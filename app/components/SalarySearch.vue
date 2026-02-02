@@ -46,14 +46,14 @@
               class="flex-1"
               label="Current Salary (optional)"
               :placeholder="country === 'UK' ? 'e.g. 45,000' : 'e.g. 80,000'"
-              :icon="Briefcase"
+              :icon="country === 'UK' ? CirclePoundSterling : CircleDollarSign"
               :param-value="period"
               :params="timeframes"
               @update:param-value="($event) => (period = $event)" />
 
             <!-- Action Button -->
             <div class="md:pb-0">
-              <AmIButton block class="md:w-auto md:min-w-[120px]" @click="handleSearch">
+              <AmIButton block class="md:w-auto md:min-w-30" @click="handleSearch">
                 <div class="flex items-center gap-1">
                   <span>Check</span>
                   <ArrowRight class="w-4 h-4" />
@@ -80,7 +80,13 @@
 <script setup lang="ts">
 // ** imports **
 import { ref, onMounted, computed } from 'vue';
-import { MapPin, ArrowRight, Briefcase } from 'lucide-vue-next';
+import {
+  MapPin,
+  ArrowRight,
+  Briefcase,
+  CirclePoundSterling,
+  CircleDollarSign,
+} from 'lucide-vue-next';
 import { useFirestore } from 'vuefire';
 import { collection, addDoc, serverTimestamp, getDocs, query } from 'firebase/firestore';
 

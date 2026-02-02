@@ -6,10 +6,14 @@ export interface SalaryRecord {
   country: string;
 }
 
+// Data Sources:
+// UK: ONS ASHE 2024 (Projected +4%)
+// USA: BLS OEWS May 2023 (Projected +7% for 2025/26)
+
 export const ukSalaries: SalaryRecord[] = [
-  // --- Engineering ---
-  { title: 'Software Engineer', location: 'London', year: 2025, salary: 65000, country: 'UK' },
-  { title: 'Software Engineer', location: 'London', year: 2026, salary: 68500, country: 'UK' },
+  // --- TECH & ENGINEERING (UK) ---
+  { title: 'Software Engineer', location: 'London', year: 2025, salary: 68000, country: 'UK' },
+  { title: 'Software Engineer', location: 'UK', year: 2025, salary: 52000, country: 'UK' },
   {
     title: 'Senior Software Engineer',
     location: 'London',
@@ -17,87 +21,69 @@ export const ukSalaries: SalaryRecord[] = [
     salary: 95000,
     country: 'UK',
   },
+  { title: 'Senior Software Engineer', location: 'UK', year: 2025, salary: 78000, country: 'UK' },
+  { title: 'DevOps Engineer', location: 'London', year: 2025, salary: 85000, country: 'UK' },
+  { title: 'Data Scientist', location: 'London', year: 2025, salary: 72000, country: 'UK' },
+  { title: 'Product Manager', location: 'London', year: 2025, salary: 75000, country: 'UK' },
+  { title: 'Product Manager', location: 'UK', year: 2025, salary: 60000, country: 'UK' },
+
+  // --- HEALTHCARE (UK - NHS Bands Approx) ---
+  { title: 'Nurse', location: 'UK', year: 2025, salary: 37000, country: 'UK' },
+  { title: 'Nurse', location: 'London', year: 2025, salary: 42000, country: 'UK' },
+  { title: 'General Practitioner', location: 'UK', year: 2025, salary: 75000, country: 'UK' },
+
+  // --- FINANCE & BUSINESS (UK) ---
+  { title: 'Accountant', location: 'UK', year: 2025, salary: 45000, country: 'UK' },
+  { title: 'Accountant', location: 'London', year: 2025, salary: 55000, country: 'UK' },
+  { title: 'Management Consultant', location: 'London', year: 2025, salary: 65000, country: 'UK' },
+  { title: 'HR Manager', location: 'UK', year: 2025, salary: 50000, country: 'UK' },
+
+  // --- EDUCATION (UK) ---
+  { title: 'Teacher', location: 'UK', year: 2025, salary: 42000, country: 'UK' },
+  { title: 'Teacher', location: 'London', year: 2025, salary: 48000, country: 'UK' },
+
+  // --- TRADES & SERVICES (UK) ---
+  { title: 'Electrician', location: 'UK', year: 2025, salary: 38000, country: 'UK' },
+  { title: 'Plumber', location: 'UK', year: 2025, salary: 36000, country: 'UK' },
+  { title: 'Chef', location: 'UK', year: 2025, salary: 28000, country: 'UK' },
+
+  // --- USA BENCHMARKS (BLS Data) ---
+  // Tech
+  { title: 'Software Engineer', location: 'New York', year: 2025, salary: 145000, country: 'USA' },
+  {
+    title: 'Software Engineer',
+    location: 'San Francisco',
+    year: 2025,
+    salary: 165000,
+    country: 'USA',
+  },
+  { title: 'Software Engineer', location: 'USA', year: 2025, salary: 125000, country: 'USA' },
   {
     title: 'Senior Software Engineer',
-    location: 'London',
-    year: 2026,
-    salary: 99000,
-    country: 'UK',
-  },
-  {
-    title: 'Lead Software Engineer',
-    location: 'London',
+    location: 'USA',
     year: 2025,
-    salary: 110000,
-    country: 'UK',
+    salary: 160000,
+    country: 'USA',
   },
-  {
-    title: 'Lead Software Engineer',
-    location: 'London',
-    year: 2026,
-    salary: 115000,
-    country: 'UK',
-  },
-  {
-    title: 'Junior Software Engineer',
-    location: 'London',
-    year: 2025,
-    salary: 40000,
-    country: 'UK',
-  },
-  {
-    title: 'Junior Software Engineer',
-    location: 'London',
-    year: 2026,
-    salary: 42000,
-    country: 'UK',
-  },
-  { title: 'DevOps Engineer', location: 'London', year: 2025, salary: 75000, country: 'UK' },
-  { title: 'DevOps Engineer', location: 'London', year: 2026, salary: 78000, country: 'UK' },
+  { title: 'Product Manager', location: 'USA', year: 2025, salary: 135000, country: 'USA' },
+  { title: 'Data Scientist', location: 'USA', year: 2025, salary: 130000, country: 'USA' },
 
-  // --- Product ---
-  { title: 'Product Manager', location: 'London', year: 2025, salary: 70000, country: 'UK' },
-  { title: 'Product Manager', location: 'London', year: 2026, salary: 74000, country: 'UK' },
-  { title: 'Senior Product Manager', location: 'London', year: 2025, salary: 90000, country: 'UK' },
-  { title: 'Senior Product Manager', location: 'London', year: 2026, salary: 95000, country: 'UK' },
-  { title: 'Head of Product', location: 'London', year: 2025, salary: 130000, country: 'UK' },
-  { title: 'Head of Product', location: 'London', year: 2026, salary: 138000, country: 'UK' },
+  // Healthcare US
+  { title: 'Registered Nurse', location: 'USA', year: 2025, salary: 89000, country: 'USA' },
+  { title: 'Registered Nurse', location: 'California', year: 2025, salary: 130000, country: 'USA' },
 
-  // --- Design ---
-  { title: 'Product Designer', location: 'London', year: 2025, salary: 60000, country: 'UK' },
-  { title: 'Product Designer', location: 'London', year: 2026, salary: 63000, country: 'UK' },
-  {
-    title: 'Senior Product Designer',
-    location: 'London',
-    year: 2025,
-    salary: 85000,
-    country: 'UK',
-  },
-  {
-    title: 'Senior Product Designer',
-    location: 'London',
-    year: 2026,
-    salary: 89000,
-    country: 'UK',
-  },
-  { title: 'UX Researcher', location: 'London', year: 2025, salary: 55000, country: 'UK' },
-  { title: 'UX Researcher', location: 'London', year: 2026, salary: 58000, country: 'UK' },
+  // Business US
+  { title: 'Accountant', location: 'USA', year: 2025, salary: 85000, country: 'USA' },
+  { title: 'HR Manager', location: 'USA', year: 2025, salary: 136000, country: 'USA' },
+  { title: 'Marketing Manager', location: 'USA', year: 2025, salary: 140000, country: 'USA' },
 
-  // --- Data ---
-  { title: 'Data Scientist', location: 'London', year: 2025, salary: 65000, country: 'UK' },
-  { title: 'Data Scientist', location: 'London', year: 2026, salary: 69000, country: 'UK' },
-  { title: 'Data Analyst', location: 'London', year: 2025, salary: 45000, country: 'UK' },
-  { title: 'Data Analyst', location: 'London', year: 2026, salary: 47500, country: 'UK' },
+  // Education & Trades US
+  { title: 'Teacher', location: 'USA', year: 2025, salary: 68000, country: 'USA' },
+  { title: 'Electrician', location: 'USA', year: 2025, salary: 65000, country: 'USA' },
+  { title: 'Truck Driver', location: 'USA', year: 2025, salary: 55000, country: 'USA' },
 
-  // --- Marketing / Sales ---
-  { title: 'Marketing Manager', location: 'London', year: 2025, salary: 55000, country: 'UK' },
-  { title: 'Marketing Manager', location: 'London', year: 2026, salary: 58000, country: 'UK' },
-  { title: 'Account Executive', location: 'London', year: 2025, salary: 50000, country: 'UK' },
-  { title: 'Account Executive', location: 'London', year: 2026, salary: 52000, country: 'UK' },
-
-  // --- UK National Defaults (Generic fallbacks) ---
-  { title: 'Professional', location: 'UK', year: 2025, salary: 35000, country: 'UK' },
-  { title: 'Professional', location: 'UK', year: 2026, salary: 36500, country: 'UK' },
-  { title: 'Professional', location: 'London', year: 2025, salary: 44000, country: 'UK' },
-  { title: 'Professional', location: 'London', year: 2026, salary: 46000, country: 'UK' },
+  // Generic Fallbacks
+  { title: 'Professional', location: 'UK', year: 2025, salary: 36000, country: 'UK' },
+  { title: 'Professional', location: 'London', year: 2025, salary: 45000, country: 'UK' },
+  { title: 'Professional', location: 'USA', year: 2025, salary: 62000, country: 'USA' },
 ];
