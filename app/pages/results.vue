@@ -187,14 +187,18 @@
             v-if="marketLastYear > 0"
             class="flex flex-col items-center justify-between pt-4 mt-4 border-t md:flex-row border-slate-200/60">
             <div class="flex items-center gap-3">
-              <div class="p-1.5 rounded-lg bg-indigo-50 text-indigo-600">
+              <div class="p-1.5 rounded-lg bg-indigo-50 text-secondary-600">
                 <History class="w-4 h-4" />
               </div>
               <div>
                 <p class="text-[10px] font-bold uppercase text-slate-400">Year over Year</p>
                 <p class="text-sm font-medium text-slate-900">
                   Salaries are
-                  <span class="font-bold text-emerald-600">up {{ trendPercent }}%</span>
+                  <span
+                    class="font-bold"
+                    :class="isTrendUp ? 'text-emerald-600' : 'text-negative-600'">
+                    {{ isTrendUp ? 'up' : 'down' }} {{ trendPercent }}%
+                  </span>
                   since 2025
                 </p>
               </div>
@@ -212,10 +216,10 @@
       <!-- Negotiation / Next Steps Card (Only if data exists) -->
       <div
         v-if="!loading && hasData"
-        class="flex flex-col items-center gap-4 p-6 text-white bg-secondary-600 shadow-xl rounded-2xl md:flex-row shadow-indigo-200">
+        class="flex flex-col items-center gap-4 p-6 text-white bg-secondary-600 shadow-xl rounded-2xl md:flex-row shadow-secondary-200">
         <div class="flex-1 space-y-1 text-center md:text-left">
           <h3 class="text-lg font-bold">Ready to take action?</h3>
-          <p class="text-xs text-indigo-100 opacity-90">
+          <p class="text-xs text-secondary-100 opacity-90">
             Get a personalized action plan, including negotiation scripts and CV tips for
             {{ title }} roles.
           </p>
@@ -237,7 +241,7 @@
       </p>
 
       <!-- The Modal Component -->
-      <NegotiationModal
+      <ModalNegotiation
         :is-open="showModal"
         :title="title"
         :current-salary="userSalary"
@@ -252,7 +256,6 @@
 // ** imports **
 import { ArrowLeft, TrendingDown, TrendingUp, Info, History, Check } from 'lucide-vue-next';
 import { ref, computed, onMounted } from 'vue';
-// NOTE: useMarketData is auto-imported by Nuxt from composables/
 
 // ** type definitions **
 
@@ -264,7 +267,7 @@ import { ref, computed, onMounted } from 'vue';
 const route = useRoute();
 const showModal = ref(false);
 
-// ** Use the Composable **
+// Destructure market data from auto-imported composable
 const {
   loading,
   marketAverage,
@@ -287,7 +290,7 @@ const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 // Has data IF average > 0 AND (it's not a generic fallback OR the user explicitly searched for "Professional")
 const hasData = computed(() => {
   if (marketAverage.value === 0) return false;
-  // If we found a generic "Professional" record but the user searched for "Avocado Picker", treat as NO DATA.
+  // If we found a generic "Professional" record but the user searched for something specific, treat as NO DATA.
   if (isGenericFallback.value && title.value.toLowerCase() !== 'professional') return false;
   return true;
 });
@@ -322,6 +325,10 @@ const trendPercent = computed<number>(() => {
     Math.round(((marketAverage.value - marketLastYear.value) / marketLastYear.value) * 100)
   );
 });
+
+const isTrendUp = computed<boolean>(() => marketAverage.value >= marketLastYear.value);
+
+// ** methods **
 
 // ** lifecycle **
 onMounted(() => {
