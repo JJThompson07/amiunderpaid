@@ -3,27 +3,38 @@
     <!-- Navbar -->
     <header
       class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b bg-white/80 backdrop-blur-md border-slate-200/50">
-      <div class="flex items-center justify-between h-16 px-4 mx-auto max-w-7xl">
+      <div class="flex flex-wrap items-center justify-between min-h-16 px-4 py-2 mx-auto max-w-7xl">
         <!-- Logo -->
-        <div class="flex items-center gap-2 text-xl font-bold tracking-tight text-primary-600">
-          <Wallet class="w-6 h-6" />
-          <span>AmI<span class="text-slate-900">Underpaid</span></span>
-        </div>
+        <NuxtLink href="/" class="flex items-center gap-2">
+          <div
+            class="flex items-center gap-2 text-xl font-bold tracking-tight text-primary-600 select-none">
+            <Wallet class="w-6 h-6" />
+            <span>AmI<span class="text-slate-900">Underpaid</span></span>
+          </div>
+        </NuxtLink>
 
         <!-- Nav -->
-        <nav class="items-center hidden gap-8 text-sm font-medium md:flex text-slate-600">
-          <a href="#" class="transition-colors hover:text-primary-600">How it works</a>
-          <a href="#" class="transition-colors hover:text-primary-600">Data Sources</a>
-          <a href="#" class="transition-colors hover:text-primary-600">About</a>
+        <nav
+          class="flex-1 items-center justify-center hidden gap-8 text-sm font-medium md:flex text-slate-600">
+          <a href="/how-it-works" class="transition-colors hover:text-primary-600">How it works</a>
+          <a href="/data-sources" class="transition-colors hover:text-primary-600">Data Sources</a>
+          <a href="/about" class="transition-colors hover:text-primary-600">About</a>
         </nav>
 
         <!-- CTA -->
-        <div class="flex items-center gap-4">
-          <button class="text-sm font-medium text-slate-600 hover:text-slate-900">Sign In</button>
-          <button
-            class="px-4 py-2 text-sm font-medium text-white transition-colors bg-slate-900 rounded-lg hover:bg-slate-800">
-            Post a Job
-          </button>
+        <div class="flex flex-1 md:flex-0 items-center justify-end gap-4">
+          <AmIButton
+            bg-colour="bg-transparent"
+            text-colour="text-slate-600"
+            animation-colour="bg-primary-400"
+            >Sign In</AmIButton
+          >
+          <!-- <AmIButton
+            bg-colour="bg-primary-900"
+            text-colour="text-slate-100"
+            animation-colour="bg-primary-600"
+            >Post a Job</AmIButton
+          > -->
         </div>
       </div>
     </header>
@@ -41,5 +52,5 @@
 </template>
 
 <script setup lang="ts">
-import { Wallet } from 'lucide-vue-next'
+import { Wallet } from 'lucide-vue-next';
 </script>

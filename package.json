@@ -13,10 +13,13 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "firebase": "^12.8.0",
     "lucide-vue-next": "^0.563.0",
     "nuxt": "^4.3.0",
+    "nuxt-vuefire": "^1.1.0",
     "vue": "^3.5.27",
-    "vue-router": "^4.6.4"
+    "vue-router": "^4.6.4",
+    "vuefire": "^3.2.2"
   },
   "devDependencies": {
     "@nuxt/eslint": "^0.7.6",

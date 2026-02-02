@@ -2,30 +2,22 @@
   <div class="relative min-h-screen overflow-hidden bg-slate-50">
     <!-- Background Gradient -->
     <div
-      class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-indigo-900 to-slate-50 z-0"></div>
-
-    <!-- Grid Pattern Overlay -->
-    <div
-      class="absolute top-0 left-0 z-0 w-full h-full opacity-10 pointer-events-none"
-      style="
-        background-image: radial-gradient(#6366f1 1px, transparent 1px);
-        background-size: 32px 32px;
-      "></div>
+      class="absolute top-0 left-0 w-full h-125 bg-linear-to-b from-secondary-900 to-slate-50 z-0"></div>
 
     <!-- Hero Content -->
     <main class="relative z-10 px-4 pt-20 pb-20">
       <div class="mb-10 space-y-4 text-center">
         <!-- Live Badge -->
         <div
-          class="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold tracking-wider text-indigo-200 uppercase border rounded-full bg-indigo-800/50 border-indigo-700/50 backdrop-blur-sm">
-          <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+          class="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold tracking-wider text-indigo-200 uppercase border rounded-full bg-primary-800/50 border-primary-700/50 backdrop-blur-sm">
+          <span class="w-2 h-2 bg-primary-400 rounded-full animate-pulse"></span>
           Live 2026 Market Data
         </div>
 
         <!-- Title -->
         <h1 class="text-4xl font-extrabold tracking-tight text-white md:text-6xl">
           Am I
-          <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 to-white"
+          <span class="text-transparent bg-clip-text bg-linear-to-r from-primary-300 to-white"
             >Underpaid?</span
           >
         </h1>
