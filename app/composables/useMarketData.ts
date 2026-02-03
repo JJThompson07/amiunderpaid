@@ -21,6 +21,7 @@ export const useMarketData = () => {
   const marketHigh = ref(0);
   const marketLow = ref(0);
   const marketLastYear = ref(0);
+  const marketDataYear = ref(0);
   const isGenericFallback = ref(false);
 
   // Reset state helper
@@ -29,6 +30,7 @@ export const useMarketData = () => {
     marketHigh.value = 0;
     marketLow.value = 0;
     marketLastYear.value = 0;
+    marketDataYear.value = 0;
     isGenericFallback.value = false;
     error.value = null;
   };
@@ -52,6 +54,7 @@ export const useMarketData = () => {
       const coll = collection(db, 'salary_benchmarks');
       const searchTitle = title.toLowerCase();
       const searchLocation = location.toLowerCase();
+      let record: SalaryBenchmark | undefined;
 
       // 1. Try Exact Match
       let q = query(
@@ -60,14 +63,14 @@ export const useMarketData = () => {
         where('searchLocation', '==', searchLocation),
         limit(1)
       );
-
       let snapshot = await getDocs(q);
-      let record: SalaryBenchmark | undefined;
 
       if (!snapshot.empty && snapshot.docs[0]) {
         record = snapshot.docs[0].data() as SalaryBenchmark;
-      } else {
-        // 2. Fallback: Try Title + Country
+      }
+
+      // 2. Fallback: Try Title + Country
+      if (!record) {
         console.log('No exact city match, checking national average...');
         q = query(
           coll,
@@ -76,25 +79,26 @@ export const useMarketData = () => {
           limit(1)
         );
         snapshot = await getDocs(q);
+        if (!snapshot.empty && snapshot.docs[0]) {
+          record = snapshot.docs[0].data() as SalaryBenchmark;
+        }
+      }
+
+      // 3. Last Resort: Generic "Professional"
+      if (!record) {
+        console.log('No role match, retrieving generic baseline...');
+        isGenericFallback.value = true;
+
+        q = query(
+          coll,
+          where('searchTitle', '==', 'professional'),
+          where('country', '==', country),
+          limit(1)
+        );
+        snapshot = await getDocs(q);
 
         if (!snapshot.empty && snapshot.docs[0]) {
           record = snapshot.docs[0].data() as SalaryBenchmark;
-        } else {
-          // 3. Last Resort: Generic "Professional"
-          console.log('No role match, retrieving generic baseline...');
-          isGenericFallback.value = true;
-
-          q = query(
-            coll,
-            where('searchTitle', '==', 'professional'),
-            where('country', '==', country),
-            limit(1)
-          );
-          snapshot = await getDocs(q);
-
-          if (!snapshot.empty && snapshot.docs[0]) {
-            record = snapshot.docs[0].data() as SalaryBenchmark;
-          }
         }
       }
 
@@ -102,8 +106,21 @@ export const useMarketData = () => {
         marketAverage.value = record.salary;
         marketHigh.value = Math.round(record.salary * 1.3);
         marketLow.value = Math.round(record.salary * 0.75);
-        // Mocking last year for now, or use record.year logic if available
-        marketLastYear.value = Math.round(record.salary * 0.95);
+        marketDataYear.value = record.year;
+
+        // Now, fetch the previous year's data
+        const prevYearQ = query(
+          coll,
+          where('searchTitle', '==', record.title.toLowerCase()),
+          where('searchLocation', '==', record.location.toLowerCase()),
+          where('year', '==', record.year - 1),
+          limit(1)
+        );
+        const prevYearSnapshot = await getDocs(prevYearQ);
+        if (!prevYearSnapshot.empty && prevYearSnapshot.docs[0]) {
+          const prevYearRecord = prevYearSnapshot.docs[0].data() as SalaryBenchmark;
+          marketLastYear.value = prevYearRecord.salary;
+        }
       }
     } catch (e: any) {
       console.error('Error fetching market data:', e);
@@ -120,6 +137,7 @@ export const useMarketData = () => {
     marketHigh,
     marketLow,
     marketLastYear,
+    marketDataYear,
     isGenericFallback,
     fetchMarketData,
   };

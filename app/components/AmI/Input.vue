@@ -4,13 +4,14 @@
       {{ label }}
     </label>
     <div class="relative flex">
-      <component
-        :is="icon"
-        v-if="icon"
-        class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-hover:text-primary-500 group-focus-within:text-primary-500 transition-colors z-10" />
+      <div v-if="icon" class="absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+        <component
+          :is="icon"
+          class="w-5 h-5 text-slate-400 group-hover:text-primary-500 group-focus-within:text-primary-500 transition-colors" />
+      </div>
       <input
         v-model="value"
-        type="text"
+        :type="type"
         :disabled="disabled"
         :placeholder="placeholder"
         class="w-full pl-10 pr-4 py-3 font-medium transition-all border bg-slate-50 border-slate-200 focus:outline-none text-slate-900 placeholder:text-slate-400"
@@ -28,7 +29,11 @@
 
 <script setup lang="ts">
 import type { Component, PropType } from 'vue';
-import type { SelectOption } from '../SalarySearch.vue';
+
+export interface SelectOption {
+  label: string;
+  value: string | number;
+}
 
 const props = defineProps({
   modelValue: {
@@ -58,6 +63,10 @@ const props = defineProps({
   params: {
     type: Array as PropType<SelectOption[]>,
     default: () => [],
+  },
+  type: {
+    type: String,
+    default: 'text',
   },
 });
 

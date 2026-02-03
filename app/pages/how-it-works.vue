@@ -11,7 +11,7 @@
 
       <!-- Steps Grid -->
       <div
-        class="space-y-12 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+        class="space-y-12 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-linear-to-b before:from-transparent before:via-slate-300 before:to-transparent">
         <!-- Step 1 -->
         <div
           class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
