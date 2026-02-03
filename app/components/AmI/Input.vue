@@ -11,7 +11,7 @@
       </div>
       <input
         v-model="value"
-        type="text"
+        :type="type"
         :disabled="disabled"
         :placeholder="placeholder"
         class="w-full pl-10 pr-4 py-3 font-medium transition-all border bg-slate-50 border-slate-200 focus:outline-none text-slate-900 placeholder:text-slate-400"
@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import type { Component, PropType } from 'vue';
-import type { SelectOption } from '../../layouts/SalarySearch.vue';
+import type { SelectOption } from '../SalarySearch.vue';
 
 const props = defineProps({
   modelValue: {
@@ -59,6 +59,10 @@ const props = defineProps({
   params: {
     type: Array as PropType<SelectOption[]>,
     default: () => [],
+  },
+  type: {
+    type: String,
+    default: 'text',
   },
 });
 

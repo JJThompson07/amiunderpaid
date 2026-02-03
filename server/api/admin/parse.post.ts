@@ -17,8 +17,12 @@ interface SalaryRecord {
 export default defineEventHandler(async (event) => {
   try {
     const body = await readMultipartFormData(event);
-    const file = body?.find((item) => item.name === 'file');
-    const country = body?.find((item) => item.name === 'country')?.data.toString() || 'UK';
+    if (!body) throw createError({ statusCode: 400, message: 'No body' });
+
+    const file = body.find((item) => item.name === 'file');
+    // Handle country being passed as a field
+    const countryPart = body.find((item) => item.name === 'country');
+    const country = countryPart ? countryPart.data.toString() : 'UK';
 
     if (!file || !file.data) {
       throw createError({ statusCode: 400, message: 'No file uploaded' });
@@ -26,19 +30,25 @@ export default defineEventHandler(async (event) => {
 
     // Parse the spreadsheet buffer
     const workbook = XLSX.read(file.data, { type: 'buffer' });
-
-    const sheetName = workbook.SheetNames[0];
-    if (typeof sheetName !== 'string' || !sheetName || !workbook.SheetNames.includes(sheetName)) {
-      throw createError({ statusCode: 400, message: 'Invalid or missing sheet name' });
+    // For ONS, the data is often in the 'All', 'Full-Time' or first sheet
+    const sheetName =
+      workbook.SheetNames.find((n) => n.includes('All') || n.includes('Full-Time')) ||
+      workbook.SheetNames[0];
+    if (!sheetName) {
+      throw createError({ statusCode: 400, message: 'No sheets found in the uploaded file' });
     }
-
     const worksheet = workbook.Sheets[sheetName];
-    if (!worksheet || typeof worksheet !== 'object' || !worksheet['!ref']) {
-      throw createError({ statusCode: 400, message: 'Invalid or missing worksheet' });
+
+    if (!worksheet) {
+      throw createError({ statusCode: 400, message: 'Could not find the data sheet' });
     }
 
-    // Convert to 2D array for fuzzy header searching
+    // Convert to 2D array (array of arrays) to handle offset headers easily
     const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+    if (!rawData || rawData.length === 0) {
+      throw createError({ statusCode: 400, message: 'The file appears to be empty.' });
+    }
 
     const normalizedData: SalaryRecord[] = [];
     const currentYear = new Date().getFullYear();
@@ -46,32 +56,61 @@ export default defineEventHandler(async (event) => {
     if (country === 'UK') {
       /**
        * ONS ASHE Parsing Logic
-       * Searches for the row containing 'Description' or 'Occupation'
+       * Target: Table 14.7a (Annual pay - Gross)
+       * Headers usually on row 5 (Index 4)
+       * Col 0: Description
+       * Col 3: Median (£)  <-- Vital: Col 2 is often 'Number of jobs'
        */
       let headerRowIndex = -1;
+      const titleIdx = 0;
+      let salaryIdx = 3; // Default fallback for ONS Table 14.7a
+
+      // 1. Scan for the Header Row
       for (let i = 0; i < Math.min(rawData.length, 20); i++) {
-        const firstCell = rawData[i]?.[0]?.toString().toLowerCase().trim();
-        if (firstCell === 'description' || firstCell === 'occupation') {
+        const row = rawData[i] || [];
+        // Check first few columns for 'Description'
+        const firstCell = row[0]?.toString().toLowerCase().trim() || '';
+        if (firstCell === 'description') {
           headerRowIndex = i;
+
+          // Dynamically find 'Median' column in this row just in case it moved
+          const foundSalaryIdx = row.findIndex(
+            (c: any) => c?.toString().toLowerCase().trim() === 'median'
+          );
+          if (foundSalaryIdx > -1) salaryIdx = foundSalaryIdx;
+
           break;
         }
       }
 
-      // If we can't find the header, fall back to the standard index 5, or fail
-      const startRow = headerRowIndex !== -1 ? headerRowIndex + 1 : 5;
+      // If header not found, assume row 5 (index 4) for standard ONS sheets
+      const startRow = headerRowIndex !== -1 ? headerRowIndex + 1 : 4;
 
       for (let i = startRow; i < rawData.length; i++) {
         const row = rawData[i];
-        if (!row || row.length < 3) continue;
+        if (!row || row.length < 2) continue;
 
-        const title = row[0]?.toString().trim();
-        const salaryValue = row[2]?.toString().replace(/,/g, '');
-        const salary = parseFloat(salaryValue);
+        const title = row[titleIdx]?.toString().trim();
 
-        if (title && !isNaN(salary) && salary > 0) {
+        // ONS data cleaning:
+        // - "x" means unreliable/unavailable
+        // - ":" means not applicable
+        let salaryRaw = row[salaryIdx];
+
+        if (typeof salaryRaw === 'string') {
+          // Remove commas if present "32,890"
+          salaryRaw = salaryRaw.replace(/,/g, '');
+        }
+
+        const salary = parseFloat(salaryRaw);
+
+        // Filter out bad data rows (summaries, empty lines, or 'x' values)
+        if (title && !isNaN(salary) && salary > 1000) {
+          // ONS titles sometimes have footnotes like "1" attached, though usually separate columns
+          // We can clean common prefixes if needed, but usually raw description is fine
           normalizedData.push({
             title,
-            location: 'UK',
+            location: 'UK', // ONS Table 14 is National. Table 15 is Regional.
             year: currentYear,
             salary: Math.round(salary),
             country: 'UK',
@@ -81,48 +120,60 @@ export default defineEventHandler(async (event) => {
     } else {
       /**
        * BLS USA Parsing Logic
-       * FUZZY HEADER DETECTION: Scans rows to find 'occ_title' and 'a_median'
+       * Targeted at OEWS National CSVs
+       * Look for 'OCC_TITLE' and 'A_MEDIAN' (Annual Median)
        */
-      let headerIdx = -1;
-      let titleCol = -1;
-      let salaryCol = -1;
-      let locCol = -1;
+      let headerRowIndex = -1;
+      let titleIdx = -1;
+      let salaryIdx = -1;
+      let locIdx = -1;
 
-      // Search through the first 25 rows to find the headers
-      for (let i = 0; i < Math.min(rawData.length, 25); i++) {
-        const row = (rawData[i] || []).map((c) => c?.toString().toLowerCase().trim());
+      // 1. Scan for Headers
+      for (let i = 0; i < Math.min(rawData.length, 20); i++) {
+        const row = (rawData[i] || []).map((c: any) => c?.toString().toLowerCase().trim() || '');
 
-        const tIdx = row.findIndex((c) => c === 'occ_title' || c === 'occupation title');
-        const sIdx = row.findIndex((c) => c === 'a_median' || c === 'annual median');
+        // Look for OCC_TITLE (Job Title) and A_MEDIAN (Annual Median Salary)
+        const t = row.indexOf('occ_title');
+        const s = row.indexOf('a_median'); // Annual Median
 
-        if (tIdx !== -1 && sIdx !== -1) {
-          headerIdx = i;
-          titleCol = tIdx;
-          salaryCol = sIdx;
-          locCol = row.findIndex((c) => c === 'area_title' || c === 'state');
+        if (t > -1 && s > -1) {
+          headerRowIndex = i;
+          titleIdx = t;
+          salaryIdx = s;
+          // Optional: State/Area
+          const l = row.findIndex((c: string) => c === 'area_title' || c === 'state');
+          if (l > -1) locIdx = l;
           break;
         }
       }
 
-      if (headerIdx === -1) {
+      if (headerRowIndex === -1) {
+        // Fallback logic if headers aren't found in first 20 rows
         throw createError({
           statusCode: 400,
-          message: `Invalid BLS format: Required headers (OCC_TITLE and A_MEDIAN) not found in the first 25 rows. Please check your file structure.`,
+          message: 'Could not find OCC_TITLE and A_MEDIAN headers in USA file.',
         });
       }
 
-      // Process rows following the discovered header
-      for (let i = headerIdx + 1; i < rawData.length; i++) {
+      for (let i = headerRowIndex + 1; i < rawData.length; i++) {
         const row = rawData[i];
         if (!row) continue;
 
-        const title = row[titleCol]?.toString().trim();
-        // BLS uses '*' or '#' for missing data; replace and parse
-        const salaryStr = row[salaryCol]?.toString().replace(/,/g, '');
-        const salary = parseFloat(salaryStr);
-        const location = locCol !== -1 ? row[locCol]?.toString() : 'USA';
+        const title = row[titleIdx]?.toString().trim();
+        let salaryRaw = row[salaryIdx];
 
-        if (title && !isNaN(salary) && salary > 0) {
+        // BLS uses '*' for missing, '#' for >$208k (sometimes)
+        if (salaryRaw === '*' || salaryRaw === '#') continue;
+
+        if (typeof salaryRaw === 'string') {
+          salaryRaw = salaryRaw.replace(/,/g, '');
+        }
+
+        const salary = parseFloat(salaryRaw);
+        const location = locIdx > -1 ? row[locIdx]?.toString().trim() : 'USA';
+
+        // Filter out "All Occupations" summary if desired, though useful context
+        if (title && !isNaN(salary) && salary > 1000) {
           normalizedData.push({
             title,
             location,

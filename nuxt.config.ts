@@ -1,5 +1,10 @@
 import tailwindcss from '@tailwindcss/vite';
 
+// Debug: Check if env vars are loaded
+if (!process.env.FIREBASE_API_KEY) {
+  console.warn('⚠️  WARNING: FIREBASE_API_KEY is missing from process.env!');
+}
+
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },

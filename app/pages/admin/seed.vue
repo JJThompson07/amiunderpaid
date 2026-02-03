@@ -21,25 +21,39 @@
 
       <!-- CONFIGURATION SECTION -->
       <div class="mb-8 space-y-6">
-        <!-- COUNTRY TOGGLE -->
-        <div class="flex flex-col gap-2">
-          <label
-            class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
-            Data Source Type
-          </label>
-          <div class="flex p-1 bg-slate-100 rounded-xl">
-            <button
-              v-for="c in ['UK', 'USA']"
-              :key="c"
-              class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
-              :class="
-                targetCountry === c
-                  ? 'bg-white text-indigo-600 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-600'
-              "
-              @click="targetCountry = c">
-              {{ c }} ({{ c === 'UK' ? 'ONS ASHE' : 'BLS OEWS' }})
-            </button>
+        <div class="grid grid-cols-2 gap-4">
+          <!-- COUNTRY TOGGLE -->
+          <div class="flex flex-col gap-2">
+            <label
+              class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
+              Region
+            </label>
+            <div class="flex p-1 bg-slate-100 rounded-xl">
+              <button
+                v-for="c in ['UK', 'USA']"
+                :key="c"
+                class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+                :class="
+                  targetCountry === c
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600'
+                "
+                @click="targetCountry = c">
+                {{ c }}
+              </button>
+            </div>
+          </div>
+
+          <!-- YEAR INPUT -->
+          <div class="flex flex-col gap-2">
+            <label
+              class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
+              Target Year
+            </label>
+            <input
+              v-model="targetYear"
+              type="number"
+              class="w-full px-4 py-2 text-sm font-bold text-center bg-slate-100 rounded-xl border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all text-slate-600" />
           </div>
         </div>
 
@@ -100,13 +114,13 @@
         <AmIButton
           v-else
           :loading="parsing"
-          :disabled="!selectedFile || !user"
+          :disabled="!selectedFile"
           block
-          :bg-colour="!selectedFile || !user ? 'bg-slate-200' : 'bg-indigo-600'"
-          :text-colour="!selectedFile || !user ? 'text-slate-400' : 'text-white'"
+          :bg-colour="!selectedFile ? 'bg-slate-200' : 'bg-primary-600'"
+          :text-colour="!selectedFile ? 'text-slate-400' : 'text-white'"
           @click="handleParse">
-          <div class="flex items-center gap-2">
-            <span v-if="!user && selectedFile">Waiting for Auth...</span>
+          <div class="flex items-center justify-center gap-2">
+            <LoaderCircle v-if="parsing" class="w-4 h-4 animate-spin" />
             <span v-else>Parse Spreadsheet</span>
           </div>
         </AmIButton>
@@ -117,11 +131,11 @@
 
 <script setup lang="ts">
 // ** imports **
-import { ref, onMounted, nextTick } from 'vue';
-import { Database, UploadCloud, CheckCircle2, Lock } from 'lucide-vue-next';
+import { ref, onMounted, nextTick, watch } from 'vue';
+import { Database, UploadCloud, CheckCircle2, Lock, LoaderCircle } from 'lucide-vue-next';
 import { useFirestore, useCurrentUser } from 'vuefire';
 import { writeBatch, doc, serverTimestamp } from 'firebase/firestore';
-import type { SalaryRecord } from '~/utils/seedData';
+import type { SalaryRecord } from '../../../utils/seedData';
 
 /**
  * PAGE METADATA
@@ -141,6 +155,7 @@ const status = ref('');
 const consoleRef = ref<HTMLElement | null>(null);
 
 const targetCountry = ref('UK');
+const targetYear = ref(2026);
 const selectedFile = ref<File | null>(null);
 const fileName = ref('');
 const parsedData = ref<SalaryRecord[]>([]);
@@ -172,7 +187,7 @@ const onFileSelect = (e: Event) => {
 
 const handleParse = async () => {
   // 1. Validation checks
-  if (!selectedFile.value || !user.value) return;
+  if (!selectedFile.value) return;
 
   parsing.value = true;
   log(`Initiating upload: ${targetCountry.value} data...`);
@@ -180,6 +195,7 @@ const handleParse = async () => {
   const formData = new FormData();
   formData.append('file', selectedFile.value);
   formData.append('country', targetCountry.value);
+  formData.append('year', targetYear.value.toString());
 
   try {
     // 2. Request parsing from server API
@@ -269,7 +285,14 @@ onMounted(() => {
   if (user.value) {
     log(`Authenticated as admin: ${user.value.email}.`);
   } else {
-    log('Waiting for authentication context...');
+    log('Checking authentication...');
+    navigateTo('/login');
+  }
+});
+
+watch(user, (newUser) => {
+  if (!newUser) {
+    navigateTo('/login');
   }
 });
 </script>
