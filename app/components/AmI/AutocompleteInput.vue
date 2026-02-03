@@ -4,10 +4,11 @@
       {{ label }}
     </label>
     <div class="relative flex">
-      <component
-        :is="icon"
-        v-if="icon"
-        class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-hover:text-primary-500 group-focus-within:text-primary-500 transition-colors z-10" />
+      <div v-if="icon" class="absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+        <component
+          :is="icon"
+          class="w-5 h-5 text-slate-400 group-hover:text-primary-500 group-focus-within:text-primary-500 transition-colors" />
+      </div>
 
       <input
         v-model="inputValue"
@@ -84,7 +85,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 // ** data & refs **
-const containerRef = ref(null);
+const containerRef = ref<HTMLElement | null>(null);
 const isOpen = ref(false);
 const inputValue = ref(props.modelValue);
 const activeIndex = ref(-1);

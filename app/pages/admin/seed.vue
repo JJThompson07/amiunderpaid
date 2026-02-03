@@ -1,137 +1,275 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-slate-100 p-4">
+  <div class="min-h-screen flex items-center justify-center bg-slate-50 p-4 pt-20">
     <div
-      class="p-8 bg-white rounded-xl shadow-lg text-center max-w-lg w-full border border-slate-200">
+      class="p-8 bg-white rounded-3xl border border-slate-200 shadow-xl text-center max-w-lg w-full">
+      <!-- ICON HEADER -->
       <div class="mb-6 flex justify-center">
         <div
-          class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-primary-600 shadow-inner">
-          <Database class="w-8 h-8" />
+          class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
+          <Database v-if="!user" class="w-8 h-8" />
+          <Lock v-else class="w-8 h-8 text-emerald-500" />
         </div>
       </div>
 
-      <h1 class="text-2xl font-bold mb-2 text-slate-900">Database Seeder</h1>
+      <h1 class="text-2xl font-black mb-2 text-slate-900">Government Data Seeder</h1>
       <p class="text-slate-500 mb-8 text-sm">
-        Ready to populate
-        <span
-          class="font-mono text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200"
-          >salary_benchmarks</span
-        >
-        with <span class="font-bold text-slate-900">{{ ukSalaries.length }}</span> records.
+        Authorized Session:
+        <span :class="user ? 'text-emerald-600 font-bold' : 'text-amber-500'">{{
+          user ? user.email : 'Connecting...'
+        }}</span>
       </p>
 
-      <!-- Status Console -->
-      <div
-        v-if="status"
-        class="mb-6 bg-slate-900 rounded-lg text-left overflow-hidden shadow-inner">
-        <div
-          class="px-4 py-2 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
-          <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider"
-            >Console Log</span
-          >
-          <div class="flex gap-1.5">
-            <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+      <!-- CONFIGURATION SECTION -->
+      <div class="mb-8 space-y-6">
+        <!-- COUNTRY TOGGLE -->
+        <div class="flex flex-col gap-2">
+          <label
+            class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
+            Data Source Type
+          </label>
+          <div class="flex p-1 bg-slate-100 rounded-xl">
+            <button
+              v-for="c in ['UK', 'USA']"
+              :key="c"
+              class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+              :class="
+                targetCountry === c
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-600'
+              "
+              @click="targetCountry = c">
+              {{ c }} ({{ c === 'UK' ? 'ONS ASHE' : 'BLS OEWS' }})
+            </button>
           </div>
         </div>
+
+        <!-- FILE UPLOAD -->
+        <div class="flex flex-col gap-2">
+          <label
+            class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
+            Spreadsheet File
+          </label>
+          <label
+            class="flex flex-col items-center px-4 py-8 bg-slate-50 text-indigo-600 rounded-2xl border-2 border-dashed border-slate-200 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all group">
+            <UploadCloud
+              class="w-10 h-10 mb-2 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+            <span
+              class="text-xs font-bold uppercase tracking-wide text-slate-500 group-hover:text-indigo-600">
+              {{ fileName || 'Select .xlsx or .csv' }}
+            </span>
+            <input type="file" class="hidden" accept=".xlsx,.csv" @change="onFileSelect" />
+          </label>
+        </div>
+      </div>
+
+      <!-- PROCESSING CONSOLE -->
+      <div
+        v-if="status"
+        class="mb-8 bg-slate-900 rounded-2xl text-left overflow-hidden shadow-inner border border-slate-800">
         <div
-          class="p-4 overflow-y-auto max-h-48 font-mono text-xs text-emerald-400 whitespace-pre-wrap leading-relaxed">
+          class="px-4 py-2 bg-slate-800/50 border-b border-slate-800 flex justify-between items-center">
+          <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider"
+            >Processing Console</span
+          >
+          <span
+            v-if="loading || parsing"
+            class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+        </div>
+        <div
+          ref="consoleRef"
+          class="p-5 overflow-y-auto max-h-48 font-mono text-[11px] text-emerald-400 whitespace-pre-wrap leading-relaxed scrollbar-thin scrollbar-thumb-slate-700">
           {{ status }}
         </div>
       </div>
 
-      <AmIAnimatedBorder :loading="loading" active-bg-colour="bg-slate-400">
-        <AmIButton :loading="loading" block class="w-full" @click="seedDatabase">
-          <div class="flex items-center justify-center gap-2">
-            <span>{{ loading ? 'Seeding Database...' : 'Run Seed Script' }}</span>
-            <UploadCloud v-if="!loading" class="w-4 h-4" />
+      <!-- ACTION BUTTONS -->
+      <div class="space-y-3">
+        <AmIButton
+          v-if="parsedData.length > 0"
+          :loading="loading"
+          block
+          bg-colour="bg-emerald-600"
+          animation-colour="bg-emerald-400"
+          @click="seedToFirestore">
+          <div class="flex items-center gap-2">
+            <CheckCircle2 class="w-4 h-4" />
+            <span>Sync {{ parsedData.length }} Records</span>
           </div>
         </AmIButton>
-      </AmIAnimatedBorder>
+
+        <AmIButton
+          v-else
+          :loading="parsing"
+          :disabled="!selectedFile || !user"
+          block
+          :bg-colour="!selectedFile || !user ? 'bg-slate-200' : 'bg-indigo-600'"
+          :text-colour="!selectedFile || !user ? 'text-slate-400' : 'text-white'"
+          @click="handleParse">
+          <div class="flex items-center gap-2">
+            <span v-if="!user && selectedFile">Waiting for Auth...</span>
+            <span v-else>Parse Spreadsheet</span>
+          </div>
+        </AmIButton>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 // ** imports **
-import { ref } from 'vue';
-import { Database, UploadCloud } from 'lucide-vue-next';
-import { useFirestore } from 'vuefire';
-import { writeBatch, doc } from 'firebase/firestore';
-import { ukSalaries } from '../../../utils/seedData';
+import { ref, onMounted, nextTick } from 'vue';
+import { Database, UploadCloud, CheckCircle2, Lock } from 'lucide-vue-next';
+import { useFirestore, useCurrentUser } from 'vuefire';
+import { writeBatch, doc, serverTimestamp } from 'firebase/firestore';
+import type { SalaryRecord } from '~/utils/seedData';
 
-// ** type definitions **
-
-// ** props **
-
-// ** emits **
+/**
+ * PAGE METADATA
+ * * Registers the 'admin' middleware to protect this route.
+ */
+definePageMeta({
+  middleware: 'admin',
+});
 
 // ** data & refs **
 const db = useFirestore();
-const loading = ref(false);
-const status = ref('');
+const user = useCurrentUser();
 
-// ** computed properties **
+const loading = ref(false);
+const parsing = ref(false);
+const status = ref('');
+const consoleRef = ref<HTMLElement | null>(null);
+
+const targetCountry = ref('UK');
+const selectedFile = ref<File | null>(null);
+const fileName = ref('');
+const parsedData = ref<SalaryRecord[]>([]);
 
 // ** methods **
-const seedDatabase = async () => {
-  if (loading.value) return;
 
-  loading.value = true;
-  status.value = '> Initializing batch write...\n';
+/**
+ * LOG HELPER
+ * * Appends messages to the internal console and auto-scrolls.
+ */
+const log = (msg: string) => {
+  status.value += `> ${msg}\n`;
+  nextTick(() => {
+    if (consoleRef.value) consoleRef.value.scrollTop = consoleRef.value.scrollHeight;
+  });
+};
+
+const onFileSelect = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (file) {
+    selectedFile.value = file;
+    fileName.value = file.name;
+    parsedData.value = [];
+    log(`Selected: ${file.name}`);
+    log(`Ready to parse. Click 'Parse Spreadsheet' below.`);
+  }
+};
+
+const handleParse = async () => {
+  // 1. Validation checks
+  if (!selectedFile.value || !user.value) return;
+
+  parsing.value = true;
+  log(`Initiating upload: ${targetCountry.value} data...`);
+
+  const formData = new FormData();
+  formData.append('file', selectedFile.value);
+  formData.append('country', targetCountry.value);
 
   try {
-    // Check if database connection is valid
-    if (!db) {
-      throw new Error('Firestore instance not found. Check your .env config.');
+    // 2. Request parsing from server API
+    log(`Sending file to server parser...`);
+    const response = await $fetch<{
+      success: boolean;
+      data: SalaryRecord[];
+      count: number;
+      error?: string;
+    }>('/api/admin/parse', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (response.success) {
+      parsedData.value = response.data;
+      log(`✅ SUCCESS: Parsed ${response.count} valid records.`);
+      log(`Review the results above, then click 'Sync' to write to Firestore.`);
+    } else {
+      log(`❌ PARSE ERROR: ${response.error}`);
+    }
+  } catch (e: any) {
+    log(`❌ NETWORK ERROR: ${e.message}`);
+  } finally {
+    parsing.value = false;
+  }
+};
+
+const seedToFirestore = async () => {
+  // 1. Pre-flight check
+  if (loading.value || parsedData.value.length === 0 || !db) return;
+
+  loading.value = true;
+  log('Starting Firestore Batch Sync...');
+
+  try {
+    const dataToSeed = [...parsedData.value];
+    const chunkSize = 400;
+    let totalSynced = 0;
+
+    // 2. Process in chunks to stay under Firebase limits
+    while (dataToSeed.length > 0) {
+      const batch = writeBatch(db);
+      const currentChunk = dataToSeed.splice(0, chunkSize);
+
+      log(`Writing batch: ${totalSynced + 1} to ${totalSynced + currentChunk.length}...`);
+
+      for (const record of currentChunk) {
+        // Create deterministic IDs
+        const cleanTitle = record.title
+          .toLowerCase()
+          .replace(/\s+/g, '_')
+          .replace(/[^a-z0-9_-]/g, '');
+        const docId =
+          `${record.country}-${record.location}-${cleanTitle}-${record.year}`.toLowerCase();
+
+        const docRef = doc(db, 'salary_benchmarks', docId);
+
+        batch.set(docRef, {
+          ...record,
+          searchTitle: record.title.toLowerCase(),
+          searchLocation: record.location.toLowerCase(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+      totalSynced += currentChunk.length;
+      log(`Committed ${totalSynced} records...`);
     }
 
-    const batch = writeBatch(db);
-    let count = 0;
-
-    status.value += '> Processing records...\n';
-
-    for (const record of ukSalaries) {
-      // Create a deterministic ID: "UK-London-Software_Engineer-2025"
-      // This prevents duplicates. If we run this script again, it just overwrites the existing doc.
-      const docId = `${record.country}-${record.location}-${record.title}-${record.year}`
-        .replace(/\s+/g, '_')
-        .toLowerCase();
-
-      const docRef = doc(db, 'salary_benchmarks', docId);
-
-      batch.set(docRef, {
-        ...record,
-        searchTitle: record.title.toLowerCase(), // Helper for searching
-        searchLocation: record.location.toLowerCase(), // Helper for searching
-        updatedAt: new Date(),
-      });
-
-      count++;
-    }
-
-    status.value += `> Prepared ${count} documents for upload.\n`;
-    status.value += `> Committing to Firestore (this may take a moment)...\n`;
-
-    // Add a race condition to timeout if it hangs (e.g. bad permissions)
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Operation timed out. Check Firestore Rules.')), 10000)
-    );
-
-    await Promise.race([batch.commit(), timeout]);
-
-    status.value += `\n✅ SUCCESS: Successfully wrote ${count} records to database.`;
-  } catch (e: unknown) {
-    console.error(e);
-    status.value += `\n❌ ERROR: ${e.message}`;
-
-    if (e.message.includes('permission')) {
-      status.value += `\n\nTIP: Go to Firebase Console -> Build -> Firestore -> Rules and ensure reads/writes are allowed (Test Mode).`;
-    }
+    log(`\n🏆 ALL DONE: ${totalSynced} records are now live.`);
+    parsedData.value = [];
+    selectedFile.value = null;
+    fileName.value = '';
+  } catch (e: any) {
+    log(`\n❌ FIREBASE ERROR: ${e.message}`);
+    console.error('Firestore Error:', e);
   } finally {
     loading.value = false;
   }
 };
 
-// ** watchers **
+// ** lifecycle **
+onMounted(() => {
+  log('System booting...');
+  if (user.value) {
+    log(`Authenticated as admin: ${user.value.email}.`);
+  } else {
+    log('Waiting for authentication context...');
+  }
+});
 </script>

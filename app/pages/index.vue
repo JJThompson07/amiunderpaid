@@ -17,9 +17,7 @@
         <!-- Title -->
         <h1 class="text-4xl font-extrabold tracking-tight text-white md:text-6xl">
           Am I
-          <span class="text-transparent bg-clip-text bg-linear-to-r from-primary-300 to-white"
-            >Underpaid?</span
-          >
+          <span class="text-transparent bg-clip-text bg-white">Underpaid?</span>
         </h1>
 
         <!-- Subtitle -->

@@ -289,30 +289,31 @@ const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 // Strict Data Check:
 // Has data IF average > 0 AND (it's not a generic fallback OR the user explicitly searched for "Professional")
 const hasData = computed(() => {
-  if (marketAverage.value === 0) return false;
+  if ((marketAverage?.value ?? 0) === 0) return false;
   // If we found a generic "Professional" record but the user searched for something specific, treat as NO DATA.
   if (isGenericFallback.value && title.value.toLowerCase() !== 'professional') return false;
   return true;
 });
 
 const isUnderpaid = computed<boolean>(
-  () => userSalary.value > 0 && userSalary.value < marketAverage.value
+  () => userSalary.value > 0 && userSalary.value < (marketAverage?.value ?? 0)
 );
 
 const diffPercent = computed<number>(() => {
-  if (userSalary.value === 0 || marketAverage.value === 0) return 0;
-  return Math.abs(
-    Math.round(((userSalary.value - marketAverage.value) / marketAverage.value) * 100)
-  );
+  const avg = marketAverage?.value ?? 0;
+  if (userSalary.value === 0 || avg === 0) return 0;
+  return Math.abs(Math.round(((userSalary.value - avg) / avg) * 100));
 });
 
 // Safe percentage for the progress bar relative to the Low-High range
 const salaryPosition = computed<number>(() => {
-  const range = marketHigh.value - marketLow.value;
+  const high = marketHigh?.value ?? 0;
+  const low = marketLow?.value ?? 0;
+  const range = high - low;
   if (range <= 0) return 50;
 
   // Calculate offset from the bottom of the range (Market Low)
-  const offset = userSalary.value - marketLow.value;
+  const offset = userSalary.value - low;
   const pct = (offset / range) * 100;
 
   // Clamp between 0% (Market Low) and 100% (Market High)
@@ -320,13 +321,15 @@ const salaryPosition = computed<number>(() => {
 });
 
 const trendPercent = computed<number>(() => {
-  if (marketLastYear.value === 0) return 0;
-  return Math.abs(
-    Math.round(((marketAverage.value - marketLastYear.value) / marketLastYear.value) * 100)
-  );
+  const lastYear = marketLastYear?.value ?? 0;
+  const avg = marketAverage?.value ?? 0;
+  if (lastYear === 0) return 0;
+  return Math.abs(Math.round(((avg - lastYear) / lastYear) * 100));
 });
 
-const isTrendUp = computed<boolean>(() => marketAverage.value >= marketLastYear.value);
+const isTrendUp = computed<boolean>(
+  () => (marketAverage?.value ?? 0) >= (marketLastYear?.value ?? 0)
+);
 
 // ** methods **
 

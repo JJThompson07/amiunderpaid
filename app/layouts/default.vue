@@ -23,12 +23,14 @@
 
         <!-- CTA -->
         <div class="flex flex-1 md:flex-0 items-center justify-end gap-4">
-          <AmIButton
-            bg-colour="bg-transparent"
-            text-colour="text-slate-600"
-            animation-colour="bg-primary-400"
-            >Sign In</AmIButton
-          >
+          <NuxtLink to="/login">
+            <AmIButton
+              bg-colour="bg-transparent"
+              text-colour="text-slate-600"
+              animation-colour="bg-primary-400"
+              >Sign In</AmIButton
+            >
+          </NuxtLink>
           <!-- <AmIButton
             bg-colour="bg-primary-900"
             text-colour="text-slate-100"

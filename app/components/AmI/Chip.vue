@@ -2,12 +2,16 @@
   <div
     class="chip inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase rounded-full tracking-tighter"
     :class="[bgColour, textColour]">
-    <component :is="icon" v-if="icon" class="w-4 h-4" />
+    <div v-if="icon" class="flex shrink-0">
+      <component :is="icon" class="w-4 h-4" />
+    </div>
     <slot />
   </div>
 </template>
 
 <script setup lang="ts">
+import type { Component, PropType } from 'vue';
+
 defineProps({
   icon: {
     type: [Object, Function] as PropType<Component>,
