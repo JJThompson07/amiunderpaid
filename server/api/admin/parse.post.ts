@@ -23,6 +23,8 @@ export default defineEventHandler(async (event) => {
     // Handle country being passed as a field
     const countryPart = body.find((item) => item.name === 'country');
     const country = countryPart ? countryPart.data.toString() : 'UK';
+    const yearPart = body.find((item) => item.name === 'year');
+    const targetYear = yearPart ? parseInt(yearPart.data.toString()) : new Date().getFullYear();
 
     if (!file || !file.data) {
       throw createError({ statusCode: 400, message: 'No file uploaded' });
@@ -51,7 +53,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const normalizedData: SalaryRecord[] = [];
-    const currentYear = new Date().getFullYear();
 
     if (country === 'UK') {
       /**
@@ -111,7 +112,7 @@ export default defineEventHandler(async (event) => {
           normalizedData.push({
             title,
             location: 'UK', // ONS Table 14 is National. Table 15 is Regional.
-            year: currentYear,
+            year: targetYear,
             salary: Math.round(salary),
             country: 'UK',
           });
@@ -177,7 +178,7 @@ export default defineEventHandler(async (event) => {
           normalizedData.push({
             title,
             location,
-            year: currentYear,
+            year: targetYear,
             salary: Math.round(salary),
             country: 'USA',
           });
