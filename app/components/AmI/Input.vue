@@ -29,7 +29,11 @@
 
 <script setup lang="ts">
 import type { Component, PropType } from 'vue';
-import type { SelectOption } from '../SalarySearch.vue';
+
+export interface SelectOption {
+  label: string;
+  value: string | number;
+}
 
 const props = defineProps({
   modelValue: {

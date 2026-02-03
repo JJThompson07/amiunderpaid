@@ -16,14 +16,36 @@
         <!-- Nav -->
         <nav
           class="flex-1 items-center justify-center hidden gap-8 text-sm font-medium md:flex text-slate-600">
-          <a href="/how-it-works" class="transition-colors hover:text-primary-600">How it works</a>
-          <a href="/data-sources" class="transition-colors hover:text-primary-600">Data Sources</a>
-          <a href="/about" class="transition-colors hover:text-primary-600">About</a>
+          <template v-if="user">
+            <NuxtLink to="/admin/seed" class="transition-colors hover:text-primary-600"
+              >Seeder</NuxtLink
+            >
+            <NuxtLink to="/admin/coding-index" class="transition-colors hover:text-primary-600"
+              >Coding Index</NuxtLink
+            >
+          </template>
+          <template v-else>
+            <a href="/how-it-works" class="transition-colors hover:text-primary-600"
+              >How it works</a
+            >
+            <a href="/data-sources" class="transition-colors hover:text-primary-600"
+              >Data Sources</a
+            >
+            <a href="/about" class="transition-colors hover:text-primary-600">About</a>
+          </template>
         </nav>
 
         <!-- CTA -->
         <div class="flex flex-1 md:flex-0 items-center justify-end gap-4">
-          <NuxtLink to="/login">
+          <AmIButton
+            v-if="user"
+            bg-colour="bg-transparent"
+            text-colour="text-slate-600"
+            animation-colour="bg-primary-400"
+            @click="handleLogout"
+            >Sign Out</AmIButton
+          >
+          <NuxtLink v-else to="/login">
             <AmIButton
               bg-colour="bg-transparent"
               text-colour="text-slate-600"
@@ -55,4 +77,16 @@
 
 <script setup lang="ts">
 import { Wallet } from 'lucide-vue-next';
+import { useCurrentUser, useFirebaseAuth } from 'vuefire';
+import { signOut } from 'firebase/auth';
+
+const user = useCurrentUser();
+const auth = useFirebaseAuth();
+
+const handleLogout = async () => {
+  if (auth) {
+    await signOut(auth);
+    await navigateTo('/');
+  }
+};
 </script>

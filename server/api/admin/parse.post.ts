@@ -12,6 +12,7 @@ interface SalaryRecord {
   year: number;
   salary: number;
   country: string;
+  id_code?: string;
 }
 
 export default defineEventHandler(async (event) => {
@@ -65,6 +66,7 @@ export default defineEventHandler(async (event) => {
       let headerRowIndex = -1;
       const titleIdx = 0;
       let salaryIdx = 3; // Default fallback for ONS Table 14.7a
+      let codeIdx = -1;
 
       // 1. Scan for the Header Row
       for (let i = 0; i < Math.min(rawData.length, 20); i++) {
@@ -80,6 +82,12 @@ export default defineEventHandler(async (event) => {
           );
           if (foundSalaryIdx > -1) salaryIdx = foundSalaryIdx;
 
+          // Dynamically find 'Code' column
+          const foundCodeIdx = row.findIndex(
+            (c: any) => c?.toString().toLowerCase().trim() === 'code'
+          );
+          if (foundCodeIdx > -1) codeIdx = foundCodeIdx;
+
           break;
         }
       }
@@ -92,6 +100,7 @@ export default defineEventHandler(async (event) => {
         if (!row || row.length < 2) continue;
 
         const title = row[titleIdx]?.toString().trim();
+        const id_code = codeIdx > -1 ? row[codeIdx]?.toString().trim() : undefined;
 
         // ONS data cleaning:
         // - "x" means unreliable/unavailable
@@ -115,6 +124,7 @@ export default defineEventHandler(async (event) => {
             year: targetYear,
             salary: Math.round(salary),
             country: 'UK',
+            id_code,
           });
         }
       }
@@ -128,6 +138,7 @@ export default defineEventHandler(async (event) => {
       let titleIdx = -1;
       let salaryIdx = -1;
       let locIdx = -1;
+      let codeIdx = -1;
 
       // 1. Scan for Headers
       for (let i = 0; i < Math.min(rawData.length, 20); i++) {
@@ -135,11 +146,13 @@ export default defineEventHandler(async (event) => {
 
         // Look for OCC_TITLE (Job Title) and A_MEDIAN (Annual Median Salary)
         const t = row.indexOf('occ_title');
+        const c = row.indexOf('occ_code');
         const s = row.indexOf('a_median'); // Annual Median
 
         if (t > -1 && s > -1) {
           headerRowIndex = i;
           titleIdx = t;
+          if (c > -1) codeIdx = c;
           salaryIdx = s;
           // Optional: State/Area
           const l = row.findIndex((c: string) => c === 'area_title' || c === 'state');
@@ -152,7 +165,8 @@ export default defineEventHandler(async (event) => {
         // Fallback logic if headers aren't found in first 20 rows
         throw createError({
           statusCode: 400,
-          message: 'Could not find OCC_TITLE and A_MEDIAN headers in USA file.',
+          message:
+            'Could not find OCC_TITLE and A_MEDIAN headers in USA file. Also looking for OCC_CODE.',
         });
       }
 
@@ -161,6 +175,7 @@ export default defineEventHandler(async (event) => {
         if (!row) continue;
 
         const title = row[titleIdx]?.toString().trim();
+        const id_code = codeIdx > -1 ? row[codeIdx]?.toString().trim() : undefined;
         let salaryRaw = row[salaryIdx];
 
         // BLS uses '*' for missing, '#' for >$208k (sometimes)
@@ -181,6 +196,7 @@ export default defineEventHandler(async (event) => {
             year: targetYear,
             salary: Math.round(salary),
             country: 'USA',
+            id_code,
           });
         }
       }

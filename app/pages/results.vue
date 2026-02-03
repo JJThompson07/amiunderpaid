@@ -199,12 +199,14 @@
                     :class="isTrendUp ? 'text-emerald-600' : 'text-negative-600'">
                     {{ isTrendUp ? 'up' : 'down' }} {{ trendPercent }}%
                   </span>
-                  since 2025
+                  since {{ marketDataYear - 1 }}
                 </p>
               </div>
             </div>
             <div class="mt-2 text-right md:mt-0">
-              <p class="text-[10px] font-bold uppercase text-slate-400">2025 Average</p>
+              <p class="text-[10px] font-bold uppercase text-slate-400">
+                {{ marketDataYear - 1 }} Average
+              </p>
               <p class="text-sm font-bold text-slate-500">
                 {{ currencySymbol }}{{ marketLastYear.toLocaleString() }}
               </p>
@@ -274,6 +276,7 @@ const {
   marketHigh,
   marketLow,
   marketLastYear,
+  marketDataYear,
   isGenericFallback,
   fetchMarketData,
 } = useMarketData();

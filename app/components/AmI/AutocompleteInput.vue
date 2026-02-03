@@ -94,9 +94,7 @@ const activeIndex = ref(-1);
 const filteredOptions = computed(() => {
   if (!inputValue.value) return [];
   const search = inputValue.value.toLowerCase();
-  return props.options
-    .filter((opt) => opt.toLowerCase().includes(search) && opt.toLowerCase() !== search)
-    .slice(0, 6);
+  return props.options.filter((opt) => opt.toLowerCase().includes(search)).slice(0, 6);
 });
 
 // ** methods **
