@@ -14,7 +14,7 @@ export default defineNuxtConfig({
   ssr: false,
 
   // ** 1. Register Modules **
-  modules: ['@nuxt/eslint', '@vueuse/nuxt', 'nuxt-vuefire'],
+  modules: ['@nuxt/eslint', '@vueuse/nuxt', 'nuxt-vuefire', 'nuxt-gtag'],
 
   // ** 2. VueFire Configuration **
   vuefire: {
@@ -32,6 +32,10 @@ export default defineNuxtConfig({
       appId: process.env.FIREBASE_APP_ID || '',
       measurementId: process.env.FIREBASE_MEASUREMENT_ID || ''
     }
+  },
+
+  gtag: {
+    id: 'G-EZQYZSSRW1'
   },
 
   // ** 3. Runtime Config **

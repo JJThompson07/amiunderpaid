@@ -18,6 +18,7 @@
     "firebase-admin": "^13.6.0",
     "lucide-vue-next": "^0.563.0",
     "nuxt": "^4.3.0",
+    "nuxt-gtag": "4.1.0",
     "nuxt-vuefire": "^1.1.0",
     "vue": "^3.5.27",
     "vue-router": "^4.6.4",
