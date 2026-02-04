@@ -16,7 +16,7 @@
         :disabled="disabled"
         :placeholder="placeholder"
         autocomplete="off"
-        class="w-full pr-4 py-3 font-medium transition-all border bg-slate-50 border-slate-200 focus:outline-none text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 rounded-xl"
+        class="w-full pr-4 py-3 font-medium transition-all border bg-slate-50 border-slate-200 focus:outline-none text-slate-900 placeholder:text-slate-400 focus:ring-0 rounded-xl"
         :class="[icon ? 'pl-10' : 'pl-4']"
         @focus="onFocus"
         @input="onInput"
@@ -34,7 +34,7 @@
           class="w-full text-left px-4 py-2.5 text-sm transition-colors"
           :class="
             activeIndex === index
-              ? 'bg-indigo-50 text-indigo-700 font-medium'
+              ? 'bg-primary-50 text-primary-700 font-medium'
               : 'text-slate-700 hover:bg-slate-50'
           "
           @click="selectOption(option)"
@@ -56,29 +56,29 @@ import type { Component, PropType } from 'vue';
 const props = defineProps({
   modelValue: {
     type: String,
-    required: true,
+    required: true
   },
   options: {
     type: Array as PropType<string[]>,
-    default: () => [],
+    default: () => []
   },
   placeholder: {
     type: String,
-    default: '',
+    default: ''
   },
   label: {
     type: String,
-    default: '',
+    default: ''
   },
   icon: {
     // Relaxed type to avoid Vue warnings with functional components
     type: [Object, Function] as PropType<Component>,
-    default: null,
+    default: null
   },
   disabled: {
     type: Boolean,
-    default: false,
-  },
+    default: false
+  }
 });
 
 // ** emits **

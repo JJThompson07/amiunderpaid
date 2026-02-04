@@ -64,7 +64,7 @@ export const ukSalaries: SalaryRecord[] = [
     location: 'San Francisco',
     year: 2025,
     salary: 182000,
-    country: 'USA',
+    country: 'USA'
   },
   { title: 'Software Engineer', location: 'New York', year: 2025, salary: 161000, country: 'USA' },
   { title: 'Software Engineer', location: 'USA', year: 2025, salary: 136000, country: 'USA' },
@@ -94,5 +94,5 @@ export const ukSalaries: SalaryRecord[] = [
   // --- GENERIC FALLBACKS ---
   { title: 'Professional', location: 'UK', year: 2025, salary: 39200, country: 'UK' },
   { title: 'Professional', location: 'London', year: 2025, salary: 49500, country: 'UK' },
-  { title: 'Professional', location: 'USA', year: 2025, salary: 67200, country: 'USA' },
+  { title: 'Professional', location: 'USA', year: 2025, salary: 67200, country: 'USA' }
 ];

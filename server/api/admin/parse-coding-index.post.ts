@@ -72,7 +72,7 @@ export default defineEventHandler(async (event) => {
     if (headerRowIndex === -1) {
       throw createError({
         statusCode: 400,
-        message: 'Could not find SOC_2020 and INDEXOCC columns in the first 20 rows.',
+        message: 'Could not find SOC_2020 and INDEXOCC columns in the first 20 rows.'
       });
     }
 
@@ -91,7 +91,7 @@ export default defineEventHandler(async (event) => {
         normalizedData.push({
           title,
           soc,
-          group: group || '',
+          group: group || ''
         });
       }
     }
@@ -99,13 +99,13 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       count: normalizedData.length,
-      data: normalizedData,
+      data: normalizedData
     };
   } catch (error: any) {
     console.error('[Coding Index Parser Error]:', error);
     return {
       success: false,
-      error: error.message || 'An unknown error occurred during parsing',
+      error: error.message || 'An unknown error occurred during parsing'
     };
   }
 });

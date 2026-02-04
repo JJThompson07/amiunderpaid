@@ -15,16 +15,16 @@ import type { Component, PropType } from 'vue';
 defineProps({
   icon: {
     type: [Object, Function] as PropType<Component>,
-    default: null,
+    default: null
   },
   bgColour: {
     type: String,
-    default: 'bg-positive-100',
+    default: 'bg-positive-100'
   },
   textColour: {
     type: String,
-    default: 'text-slate-800',
-  },
+    default: 'text-slate-800'
+  }
 });
 </script>
 

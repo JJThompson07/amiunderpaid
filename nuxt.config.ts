@@ -20,7 +20,7 @@ export default defineNuxtConfig({
   vuefire: {
     auth: {
       enabled: true,
-      sessionCookie: false,
+      sessionCookie: false
     },
     config: {
       // Using fallback strings to prevent the SDK from crashing if .env fails to load
@@ -30,20 +30,20 @@ export default defineNuxtConfig({
       storageBucket: process.env.FIREBASE_STORAGE_BUCKET || '',
       messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '',
       appId: process.env.FIREBASE_APP_ID || '',
-      measurementId: process.env.FIREBASE_MEASUREMENT_ID || '',
-    },
+      measurementId: process.env.FIREBASE_MEASUREMENT_ID || ''
+    }
   },
 
   // ** 3. Runtime Config **
   // This helps Nuxt track these variables for client/server consistency
   runtimeConfig: {
     public: {
-      firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
-    },
+      firebaseProjectId: process.env.FIREBASE_PROJECT_ID
+    }
   },
 
   // ** 4. Vite / Tailwind **
   vite: {
-    plugins: [tailwindcss()],
-  },
+    plugins: [tailwindcss()]
+  }
 });

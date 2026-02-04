@@ -6,7 +6,7 @@
       </div>
       <h2 class="text-2xl font-bold text-slate-900 mb-2">No data found for this role</h2>
       <p class="text-slate-500 max-w-md mx-auto mb-8">
-        We couldn't find enough salary data for <strong>{{ title }}</strong> in
+        We couldn't find enough {{ period }}ly salary data for <strong>{{ title }}</strong> in
         <strong>{{ location || country }}</strong> to give you an accurate verdict.
       </p>
       <NuxtLink to="/">
@@ -22,20 +22,24 @@ import type { Component, PropType } from 'vue';
 defineProps({
   icon: {
     type: [Object, Function] as PropType<Component>,
-    default: null,
+    default: null
   },
   title: {
     type: String,
-    required: true,
+    required: true
   },
   location: {
     type: String,
-    default: '',
+    default: ''
   },
   country: {
     type: String,
-    required: true,
+    required: true
   },
+  period: {
+    type: String,
+    required: true
+  }
 });
 </script>
 

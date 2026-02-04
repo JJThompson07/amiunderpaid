@@ -13,6 +13,7 @@ interface SalaryRecord {
   salary: number;
   country: string;
   id_code?: string;
+  period: string;
 }
 
 export default defineEventHandler(async (event) => {
@@ -26,6 +27,8 @@ export default defineEventHandler(async (event) => {
     const country = countryPart ? countryPart.data.toString() : 'UK';
     const yearPart = body.find((item) => item.name === 'year');
     const targetYear = yearPart ? parseInt(yearPart.data.toString()) : new Date().getFullYear();
+    const periodPart = body.find((item) => item.name === 'period');
+    const targetPeriod = periodPart ? periodPart.data.toString() : 'year';
 
     if (!file || !file.data) {
       throw createError({ statusCode: 400, message: 'No file uploaded' });
@@ -125,6 +128,7 @@ export default defineEventHandler(async (event) => {
             salary: Math.round(salary),
             country: 'UK',
             id_code,
+            period: targetPeriod
           });
         }
       }
@@ -166,7 +170,7 @@ export default defineEventHandler(async (event) => {
         throw createError({
           statusCode: 400,
           message:
-            'Could not find OCC_TITLE and A_MEDIAN headers in USA file. Also looking for OCC_CODE.',
+            'Could not find OCC_TITLE and A_MEDIAN headers in USA file. Also looking for OCC_CODE.'
         });
       }
 
@@ -197,6 +201,7 @@ export default defineEventHandler(async (event) => {
             salary: Math.round(salary),
             country: 'USA',
             id_code,
+            period: 'year' // USA is always annual
           });
         }
       }
@@ -205,13 +210,13 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       count: normalizedData.length,
-      data: normalizedData,
+      data: normalizedData
     };
   } catch (error: any) {
     console.error('[Parser API Error]:', error);
     return {
       success: false,
-      error: error.message || 'An unknown error occurred during parsing',
+      error: error.message || 'An unknown error occurred during parsing'
     };
   }
 });

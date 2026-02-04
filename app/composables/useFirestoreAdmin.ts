@@ -7,7 +7,7 @@ import {
   limit,
   type Query,
   type DocumentReference,
-  type DocumentData,
+  type DocumentData
 } from 'firebase/firestore';
 
 export const useFirestoreAdmin = (log: (msg: string) => void) => {
@@ -98,6 +98,6 @@ export const useFirestoreAdmin = (log: (msg: string) => void) => {
   return {
     loading,
     batchDelete,
-    batchSeed,
+    batchSeed
   };
 };

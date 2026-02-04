@@ -19,6 +19,6 @@ export const useConsoleLog = () => {
     status,
     consoleRef,
     log,
-    clearLog,
+    clearLog
   };
 };

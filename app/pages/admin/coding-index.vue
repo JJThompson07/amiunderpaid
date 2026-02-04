@@ -164,7 +164,7 @@ import {
   query,
   where,
   getCountFromServer,
-  getDoc,
+  getDoc
 } from 'firebase/firestore';
 
 interface JobTitleRecord {
@@ -177,7 +177,7 @@ interface JobTitleRecord {
  * PAGE METADATA
  */
 definePageMeta({
-  middleware: 'admin',
+  middleware: 'admin'
 });
 
 // ** data & refs **
@@ -257,7 +257,7 @@ const handleParse = async () => {
       error?: string;
     }>('/api/admin/parse-coding-index', {
       method: 'POST',
-      body: formData,
+      body: formData
     });
 
     if (response.success) {
@@ -284,7 +284,7 @@ const seedToFirestore = async () => {
     const cleanTitle = record.title
       .toLowerCase()
       .replace(/\s+/g, '_')
-      .replace(/[^a-z0-9_\-\+\.#]/g, '');
+      .replace(/[^a-z0-9_\-+.#]/g, '');
     return `${targetCountry.value}-${cleanTitle}`.toLowerCase();
   };
 
@@ -334,8 +334,8 @@ const seedToFirestore = async () => {
           soc: record.soc,
           group: record.group,
           country: targetCountry.value,
-          updatedAt: serverTimestamp(),
-        },
+          updatedAt: serverTimestamp()
+        }
       };
     });
 

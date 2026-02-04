@@ -8,6 +8,7 @@ export interface SalaryBenchmark {
   country: string;
   salary: number;
   year: number;
+  period?: string;
 }
 
 export const useMarketData = () => {
@@ -22,6 +23,9 @@ export const useMarketData = () => {
   const marketLow = ref(0);
   const marketLastYear = ref(0);
   const marketDataYear = ref(0);
+  const marketPeriod = ref('year');
+  const matchedTitle = ref('');
+  const matchedLocation = ref('');
   const isGenericFallback = ref(false);
 
   // Reset state helper
@@ -31,6 +35,9 @@ export const useMarketData = () => {
     marketLow.value = 0;
     marketLastYear.value = 0;
     marketDataYear.value = 0;
+    marketPeriod.value = 'year';
+    matchedTitle.value = '';
+    matchedLocation.value = '';
     isGenericFallback.value = false;
     error.value = null;
   };
@@ -41,7 +48,12 @@ export const useMarketData = () => {
    * 2. Country Match (Title + Country)
    * 3. Generic Match (Professional + Country)
    */
-  const fetchMarketData = async (title: string, location: string, country: string) => {
+  const fetchMarketData = async (
+    title: string,
+    location: string,
+    country: string,
+    period: string = 'year'
+  ) => {
     if (!db) {
       error.value = 'Database not initialized';
       return;
@@ -51,36 +63,89 @@ export const useMarketData = () => {
     resetData();
 
     try {
+      // 1. Try Adzuna API (Dummy for now)
+      // This will eventually call the server API to get live data
+      const apiData = null; // await $fetch('/api/adzuna', ...)
+      if (apiData) {
+        // TODO: Map API data to state
+        return;
+      }
+
       const coll = collection(db, 'salary_benchmarks');
       const searchTitle = title.toLowerCase();
       const searchLocation = location.toLowerCase();
       let record: SalaryBenchmark | undefined;
 
-      // 1. Try Exact Match
-      let q = query(
-        coll,
-        where('searchTitle', '==', searchTitle),
-        where('searchLocation', '==', searchLocation),
-        limit(1)
-      );
-      let snapshot = await getDocs(q);
-
-      if (!snapshot.empty && snapshot.docs[0]) {
-        record = snapshot.docs[0].data() as SalaryBenchmark;
-      }
-
-      // 2. Fallback: Try Title + Country
-      if (!record) {
-        console.log('No exact city match, checking national average...');
-        q = query(
+      if (country === 'USA') {
+        // USA Strategy: Direct Title Matching (BLS Data)
+        // 1. Exact Title + Location
+        let q = query(
           coll,
+          where('searchTitle', '==', searchTitle),
+          where('searchLocation', '==', searchLocation),
+          where('period', '==', period),
+          limit(1)
+        );
+        let snapshot = await getDocs(q);
+        if (!snapshot.empty && snapshot.docs[0]) {
+          record = snapshot.docs[0].data() as SalaryBenchmark;
+        }
+
+        // 2. Fallback: Title + Country (National Average)
+        if (!record) {
+          q = query(
+            coll,
+            where('searchTitle', '==', searchTitle),
+            where('country', '==', country),
+            where('period', '==', period),
+            limit(1)
+          );
+          snapshot = await getDocs(q);
+          if (!snapshot.empty && snapshot.docs[0]) {
+            record = snapshot.docs[0].data() as SalaryBenchmark;
+          }
+        }
+      } else {
+        // UK Strategy: SOC Code Mapping (ONS Data)
+        // 1. Try SOC Code Mapping
+        const jobQ = query(
+          collection(db, 'job_titles'),
           where('searchTitle', '==', searchTitle),
           where('country', '==', country),
           limit(1)
         );
-        snapshot = await getDocs(q);
-        if (!snapshot.empty && snapshot.docs[0]) {
-          record = snapshot.docs[0].data() as SalaryBenchmark;
+        const jobSnapshot = await getDocs(jobQ);
+
+        if (!jobSnapshot.empty && jobSnapshot.docs[0]) {
+          const jobData = jobSnapshot.docs[0].data();
+          if (jobData.soc) {
+            console.log(`Found SOC code: ${jobData.soc}. Fetching benchmark...`);
+            const socQ = query(
+              coll,
+              where('id_code', '==', jobData.soc),
+              where('country', '==', country),
+              where('period', '==', period),
+              limit(1)
+            );
+            const socSnapshot = await getDocs(socQ);
+            if (!socSnapshot.empty && socSnapshot.docs[0])
+              record = socSnapshot.docs[0].data() as SalaryBenchmark;
+          }
+        }
+
+        // 2. Fallback: Direct Title Match (for broad groups like "Nurse")
+        if (!record) {
+          const q = query(
+            coll,
+            where('searchTitle', '==', searchTitle),
+            where('country', '==', country),
+            where('period', '==', period),
+            limit(1)
+          );
+          const snapshot = await getDocs(q);
+          if (!snapshot.empty && snapshot.docs[0]) {
+            record = snapshot.docs[0].data() as SalaryBenchmark;
+          }
         }
       }
 
@@ -89,13 +154,14 @@ export const useMarketData = () => {
         console.log('No role match, retrieving generic baseline...');
         isGenericFallback.value = true;
 
-        q = query(
+        const q = query(
           coll,
           where('searchTitle', '==', 'professional'),
           where('country', '==', country),
+          where('period', '==', period),
           limit(1)
         );
-        snapshot = await getDocs(q);
+        const snapshot = await getDocs(q);
 
         if (!snapshot.empty && snapshot.docs[0]) {
           record = snapshot.docs[0].data() as SalaryBenchmark;
@@ -107,6 +173,9 @@ export const useMarketData = () => {
         marketHigh.value = Math.round(record.salary * 1.3);
         marketLow.value = Math.round(record.salary * 0.75);
         marketDataYear.value = record.year;
+        matchedTitle.value = record.title;
+        marketPeriod.value = record.period || 'year';
+        matchedLocation.value = record.location;
 
         // Now, fetch the previous year's data
         const prevYearQ = query(
@@ -114,6 +183,7 @@ export const useMarketData = () => {
           where('searchTitle', '==', record.title.toLowerCase()),
           where('searchLocation', '==', record.location.toLowerCase()),
           where('year', '==', record.year - 1),
+          where('period', '==', period),
           limit(1)
         );
         const prevYearSnapshot = await getDocs(prevYearQ);
@@ -138,7 +208,10 @@ export const useMarketData = () => {
     marketLow,
     marketLastYear,
     marketDataYear,
+    marketPeriod,
+    matchedTitle,
+    matchedLocation,
     isGenericFallback,
-    fetchMarketData,
+    fetchMarketData
   };
 };
