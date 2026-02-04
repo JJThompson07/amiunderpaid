@@ -59,12 +59,13 @@
               </p>
             </div>
             <div class="mt-auto pt-4">
-              <a
+              <!-- <a
                 href="https://example.com/negotiate"
                 target="_blank"
                 class="block w-full py-2.5 text-center text-sm font-bold text-white bg-secondary-600 rounded-lg hover:bg-secondary-700 transition-colors shadow-sm">
                 Start Course
-              </a>
+              </a> -->
+              <AmIButton disabled class="text-center">Coming Soon</AmIButton>
             </div>
           </div>
 
@@ -83,12 +84,13 @@
               </p>
             </div>
             <div class="mt-auto pt-4">
-              <a
+              <!-- <a
                 href="https://example.com/cv-review"
                 target="_blank"
                 class="block w-full py-2.5 text-center text-sm font-bold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm">
                 Get Reviewed
-              </a>
+              </a> -->
+              <AmIButton disabled class="text-center">Coming Soon</AmIButton>
             </div>
           </div>
         </div>
