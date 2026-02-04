@@ -10,6 +10,7 @@ export default withNuxt(
     rules: {
       'vue/multi-word-component-names': 'off', // Optional: allows single-word component names
       'no-console': 'warn',
-    },
+      '@typescript-eslint/no-explicit-any': 'off'
+    }
   }
 );

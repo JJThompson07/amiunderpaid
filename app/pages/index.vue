@@ -34,16 +34,20 @@
       <div
         class="flex flex-wrap justify-center gap-8 mt-16 transition duration-500 md:gap-16 opacity-50 grayscale hover:grayscale-0">
         <div class="flex items-center h-8 gap-2 font-bold text-slate-500">
-          <div class="w-6 h-6 rounded-md bg-slate-400"></div>
+          <SquareCheckBig class="w-6 h-6 text-primary-400" />
           ONS Data
         </div>
         <div class="flex items-center h-8 gap-2 font-bold text-slate-500">
-          <div class="w-6 h-6 rounded-md bg-slate-400"></div>
+          <Square class="w-6 h-6 text-slate-400" />
           Adzuna API
+          <span
+            class="ml-1 text-[10px] uppercase tracking-wider bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full"
+            >Coming Soon</span
+          >
         </div>
         <div class="flex items-center h-8 gap-2 font-bold text-slate-500">
-          <div class="w-6 h-6 rounded-md bg-slate-400"></div>
-          Gov.uk
+          <SquareCheckBig class="w-6 h-6 text-primary-400" />
+          BLS Data
         </div>
       </div>
     </main>
@@ -51,5 +55,7 @@
 </template>
 
 <script setup lang="ts">
+import { Square, SquareCheckBig } from 'lucide-vue-next';
+
 // Nuxt automatically imports the SalarySearch component from /components
 </script>

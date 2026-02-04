@@ -39,6 +39,10 @@
                 <span class="text-slate-300">|</span>
                 <span>{{ record.year }}</span>
                 <span class="text-slate-300">|</span>
+                <span class="uppercase text-[10px] font-bold tracking-wider text-slate-400">{{
+                  record.period
+                }}</span>
+                <span class="text-slate-300">|</span>
                 <span class="text-slate-500 font-medium"
                   >{{ record.count.toLocaleString() }} records</span
                 >
@@ -47,7 +51,7 @@
                 :disabled="loading"
                 class="ml-1 p-0.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete this dataset"
-                @click="deleteRecords(record.country, record.year)">
+                @click="deleteRecords(record.country, record.year, record.period)">
                 <X class="w-3 h-3" />
               </button>
             </div>
@@ -57,7 +61,7 @@
 
       <!-- CONFIGURATION SECTION -->
       <div class="mb-8 space-y-6">
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-3 gap-4">
           <!-- COUNTRY TOGGLE -->
           <div class="flex flex-col gap-2">
             <label
@@ -74,8 +78,31 @@
                     ? 'bg-white text-indigo-600 shadow-sm'
                     : 'text-slate-400 hover:text-slate-600'
                 "
-                @click="targetCountry = c">
+                @click="setCountry(c)">
                 {{ c }}
+              </button>
+            </div>
+          </div>
+
+          <!-- PERIOD TOGGLE (UK ONLY) -->
+          <div class="flex flex-col gap-2">
+            <label
+              class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
+              Pay Period
+            </label>
+            <div class="flex p-1 bg-slate-100 rounded-xl">
+              <button
+                v-for="p in ['Year', 'Hour', 'Week']"
+                :key="p"
+                :disabled="targetCountry === 'USA'"
+                class="flex-1 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="
+                  targetPeriod === p.toLowerCase()
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600'
+                "
+                @click="targetPeriod = p.toLowerCase()">
+                {{ p }}
               </button>
             </div>
           </div>
@@ -176,7 +203,7 @@ import {
   collection,
   query,
   where,
-  getCountFromServer,
+  getCountFromServer
 } from 'firebase/firestore';
 import type { SalaryRecord } from '../../../utils/seedData';
 
@@ -185,7 +212,7 @@ import type { SalaryRecord } from '../../../utils/seedData';
  * * Registers the 'admin' middleware to protect this route.
  */
 definePageMeta({
-  middleware: 'admin',
+  middleware: 'admin'
 });
 
 // ** data & refs **
@@ -197,41 +224,53 @@ const { status, consoleRef, log } = useConsoleLog();
 const { loading, batchDelete, batchSeed } = useFirestoreAdmin(log);
 
 const targetCountry = ref('UK');
+const targetPeriod = ref('year');
 const targetYear = ref(2026);
 const selectedFile = ref<File | null>(null);
 const fileName = ref('');
-const parsedData = ref<SalaryRecord[]>([]);
-const existingData = ref<{ country: string; year: number; count: number }[]>([]);
+const parsedData = ref<(SalaryRecord & { period: string })[]>([]);
+const existingData = ref<{ country: string; year: number; period: string; count: number }[]>([]);
 
 // ** methods **
 
 const fetchSummary = async () => {
   if (!db) return;
   const countries = ['UK', 'USA'];
+  const periods = ['year', 'hour', 'week'];
 
   // Generate last 5 years dynamically
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i + 1);
 
-  const results: { country: string; year: number; count: number }[] = [];
+  const results: { country: string; year: number; period: string; count: number }[] = [];
 
   for (const country of countries) {
     for (const year of years) {
-      const q = query(
-        collection(db, 'salary_benchmarks'),
-        where('country', '==', country),
-        where('year', '==', year)
-      );
-      const snapshot = await getCountFromServer(q);
-      const count = snapshot.data().count;
-      if (count > 0) {
-        results.push({ country, year, count });
+      for (const period of periods) {
+        const q = query(
+          collection(db, 'salary_benchmarks'),
+          where('country', '==', country),
+          where('year', '==', year),
+          where('period', '==', period)
+        );
+        const snapshot = await getCountFromServer(q);
+        const count = snapshot.data().count;
+        if (count > 0) {
+          results.push({ country, year, period, count });
+        }
       }
     }
   }
   existingData.value = results.sort(
     (a, b) => b.year - a.year || a.country.localeCompare(b.country)
   );
+};
+
+const setCountry = (c: string) => {
+  targetCountry.value = c;
+  if (c === 'USA') {
+    targetPeriod.value = 'year';
+  }
 };
 
 const onFileSelect = (e: Event) => {
@@ -246,11 +285,11 @@ const onFileSelect = (e: Event) => {
   }
 };
 
-const deleteRecords = async (country: string, year: number) => {
+const deleteRecords = async (country: string, year: number, period: string) => {
   if (!db) return;
   if (
     !confirm(
-      `Are you sure you want to delete ALL records for ${country} ${year}? This cannot be undone.`
+      `Are you sure you want to delete ALL records for ${country} ${year} (${period})? This cannot be undone.`
     )
   ) {
     return;
@@ -259,9 +298,10 @@ const deleteRecords = async (country: string, year: number) => {
   const q = query(
     collection(db, 'salary_benchmarks'),
     where('country', '==', country),
-    where('year', '==', year)
+    where('year', '==', year),
+    where('period', '==', period)
   );
-  await batchDelete(q, `${country} ${year} data`);
+  await batchDelete(q, `${country} ${year} (${period}) data`);
   await fetchSummary();
 };
 
@@ -276,18 +316,19 @@ const handleParse = async () => {
   formData.append('file', selectedFile.value);
   formData.append('country', targetCountry.value);
   formData.append('year', targetYear.value.toString());
+  formData.append('period', targetPeriod.value);
 
   try {
     // 2. Request parsing from server API
     log(`Sending file to server parser...`);
     const response = await $fetch<{
       success: boolean;
-      data: SalaryRecord[];
+      data: (SalaryRecord & { period: string })[];
       count: number;
       error?: string;
     }>('/api/admin/parse', {
       method: 'POST',
-      body: formData,
+      body: formData
     });
 
     if (response.success) {
@@ -322,9 +363,16 @@ const seedToFirestore = async () => {
         .toLowerCase()
         .replace(/\s+/g, '_')
         .replace(/[^a-z0-9_\-+.#]/g, '');
-      const docId = `${record.country}-${cleanLocation}-${cleanTitle}-${record.year}`.toLowerCase();
+      const docId =
+        `${record.country}-${cleanLocation}-${cleanTitle}-${record.year}-${record.period}`.toLowerCase();
 
       const docRef = doc(db, 'salary_benchmarks', docId);
+
+      // Generate keywords for search (split by space, comma, parens, dash)
+      const keywords = record.title
+        .toLowerCase()
+        .split(/[\s,()-]+/)
+        .filter((k) => k.length > 1);
 
       return {
         ref: docRef,
@@ -332,8 +380,9 @@ const seedToFirestore = async () => {
           ...record,
           searchTitle: record.title.toLowerCase(),
           searchLocation: record.location.toLowerCase(),
-          updatedAt: serverTimestamp(),
-        },
+          keywords,
+          updatedAt: serverTimestamp()
+        }
       };
     });
 
@@ -342,6 +391,8 @@ const seedToFirestore = async () => {
     fileName.value = '';
     await fetchSummary();
   } catch (e) {
+    console.error(e);
+    loading.value = false;
     // Error logging handled in composable
   }
 };

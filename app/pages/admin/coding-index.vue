@@ -97,6 +97,20 @@
             <input type="file" class="hidden" accept=".xlsx,.csv" @change="onFileSelect" />
           </label>
         </div>
+
+        <!-- OVERWRITE TOGGLE -->
+        <div class="flex items-center gap-3 px-2">
+          <input
+            id="overwrite"
+            v-model="overwrite"
+            type="checkbox"
+            class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500" />
+          <label
+            for="overwrite"
+            class="text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer">
+            Overwrite Existing Records
+          </label>
+        </div>
       </div>
 
       <!-- PROCESSING CONSOLE -->
@@ -164,7 +178,7 @@ import {
   query,
   where,
   getCountFromServer,
-  getDoc,
+  getDoc
 } from 'firebase/firestore';
 
 interface JobTitleRecord {
@@ -177,7 +191,7 @@ interface JobTitleRecord {
  * PAGE METADATA
  */
 definePageMeta({
-  middleware: 'admin',
+  middleware: 'admin'
 });
 
 // ** data & refs **
@@ -189,6 +203,7 @@ const { status, consoleRef, log } = useConsoleLog();
 const { loading, batchDelete, batchSeed } = useFirestoreAdmin(log);
 
 const targetCountry = ref('UK');
+const overwrite = ref(false);
 const selectedFile = ref<File | null>(null);
 const fileName = ref('');
 const parsedData = ref<JobTitleRecord[]>([]);
@@ -257,7 +272,7 @@ const handleParse = async () => {
       error?: string;
     }>('/api/admin/parse-coding-index', {
       method: 'POST',
-      body: formData,
+      body: formData
     });
 
     if (response.success) {
@@ -284,34 +299,41 @@ const seedToFirestore = async () => {
     const cleanTitle = record.title
       .toLowerCase()
       .replace(/\s+/g, '_')
-      .replace(/[^a-z0-9_\-\+\.#]/g, '');
-    return `${targetCountry.value}-${cleanTitle}`.toLowerCase();
+      .replace(/[^a-z0-9_\-+.#]/g, '');
+    const cleanSoc = record.soc.replace(/[^a-z0-9]/gi, '');
+    return `${targetCountry.value}-${cleanTitle}-${cleanSoc}`.toLowerCase();
   };
 
   loading.value = true;
-  log('Checking for existing records to save write quota...');
 
   const recordsToSeed: JobTitleRecord[] = [];
-  const total = parsedData.value.length;
-  let checked = 0;
-  const checkChunkSize = 50; // Parallel reads
 
   try {
-    // 1. Filter out existing records
-    for (let i = 0; i < total; i += checkChunkSize) {
-      const chunk = parsedData.value.slice(i, i + checkChunkSize);
-      const results = await Promise.all(
-        chunk.map(async (record) => {
-          const docId = getRecordId(record);
-          const docRef = doc(db, 'job_titles', docId);
-          const snap = await getDoc(docRef);
-          return snap.exists() ? null : record;
-        })
-      );
-      recordsToSeed.push(...(results.filter((r) => r !== null) as JobTitleRecord[]));
-      checked += chunk.length;
-      if (checked % 500 === 0 || checked === total) {
-        log(`Checked ${checked}/${total}. Found ${recordsToSeed.length} new records.`);
+    if (overwrite.value) {
+      log('⚠️ Overwrite mode enabled. Skipping existence check...');
+      recordsToSeed.push(...parsedData.value);
+    } else {
+      log('Checking for existing records to save write quota...');
+      const total = parsedData.value.length;
+      let checked = 0;
+      const checkChunkSize = 50; // Parallel reads
+
+      // 1. Filter out existing records
+      for (let i = 0; i < total; i += checkChunkSize) {
+        const chunk = parsedData.value.slice(i, i + checkChunkSize);
+        const results = await Promise.all(
+          chunk.map(async (record) => {
+            const docId = getRecordId(record);
+            const docRef = doc(db, 'job_titles', docId);
+            const snap = await getDoc(docRef);
+            return snap.exists() ? null : record;
+          })
+        );
+        recordsToSeed.push(...(results.filter((r) => r !== null) as JobTitleRecord[]));
+        checked += chunk.length;
+        if (checked % 500 === 0 || checked === total) {
+          log(`Checked ${checked}/${total}. Found ${recordsToSeed.length} new records.`);
+        }
       }
     }
 
@@ -326,16 +348,23 @@ const seedToFirestore = async () => {
       const docId = getRecordId(record);
       const docRef = doc(db, 'job_titles', docId);
 
+      // Generate keywords for search (split by space, comma, parens, dash)
+      const keywords = record.title
+        .toLowerCase()
+        .split(/[\s,()-]+/)
+        .filter((k) => k.length > 1);
+
       return {
         ref: docRef,
         data: {
           title: record.title,
           searchTitle: record.title.toLowerCase(),
+          keywords,
           soc: record.soc,
           group: record.group,
           country: targetCountry.value,
-          updatedAt: serverTimestamp(),
-        },
+          updatedAt: serverTimestamp()
+        }
       };
     });
 

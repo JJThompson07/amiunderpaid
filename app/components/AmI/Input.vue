@@ -38,48 +38,48 @@ export interface SelectOption {
 const props = defineProps({
   modelValue: {
     type: [String, Number],
-    required: true,
+    required: true
   },
   placeholder: {
     type: String,
-    default: '',
+    default: ''
   },
   label: {
     type: String,
-    default: '',
+    default: ''
   },
   icon: {
     type: [Object, Function] as PropType<Component>,
-    default: null,
+    default: null
   },
   disabled: {
     type: Boolean,
-    default: false,
+    default: false
   },
   paramValue: {
     type: [String, Number],
-    default: null,
+    default: null
   },
   params: {
     type: Array as PropType<SelectOption[]>,
-    default: () => [],
+    default: () => []
   },
   type: {
     type: String,
-    default: 'text',
-  },
+    default: 'text'
+  }
 });
 
 const emit = defineEmits(['update:modelValue', 'update:paramValue']);
 
 const value = computed({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
+  set: (val) => emit('update:modelValue', val)
 });
 
 const param = computed({
   get: () => props.paramValue,
-  set: (val) => emit('update:paramValue', val),
+  set: (val) => emit('update:paramValue', val)
 });
 </script>
 

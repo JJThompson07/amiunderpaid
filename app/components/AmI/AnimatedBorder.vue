@@ -14,7 +14,7 @@
           [
             'hovered',
             `hovered-${index}`,
-            loading || hoveredElement ? animationColour : 'bg-transparent',
+            loading || hoveredElement ? animationColour : 'bg-transparent'
           ].join(' ')
         "></span>
     </div>
@@ -28,20 +28,20 @@ import { useElementHover } from '@vueuse/core';
 const props = defineProps({
   activeBgColour: {
     type: String,
-    default: 'bg-transparent',
+    default: 'bg-transparent'
   },
   animationColour: {
     type: String,
-    default: 'bg-primary-300',
+    default: 'bg-primary-300'
   },
   loading: {
     type: Boolean,
-    default: false,
+    default: false
   },
   hoverable: {
     type: Boolean,
-    default: false,
-  },
+    default: false
+  }
 });
 
 // ** Data & Refs **

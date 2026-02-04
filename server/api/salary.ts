@@ -35,6 +35,6 @@ export default defineEventHandler((event) => {
     average: Math.round(base),
     high: Math.round(base * 1.3),
     low: Math.round(base * 0.7),
-    lastYear: Math.round(base * 0.94), // 6% less than current
+    lastYear: Math.round(base * 0.94) // 6% less than current
   };
 });

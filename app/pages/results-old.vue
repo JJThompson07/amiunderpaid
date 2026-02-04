@@ -43,7 +43,8 @@
         :title="title"
         :location="location"
         :country="country"
-        :icon="Info" />
+        :icon="Info"
+        :period="userPeriod" />
 
       <!-- Result Headline Card (Only show if we have data) -->
       <div
@@ -53,6 +54,30 @@
           <p class="mb-2 text-sm font-medium text-slate-500">
             Verdict for {{ title }} in {{ location || country }}
           </p>
+
+          <!-- Fallback Notice -->
+          <div
+            v-if="
+              (matchedTitle && matchedTitle.toLowerCase() !== title.toLowerCase()) ||
+              (matchedLocation &&
+                location &&
+                matchedLocation.toLowerCase() !== location.toLowerCase())
+            "
+            class="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium border border-amber-100">
+            <Info class="w-3.5 h-3.5" />
+            <span>
+              Exact match not found. Showing government data for
+              <span class="font-bold">{{ matchedTitle }}</span>
+              <span
+                v-if="
+                  matchedLocation &&
+                  location &&
+                  matchedLocation.toLowerCase() !== location.toLowerCase()
+                ">
+                in <span class="font-bold">{{ matchedLocation }}</span></span
+              >.
+            </span>
+          </div>
 
           <!-- No Salary Input -->
           <div v-if="userSalary === 0" class="space-y-2">
@@ -90,7 +115,8 @@
             <div>
               <h2 class="text-4xl font-black text-slate-900">Underpaid by {{ diffPercent }}%</h2>
               <p class="text-sm text-slate-600 mt-1">
-                Typical {{ title }}s in {{ location || country }} earn
+                Typical {{ matchedTitle || title }}s in
+                {{ matchedLocation || location || country }} earn
                 <span class="font-bold text-slate-900"
                   >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
                 >.
@@ -215,8 +241,16 @@
         </div>
       </div>
 
+      <!-- The Negotiation Component -->
+      <SectionNegotiation
+        v-if="hasData"
+        :title="title"
+        :current-salary="userSalary"
+        :market-average="marketAverage"
+        :currency-symbol="currencySymbol"
+        @close="showModal = false" />
       <!-- Negotiation / Next Steps Card (Only if data exists) -->
-      <div
+      <!-- <div
         v-if="!loading && hasData"
         class="flex flex-col items-center gap-4 p-6 text-white bg-secondary-600 shadow-xl rounded-2xl md:flex-row shadow-secondary-200">
         <div class="flex-1 space-y-1 text-center md:text-left">
@@ -226,7 +260,6 @@
             {{ title }} roles.
           </p>
         </div>
-        <!-- Opens the Modal -->
         <AmIButton
           bg-colour="bg-white"
           text-colour="text-secondary-600"
@@ -235,21 +268,12 @@
           @click="showModal = true">
           Get Action Plan
         </AmIButton>
-      </div>
+      </div> -->
 
       <p class="flex items-center justify-center gap-1 mt-6 text-[10px] text-center text-slate-400">
         <Info class="w-3 h-3" />
         Data based on recent listings from Adzuna and ONS Benchmarks.
       </p>
-
-      <!-- The Modal Component -->
-      <ModalNegotiation
-        :is-open="showModal"
-        :title="title"
-        :current-salary="userSalary"
-        :market-average="marketAverage"
-        :currency-symbol="currencySymbol"
-        @close="showModal = false" />
     </div>
   </div>
 </template>
@@ -277,8 +301,10 @@ const {
   marketLow,
   marketLastYear,
   marketDataYear,
+  matchedTitle,
+  matchedLocation,
   isGenericFallback,
-  fetchMarketData,
+  fetchMarketData
 } = useMarketData();
 
 // ** computed properties **
@@ -288,6 +314,7 @@ const country = computed<string>(() => route.query.country?.toString() || 'UK');
 const userSalary = computed<number>(() => Number(route.query.sal) || 0);
 
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
+const userPeriod = computed<string>(() => route.query.period?.toString() || 'year');
 
 // Strict Data Check:
 // Has data IF average > 0 AND (it's not a generic fallback OR the user explicitly searched for "Professional")
@@ -338,7 +365,7 @@ const isTrendUp = computed<boolean>(
 
 // ** lifecycle **
 onMounted(() => {
-  fetchMarketData(title.value, location.value, country.value);
+  fetchMarketData(title.value, location.value, country.value, userPeriod.value);
 });
 
 // ** watchers **

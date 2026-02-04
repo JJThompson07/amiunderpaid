@@ -7,7 +7,7 @@
       loading ? 'cursor-wait' : 'cursor-pointer',
       textColour,
       { 'pointer-events-none': disabled },
-      { 'whitespace-nowrap': !wrap },
+      { 'whitespace-nowrap': !wrap }
     ]">
     <section class="relative z-10 flex h-full flex-col rounded-md">
       <slot />
@@ -22,28 +22,28 @@ import { useElementHover } from '@vueuse/core';
 const props = defineProps({
   bgColour: {
     type: String,
-    default: 'bg-primary-500',
+    default: 'bg-primary-500'
   },
   textColour: {
     type: String,
-    default: 'text-white',
+    default: 'text-white'
   },
   animationColour: {
     type: String,
-    default: 'bg-primary-400',
+    default: 'bg-primary-400'
   },
   loading: {
     type: Boolean,
-    default: false,
+    default: false
   },
   disabled: {
     type: Boolean,
-    default: false,
+    default: false
   },
   wrap: {
     type: Boolean,
-    default: false,
-  },
+    default: false
+  }
 });
 
 // ** Data & Refs **
