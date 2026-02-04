@@ -24,6 +24,12 @@
         @keydown.up.prevent="navigateOptions(-1)"
         @keydown.enter.prevent="selectActiveOption" />
 
+      <!-- Loading Indicator -->
+      <div v-if="loading" class="absolute right-3 top-1/2 -translate-y-1/2">
+        <div
+          class="w-4 h-4 border-2 border-slate-200 border-t-primary-500 rounded-full animate-spin"></div>
+      </div>
+
       <!-- Dropdown -->
       <div
         v-if="isOpen && filteredOptions.length > 0"
@@ -78,6 +84,10 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  loading: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -94,7 +104,7 @@ const activeIndex = ref(-1);
 const filteredOptions = computed(() => {
   if (!inputValue.value) return [];
   const search = inputValue.value.toLowerCase();
-  return props.options.filter((opt) => opt.toLowerCase().includes(search)).slice(0, 6);
+  return props.options.filter((opt) => opt.toLowerCase().includes(search)).slice(0, 50);
 });
 
 // ** methods **

@@ -27,6 +27,7 @@ export const useMarketData = () => {
   const matchedTitle = ref('');
   const matchedLocation = ref('');
   const isGenericFallback = ref(false);
+  const ambiguousMatches = ref<any[]>([]);
 
   // Reset state helper
   const resetData = () => {
@@ -39,6 +40,7 @@ export const useMarketData = () => {
     matchedTitle.value = '';
     matchedLocation.value = '';
     isGenericFallback.value = false;
+    ambiguousMatches.value = [];
     error.value = null;
   };
 
@@ -72,9 +74,41 @@ export const useMarketData = () => {
       }
 
       const coll = collection(db, 'salary_benchmarks');
-      const searchTitle = title.toLowerCase();
+
+      // Parse title for group: "Title (Group)"
+      let searchTitle = title.toLowerCase();
+      let searchGroup = '';
+      const groupMatch = title.match(/^(.*) \((.*)\)$/);
+      if (groupMatch && groupMatch[1] && groupMatch[2]) {
+        searchTitle = groupMatch[1].toLowerCase();
+        searchGroup = groupMatch[2].toLowerCase();
+      }
       const searchLocation = location.toLowerCase();
       let record: SalaryBenchmark | undefined;
+
+      // Helper to find best match from keywords
+      const findBestMatch = async (
+        collectionName: string,
+        searchTerms: string[],
+        constraints: any[]
+      ) => {
+        const sortedTerms = [...searchTerms].sort((a, b) => b.length - a.length);
+        for (const term of sortedTerms) {
+          const q = query(
+            collection(db, collectionName),
+            where('keywords', 'array-contains', term),
+            ...constraints,
+            limit(1)
+          );
+          const snap = await getDocs(q);
+          if (!snap.empty && snap.docs[0]) {
+            return snap.docs[0].data();
+          }
+        }
+        return null;
+      };
+
+      const searchKeywords = searchTitle.split(/[\s,()-]+/).filter((k) => k.length > 2);
 
       if (country === 'USA') {
         // USA Strategy: Direct Title Matching (BLS Data)
@@ -105,19 +139,48 @@ export const useMarketData = () => {
             record = snapshot.docs[0].data() as SalaryBenchmark;
           }
         }
+
+        // 3. Fallback: Keyword Match
+        if (!record && searchKeywords.length > 0) {
+          const match = await findBestMatch('salary_benchmarks', searchKeywords, [
+            where('country', '==', country),
+            where('period', '==', period)
+          ]);
+          if (match) record = match as SalaryBenchmark;
+        }
       } else {
         // UK Strategy: SOC Code Mapping (ONS Data)
         // 1. Try SOC Code Mapping
         const jobQ = query(
           collection(db, 'job_titles'),
           where('searchTitle', '==', searchTitle),
-          where('country', '==', country),
-          limit(1)
+          where('country', '==', country)
         );
         const jobSnapshot = await getDocs(jobQ);
 
-        if (!jobSnapshot.empty && jobSnapshot.docs[0]) {
-          const jobData = jobSnapshot.docs[0].data();
+        let jobData: any = !jobSnapshot.empty ? jobSnapshot.docs[0].data() : null;
+
+        // Check for ambiguity (multiple exact matches with different groups)
+        if (jobSnapshot.size > 1 && !searchGroup) {
+          ambiguousMatches.value = jobSnapshot.docs.map((d) => d.data());
+        }
+
+        if (jobData) {
+          if (searchGroup && !jobSnapshot.empty) {
+            const match = jobSnapshot.docs.find(
+              (d) => d.data().group?.toLowerCase() === searchGroup
+            );
+            if (match) jobData = match.data();
+          }
+        } else if (searchKeywords.length > 0) {
+          // Fallback: Keyword search for job title
+          const match = await findBestMatch('job_titles', searchKeywords, [
+            where('country', '==', country)
+          ]);
+          if (match) jobData = match;
+        }
+
+        if (jobData && jobData.soc) {
           if (jobData.soc) {
             console.log(`Found SOC code: ${jobData.soc}. Fetching benchmark...`);
             const socQ = query(
@@ -146,6 +209,15 @@ export const useMarketData = () => {
           if (!snapshot.empty && snapshot.docs[0]) {
             record = snapshot.docs[0].data() as SalaryBenchmark;
           }
+        }
+
+        // 3. Fallback: Keyword Match for Direct Title
+        if (!record && searchKeywords.length > 0) {
+          const match = await findBestMatch('salary_benchmarks', searchKeywords, [
+            where('country', '==', country),
+            where('period', '==', period)
+          ]);
+          if (match) record = match as SalaryBenchmark;
         }
       }
 
@@ -212,6 +284,7 @@ export const useMarketData = () => {
     matchedTitle,
     matchedLocation,
     isGenericFallback,
+    ambiguousMatches,
     fetchMarketData
   };
 };

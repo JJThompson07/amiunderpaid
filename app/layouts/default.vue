@@ -45,14 +45,6 @@
             @click="handleLogout"
             >Sign Out</AmIButton
           >
-          <NuxtLink v-else to="/login">
-            <AmIButton
-              bg-colour="bg-transparent"
-              text-colour="text-slate-600"
-              animation-colour="bg-primary-400"
-              >Sign In</AmIButton
-            >
-          </NuxtLink>
           <!-- <AmIButton
             bg-colour="bg-primary-900"
             text-colour="text-slate-100"
@@ -71,6 +63,11 @@
     <!-- Simple Footer -->
     <footer class="py-8 text-sm text-center bg-white border-t border-slate-200 text-slate-400">
       <p>&copy; 2026 Am I Underpaid. All rights reserved.</p>
+      <div class="mt-4">
+        <NuxtLink to="/login" class="text-xs text-slate-300 hover:text-slate-500 transition-colors"
+          >Admin Access</NuxtLink
+        >
+      </div>
     </footer>
   </div>
 </template>

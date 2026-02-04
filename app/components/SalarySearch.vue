@@ -28,6 +28,7 @@
             placeholder="e.g. Software Engineer"
             :icon="Search"
             :options="titleOptions"
+            :loading="fetching"
             @update:model-value="fetchTitles" />
         </div>
 
@@ -62,7 +63,7 @@
               text-colour="text-white"
               class="w-full text-center"
               :loading="loading"
-              :disabled="title === '' || salary === ''"
+              :disabled="title === ''"
               @click.prevent="handleSearch">
               Check Salary
             </AmIButton>
@@ -87,6 +88,7 @@ const location = ref('');
 const salary = ref('');
 const period = ref('year');
 const loading = ref(false);
+const fetching = ref(false);
 const titleOptions = ref<string[]>([]);
 
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
@@ -107,37 +109,100 @@ watch(country, (newVal) => {
   if (newVal === 'USA') {
     period.value = 'year';
   }
+  titleOptions.value = [];
 });
 
 const fetchTitles = async (val: string) => {
-  if (!val || val.length < 2 || !db) return;
+  if (!val || val.length < 2) {
+    titleOptions.value = [];
+    return;
+  }
+  if (!db) return;
+
+  fetching.value = true;
+  const searchTerm = val.toLowerCase();
+
+  const targetCollection = country.value === 'USA' ? 'salary_benchmarks' : 'job_titles';
 
   try {
-    const q = query(
-      collection(db, 'job_titles'),
+    // 1. Prefix Search (Starts with...)
+    const prefixQ = query(
+      collection(db, targetCollection),
       where('country', '==', country.value),
-      where('searchTitle', '>=', val.toLowerCase()),
-      where('searchTitle', '<=', val.toLowerCase() + '\uf8ff'),
-      limit(5)
+      where('searchTitle', '>=', searchTerm),
+      where('searchTitle', '<=', searchTerm + '\uf8ff'),
+      limit(50)
     );
-    const snap = await getDocs(q);
-    titleOptions.value = snap.docs.map((d) => d.data().title);
+
+    // 2. Keyword Search (Contains word...)
+    // Note: Requires composite index on [country, keywords]
+    const keywordQ = query(
+      collection(db, targetCollection),
+      where('country', '==', country.value),
+      where('keywords', 'array-contains', searchTerm),
+      limit(50)
+    );
+
+    // Run queries in parallel but handle failures independently (e.g. missing index)
+    const [prefixSnap, keywordSnap] = await Promise.allSettled([
+      getDocs(prefixQ),
+      getDocs(keywordQ)
+    ]);
+
+    // Merge and deduplicate results
+    const results = new Map<string, string>();
+    const processDoc = (d: any) => {
+      const data = d.data();
+      const label = data.group ? `${data.title} (${data.group})` : data.title;
+      results.set(label, label);
+    };
+
+    if (prefixSnap.status === 'fulfilled') {
+      prefixSnap.value.docs.forEach(processDoc);
+    } else {
+      console.error('Prefix search failed:', prefixSnap.reason);
+    }
+    if (keywordSnap.status === 'fulfilled') {
+      keywordSnap.value.docs.forEach(processDoc);
+    } else {
+      console.error('Keyword search failed:', keywordSnap.reason);
+    }
+
+    titleOptions.value = Array.from(results.values());
   } catch (e) {
     // Silent fail for autocomplete
     console.error(e);
+  } finally {
+    fetching.value = false;
   }
 };
 
 const handleSearch = async () => {
   loading.value = true;
+
+  const slugify = (str: string) => {
+    // 1. Remove parent group in parentheses at the end of the string
+    let cleanStr = str.replace(/\s*\(.*\)$/, '');
+    // 2. Remove commas
+    cleanStr = cleanStr.replace(/,/g, '');
+    // 3. Lowercase, trim, and replace spaces/multiple dashes with a single dash
+    return cleanStr.toLowerCase().trim().replace(/\s+/g, '-').replace(/-+/g, '-');
+  };
+
+  const titleSlug = slugify(title.value);
+  const countrySlug = country.value.toLowerCase();
+  const locationSlug = location.value ? slugify(location.value) : '';
+
+  const path = locationSlug
+    ? `/salary/${titleSlug}/${countrySlug}/${locationSlug}`
+    : `/salary/${titleSlug}/${countrySlug}`;
+
   await navigateTo({
-    path: '/results',
-    query: {
-      title: title.value,
-      loc: location.value,
-      sal: salary.value,
-      country: country.value,
-      period: period.value
+    path,
+    state: {
+      q: title.value, // Pass original title for accurate lookup
+      compare: salary.value || undefined,
+      period: period.value !== 'year' ? period.value : undefined
     }
   });
   loading.value = false;

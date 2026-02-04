@@ -368,12 +368,19 @@ const seedToFirestore = async () => {
 
       const docRef = doc(db, 'salary_benchmarks', docId);
 
+      // Generate keywords for search (split by space, comma, parens, dash)
+      const keywords = record.title
+        .toLowerCase()
+        .split(/[\s,()-]+/)
+        .filter((k) => k.length > 1);
+
       return {
         ref: docRef,
         data: {
           ...record,
           searchTitle: record.title.toLowerCase(),
           searchLocation: record.location.toLowerCase(),
+          keywords,
           updatedAt: serverTimestamp()
         }
       };
