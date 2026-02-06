@@ -20,7 +20,12 @@ export default defineEventHandler(async (event) => {
     // Configure index settings for filtering (idempotent)
     // We ensure 'country' is available for filtering in SalarySearch.vue
     await index.setSettings({
-      attributesForFaceting: ['filterOnly(country)', 'filterOnly(year)', 'filterOnly(period)']
+      attributesForFaceting: [
+        'filterOnly(country)',
+        'filterOnly(year)',
+        'filterOnly(period)',
+        'filterOnly(id_code)' // Required for UK SOC code lookup
+      ]
     });
 
     // Save objects (upsert)

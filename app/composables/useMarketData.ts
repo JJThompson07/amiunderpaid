@@ -1,4 +1,5 @@
 import { ref } from 'vue';
+import type { SearchClient } from 'algoliasearch';
 
 export interface SalaryBenchmark {
   title: string;
@@ -56,8 +57,12 @@ export const useMarketData = () => {
     loading.value = true;
     resetData();
 
+    // Clean up title if it comes from a URL slug (e.g. "software-engineer" -> "software engineer")
+    const searchTitle = title.replace(/-/g, ' ');
+
     try {
-      const { $algolia } = useNuxtApp();
+      const nuxtApp = useNuxtApp();
+      const $algolia = nuxtApp.$algolia as SearchClient;
       const nationalIndex = $algolia.initIndex('salary_benchmarks');
       const regionalIndex = $algolia.initIndex('regional_salary_benchmarks');
       const jobTitlesIndex = $algolia.initIndex('job_titles');
@@ -67,10 +72,10 @@ export const useMarketData = () => {
       // ** STRATEGY 1: Regional Search (if location provided) **
       if (location && location.length > 2) {
         // Search for Title + Location in Regional Index
-        const { hits } = await regionalIndex.search<SalaryBenchmark>(title, {
+        const { hits } = await regionalIndex.search<SalaryBenchmark>(searchTitle, {
           filters: `country:${country} AND period:${period}`,
           queryLanguages: ['en'],
-          optionalWords: title, // Allow fuzzy matching on title if location matches well
+          optionalWords: searchTitle, // Allow fuzzy matching on title if location matches well
           hitsPerPage: 5
         });
 
@@ -88,7 +93,7 @@ export const useMarketData = () => {
       if (!record) {
         if (country === 'UK') {
           // UK Specific: Use Job Titles Index to find SOC code
-          const { hits: titleHits } = await jobTitlesIndex.search<any>(title, {
+          const { hits: titleHits } = await jobTitlesIndex.search<any>(searchTitle, {
             filters: `country:UK`,
             hitsPerPage: 5
           });
@@ -118,7 +123,7 @@ export const useMarketData = () => {
         
         // USA or UK Fallback (Direct Title Match)
         if (!record) {
-          const { hits } = await nationalIndex.search<SalaryBenchmark>(title, {
+          const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
             filters: `country:${country} AND period:${period}`,
             hitsPerPage: 1
           });
@@ -166,7 +171,7 @@ export const useMarketData = () => {
           hitsPerPage: 1
         });
 
-        if (prevHits.length > 0) {
+        if (prevHits.length > 0 && prevHits[0]?.salary) {
           marketLastYear.value = prevHits[0].salary;
         }
       }

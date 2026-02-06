@@ -9,8 +9,8 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
-  // ** Disable SSR **
-  // This turns the app into an SPA, making Firebase integration much more stable
+  // ** Server-Side Rendering **
+  // disable globally for SEO
   ssr: false,
 
   // ** 1. Register Modules **
@@ -42,6 +42,7 @@ export default defineNuxtConfig({
   gtag: {
     id: 'G-EZQYZSSRW1'
   },
+
 
   // ** 3. Runtime Config **
   // This helps Nuxt track these variables for client/server consistency
