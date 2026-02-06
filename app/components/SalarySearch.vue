@@ -79,6 +79,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Search, MapPin, Banknote } from 'lucide-vue-next';
+import type { SearchClient } from 'algoliasearch';
 
 const country = ref('UK');
 const title = ref('');
@@ -89,6 +90,8 @@ const loading = ref(false);
 const fetching = ref(false);
 const titleOptions = ref<string[]>([]);
 const locationOptions = ref<string[]>([]);
+
+const { trackSearch } = useAnalytics();
 
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 
@@ -111,6 +114,76 @@ watch(country, (newVal) => {
   titleOptions.value = [];
 });
 
+const fetchUKTitles = async (searchTerm: string) => {
+  const { $algolia } = useNuxtApp();
+  const index = ($algolia as SearchClient).initIndex('job_titles');
+
+  const { hits } = await index.search(searchTerm, {
+    filters: `country:UK`,
+    hitsPerPage: 20
+  });
+
+  const results = new Set<string>();
+  hits.forEach((hit: any) => {
+    const label = hit.group ? `${hit.title} (${hit.group})` : hit.title;
+    results.add(label);
+  });
+  return Array.from(results);
+};
+
+const fetchUSATitles = async (searchTerm: string) => {
+  const { $algolia } = useNuxtApp();
+
+  const index = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
+
+  let filters = `country:USA`;
+  if (location.value) {
+    const locVal = location.value.toLowerCase().replace(/"/g, '\\"');
+    filters += ` AND searchLocation:"${locVal}"`;
+  }
+
+  const { hits } = await index.search(searchTerm, {
+    filters,
+    hitsPerPage: 20
+  });
+
+  const results = new Set<string>();
+  hits.forEach((hit: any) => {
+    results.add(hit.title);
+  });
+  return Array.from(results);
+};
+
+const fetchUKLocations = async (searchTerm: string) => {
+  const { $algolia } = useNuxtApp();
+  const index = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
+
+  const { facetHits } = await index.searchForFacetValues('location', searchTerm, {
+    filters: `country:UK`,
+    maxFacetHits: 20
+  });
+
+  return facetHits.map((h: any) => h.value);
+};
+
+const fetchUSALocations = async (searchTerm: string) => {
+  const { $algolia } = useNuxtApp();
+  const index = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
+
+  let filters = `country:USA`;
+  if (title.value) {
+    const titleVal = title.value.toLowerCase().replace(/"/g, '\\"');
+    filters += ` AND searchTitle:"${titleVal}"`;
+  }
+
+  const { facetHits } = await index.searchForFacetValues('location', searchTerm, {
+    filters,
+    maxFacetHits: 20
+  });
+
+  return facetHits.map((h: any) => h.value);
+};
+
 const fetchTitles = async (val: string) => {
   if (!val || val.length < 2) {
     titleOptions.value = [];
@@ -120,26 +193,12 @@ const fetchTitles = async (val: string) => {
   fetching.value = true;
   const searchTerm = val.trim();
 
-  const targetCollection = country.value === 'USA' ? 'salary_benchmarks' : 'job_titles';
-
   try {
-    const { $algolia } = useNuxtApp();
-    const index = $algolia.initIndex(targetCollection);
-
-    const { hits } = await index.search(searchTerm, {
-      filters: `country:${country.value}`,
-      hitsPerPage: 20
-    });
-
-    // Deduplicate and format
-    const results = new Set<string>();
-    
-    hits.forEach((hit: any) => {
-      const label = hit.group ? `${hit.title} (${hit.group})` : hit.title;
-      results.add(label);
-    });
-
-    titleOptions.value = Array.from(results);
+    if (country.value === 'UK') {
+      titleOptions.value = await fetchUKTitles(searchTerm);
+    } else {
+      titleOptions.value = await fetchUSATitles(searchTerm);
+    }
   } catch (e) {
     console.error(e);
   } finally {
@@ -149,22 +208,18 @@ const fetchTitles = async (val: string) => {
 
 const fetchLocations = async (val: string) => {
   if (!val || val.length < 2) {
-    titleOptions.value = [];
+    locationOptions.value = [];
     return;
   }
 
   fetching.value = true;
 
   try {
-    const { $algolia } = useNuxtApp();
-    const index = $algolia.initIndex('regional_salary_benchmarks');
-
-    const { hits } = await index.search(val, {
-      filters: `country:${country.value}`,
-      hitsPerPage: 20
-    });
-
-    locationOptions.value = hits.map((h: any) => h.location);
+    if (country.value === 'UK') {
+      locationOptions.value = await fetchUKLocations(val);
+    } else {
+      locationOptions.value = await fetchUSALocations(val);
+    }
   } catch (e) {
     // Silent fail for autocomplete
     console.error(e);
@@ -193,12 +248,16 @@ const handleSearch = async () => {
     ? `/salary/${titleSlug}/${countrySlug}/${locationSlug}`
     : `/salary/${titleSlug}/${countrySlug}`;
 
+  trackSearch(title.value, country.value, location.value, salary.value);
+
   await navigateTo({
     path,
-    state: {
-      q: title.value, // Pass original title for accurate lookup
+    query: {
       compare: salary.value || undefined,
       period: period.value !== 'year' ? period.value : undefined
+    },
+    state: {
+      q: title.value // Pass original title for accurate lookup
     }
   });
   loading.value = false;

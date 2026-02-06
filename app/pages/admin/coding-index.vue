@@ -242,7 +242,7 @@ const deleteRecords = async (country: string) => {
   }
 
   const q = query(collection(db, 'job_titles'), where('country', '==', country));
-  
+
   // 1. Delete from Firestore
   await batchDelete(q, `${country} mappings`);
 

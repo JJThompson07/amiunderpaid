@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import type { SearchClient } from 'algoliasearch';
+import type { SearchClient, SearchIndex } from 'algoliasearch';
 
 export interface SalaryBenchmark {
   title: string;
@@ -26,6 +26,7 @@ export const useMarketData = () => {
   const matchedLocation = ref('');
   const isGenericFallback = ref(false);
   const ambiguousMatches = ref<any[]>([]);
+  const regionalData = ref<SalaryBenchmark | null>(null);
 
   // Reset state helper
   const resetData = () => {
@@ -39,26 +40,67 @@ export const useMarketData = () => {
     matchedLocation.value = '';
     isGenericFallback.value = false;
     ambiguousMatches.value = [];
+    regionalData.value = null;
     error.value = null;
   };
 
-  /**
-   * Fetches salary data with a 3-step fallback strategy:
-   * 1. Exact Match (Title + Location)
-   * 2. Country Match (Title + Country)
-   * 3. Generic Match (Professional + Country)
-   */
-  const fetchMarketData = async (
-    title: string,
-    location: string,
+  // ** Internal Helpers **
+
+  const processRecord = async (
+    record: SalaryBenchmark,
     country: string,
-    period: string = 'year'
+    period: string,
+    nationalIndex: any,
+    regionalIndex: any
   ) => {
+    marketAverage.value = record.salary;
+    marketHigh.value = Math.round(record.salary * 1.3);
+    marketLow.value = Math.round(record.salary * 0.75);
+    marketDataYear.value = record.year;
+    matchedTitle.value = record.title;
+    marketPeriod.value = record.period || 'year';
+    matchedLocation.value = record.location;
+
+    // ** Fetch Previous Year Data (for trends) **
+    const targetIndex =
+      record.location === 'United Kingdom' || record.location === 'USA'
+        ? nationalIndex
+        : regionalIndex;
+
+    const prevYear = record.year - 1;
+
+    const { hits: prevHits } = await targetIndex.search(record.title, {
+      filters: `country:${country} AND year:${prevYear} AND period:${period}`,
+      hitsPerPage: 1
+    });
+
+    if (prevHits.length > 0 && prevHits[0]?.salary) {
+      marketLastYear.value = prevHits[0].salary;
+    }
+  };
+
+  const fetchGenericFallback = async (
+    country: string,
+    period: string,
+    nationalIndex: SearchIndex
+  ) => {
+    console.log('No role match, retrieving generic baseline...');
+    isGenericFallback.value = true;
+    const { hits } = await nationalIndex.search('professional', {
+      filters: `country:${country} AND period:${period}`,
+      hitsPerPage: 1
+    });
+    return hits.length > 0 ? (hits[0] as unknown as SalaryBenchmark) : undefined;
+  };
+
+  // ** UK Specific Logic **
+  const fetchUkMarketData = async (title: string, location: string, period: string = 'year') => {
     loading.value = true;
     resetData();
 
     // Clean up title if it comes from a URL slug (e.g. "software-engineer" -> "software engineer")
     const searchTitle = title.replace(/-/g, ' ');
+    const country = 'UK';
 
     try {
       const nuxtApp = useNuxtApp();
@@ -69,77 +111,59 @@ export const useMarketData = () => {
 
       let record: SalaryBenchmark | undefined;
 
-      // ** STRATEGY 1: Regional Search (if location provided) **
-      if (location && location.length > 2) {
-        // Search for Title + Location in Regional Index
-        const { hits } = await regionalIndex.search<SalaryBenchmark>(searchTitle, {
-          filters: `country:${country} AND period:${period}`,
-          queryLanguages: ['en'],
-          optionalWords: searchTitle, // Allow fuzzy matching on title if location matches well
-          hitsPerPage: 5
+      // 1. SOC Code Lookup (UK Strategy)
+      const { hits: titleHits } = await jobTitlesIndex.search<any>(searchTitle, {
+        filters: `country:UK`,
+        hitsPerPage: 5
+      });
+
+      // Handle Ambiguity
+      if (titleHits.length > 1) {
+        const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
+        if (groups.size > 1) {
+          ambiguousMatches.value = titleHits;
+        }
+      }
+
+      const bestTitleMatch = titleHits[0];
+
+      if (bestTitleMatch && bestTitleMatch.soc) {
+        // Search National Benchmarks by SOC Code
+        const { hits: benchmarkHits } = await nationalIndex.search<SalaryBenchmark>('', {
+          filters: `id_code:${bestTitleMatch.soc} AND country:UK AND period:${period}`,
+          hitsPerPage: 1
         });
+        if (benchmarkHits.length > 0) {
+          record = benchmarkHits[0];
 
-        // Client-side filter to ensure location relevance
-        // (Algolia search might return a record with correct title but wrong location if ranking allows)
-        const locLower = location.toLowerCase();
-        const bestRegional = hits.find(h => h.location.toLowerCase().includes(locLower) || locLower.includes(h.location.toLowerCase()));
-        
-        if (bestRegional) {
-          record = bestRegional;
-        }
-      }
+          // ** UK Regional Fetch (Secondary) **
+          if (location && location.length > 2) {
+            const { hits: regionalHits } = await regionalIndex.search<SalaryBenchmark>(
+              '', // UK Regional data is aggregate (Title = 'All'), so we don't search by job title.
+              {
+                filters: `country:UK AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
+                hitsPerPage: 10
+              }
+            );
 
-      // ** STRATEGY 2: National Search (Fallback) **
-      if (!record) {
-        if (country === 'UK') {
-          // UK Specific: Use Job Titles Index to find SOC code
-          const { hits: titleHits } = await jobTitlesIndex.search<any>(searchTitle, {
-            filters: `country:UK`,
-            hitsPerPage: 5
-          });
+            console.log('Regional Hits:', regionalHits);
 
-          // Handle Ambiguity
-          if (titleHits.length > 1) {
-            // If multiple groups found (e.g. "Nurse"), store them for the UI modal
-            const groups = new Set(titleHits.map(h => h.group).filter(Boolean));
-            if (groups.size > 1) {
-              ambiguousMatches.value = titleHits;
-            }
-          }
+            const locLower = location.toLowerCase();
+            const bestRegional = regionalHits.find(
+              (h) =>
+                h.location.toLowerCase().includes(locLower) ||
+                locLower.includes(h.location.toLowerCase())
+            );
 
-          const bestTitleMatch = titleHits[0];
-
-          if (bestTitleMatch && bestTitleMatch.soc) {
-            // Search National Benchmarks by SOC Code
-            const { hits: benchmarkHits } = await nationalIndex.search<SalaryBenchmark>('', {
-              filters: `id_code:${bestTitleMatch.soc} AND country:UK AND period:${period}`,
-              hitsPerPage: 1
-            });
-            if (benchmarkHits.length > 0) {
-              record = benchmarkHits[0];
-            }
-          }
-        } 
-        
-        // USA or UK Fallback (Direct Title Match)
-        if (!record) {
-          const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
-            filters: `country:${country} AND period:${period}`,
-            hitsPerPage: 1
-          });
-          if (hits.length > 0) {
-            record = hits[0];
+            if (bestRegional) regionalData.value = bestRegional;
           }
         }
       }
 
-      // ** STRATEGY 3: Generic Fallback **
+      // 2. Direct Title Match Fallback
       if (!record) {
-        console.log('No role match, retrieving generic baseline...');
-        isGenericFallback.value = true;
-        
-        const { hits } = await nationalIndex.search<SalaryBenchmark>('professional', {
-          filters: `country:${country} AND period:${period}`,
+        const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
+          filters: `country:UK AND period:${period}`,
           hitsPerPage: 1
         });
         if (hits.length > 0) {
@@ -147,33 +171,79 @@ export const useMarketData = () => {
         }
       }
 
-      // ** Process Result **
+      // 3. Generic Fallback
+      if (!record) {
+        record = await fetchGenericFallback(country, period, nationalIndex);
+      }
+
       if (record) {
-        marketAverage.value = record.salary;
-        marketHigh.value = Math.round(record.salary * 1.3);
-        marketLow.value = Math.round(record.salary * 0.75);
-        marketDataYear.value = record.year;
-        matchedTitle.value = record.title;
-        marketPeriod.value = record.period || 'year';
-        matchedLocation.value = record.location;
+        await processRecord(record, country, period, nationalIndex, regionalIndex);
+      }
+    } catch (e: any) {
+      console.error('Error fetching UK market data:', e);
+      error.value = e.message;
+    } finally {
+      loading.value = false;
+    }
+  };
 
-        // ** Fetch Previous Year Data (for trends) **
-        const targetIndex = record.location === 'United Kingdom' || record.location === 'USA' 
-          ? nationalIndex 
-          : regionalIndex;
+  // ** USA Specific Logic **
+  const fetchUSAMarketData = async (title: string, location: string, period: string = 'year') => {
+    loading.value = true;
+    resetData();
 
-        const prevYear = record.year - 1;
-        
-        // We use filters to find the exact same record but for the previous year
-        // Note: We search for the title again to ensure we get the right record context
-        const { hits: prevHits } = await targetIndex.search<SalaryBenchmark>(record.title, {
-          filters: `country:${country} AND year:${prevYear} AND period:${period}`,
-          hitsPerPage: 1
+    const searchTitle = title.replace(/-/g, ' ');
+    const country = 'USA';
+
+    try {
+      const { $algolia } = useNuxtApp();
+      const nationalIndex = ($algolia as SearchClient).initIndex('salary_benchmarks');
+      const regionalIndex = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
+
+      let record: SalaryBenchmark | undefined;
+
+      // 1. Regional Search (Primary for USA)
+      if (location && location.length > 2) {
+        // Search for Title + Location in Regional Index
+        const { hits } = await regionalIndex.search<SalaryBenchmark>(searchTitle, {
+          filters: `country:USA AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
+          queryLanguages: ['en'],
+          optionalWords: searchTitle, // Allow fuzzy matching on title if location matches well
+          hitsPerPage: 10
         });
 
-        if (prevHits.length > 0 && prevHits[0]?.salary) {
-          marketLastYear.value = prevHits[0].salary;
+        console.log(hits);
+
+        const locLower = location.toLowerCase();
+        const bestRegional = hits.find(
+          (h) =>
+            h.location.toLowerCase().includes(locLower) ||
+            locLower.includes(h.location.toLowerCase())
+        );
+
+        if (bestRegional) {
+          record = bestRegional;
         }
+      }
+
+      // 2. National Fallback
+      if (!record) {
+        const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
+          filters: `country:USA AND period:${period}`,
+          hitsPerPage: 1
+        });
+        if (hits.length > 0) {
+          record = hits[0];
+        }
+      }
+
+      // 3. Generic Fallback
+      if (!record) {
+        record = await fetchGenericFallback(country, period, nationalIndex);
+      }
+
+      if (record) {
+        await processRecord(record, country, period, nationalIndex, regionalIndex);
       }
     } catch (e: any) {
       console.error('Error fetching market data:', e);
@@ -196,6 +266,8 @@ export const useMarketData = () => {
     matchedLocation,
     isGenericFallback,
     ambiguousMatches,
-    fetchMarketData
+    regionalData,
+    fetchUkMarketData,
+    fetchUSAMarketData
   };
 };

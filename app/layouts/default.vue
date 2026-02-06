@@ -7,9 +7,9 @@
         <!-- Logo -->
         <NuxtLink href="/" class="flex items-center gap-2">
           <div
-            class="flex items-center gap-2 text-xl font-bold tracking-tight text-primary-600 select-none">
-            <Wallet class="w-6 h-6" />
-            <span>AmI<span class="text-slate-900">Underpaid</span></span>
+            class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none">
+            <div class="logo h-7 w-7" aria-label="Am I" />
+            <span class="text-slate-900">Underpaid</span>
           </div>
         </NuxtLink>
 
@@ -73,7 +73,6 @@
 </template>
 
 <script setup lang="ts">
-import { Wallet } from 'lucide-vue-next';
 import { useCurrentUser, useFirebaseAuth } from 'vuefire';
 import { signOut } from 'firebase/auth';
 
@@ -87,3 +86,10 @@ const handleLogout = async () => {
   }
 };
 </script>
+
+<style>
+.logo {
+  background: url('../../assets/img/logo.png') no-repeat center center;
+  background-size: cover;
+}
+</style>

@@ -43,7 +43,6 @@ export default defineNuxtConfig({
     id: 'G-EZQYZSSRW1'
   },
 
-
   // ** 3. Runtime Config **
   // This helps Nuxt track these variables for client/server consistency
   runtimeConfig: {

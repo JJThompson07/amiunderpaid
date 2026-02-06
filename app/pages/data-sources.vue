@@ -88,5 +88,5 @@
 
 <script setup lang="ts">
 // ** imports **
-import { Building2, Search, Users, Flag, Dot } from 'lucide-vue-next';
+import { Building2, Search, Users, Flag } from 'lucide-vue-next';
 </script>
