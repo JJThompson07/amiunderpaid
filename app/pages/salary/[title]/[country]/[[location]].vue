@@ -269,6 +269,16 @@
         </div>
       </div>
 
+      <!-- Regional Comparison Card (UK Only) -->
+      <SectionUKComparison
+        v-if="country === 'UK' && regionalData && location"
+        :country="country"
+        :location="location"
+        :display-title="matchedTitle || displayTitle"
+        :market-average="marketAverage"
+        :user-salary="userSalary"
+        :regional-data="regionalData" />
+
       <!-- Ambiguity Modal -->
       <ModalAmbiguity
         v-if="showAmbiguityModal"
@@ -302,6 +312,8 @@ import { computed, onMounted, watch } from 'vue';
 const route = useRoute();
 const showAmbiguityModal = ref(false);
 
+const { trackAmbiguousSearch } = useAnalytics();
+
 // Destructure market data from auto-imported composable
 const {
   loading,
@@ -314,7 +326,9 @@ const {
   matchedLocation,
   isGenericFallback,
   ambiguousMatches,
-  fetchMarketData
+  regionalData,
+  fetchUkMarketData,
+  fetchUSAMarketData
 } = useMarketData();
 
 // ** helpers **
@@ -380,11 +394,23 @@ const isTrendUp = computed<boolean>(
   () => (marketAverage?.value ?? 0) >= (marketLastYear?.value ?? 0)
 );
 
+const fetchData = (t: string, l: string, c: string, p: string) => {
+  if (c === 'UK') {
+    fetchUkMarketData(t, l, p);
+  } else {
+    fetchUSAMarketData(t, l, p);
+  }
+};
+
 // ** methods **
 const handleAmbiguitySelect = (match: any) => {
   const specificTitle = match.group ? `${match.title} (${match.group})` : match.title;
+
+  // gtag track for ambiguity selection
+  trackAmbiguousSearch(match.title, match.group);
+
   // Re-fetch with specific group, but keep URL clean
-  fetchMarketData(specificTitle, location.value, country.value, userPeriod.value);
+  fetchData(specificTitle, location.value, country.value, userPeriod.value);
   showAmbiguityModal.value = false;
 };
 
@@ -397,7 +423,7 @@ onMounted(() => {
     if (history.state.period) userPeriod.value = String(history.state.period);
   }
 
-  fetchMarketData(searchTitle.value, location.value, country.value, userPeriod.value);
+  fetchData(searchTitle.value, location.value, country.value, userPeriod.value);
 });
 
 // ** watchers **

@@ -66,29 +66,28 @@
       <!-- CONFIGURATION SECTION -->
       <div class="mb-8 space-y-6">
         <div class="grid grid-cols-2 gap-4">
-          
           <!-- COUNTRY TOGGLE -->
           <div class="flex flex-col gap-2">
             <label
-            class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
-            Region
-          </label>
-          <div class="flex p-1 bg-slate-100 rounded-xl">
-            <button
-            v-for="c in ['UK', 'USA']"
-            :key="c"
-            class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
-            :class="
+              class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
+              Region
+            </label>
+            <div class="flex p-1 bg-slate-100 rounded-xl">
+              <button
+                v-for="c in ['UK', 'USA']"
+                :key="c"
+                class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+                :class="
                   targetCountry === c
-                  ? 'bg-white text-indigo-600 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-600'
-                  "
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600'
+                "
                 @click="setCountry(c)">
                 {{ c }}
               </button>
             </div>
           </div>
-          
+
           <!-- SCOPE TOGGLE -->
           <div class="flex flex-col gap-2">
             <label
@@ -188,32 +187,45 @@
 
       <!-- ACTION BUTTONS -->
       <div class="space-y-3">
-        <AmIButton
+        <AmIAnimatedBorder
           v-if="parsedData.length > 0"
           :loading="loading"
           block
-          bg-colour="bg-emerald-600"
-          animation-colour="bg-emerald-400"
-          @click="seedToFirestore">
-          <div class="flex items-center gap-2">
-            <CheckCircle2 class="w-4 h-4" />
-            <span>Sync {{ parsedData.length }} Records</span>
-          </div>
-        </AmIButton>
+          bg-colour="bg-slate-400"
+          animation-colour="bg-secondary-400">
+          <AmIButton
+            v-if="parsedData.length > 0"
+            :loading="loading"
+            block
+            bg-colour="bg-secondary-600"
+            animation-colour="bg-secondary-400"
+            @click="seedToFirestore">
+            <div class="flex items-center gap-2">
+              <CheckCircle2 class="w-4 h-4" />
+              <span>Sync {{ parsedData.length }} Records</span>
+            </div>
+          </AmIButton>
+        </AmIAnimatedBorder>
 
-        <AmIButton
+        <AmIAnimatedBorder
           v-else
           :loading="parsing"
-          :disabled="!selectedFile"
           block
-          :bg-colour="!selectedFile ? 'bg-slate-200' : 'bg-primary-600'"
-          :text-colour="!selectedFile ? 'text-slate-400' : 'text-white'"
-          @click="handleParse">
-          <div class="flex items-center justify-center gap-2">
-            <LoaderCircle v-if="parsing" class="w-4 h-4 animate-spin" />
-            <span v-else>Parse Spreadsheet</span>
-          </div>
-        </AmIButton>
+          bg-colour="bg-slate-400"
+          animation-colour="bg-primary-400">
+          <AmIButton
+            :loading="parsing"
+            :disabled="!selectedFile"
+            block
+            :bg-colour="!selectedFile ? 'bg-slate-200' : 'bg-primary-600'"
+            :text-colour="!selectedFile ? 'text-slate-400' : 'text-white'"
+            @click="handleParse">
+            <div class="flex items-center justify-center gap-2">
+              <LoaderCircle v-if="parsing" class="w-4 h-4 animate-spin" />
+              <span v-else>Parse Spreadsheet</span>
+            </div>
+          </AmIButton>
+        </AmIAnimatedBorder>
       </div>
     </div>
   </div>
@@ -250,7 +262,9 @@ const targetYear = ref(2026);
 const selectedFile = ref<File | null>(null);
 const fileName = ref('');
 const parsedData = ref<(SalaryRecord & { period: string })[]>([]);
-const existingData = ref<{ country: string; year: number; period: string; count: number; scope: string }[]>([]);
+const existingData = ref<
+  { country: string; year: number; period: string; count: number; scope: string }[]
+>([]);
 
 // ** methods **
 
@@ -263,7 +277,8 @@ const fetchSummary = async () => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i + 1);
 
-  const results: { country: string; year: number; period: string; count: number; scope: string }[] = [];
+  const results: { country: string; year: number; period: string; count: number; scope: string }[] =
+    [];
   const collections = [
     { name: 'salary_benchmarks', scope: 'National' },
     { name: 'regional_salary_benchmarks', scope: 'Regional' }
@@ -275,23 +290,25 @@ const fetchSummary = async () => {
     for (const country of countries) {
       for (const year of years) {
         for (const period of periods) {
-          promises.push((async () => {
-            try {
-              const q = query(
-                collection(db, col.name),
-                where('country', '==', country),
-                where('year', '==', year),
-                where('period', '==', period)
-              );
-              const snapshot = await getCountFromServer(q);
-              const count = snapshot.data().count;
-              if (count > 0) {
-                results.push({ country, year, period, count, scope: col.scope });
+          promises.push(
+            (async () => {
+              try {
+                const q = query(
+                  collection(db, col.name),
+                  where('country', '==', country),
+                  where('year', '==', year),
+                  where('period', '==', period)
+                );
+                const snapshot = await getCountFromServer(q);
+                const count = snapshot.data().count;
+                if (count > 0) {
+                  results.push({ country, year, period, count, scope: col.scope });
+                }
+              } catch (e) {
+                console.warn(`Failed to fetch summary for ${col.name}:`, e);
               }
-            } catch (e) {
-              console.warn(`Failed to fetch summary for ${col.name}:`, e);
-            }
-          })());
+            })()
+          );
         }
       }
     }
@@ -300,10 +317,10 @@ const fetchSummary = async () => {
   await Promise.all(promises);
 
   existingData.value = results.sort(
-    (a, b) => b.year - a.year || a.country.localeCompare(b.country) || a.scope.localeCompare(b.scope)
+    (a, b) =>
+      b.year - a.year || a.country.localeCompare(b.country) || a.scope.localeCompare(b.scope)
   );
 };
-
 
 const setCountry = (c: string) => {
   targetCountry.value = c;
@@ -341,7 +358,7 @@ const deleteRecords = async (country: string, year: number, period: string, scop
     where('year', '==', year),
     where('period', '==', period)
   );
-  
+
   // 1. Delete from Firestore
   await batchDelete(q, `${country} ${year} (${period}) data`);
 
@@ -470,7 +487,9 @@ const seedToFirestore = async () => {
     console.error(e);
     loading.value = false;
     if (e.code === 'permission-denied') {
-      log(`❌ PERMISSION ERROR: Missing write access for collection '${collectionName}'. Check firestore.rules.`);
+      log(
+        `❌ PERMISSION ERROR: Missing write access for collection '${collectionName}'. Check firestore.rules.`
+      );
     }
     // Error logging handled in composable
   }

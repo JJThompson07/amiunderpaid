@@ -42,13 +42,20 @@ export default defineEventHandler(async (event) => {
     if (country === 'UK') {
       // UK Regional Logic (PROV - Work Geography Table 7.7a)
       // Prioritize "Full-Time" sheet
-      const sheetName = workbook.SheetNames.find(s => s.includes('Full-Time')) || workbook.SheetNames[0];
+      const sheetName =
+        workbook.SheetNames.find((s) => s.includes('Full-Time')) || workbook.SheetNames[0];
       if (!sheetName) {
-        throw createError({ statusCode: 422, message: 'No sheets found in the uploaded ONS file.' });
+        throw createError({
+          statusCode: 422,
+          message: 'No sheets found in the uploaded ONS file.'
+        });
       }
       const sheet = workbook.Sheets[sheetName];
       if (!sheet) {
-        throw createError({ statusCode: 422, message: 'Could not find the data sheet in the uploaded ONS file.' });
+        throw createError({
+          statusCode: 422,
+          message: 'Could not find the data sheet in the uploaded ONS file.'
+        });
       }
       const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
 
@@ -62,12 +69,18 @@ export default defineEventHandler(async (event) => {
       }
 
       if (headerRowIndex === -1) {
-        throw createError({ statusCode: 422, message: 'Could not detect UK (ONS) header structure.' });
+        throw createError({
+          statusCode: 422,
+          message: 'Could not detect UK (ONS) header structure.'
+        });
       }
 
       const headers = rawData[headerRowIndex];
       if (!headers) {
-        throw createError({ statusCode: 422, message: 'Could not extract UK (ONS) headers from the first detected header row.' });
+        throw createError({
+          statusCode: 422,
+          message: 'Could not extract UK (ONS) headers from the first detected header row.'
+        });
       }
       const descIdx = headers.indexOf('Description'); // Contains Location in regional files
       const codeIdx = headers.indexOf('Code');
@@ -94,26 +107,34 @@ export default defineEventHandler(async (event) => {
           period: 'year'
         });
       }
-
     } else {
       // USA Regional Logic (State/Area files)
       if (!workbook.SheetNames[0]) {
-        throw createError({ statusCode: 422, message: 'No sheets found in the uploaded BLS file.' });
+        throw createError({
+          statusCode: 422,
+          message: 'No sheets found in the uploaded BLS file.'
+        });
       }
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       if (!sheet) {
-        throw createError({ statusCode: 422, message: 'Could not find the data sheet in the uploaded BLS file.' });
+        throw createError({
+          statusCode: 422,
+          message: 'Could not find the data sheet in the uploaded BLS file.'
+        });
       }
       const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
 
       const headers = rawData[0] || [];
-      const titleIdx = headers.findIndex(h => h?.toString().toUpperCase() === 'OCC_TITLE');
-      const salaryIdx = headers.findIndex(h => h?.toString().toUpperCase() === 'A_MEDIAN');
-      const codeIdx = headers.findIndex(h => h?.toString().toUpperCase() === 'OCC_CODE');
-      const locIdx = headers.findIndex(h => h?.toString().toUpperCase() === 'AREA_TITLE');
+      const titleIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'OCC_TITLE');
+      const salaryIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'A_MEDIAN');
+      const codeIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'OCC_CODE');
+      const locIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'AREA_TITLE');
 
       if (titleIdx === -1 || salaryIdx === -1 || locIdx === -1) {
-        throw createError({ statusCode: 422, message: 'Could not detect USA (BLS) header structure (OCC_TITLE/A_MEDIAN/AREA_TITLE).' });
+        throw createError({
+          statusCode: 422,
+          message: 'Could not detect USA (BLS) header structure (OCC_TITLE/A_MEDIAN/AREA_TITLE).'
+        });
       }
 
       for (let i = 1; i < rawData.length; i++) {
@@ -128,9 +149,10 @@ export default defineEventHandler(async (event) => {
         // BLS uses '*' for missing and '#' for >$239k
         if (salaryRaw === '*' || salaryRaw === '#') continue;
 
-        const salary = typeof salaryRaw === 'string' 
-          ? parseFloat(salaryRaw.replace(/,/g, '')) 
-          : parseFloat(salaryRaw);
+        const salary =
+          typeof salaryRaw === 'string'
+            ? parseFloat(salaryRaw.replace(/,/g, ''))
+            : parseFloat(salaryRaw);
 
         if (!isNaN(salary)) {
           normalizedData.push({

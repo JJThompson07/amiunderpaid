@@ -38,13 +38,20 @@ export default defineEventHandler(async (event) => {
     if (country === 'UK') {
       // ONS ASHE usually has multiple sheets (All, Male, Female, Full-Time, etc.)
       // We prioritize the "Full-Time" sheet if it exists for annual pay.
-      const sheetName = workbook.SheetNames.find(s => s.includes('Full-Time')) || workbook.SheetNames[0];
+      const sheetName =
+        workbook.SheetNames.find((s) => s.includes('Full-Time')) || workbook.SheetNames[0];
       if (!sheetName) {
-        throw createError({ statusCode: 422, message: 'No sheets found in the uploaded ONS file.' });
+        throw createError({
+          statusCode: 422,
+          message: 'No sheets found in the uploaded ONS file.'
+        });
       }
       const sheet = workbook.Sheets[sheetName];
       if (!sheet) {
-        throw createError({ statusCode: 422, message: 'Could not find the data sheet in the uploaded ONS file.' });
+        throw createError({
+          statusCode: 422,
+          message: 'Could not find the data sheet in the uploaded ONS file.'
+        });
       }
 
       // Fix for ONS files: Force range recalculation by removing the explicit range metadata.
@@ -65,9 +72,12 @@ export default defineEventHandler(async (event) => {
       }
 
       if (headerRowIndex === -1) {
-        throw createError({ statusCode: 422, message: 'Could not detect UK (ONS) header structure.' });
+        throw createError({
+          statusCode: 422,
+          message: 'Could not detect UK (ONS) header structure.'
+        });
       }
-      
+
       const headers = rawData[headerRowIndex];
       if (!headers) {
         throw createError({ statusCode: 422, message: 'Could not detect UK (ONS) headers.' });
@@ -104,23 +114,32 @@ export default defineEventHandler(async (event) => {
     } else {
       // USA (BLS OEWS) Logic
       if (workbook.SheetNames[0] === undefined) {
-        throw createError({ statusCode: 422, message: 'No sheets found in the uploaded BLS file.' });
+        throw createError({
+          statusCode: 422,
+          message: 'No sheets found in the uploaded BLS file.'
+        });
       }
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       if (!sheet) {
-        throw createError({ statusCode: 422, message: 'Could not find the data sheet in the uploaded BLS file.' });
+        throw createError({
+          statusCode: 422,
+          message: 'Could not find the data sheet in the uploaded BLS file.'
+        });
       }
-      
+
       const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
 
       const headers = rawData[0] || [];
-      const titleIdx = headers.findIndex(h => h?.toString().toUpperCase() === 'OCC_TITLE');
-      const salaryIdx = headers.findIndex(h => h?.toString().toUpperCase() === 'A_MEDIAN');
-      const codeIdx = headers.findIndex(h => h?.toString().toUpperCase() === 'OCC_CODE');
-      const locIdx = headers.findIndex(h => h?.toString().toUpperCase() === 'AREA_TITLE');
+      const titleIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'OCC_TITLE');
+      const salaryIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'A_MEDIAN');
+      const codeIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'OCC_CODE');
+      const locIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'AREA_TITLE');
 
       if (titleIdx === -1 || salaryIdx === -1) {
-        throw createError({ statusCode: 422, message: 'Could not detect USA (BLS) header structure (OCC_TITLE/A_MEDIAN).' });
+        throw createError({
+          statusCode: 422,
+          message: 'Could not detect USA (BLS) header structure (OCC_TITLE/A_MEDIAN).'
+        });
       }
 
       for (let i = 1; i < rawData.length; i++) {
@@ -135,9 +154,10 @@ export default defineEventHandler(async (event) => {
         // BLS uses '*' for missing and '#' for >$239k. We skip '*' and treat '#' as the cap or skip.
         if (salaryRaw === '*' || salaryRaw === '#') continue;
 
-        const salary = typeof salaryRaw === 'string' 
-          ? parseFloat(salaryRaw.replace(/,/g, '')) 
-          : parseFloat(salaryRaw);
+        const salary =
+          typeof salaryRaw === 'string'
+            ? parseFloat(salaryRaw.replace(/,/g, ''))
+            : parseFloat(salaryRaw);
 
         if (!isNaN(salary)) {
           normalizedData.push({
