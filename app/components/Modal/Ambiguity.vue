@@ -17,17 +17,17 @@
         <button
           v-for="match in matches"
           :key="match.group + match.soc"
-          class="w-full text-left p-4 rounded-xl hover:bg-indigo-50 transition-colors group flex items-center justify-between"
+          class="w-full text-left p-4 rounded-xl hover:bg-primary-50 transition-colors group flex items-center justify-between"
           @click="$emit('select', match)">
           <div>
-            <div class="font-bold text-slate-700 group-hover:text-indigo-700">
+            <div class="font-bold text-slate-700 group-hover:text-primary-700">
               {{ match.title }}
             </div>
             <div class="text-xs font-medium text-slate-400 uppercase tracking-wide mt-0.5">
               {{ match.group }}
             </div>
           </div>
-          <div class="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-600">
+          <div class="opacity-0 group-hover:opacity-100 transition-opacity text-primary-600">
             <ArrowRight class="w-5 h-5" />
           </div>
         </button>

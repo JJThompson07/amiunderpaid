@@ -224,14 +224,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { Database, UploadCloud, CheckCircle2, Lock, LoaderCircle, X } from 'lucide-vue-next';
 import { useFirestore, useCurrentUser } from 'vuefire';
-import {
-  doc,
-  serverTimestamp,
-  collection,
-  query,
-  where,
-  getCountFromServer
-} from 'firebase/firestore';
+import { doc, collection, query, where, getCountFromServer } from 'firebase/firestore';
 import type { SalaryRecord } from '../../../utils/seedData';
 
 /**
@@ -348,7 +341,25 @@ const deleteRecords = async (country: string, year: number, period: string, scop
     where('year', '==', year),
     where('period', '==', period)
   );
+  
+  // 1. Delete from Firestore
   await batchDelete(q, `${country} ${year} (${period}) data`);
+
+  // 2. Delete from Algolia
+  log(`Clearing Algolia records for ${country} ${year}...`);
+  try {
+    await $fetch('/api/admin/clear-algolia', {
+      method: 'POST',
+      body: {
+        indexName: collectionName,
+        filters: `country:${country} AND year:${year} AND period:${period}`
+      }
+    });
+    log('✅ Algolia index cleared.');
+  } catch (e: any) {
+    log(`⚠️ Failed to clear Algolia: ${e.message}`);
+  }
+
   await fetchSummary();
 };
 
@@ -405,8 +416,11 @@ const seedToFirestore = async () => {
   const collectionName =
     targetScope.value === 'national' ? 'salary_benchmarks' : 'regional_salary_benchmarks';
 
+  const recordsToSync: any[] = [];
+
   try {
-    await batchSeed(parsedData.value, (record) => {
+    // 1. Prepare and Save to Firestore
+    await batchSeed(parsedData.value, (record: any) => {
       // Create deterministic IDs
       const cleanTitle = record.title
         .toLowerCase()
@@ -421,23 +435,32 @@ const seedToFirestore = async () => {
 
       const docRef = doc(db, collectionName, docId);
 
-      // Generate keywords for search (split by any non-alphanumeric character)
-      const keywords = record.title
-        .toLowerCase()
-        .split(/[^a-z0-9]+/)
-        .filter((k) => k.length > 1);
+      const finalRecord = {
+        ...record,
+        searchTitle: record.title.toLowerCase(),
+        searchLocation: record.location.toLowerCase(),
+        updatedAt: new Date(), // Use Date instead of serverTimestamp for JSON compatibility
+        objectID: docId // For Algolia
+      };
+
+      recordsToSync.push(finalRecord);
 
       return {
         ref: docRef,
-        data: {
-          ...record,
-          searchTitle: record.title.toLowerCase(),
-          searchLocation: record.location.toLowerCase(),
-          keywords,
-          updatedAt: serverTimestamp()
-        }
+        data: finalRecord
       };
     });
+
+    // 2. Sync to Algolia
+    log(`Syncing ${recordsToSync.length} records to Algolia index '${collectionName}'...`);
+    await $fetch('/api/admin/sync-algolia', {
+      method: 'POST',
+      body: {
+        data: recordsToSync,
+        indexName: collectionName
+      }
+    });
+    log('✅ Algolia Sync Complete.');
 
     parsedData.value = [];
     selectedFile.value = null;

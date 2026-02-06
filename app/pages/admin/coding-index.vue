@@ -171,15 +171,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { BookOpen, UploadCloud, CheckCircle2, Lock, LoaderCircle, X } from 'lucide-vue-next';
 import { useFirestore, useCurrentUser } from 'vuefire';
-import {
-  doc,
-  serverTimestamp,
-  collection,
-  query,
-  where,
-  getCountFromServer,
-  getDoc
-} from 'firebase/firestore';
+import { doc, collection, query, where, getCountFromServer, getDoc } from 'firebase/firestore';
 
 interface JobTitleRecord {
   title: string;
@@ -250,7 +242,25 @@ const deleteRecords = async (country: string) => {
   }
 
   const q = query(collection(db, 'job_titles'), where('country', '==', country));
+  
+  // 1. Delete from Firestore
   await batchDelete(q, `${country} mappings`);
+
+  // 2. Delete from Algolia
+  log(`Clearing Algolia records for ${country}...`);
+  try {
+    await $fetch('/api/admin/clear-algolia', {
+      method: 'POST',
+      body: {
+        indexName: 'job_titles',
+        filters: `country:${country}`
+      }
+    });
+    log('✅ Algolia index cleared.');
+  } catch (e: any) {
+    log(`⚠️ Failed to clear Algolia: ${e.message}`);
+  }
+
   await fetchSummary();
 };
 
@@ -344,29 +354,37 @@ const seedToFirestore = async () => {
     }
 
     // 2. Batch write new records
+    const recordsToSync: any[] = [];
+
     await batchSeed(recordsToSeed, (record) => {
       const docId = getRecordId(record);
       const docRef = doc(db, 'job_titles', docId);
 
-      // Generate keywords for search (split by any non-alphanumeric character)
-      const keywords = record.title
-        .toLowerCase()
-        .split(/[^a-z0-9]+/)
-        .filter((k) => k.length > 1);
+      const finalRecord = {
+        title: record.title,
+        searchTitle: record.title.toLowerCase(),
+        soc: record.soc,
+        group: record.group,
+        country: targetCountry.value,
+        updatedAt: new Date(),
+        objectID: docId
+      };
+
+      recordsToSync.push(finalRecord);
 
       return {
         ref: docRef,
-        data: {
-          title: record.title,
-          searchTitle: record.title.toLowerCase(),
-          keywords,
-          soc: record.soc,
-          group: record.group,
-          country: targetCountry.value,
-          updatedAt: serverTimestamp()
-        }
+        data: finalRecord
       };
     });
+
+    // 3. Sync to Algolia
+    log(`Syncing to Algolia index 'job_titles'...`);
+    await $fetch('/api/admin/sync-algolia', {
+      method: 'POST',
+      body: { data: recordsToSync, indexName: 'job_titles' }
+    });
+    log('✅ Algolia Sync Complete.');
 
     parsedData.value = [];
     selectedFile.value = null;
