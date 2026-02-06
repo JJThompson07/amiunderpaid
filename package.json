@@ -23,7 +23,9 @@
     "vue": "^3.5.27",
     "vue-router": "^4.6.4",
     "vuefire": "^3.2.2",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "@nuxtjs/algolia": "^1.11.0",
+    "algoliasearch": "^4.22.1"
   },
   "devDependencies": {
     "@nuxt/eslint": "^0.7.6",

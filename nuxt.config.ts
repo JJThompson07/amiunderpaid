@@ -14,7 +14,12 @@ export default defineNuxtConfig({
   ssr: false,
 
   // ** 1. Register Modules **
-  modules: ['@nuxt/eslint', '@vueuse/nuxt', 'nuxt-vuefire', 'nuxt-gtag'],
+  modules: ['@nuxt/eslint', '@vueuse/nuxt', 'nuxt-vuefire', 'nuxt-gtag', '@nuxtjs/algolia'],
+
+  algolia: {
+    apiKey: process.env.ALGOLIA_SEARCH_API_KEY,
+    applicationId: process.env.ALGOLIA_APPLICATION_ID
+  },
 
   // ** 2. VueFire Configuration **
   vuefire: {

@@ -35,11 +35,13 @@
         <div class="flex flex-col md:flex-row gap-3">
           <!-- Location -->
           <div class="flex-1">
-            <AmIInput
+            <AmIAutocompleteInput
               v-model="location"
               label="Location"
               placeholder="e.g. London"
-              :icon="MapPin" />
+              :icon="MapPin"
+              :options="locationOptions"
+              @update:model-value="fetchLocations" />
           </div>
 
           <!-- Salary -->
@@ -77,10 +79,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Search, MapPin, Banknote } from 'lucide-vue-next';
-import { useFirestore } from 'vuefire';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-
-const db = useFirestore();
 
 const country = ref('UK');
 const title = ref('');
@@ -90,6 +88,7 @@ const period = ref('year');
 const loading = ref(false);
 const fetching = ref(false);
 const titleOptions = ref<string[]>([]);
+const locationOptions = ref<string[]>([]);
 
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 
@@ -117,58 +116,55 @@ const fetchTitles = async (val: string) => {
     titleOptions.value = [];
     return;
   }
-  if (!db) return;
 
   fetching.value = true;
-  const searchTerm = val.toLowerCase();
+  const searchTerm = val.trim();
 
   const targetCollection = country.value === 'USA' ? 'salary_benchmarks' : 'job_titles';
 
   try {
-    // 1. Prefix Search (Starts with...)
-    const prefixQ = query(
-      collection(db, targetCollection),
-      where('country', '==', country.value),
-      where('searchTitle', '>=', searchTerm),
-      where('searchTitle', '<=', searchTerm + '\uf8ff'),
-      limit(50)
-    );
+    const { $algolia } = useNuxtApp();
+    const index = $algolia.initIndex(targetCollection);
 
-    // 2. Keyword Search (Contains word...)
-    // Note: Requires composite index on [country, keywords]
-    const keywordQ = query(
-      collection(db, targetCollection),
-      where('country', '==', country.value),
-      where('keywords', 'array-contains', searchTerm),
-      limit(50)
-    );
+    const { hits } = await index.search(searchTerm, {
+      filters: `country:${country.value}`,
+      hitsPerPage: 20
+    });
 
-    // Run queries in parallel but handle failures independently (e.g. missing index)
-    const [prefixSnap, keywordSnap] = await Promise.allSettled([
-      getDocs(prefixQ),
-      getDocs(keywordQ)
-    ]);
+    // Deduplicate and format
+    const results = new Set<string>();
+    
+    hits.forEach((hit: any) => {
+      const label = hit.group ? `${hit.title} (${hit.group})` : hit.title;
+      results.add(label);
+    });
 
-    // Merge and deduplicate results
-    const results = new Map<string, string>();
-    const processDoc = (d: any) => {
-      const data = d.data();
-      const label = data.group ? `${data.title} (${data.group})` : data.title;
-      results.set(label, label);
-    };
+    titleOptions.value = Array.from(results);
+  } catch (e) {
+    console.error(e);
+  } finally {
+    fetching.value = false;
+  }
+};
 
-    if (prefixSnap.status === 'fulfilled') {
-      prefixSnap.value.docs.forEach(processDoc);
-    } else {
-      console.error('Prefix search failed:', prefixSnap.reason);
-    }
-    if (keywordSnap.status === 'fulfilled') {
-      keywordSnap.value.docs.forEach(processDoc);
-    } else {
-      console.error('Keyword search failed:', keywordSnap.reason);
-    }
+const fetchLocations = async (val: string) => {
+  if (!val || val.length < 2) {
+    titleOptions.value = [];
+    return;
+  }
 
-    titleOptions.value = Array.from(results.values());
+  fetching.value = true;
+
+  try {
+    const { $algolia } = useNuxtApp();
+    const index = $algolia.initIndex('regional_salary_benchmarks');
+
+    const { hits } = await index.search(val, {
+      filters: `country:${country.value}`,
+      hitsPerPage: 20
+    });
+
+    locationOptions.value = hits.map((h: any) => h.location);
   } catch (e) {
     // Silent fail for autocomplete
     console.error(e);

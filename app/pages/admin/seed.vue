@@ -28,9 +28,9 @@
           <div class="flex flex-col justify-center gap-2">
             <div
               v-for="record in existingData"
-              :key="record.country + record.year"
+              :key="record.country + record.year + record.scope"
               class="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-sm text-xs font-bold text-slate-600 flex items-center gap-2 flex justify-between">
-              <div class="flex gap-1">
+              <div class="flex items-center gap-2">
                 <span
                   class="w-10"
                   :class="record.country === 'UK' ? 'text-primary-600' : 'text-secondary-600'"
@@ -43,6 +43,10 @@
                   record.period
                 }}</span>
                 <span class="text-slate-300">|</span>
+                <span class="uppercase text-[10px] font-bold tracking-wider text-indigo-400">{{
+                  record.scope
+                }}</span>
+                <span class="text-slate-300">|</span>
                 <span class="text-slate-500 font-medium"
                   >{{ record.count.toLocaleString() }} records</span
                 >
@@ -51,7 +55,7 @@
                 :disabled="loading"
                 class="ml-1 p-0.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete this dataset"
-                @click="deleteRecords(record.country, record.year, record.period)">
+                @click="deleteRecords(record.country, record.year, record.period, record.scope)">
                 <X class="w-3 h-3" />
               </button>
             </div>
@@ -61,25 +65,48 @@
 
       <!-- CONFIGURATION SECTION -->
       <div class="mb-8 space-y-6">
-        <div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-2 gap-4">
+          
           <!-- COUNTRY TOGGLE -->
           <div class="flex flex-col gap-2">
             <label
+            class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
+            Region
+          </label>
+          <div class="flex p-1 bg-slate-100 rounded-xl">
+            <button
+            v-for="c in ['UK', 'USA']"
+            :key="c"
+            class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
+            :class="
+                  targetCountry === c
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-600'
+                  "
+                @click="setCountry(c)">
+                {{ c }}
+              </button>
+            </div>
+          </div>
+          
+          <!-- SCOPE TOGGLE -->
+          <div class="flex flex-col gap-2">
+            <label
               class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
-              Region
+              Data Scope
             </label>
             <div class="flex p-1 bg-slate-100 rounded-xl">
               <button
-                v-for="c in ['UK', 'USA']"
-                :key="c"
+                v-for="s in ['National', 'Regional']"
+                :key="s"
                 class="flex-1 py-2 rounded-lg text-xs font-bold transition-all"
                 :class="
-                  targetCountry === c
+                  targetScope === s.toLowerCase()
                     ? 'bg-white text-indigo-600 shadow-sm'
                     : 'text-slate-400 hover:text-slate-600'
                 "
-                @click="setCountry(c)">
-                {{ c }}
+                @click="targetScope = s.toLowerCase()">
+                {{ s }}
               </button>
             </div>
           </div>
@@ -94,7 +121,7 @@
               <button
                 v-for="p in ['Year', 'Hour', 'Week']"
                 :key="p"
-                :disabled="targetCountry === 'USA'"
+                :disabled="targetCountry !== 'UK' || p !== 'Year'"
                 class="flex-1 py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :class="
                   targetPeriod === p.toLowerCase()
@@ -197,14 +224,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { Database, UploadCloud, CheckCircle2, Lock, LoaderCircle, X } from 'lucide-vue-next';
 import { useFirestore, useCurrentUser } from 'vuefire';
-import {
-  doc,
-  serverTimestamp,
-  collection,
-  query,
-  where,
-  getCountFromServer
-} from 'firebase/firestore';
+import { doc, collection, query, where, getCountFromServer } from 'firebase/firestore';
 import type { SalaryRecord } from '../../../utils/seedData';
 
 /**
@@ -223,48 +243,67 @@ const parsing = ref(false);
 const { status, consoleRef, log } = useConsoleLog();
 const { loading, batchDelete, batchSeed } = useFirestoreAdmin(log);
 
+const targetScope = ref('national'); // 'national' | 'regional'
 const targetCountry = ref('UK');
 const targetPeriod = ref('year');
 const targetYear = ref(2026);
 const selectedFile = ref<File | null>(null);
 const fileName = ref('');
 const parsedData = ref<(SalaryRecord & { period: string })[]>([]);
-const existingData = ref<{ country: string; year: number; period: string; count: number }[]>([]);
+const existingData = ref<{ country: string; year: number; period: string; count: number; scope: string }[]>([]);
 
 // ** methods **
 
 const fetchSummary = async () => {
   if (!db) return;
   const countries = ['UK', 'USA'];
-  const periods = ['year', 'hour', 'week'];
+  const periods = ['year'];
 
   // Generate last 5 years dynamically
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i + 1);
 
-  const results: { country: string; year: number; period: string; count: number }[] = [];
+  const results: { country: string; year: number; period: string; count: number; scope: string }[] = [];
+  const collections = [
+    { name: 'salary_benchmarks', scope: 'National' },
+    { name: 'regional_salary_benchmarks', scope: 'Regional' }
+  ];
 
-  for (const country of countries) {
-    for (const year of years) {
-      for (const period of periods) {
-        const q = query(
-          collection(db, 'salary_benchmarks'),
-          where('country', '==', country),
-          where('year', '==', year),
-          where('period', '==', period)
-        );
-        const snapshot = await getCountFromServer(q);
-        const count = snapshot.data().count;
-        if (count > 0) {
-          results.push({ country, year, period, count });
+  const promises = [];
+
+  for (const col of collections) {
+    for (const country of countries) {
+      for (const year of years) {
+        for (const period of periods) {
+          promises.push((async () => {
+            try {
+              const q = query(
+                collection(db, col.name),
+                where('country', '==', country),
+                where('year', '==', year),
+                where('period', '==', period)
+              );
+              const snapshot = await getCountFromServer(q);
+              const count = snapshot.data().count;
+              if (count > 0) {
+                results.push({ country, year, period, count, scope: col.scope });
+              }
+            } catch (e) {
+              console.warn(`Failed to fetch summary for ${col.name}:`, e);
+            }
+          })());
         }
       }
     }
   }
+
+  await Promise.all(promises);
+
   existingData.value = results.sort(
-    (a, b) => b.year - a.year || a.country.localeCompare(b.country)
+    (a, b) => b.year - a.year || a.country.localeCompare(b.country) || a.scope.localeCompare(b.scope)
   );
 };
+
 
 const setCountry = (c: string) => {
   targetCountry.value = c;
@@ -285,23 +324,42 @@ const onFileSelect = (e: Event) => {
   }
 };
 
-const deleteRecords = async (country: string, year: number, period: string) => {
+const deleteRecords = async (country: string, year: number, period: string, scope: string) => {
   if (!db) return;
   if (
     !confirm(
-      `Are you sure you want to delete ALL records for ${country} ${year} (${period})? This cannot be undone.`
+      `Are you sure you want to delete ALL ${scope} records for ${country} ${year} (${period})? This cannot be undone.`
     )
   ) {
     return;
   }
 
+  const collectionName = scope === 'National' ? 'salary_benchmarks' : 'regional_salary_benchmarks';
   const q = query(
-    collection(db, 'salary_benchmarks'),
+    collection(db, collectionName),
     where('country', '==', country),
     where('year', '==', year),
     where('period', '==', period)
   );
+  
+  // 1. Delete from Firestore
   await batchDelete(q, `${country} ${year} (${period}) data`);
+
+  // 2. Delete from Algolia
+  log(`Clearing Algolia records for ${country} ${year}...`);
+  try {
+    await $fetch('/api/admin/clear-algolia', {
+      method: 'POST',
+      body: {
+        indexName: collectionName,
+        filters: `country:${country} AND year:${year} AND period:${period}`
+      }
+    });
+    log('✅ Algolia index cleared.');
+  } catch (e: any) {
+    log(`⚠️ Failed to clear Algolia: ${e.message}`);
+  }
+
   await fetchSummary();
 };
 
@@ -310,7 +368,7 @@ const handleParse = async () => {
   if (!selectedFile.value) return;
 
   parsing.value = true;
-  log(`Initiating upload: ${targetCountry.value} data...`);
+  log(`Initiating upload: ${targetCountry.value} (${targetScope.value}) data...`);
 
   const formData = new FormData();
   formData.append('file', selectedFile.value);
@@ -318,15 +376,18 @@ const handleParse = async () => {
   formData.append('year', targetYear.value.toString());
   formData.append('period', targetPeriod.value);
 
+  const endpoint =
+    targetScope.value === 'national' ? '/api/admin/parse' : '/api/admin/parse-region';
+
   try {
     // 2. Request parsing from server API
-    log(`Sending file to server parser...`);
+    log(`Sending file to server parser (${endpoint})...`);
     const response = await $fetch<{
       success: boolean;
       data: (SalaryRecord & { period: string })[];
       count: number;
       error?: string;
-    }>('/api/admin/parse', {
+    }>(endpoint, {
       method: 'POST',
       body: formData
     });
@@ -352,8 +413,14 @@ const seedToFirestore = async () => {
   loading.value = true;
   log('Starting Firestore Batch Sync...');
 
+  const collectionName =
+    targetScope.value === 'national' ? 'salary_benchmarks' : 'regional_salary_benchmarks';
+
+  const recordsToSync: any[] = [];
+
   try {
-    await batchSeed(parsedData.value, (record) => {
+    // 1. Prepare and Save to Firestore
+    await batchSeed(parsedData.value, (record: any) => {
       // Create deterministic IDs
       const cleanTitle = record.title
         .toLowerCase()
@@ -366,33 +433,45 @@ const seedToFirestore = async () => {
       const docId =
         `${record.country}-${cleanLocation}-${cleanTitle}-${record.year}-${record.period}`.toLowerCase();
 
-      const docRef = doc(db, 'salary_benchmarks', docId);
+      const docRef = doc(db, collectionName, docId);
 
-      // Generate keywords for search (split by space, comma, parens, dash)
-      const keywords = record.title
-        .toLowerCase()
-        .split(/[\s,()-]+/)
-        .filter((k) => k.length > 1);
+      const finalRecord = {
+        ...record,
+        searchTitle: record.title.toLowerCase(),
+        searchLocation: record.location.toLowerCase(),
+        updatedAt: new Date(), // Use Date instead of serverTimestamp for JSON compatibility
+        objectID: docId // For Algolia
+      };
+
+      recordsToSync.push(finalRecord);
 
       return {
         ref: docRef,
-        data: {
-          ...record,
-          searchTitle: record.title.toLowerCase(),
-          searchLocation: record.location.toLowerCase(),
-          keywords,
-          updatedAt: serverTimestamp()
-        }
+        data: finalRecord
       };
     });
+
+    // 2. Sync to Algolia
+    log(`Syncing ${recordsToSync.length} records to Algolia index '${collectionName}'...`);
+    await $fetch('/api/admin/sync-algolia', {
+      method: 'POST',
+      body: {
+        data: recordsToSync,
+        indexName: collectionName
+      }
+    });
+    log('✅ Algolia Sync Complete.');
 
     parsedData.value = [];
     selectedFile.value = null;
     fileName.value = '';
     await fetchSummary();
-  } catch (e) {
+  } catch (e: any) {
     console.error(e);
     loading.value = false;
+    if (e.code === 'permission-denied') {
+      log(`❌ PERMISSION ERROR: Missing write access for collection '${collectionName}'. Check firestore.rules.`);
+    }
     // Error logging handled in composable
   }
 };
@@ -415,5 +494,12 @@ watch(user, (newUser) => {
   } else {
     fetchSummary();
   }
+});
+
+watch(targetScope, (newScope) => {
+  if (newScope === 'regional') {
+    targetPeriod.value = 'year';
+  }
+  fetchSummary();
 });
 </script>

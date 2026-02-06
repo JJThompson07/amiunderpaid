@@ -2,9 +2,13 @@ import { readMultipartFormData, createError } from 'h3';
 import * as XLSX from 'xlsx';
 
 /**
- * Enhanced Server-side parser for ONS (UK) and BLS (USA) employment data.
- * Designed to handle the multi-row headers of ONS ASHE and the flat CSV of BLS OEWS.
- * This version focuses strictly on annual (yearly) salary data.
+ * Server-side parser for Regional/State employment data.
+ * * UK Source: ONS ASHE Work Geography Table 7.7a
+ * - 'Description' column = Location Name
+ * - Job Title defaults to 'All' (as these tables are aggregates)
+ * * USA Source: BLS OEWS State/Area data
+ * - 'AREA_TITLE' column = Location Name
+ * - 'OCC_TITLE' column = Job Title
  */
 
 interface SalaryRecord {
@@ -36,8 +40,8 @@ export default defineEventHandler(async (event) => {
     const normalizedData: SalaryRecord[] = [];
 
     if (country === 'UK') {
-      // ONS ASHE usually has multiple sheets (All, Male, Female, Full-Time, etc.)
-      // We prioritize the "Full-Time" sheet if it exists for annual pay.
+      // UK Regional Logic (PROV - Work Geography Table 7.7a)
+      // Prioritize "Full-Time" sheet
       const sheetName = workbook.SheetNames.find(s => s.includes('Full-Time')) || workbook.SheetNames[0];
       if (!sheetName) {
         throw createError({ statusCode: 422, message: 'No sheets found in the uploaded ONS file.' });
@@ -46,16 +50,9 @@ export default defineEventHandler(async (event) => {
       if (!sheet) {
         throw createError({ statusCode: 422, message: 'Could not find the data sheet in the uploaded ONS file.' });
       }
-
-      // Fix for ONS files: Force range recalculation by removing the explicit range metadata.
-      // Government files often have malformed ranges (e.g. claiming data is only A1:A1).
-      // if (sheet['!ref']) {
-      //   delete sheet['!ref'];
-      // }
-
       const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
 
-      // ONS files have metadata rows at the top. We look for the row containing "Description" and "Code"
+      // Find header row (Description/Code)
       let headerRowIndex = -1;
       for (let i = 0; i < Math.min(rawData.length, 10); i++) {
         if (rawData[i]?.includes('Description') && rawData[i]?.includes('Code')) {
@@ -67,33 +64,29 @@ export default defineEventHandler(async (event) => {
       if (headerRowIndex === -1) {
         throw createError({ statusCode: 422, message: 'Could not detect UK (ONS) header structure.' });
       }
-      
+
       const headers = rawData[headerRowIndex];
       if (!headers) {
-        throw createError({ statusCode: 422, message: 'Could not detect UK (ONS) headers.' });
+        throw createError({ statusCode: 422, message: 'Could not extract UK (ONS) headers from the first detected header row.' });
       }
-
-      const titleIdx = headers.indexOf('Description');
+      const descIdx = headers.indexOf('Description'); // Contains Location in regional files
       const codeIdx = headers.indexOf('Code');
       const medianIdx = headers.indexOf('Median');
 
       for (let i = headerRowIndex + 1; i < rawData.length; i++) {
         const row = rawData[i];
-        if (!row || !row[titleIdx]) continue;
+        if (!row || !row[descIdx]) continue;
 
-        const title = row[titleIdx].toString().trim();
+        const location = row[descIdx].toString().trim(); // Description is Location
         const id_code = row[codeIdx]?.toString().trim();
         const salaryVal = row[medianIdx];
 
         // ONS uses 'x', '..', or ':' for suppressed/missing data
         if (typeof salaryVal !== 'number' || isNaN(salaryVal)) continue;
 
-        // Filter out non-annual data (e.g. hourly/weekly) if mixed in or wrong file uploaded
-        if (salaryVal < 1000) continue;
-
         normalizedData.push({
-          title,
-          location: 'United Kingdom',
+          title: 'All', // UK Regional tables are aggregates, so we set title to 'All'
+          location,
           year: targetYear,
           salary: Math.round(salaryVal),
           country: 'UK',
@@ -101,16 +94,16 @@ export default defineEventHandler(async (event) => {
           period: 'year'
         });
       }
+
     } else {
-      // USA (BLS OEWS) Logic
-      if (workbook.SheetNames[0] === undefined) {
+      // USA Regional Logic (State/Area files)
+      if (!workbook.SheetNames[0]) {
         throw createError({ statusCode: 422, message: 'No sheets found in the uploaded BLS file.' });
       }
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       if (!sheet) {
         throw createError({ statusCode: 422, message: 'Could not find the data sheet in the uploaded BLS file.' });
       }
-      
       const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
 
       const headers = rawData[0] || [];
@@ -119,8 +112,8 @@ export default defineEventHandler(async (event) => {
       const codeIdx = headers.findIndex(h => h?.toString().toUpperCase() === 'OCC_CODE');
       const locIdx = headers.findIndex(h => h?.toString().toUpperCase() === 'AREA_TITLE');
 
-      if (titleIdx === -1 || salaryIdx === -1) {
-        throw createError({ statusCode: 422, message: 'Could not detect USA (BLS) header structure (OCC_TITLE/A_MEDIAN).' });
+      if (titleIdx === -1 || salaryIdx === -1 || locIdx === -1) {
+        throw createError({ statusCode: 422, message: 'Could not detect USA (BLS) header structure (OCC_TITLE/A_MEDIAN/AREA_TITLE).' });
       }
 
       for (let i = 1; i < rawData.length; i++) {
@@ -129,10 +122,10 @@ export default defineEventHandler(async (event) => {
 
         const title = row[titleIdx].toString().trim();
         const id_code = row[codeIdx]?.toString().trim();
-        const location = locIdx > -1 ? row[locIdx]?.toString().trim() : 'USA';
+        const location = row[locIdx].toString().trim(); // Explicitly use AREA_TITLE for location
         const salaryRaw = row[salaryIdx];
 
-        // BLS uses '*' for missing and '#' for >$239k. We skip '*' and treat '#' as the cap or skip.
+        // BLS uses '*' for missing and '#' for >$239k
         if (salaryRaw === '*' || salaryRaw === '#') continue;
 
         const salary = typeof salaryRaw === 'string' 
@@ -159,7 +152,7 @@ export default defineEventHandler(async (event) => {
       data: normalizedData
     };
   } catch (error: any) {
-    console.error('[Parser API Error]:', error);
+    console.error('[Region Parser API Error]:', error);
     throw createError({
       statusCode: error.statusCode || 500,
       message: error.message || 'Internal Server Error during parsing'
