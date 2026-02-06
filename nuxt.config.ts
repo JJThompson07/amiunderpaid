@@ -9,9 +9,9 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
-  // ** Disable SSR **
-  // This turns the app into an SPA, making Firebase integration much more stable
-  ssr: false,
+  // ** Server-Side Rendering **
+  // Enabled globally for SEO, but disabled for Admin routes via routeRules below
+  ssr: true,
 
   // ** 1. Register Modules **
   modules: ['@nuxt/eslint', '@vueuse/nuxt', 'nuxt-vuefire', 'nuxt-gtag', '@nuxtjs/algolia'],
@@ -41,6 +41,26 @@ export default defineNuxtConfig({
 
   gtag: {
     id: 'G-EZQYZSSRW1'
+  },
+
+  routeRules: {
+    // Admin pages should be SPA-only to handle client-side auth easily
+    '/admin/**': { ssr: false },
+    '/login': { ssr: false },
+
+    // Cache the API responses for 1 day to boost SEO performance
+    // This handles the dynamic title, country, and optional location
+    '/api/salary/**': { 
+      swr: 60 * 60 * 24, // 24 hours
+      cache: {
+        // This ensures /api/salary/nurse/uk is cached separately from /api/salary/dev/uk
+        varies: ['query'] 
+      }
+    },
+    // Cache the Salary Result pages for 1 day to boost SEO performance
+    '/salary/**': { 
+      swr: 60 * 60 * 24 // 24 hours
+    },
   },
 
   // ** 3. Runtime Config **
