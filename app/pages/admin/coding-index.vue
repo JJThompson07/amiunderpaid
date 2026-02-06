@@ -348,10 +348,10 @@ const seedToFirestore = async () => {
       const docId = getRecordId(record);
       const docRef = doc(db, 'job_titles', docId);
 
-      // Generate keywords for search (split by space, comma, parens, dash)
+      // Generate keywords for search (split by any non-alphanumeric character)
       const keywords = record.title
         .toLowerCase()
-        .split(/[\s,()-]+/)
+        .split(/[^a-z0-9]+/)
         .filter((k) => k.length > 1);
 
       return {

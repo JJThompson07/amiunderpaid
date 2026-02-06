@@ -35,11 +35,13 @@
         <div class="flex flex-col md:flex-row gap-3">
           <!-- Location -->
           <div class="flex-1">
-            <AmIInput
+            <AmIAutocompleteInput
               v-model="location"
               label="Location"
               placeholder="e.g. London"
-              :icon="MapPin" />
+              :icon="MapPin"
+              :options="locationOptions"
+              @update:model-value="fetchLocations" />
           </div>
 
           <!-- Salary -->
@@ -90,6 +92,7 @@ const period = ref('year');
 const loading = ref(false);
 const fetching = ref(false);
 const titleOptions = ref<string[]>([]);
+const locationOptions = ref<string[]>([]);
 
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 
@@ -120,55 +123,95 @@ const fetchTitles = async (val: string) => {
   if (!db) return;
 
   fetching.value = true;
-  const searchTerm = val.toLowerCase();
+  const searchTerm = val.toLowerCase().trim();
+  const searchTerms = searchTerm.split(/\s+/).filter((t) => t.length > 0);
 
   const targetCollection = country.value === 'USA' ? 'salary_benchmarks' : 'job_titles';
 
   try {
-    // 1. Prefix Search (Starts with...)
-    const prefixQ = query(
-      collection(db, targetCollection),
-      where('country', '==', country.value),
-      where('searchTitle', '>=', searchTerm),
-      where('searchTitle', '<=', searchTerm + '\uf8ff'),
-      limit(50)
+    const queries = [];
+
+    // 1. Prefix Search (Standard autocomplete)
+    queries.push(
+      getDocs(
+        query(
+          collection(db, targetCollection),
+          where('country', '==', country.value),
+          where('searchTitle', '>=', searchTerm),
+          where('searchTitle', '<=', searchTerm + '\uf8ff'),
+          limit(20)
+        )
+      )
     );
 
-    // 2. Keyword Search (Contains word...)
-    // Note: Requires composite index on [country, keywords]
-    const keywordQ = query(
-      collection(db, targetCollection),
-      where('country', '==', country.value),
-      where('keywords', 'array-contains', searchTerm),
-      limit(50)
-    );
+    // 2. Keyword Search (For "Building Surveyor" matching "Surveyor, Building")
+    // Pick the longest alphanumeric term to match against DB keywords
+    const keywordTerm = searchTerms
+      .map((t) => t.replace(/[^a-z0-9]/g, ''))
+      .filter((t) => t.length > 1)
+      .reduce((a, b) => (a.length >= b.length ? a : b), '');
 
-    // Run queries in parallel but handle failures independently (e.g. missing index)
-    const [prefixSnap, keywordSnap] = await Promise.allSettled([
-      getDocs(prefixQ),
-      getDocs(keywordQ)
-    ]);
-
-    // Merge and deduplicate results
-    const results = new Map<string, string>();
-    const processDoc = (d: any) => {
-      const data = d.data();
-      const label = data.group ? `${data.title} (${data.group})` : data.title;
-      results.set(label, label);
-    };
-
-    if (prefixSnap.status === 'fulfilled') {
-      prefixSnap.value.docs.forEach(processDoc);
-    } else {
-      console.error('Prefix search failed:', prefixSnap.reason);
+    if (keywordTerm) {
+      queries.push(
+        getDocs(
+          query(
+            collection(db, targetCollection),
+            where('country', '==', country.value),
+            where('keywords', 'array-contains', keywordTerm),
+            limit(100)
+          )
+        )
+      );
     }
-    if (keywordSnap.status === 'fulfilled') {
-      keywordSnap.value.docs.forEach(processDoc);
-    } else {
-      console.error('Keyword search failed:', keywordSnap.reason);
+
+    const snapshots = await Promise.all(queries);
+    const results = new Map<string, string>();
+
+    for (const snap of snapshots) {
+      for (const doc of snap.docs) {
+        const data = doc.data();
+        if (!data.title) continue;
+
+        const label = data.group ? `${data.title} (${data.group})` : data.title;
+        const labelLower = label.toLowerCase();
+
+        // Simple client-side check: Does the title contain all the words the user typed?
+        const isMatch = searchTerms.every((term) => labelLower.includes(term));
+
+        if (isMatch) {
+          results.set(label, label);
+        }
+      }
     }
 
     titleOptions.value = Array.from(results.values());
+  } catch (e) {
+    console.error(e);
+  } finally {
+    fetching.value = false;
+  }
+};
+
+const fetchLocations = async (val: string) => {
+  if (!val || val.length < 2) {
+    titleOptions.value = [];
+    return;
+  }
+  if (!db) return;
+
+  fetching.value = true;
+  const searchTerm = val.toLowerCase();
+
+  try {
+    const q = query(
+      collection(db, 'regional_salary_benchmarks'),
+      where('country', '==', country.value),
+      where('searchLocation', '>=', searchTerm),
+      where('searchLocation', '<=', searchTerm + '\uf8ff'),
+      limit(50)
+    );
+    const snap = await getDocs(q);
+    locationOptions.value = snap.docs.map(d => d.data().location);
   } catch (e) {
     // Silent fail for autocomplete
     console.error(e);
