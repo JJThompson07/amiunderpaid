@@ -1,5 +1,6 @@
 <template>
   <div
+    v-if="accessGranted"
     class="min-h-screen flex items-center justify-center bg-slate-50 p-4 relative overflow-hidden">
     <div
       class="absolute top-0 left-0 w-full h-[400px] bg-linear-to-b from-secondary-900 to-slate-50 z-0"></div>
@@ -88,6 +89,22 @@
       </div>
     </div>
   </div>
+  <div v-else>
+    <div class="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div class="text-center">
+        <h2 class="text-2xl font-bold text-slate-900 mb-4">404 Not Found</h2>
+        <p class="text-slate-500 mb-6">
+          The page you're looking for doesn't exist or you don't have access to it.
+        </p>
+        <NuxtLink to="/">
+          <AmIButton title="Go to homepage" text-colour="text-white">
+            Go to homepage
+          </AmIButton>
+        </NuxtLink>
+      </div>
+      </div>
+
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -98,18 +115,24 @@ import { useFirebaseAuth } from 'vuefire';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
 // ** data & refs **
-const email = ref('');
-const password = ref('');
-const loading = ref(false);
-const error = ref('');
+const email = ref<string>('');
+const password = ref<string>('');
+const loading = ref<boolean>(false);
+const accessGranted = ref<boolean>(false);
+const error = ref<string>('');
 
 const auth = useFirebaseAuth();
 const route = useRoute();
 
+// Check if the URL has the correct ?access=... parameter
+const isAccessGranted = computed(() => {
+  return route.query.access === process.env.NUXT_ADMIN_ACCESS_KEY;
+});
+
 // ** methods **
 const handleLogin = async () => {
   // 1. Pre-flight validation
-  if (!auth) {
+  if (!auth || !isAccessGranted.value) {
     error.value = 'The authentication service is not ready. Please refresh.';
     return;
   }

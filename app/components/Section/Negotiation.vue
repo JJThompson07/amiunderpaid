@@ -28,7 +28,7 @@
             <div class="mt-auto pt-4">
               <button
                 class="block w-full py-2.5 text-center text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
-                @click="showScript = !showScript">
+                @click="toggleScript">
                 {{ showScript ? 'Hide Script' : 'View Script' }}
               </button>
             </div>
@@ -125,6 +125,7 @@
 // imports
 import { Copy, CheckCircle2, TrendingUp, FileText, Mail } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
+import { trackResultAction } from '../../composables/useAnalytics';
 
 // ** type definitions **
 
@@ -184,6 +185,17 @@ Best regards,`;
 });
 
 // ** methods **
+const toggleScript = () => {
+  showScript.value = !showScript.value;
+
+  // only track the action when the user views the script, not when they hide it
+  if (showScript.value) {
+    trackResultAction('view_script', {
+      action: 'view_script',
+    });
+  }
+};
+
 const copyToClipboard = async () => {
   await navigator.clipboard.writeText(emailBody.value);
   copied.value = true;
