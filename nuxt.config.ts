@@ -47,7 +47,8 @@ export default defineNuxtConfig({
   // This helps Nuxt track these variables for client/server consistency
   runtimeConfig: {
     public: {
-      firebaseProjectId: process.env.FIREBASE_PROJECT_ID
+      firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
+      adminAccessKey: process.env.NUXT_ADMIN_ACCESS_KEY
     }
   },
 
@@ -58,7 +59,10 @@ export default defineNuxtConfig({
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (id.includes('node_modules') && (id.includes('firebase') || id.includes('@firebase'))) {
+            if (
+              id.includes('node_modules') &&
+              (id.includes('firebase') || id.includes('@firebase'))
+            ) {
               return 'firebase';
             }
           }

@@ -7,7 +7,11 @@
         </div>
         <div class="flex-1">
           <h3 class="text-lg font-bold text-slate-900">{{ location }}</h3>
-          <p class="text-xs text-slate-500">Comparing against the regional average for all jobs<span v-if="year"> from {{ year }}</span>.</p>
+          <p class="text-xs text-slate-500">
+            Comparing against the regional average for all jobs<span v-if="year">
+              from {{ year }}</span
+            >.
+          </p>
         </div>
         <div>
           <p class="text-sm text-slate-500 font-bold px-1">

@@ -28,7 +28,7 @@
             <div class="mt-auto pt-4">
               <button
                 class="block w-full py-2.5 text-center text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
-                @click="showScript = !showScript">
+                @click="toggleScript">
                 {{ showScript ? 'Hide Script' : 'View Script' }}
               </button>
             </div>
@@ -142,6 +142,7 @@ defineEmits(['close']);
 // ** data & refs **
 const copied = ref(false);
 const showScript = ref(false);
+const { trackResultAction } = useAnalytics();
 
 // ** computed properties **
 const diffAmount = computed(() => Math.abs(props.marketAverage - props.currentSalary));
@@ -150,40 +151,42 @@ const isUnderpaid = computed(() => props.marketAverage > props.currentSalary);
 const emailSubject = computed(() => `Subject: Salary Review Discussion - ${props.title} Role`);
 
 const emailBody = computed(() => {
-  if (isUnderpaid.value) {
-    return `Subject: ${emailSubject.value}
-
-Hi [Manager Name],
-
-I hope you're having a good week.
-
-I'm writing to request a meeting to discuss my compensation. 
-
-Based on my recent research into the current market for ${props.title} roles, the average benchmark is currently ${props.currencySymbol}${props.marketAverage.toLocaleString()}.
+  const emailBody = isUnderpaid.value
+    ? `Based on my recent research into the current market for ${props.title} roles, the average benchmark is currently ${props.currencySymbol}${props.marketAverage.toLocaleString()}.
 
 Given my recent contributions to [Project/Team Name] and the current market rate, I would like to discuss bringing my salary closer to this benchmark (${props.currencySymbol}${props.marketAverage.toLocaleString()}).
 
-I'm keen to continue delivering value to the team and would appreciate the opportunity to discuss this further.
+I'm keen to continue delivering value to the team and would appreciate the opportunity to discuss this further.`
+    : `I would appreciate the opportunity to schedule a brief meeting to discuss my performance and career progression.
 
-Best regards,`;
-  } else {
-    return `Subject: ${emailSubject.value}
+Over the past year, I have [mention 1-2 key achievements]. I am keen to discuss how my compensation can evolve to reflect these increased responsibilities and the value I am delivering to the team.
+
+When would be a good time to chat?`;
+
+  return `Subject: ${emailSubject.value}
 
 Hi [Manager Name],
 
 I hope you're having a good week.
 
-I would appreciate the opportunity to schedule a brief meeting to discuss my performance and career progression.
+I'm writing to request a meeting to discuss my current role and a salary alignment. 
 
-Over the past year, I have [mention 1-2 key achievements]. I am keen to discuss how my compensation can evolve to reflect these increased responsibilities and the value I am delivering to the team.
+${emailBody}
 
-When would be a good time to chat?
-
-Best regards,`;
-  }
+Best regards,
+[Your Name]`;
 });
 
 // ** methods **
+const toggleScript = () => {
+  showScript.value = !showScript.value;
+
+  // only track the action when the user views the script, not when they hide it
+  if (showScript.value) {
+    trackResultAction('view_script');
+  }
+};
+
 const copyToClipboard = async () => {
   await navigator.clipboard.writeText(emailBody.value);
   copied.value = true;
