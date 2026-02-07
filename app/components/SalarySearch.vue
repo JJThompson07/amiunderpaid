@@ -263,7 +263,8 @@ const handleSearch = async () => {
       period: period.value !== 'year' ? period.value : undefined
     },
     state: {
-      q: title.value // Pass original title for accurate lookup
+      q: title.value, // Pass original title for accurate lookup
+      confirmed: true
     }
   });
   loading.value = false;
