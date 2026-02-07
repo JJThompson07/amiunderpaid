@@ -94,7 +94,7 @@
             class="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium border border-amber-100">
             <Info class="w-3.5 h-3.5" />
             <span>
-              Exact match not found. Showing government data for
+              Exact match not found. Showing {{ marketDataYear }} government data for
               <span class="font-bold">{{ matchedTitle }}</span>
               <span
                 v-if="
@@ -277,7 +277,9 @@
         :display-title="matchedTitle || displayTitle"
         :market-average="marketAverage"
         :user-salary="userSalary"
-        :regional-data="regionalData" />
+        :regional-data="regionalData"
+        :year="marketDataYear"
+         />
 
       <!-- Ambiguity Modal -->
       <LazyModalAmbiguity
