@@ -10,7 +10,9 @@
         <strong>{{ location || country }}</strong> to give you an accurate verdict.
       </p>
       <NuxtLink to="/">
-        <AmIButton text-colour="text-white"> Try a different search </AmIButton>
+        <AmIButton title="Try a different search" text-colour="text-white">
+          Try a different search
+        </AmIButton>
       </NuxtLink>
     </div>
   </div>

@@ -19,7 +19,8 @@
       <div v-if="param" class="relative">
         <select
           v-model="param"
-          class="h-full py-0 px-4 font-medium transition-colors border-0 border-l cursor-pointer rounded-r-xl bg-slate-100 text-slate-500 sm:text-sm border-slate-200 hover:bg-slate-200 hover:outline-0">
+          class="h-full py-0 px-4 font-medium transition-colors border-0 border-l cursor-pointer rounded-r-xl bg-slate-100 text-slate-500 sm:text-sm border-slate-200 hover:bg-slate-200 hover:outline-0"
+          :disabled="paramsDisabled">
           <option v-for="p in params" :key="p.value" :value="p.value">{{ p.label }}</option>
         </select>
       </div>
@@ -67,6 +68,10 @@ const props = defineProps({
   type: {
     type: String,
     default: 'text'
+  },
+  paramsDisabled: {
+    type: Boolean,
+    default: false
   }
 });
 

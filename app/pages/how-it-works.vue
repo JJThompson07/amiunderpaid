@@ -74,7 +74,7 @@
       <!-- CTA -->
       <div class="mt-16 text-center">
         <NuxtLink to="/">
-          <AmIButton size="lg">Check My Salary Now</AmIButton>
+          <AmIButton title="Go to salary search" size="lg">Check My Salary Now</AmIButton>
         </NuxtLink>
       </div>
     </div>

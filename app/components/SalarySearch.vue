@@ -18,6 +18,14 @@
       </div>
     </div>
 
+    <div class="flex justify-end absolute top-0 right-0">
+      <AmIButton v-if="!showCalc" title="Salary converter" @click="showCalc = true"
+        ><CalculatorIcon class="w-5 h-5 text-slate-50"
+      /></AmIButton>
+
+      <ModalHourlyCalculator v-if="showCalc" :country="country" @close="showCalc = false" />
+    </div>
+
     <div class="p-3 bg-white shadow-2xl rounded-3xl ring-1 ring-slate-900/5">
       <form class="flex flex-col gap-3" @submit.prevent="handleSearch">
         <!-- Job Title -->
@@ -38,7 +46,7 @@
             <AmIAutocompleteInput
               v-model="location"
               label="Location"
-              placeholder="e.g. London"
+              :placeholder="`e.g. ${country === 'UK' ? 'London' : 'New York'}`"
               :icon="MapPin"
               :options="locationOptions"
               @update:model-value="fetchLocations" />
@@ -52,7 +60,7 @@
               type="number"
               label="Current Salary"
               :placeholder="currencySymbol + '0'"
-              :icon="Banknote"
+              :icon="Wallet"
               :params="periodOptions" />
           </div>
         </div>
@@ -66,6 +74,7 @@
               class="w-full text-center"
               :loading="loading"
               :disabled="title === ''"
+              title="Check salary"
               @click.prevent="handleSearch">
               Check Salary
             </AmIButton>
@@ -78,7 +87,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { Search, MapPin, Banknote } from 'lucide-vue-next';
+import { Search, MapPin, CalculatorIcon, Wallet } from 'lucide-vue-next';
 import type { SearchClient } from 'algoliasearch';
 
 const country = ref('UK');
@@ -90,6 +99,7 @@ const loading = ref(false);
 const fetching = ref(false);
 const titleOptions = ref<string[]>([]);
 const locationOptions = ref<string[]>([]);
+const showCalc = ref<boolean>(false);
 
 const { trackSearch } = useAnalytics();
 
@@ -99,10 +109,6 @@ const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 // Restricts options based on selected country
 const periodOptions = computed(() => {
   const opts = [{ label: '/ yr', value: 'year' }];
-  if (country.value === 'UK') {
-    opts.push({ label: '/ hr', value: 'hour' });
-    opts.push({ label: '/ wk', value: 'week' });
-  }
   return opts;
 });
 

@@ -8,7 +8,10 @@
       textColour,
       { 'pointer-events-none': disabled },
       { 'whitespace-nowrap': !wrap }
-    ]">
+    ]"
+    role="button"
+    :disabled="disabled"
+    :title="title">
     <section class="relative z-10 flex h-full flex-col rounded-md">
       <slot />
     </section>
@@ -43,6 +46,10 @@ const props = defineProps({
   wrap: {
     type: Boolean,
     default: false
+  },
+  title: {
+    type: String,
+    default: ''
   }
 });
 
