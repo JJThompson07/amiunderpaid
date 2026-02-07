@@ -47,7 +47,8 @@ export default defineNuxtConfig({
   // This helps Nuxt track these variables for client/server consistency
   runtimeConfig: {
     public: {
-      firebaseProjectId: process.env.FIREBASE_PROJECT_ID
+      firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
+      adminAccessKey: process.env.NUXT_ADMIN_ACCESS_KEY
     }
   },
 

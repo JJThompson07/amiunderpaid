@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="accessGranted"
+    v-if="isAccessGranted"
     class="min-h-screen flex items-center justify-center bg-slate-50 p-4 relative overflow-hidden">
     <div
       class="absolute top-0 left-0 w-full h-[400px] bg-linear-to-b from-secondary-900 to-slate-50 z-0"></div>
@@ -118,15 +118,15 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 const email = ref<string>('');
 const password = ref<string>('');
 const loading = ref<boolean>(false);
-const accessGranted = ref<boolean>(false);
 const error = ref<string>('');
 
 const auth = useFirebaseAuth();
 const route = useRoute();
+const config = useRuntimeConfig();
 
 // Check if the URL has the correct ?access=... parameter
 const isAccessGranted = computed(() => {
-  return route.query.access === process.env.NUXT_ADMIN_ACCESS_KEY;
+  return route.query.access === config.public.adminAccessKey;
 });
 
 // ** methods **
