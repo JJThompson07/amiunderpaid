@@ -278,8 +278,7 @@
         :market-average="marketAverage"
         :user-salary="userSalary"
         :regional-data="regionalData"
-        :year="marketDataYear"
-         />
+        :year="marketDataYear" />
 
       <!-- Ambiguity Modal -->
       <LazyModalAmbiguity

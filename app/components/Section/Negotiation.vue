@@ -191,7 +191,7 @@ const toggleScript = () => {
   // only track the action when the user views the script, not when they hide it
   if (showScript.value) {
     trackResultAction('view_script', {
-      action: 'view_script',
+      action: 'view_script'
     });
   }
 };

@@ -59,7 +59,10 @@ export default defineNuxtConfig({
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (id.includes('node_modules') && (id.includes('firebase') || id.includes('@firebase'))) {
+            if (
+              id.includes('node_modules') &&
+              (id.includes('firebase') || id.includes('@firebase'))
+            ) {
               return 'firebase';
             }
           }

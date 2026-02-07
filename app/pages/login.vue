@@ -97,13 +97,10 @@
           The page you're looking for doesn't exist or you don't have access to it.
         </p>
         <NuxtLink to="/">
-          <AmIButton title="Go to homepage" text-colour="text-white">
-            Go to homepage
-          </AmIButton>
+          <AmIButton title="Go to homepage" text-colour="text-white"> Go to homepage </AmIButton>
         </NuxtLink>
       </div>
-      </div>
-
+    </div>
   </div>
 </template>
 
