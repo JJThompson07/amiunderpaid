@@ -66,7 +66,7 @@
       </div>
 
       <!-- No Data Found State -->
-      <AmICardNoData
+      <LazyAmICardNoData
         v-else-if="!hasData"
         :title="displayTitle"
         :location="location"
@@ -270,7 +270,7 @@
       </div>
 
       <!-- Regional Comparison Card (UK Only) -->
-      <SectionUKComparison
+      <LazySectionUKComparison
         v-if="country === 'UK' && regionalData && location"
         :country="country"
         :location="location"
@@ -280,7 +280,7 @@
         :regional-data="regionalData" />
 
       <!-- Ambiguity Modal -->
-      <ModalAmbiguity
+      <LazyModalAmbiguity
         v-if="showAmbiguityModal"
         :title="displayTitle"
         :matches="ambiguousMatches"
@@ -288,7 +288,7 @@
         @close="showAmbiguityModal = false" />
 
       <!-- The Negotiation Component -->
-      <SectionNegotiation
+      <LazySectionNegotiation
         v-if="hasData"
         :title="displayTitle"
         :current-salary="userSalary"
