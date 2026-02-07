@@ -125,7 +125,6 @@
 // imports
 import { Copy, CheckCircle2, TrendingUp, FileText, Mail } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
-import { trackResultAction } from '../../composables/useAnalytics';
 
 // ** type definitions **
 
@@ -143,6 +142,7 @@ defineEmits(['close']);
 // ** data & refs **
 const copied = ref(false);
 const showScript = ref(false);
+const { trackResultAction } = useAnalytics();
 
 // ** computed properties **
 const diffAmount = computed(() => Math.abs(props.marketAverage - props.currentSalary));
@@ -190,9 +190,7 @@ const toggleScript = () => {
 
   // only track the action when the user views the script, not when they hide it
   if (showScript.value) {
-    trackResultAction('view_script', {
-      action: 'view_script'
-    });
+    trackResultAction('view_script');
   }
 };
 
