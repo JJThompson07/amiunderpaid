@@ -53,6 +53,17 @@ export default defineNuxtConfig({
 
   // ** 4. Vite / Tailwind **
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules') && (id.includes('firebase') || id.includes('@firebase'))) {
+              return 'firebase';
+            }
+          }
+        }
+      }
+    }
   }
 });

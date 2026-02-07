@@ -23,7 +23,7 @@
         ><CalculatorIcon class="w-5 h-5 text-slate-50"
       /></AmIButton>
 
-      <ModalSalaryConverter v-if="showCalc" :country="country" @close="showCalc = false" />
+      <LazyModalSalaryConverter v-if="showCalc" :country="country" @close="showCalc = false" />
     </div>
 
     <div class="p-3 bg-white shadow-2xl rounded-3xl ring-1 ring-slate-900/5">
@@ -263,7 +263,8 @@ const handleSearch = async () => {
       period: period.value !== 'year' ? period.value : undefined
     },
     state: {
-      q: title.value // Pass original title for accurate lookup
+      q: title.value, // Pass original title for accurate lookup
+      confirmed: true
     }
   });
   loading.value = false;
