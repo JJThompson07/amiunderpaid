@@ -42,15 +42,10 @@
             bg-colour="bg-transparent"
             text-colour="text-slate-600"
             animation-colour="bg-primary-400"
+            title="Sign out"
             @click="handleLogout"
             >Sign Out</AmIButton
           >
-          <!-- <AmIButton
-            bg-colour="bg-primary-900"
-            text-colour="text-slate-100"
-            animation-colour="bg-primary-600"
-            >Post a Job</AmIButton
-          > -->
         </div>
       </div>
     </header>

@@ -6,7 +6,7 @@
           <MapPin class="w-5 h-5" />
         </div>
         <div class="flex-1">
-          <h3 class="text-lg font-bold text-slate-900">Location Analysis: {{ location }}</h3>
+          <h3 class="text-lg font-bold text-slate-900">{{ location }}</h3>
           <p class="text-xs text-slate-500">Comparing against the regional average for all jobs.</p>
         </div>
         <div>

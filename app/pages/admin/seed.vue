@@ -199,6 +199,7 @@
             block
             bg-colour="bg-secondary-600"
             animation-colour="bg-secondary-400"
+            title="Sync Records"
             @click="seedToFirestore">
             <div class="flex items-center gap-2">
               <CheckCircle2 class="w-4 h-4" />
@@ -219,6 +220,7 @@
             block
             :bg-colour="!selectedFile ? 'bg-slate-200' : 'bg-primary-600'"
             :text-colour="!selectedFile ? 'text-slate-400' : 'text-white'"
+            title="Parse Spreadsheet"
             @click="handleParse">
             <div class="flex items-center justify-center gap-2">
               <LoaderCircle v-if="parsing" class="w-4 h-4 animate-spin" />

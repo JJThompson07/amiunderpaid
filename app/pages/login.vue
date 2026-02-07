@@ -64,7 +64,12 @@
           <!-- SUBMIT BUTTON -->
           <div class="pt-2">
             <AmIAnimatedBorder :loading="loading" active-bg-colour="bg-slate-400">
-              <AmIButton block :disabled="loading" type="submit" @click.prevent="handleLogin">
+              <AmIButton
+                title="login"
+                block
+                :disabled="loading"
+                type="submit"
+                @click.prevent="handleLogin">
                 <div class="flex items-center justify-center gap-2">
                   <span
                     v-if="loading"
