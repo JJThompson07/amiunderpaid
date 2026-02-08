@@ -63,10 +63,6 @@
             carefully vet all affiliate partners to ensure they meet our standards for quality and
             relevance to career development.
           </p>
-          <p class="mt-2">
-            We only recommend services that we believe provide genuine value to our users in their
-            career progression.
-          </p>
         </section>
       </div>
     </div>
