@@ -1,7 +1,7 @@
 <template>
   <div
     ref="button"
-    class="relative overflow-hidden rounded-lg px-4 py-2 select-none transition-all duration-700 ease-in-out font-bold"
+    class="relative overflow-hidden rounded-lg px-4 py-2 select-none transition-all duration-700 ease-in-out font-bold text-center shadow-md"
     :class="[
       backgroundColour,
       loading ? 'cursor-wait' : 'cursor-pointer',

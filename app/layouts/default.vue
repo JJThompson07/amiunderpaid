@@ -58,10 +58,12 @@
     <!-- Simple Footer -->
     <footer class="py-8 text-sm text-center bg-white border-t border-slate-200 text-slate-400">
       <p>&copy; 2026 Am I Underpaid. All rights reserved.</p>
-      <div class="mt-4">
-        <NuxtLink to="/login" class="text-xs text-slate-300 hover:text-slate-500 transition-colors"
-          >Admin Access</NuxtLink
-        >
+      <div class="mt-4 flex justify-center gap-6 items-center">
+        <NuxtLink
+          to="/privacy-policy"
+          class="text-xs text-slate-400 hover:text-slate-600 transition-colors">
+          Privacy Policy
+        </NuxtLink>
       </div>
     </footer>
   </div>

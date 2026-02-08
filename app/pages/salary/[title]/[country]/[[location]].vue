@@ -17,57 +17,17 @@
       v-else
       class="absolute top-0 left-0 w-full h-125 bg-linear-to-b from-slate-800 to-slate-50 z-0"></div>
 
-    <div class="relative max-w-3xl px-4 mx-auto">
+    <div class="relative max-w-4xl px-4 mx-auto flex flex-col gap-6">
       <!-- Breadcrumbs -->
-      <nav
-        class="flex items-center gap-2 my-6 text-xs font-medium text-slate-300/80 flex-wrap"
-        aria-label="Breadcrumb">
-        <ol class="flex items-center gap-2 flex-wrap">
-          <li>
-            <NuxtLink to="/" class="flex items-center gap-1 hover:text-white transition-colors">
-              <Home class="w-3 h-3" />
-              Home
-            </NuxtLink>
-          </li>
-          <li class="text-slate-500 select-none">/</li>
-          <li>
-            <NuxtLink to="/" class="hover:text-white transition-colors"> Salaries </NuxtLink>
-          </li>
-          <li class="text-slate-500 select-none">/</li>
-          <li>
-            <NuxtLink
-              :to="`/salary/${route.params.title}/${route.params.country}`"
-              class="hover:text-white transition-colors">
-              {{ displayTitle }}
-            </NuxtLink>
-          </li>
-          <li class="text-slate-500 select-none">/</li>
-          <li>
-            <NuxtLink
-              :to="`/salary/${route.params.title}/${route.params.country}`"
-              class="hover:text-white transition-colors">
-              {{ country }}
-            </NuxtLink>
-          </li>
-          <li v-if="location" class="text-slate-500 select-none">/</li>
-          <li v-if="location" class="text-slate-100" aria-current="page">{{ location }}</li>
-        </ol>
-      </nav>
-
-      <!-- Loading State -->
-      <div
-        v-if="loading"
-        class="flex items-center justify-center h-64 bg-white rounded-2xl shadow-xl">
-        <div class="flex flex-col items-center gap-4">
-          <div
-            class="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-          <p class="text-sm font-medium text-slate-500">Searching 140,000+ records...</p>
-        </div>
-      </div>
+      <AmILocationBreadcrumbs
+        :route="route"
+        :display-title="displayTitle"
+        :country="country"
+        :location="location" />
 
       <!-- No Data Found State -->
       <LazyAmICardNoData
-        v-else-if="!hasData"
+        v-if="!hasData"
         :title="displayTitle"
         :location="location"
         :country="country"
@@ -75,9 +35,7 @@
         :period="userPeriod" />
 
       <!-- Result Headline Card (Only show if we have data) -->
-      <div
-        v-else
-        class="mb-6 overflow-hidden bg-white border shadow-xl rounded-2xl border-slate-200">
+      <div v-else class="overflow-hidden bg-white border shadow-xl rounded-2xl border-slate-200">
         <div class="p-6 text-center">
           <p class="mb-2 text-sm font-medium text-slate-500">
             Verdict for {{ displayTitle }} in {{ location || country }}
@@ -126,8 +84,9 @@
             <div>
               <h2 class="text-4xl font-black text-slate-900">Spot on!</h2>
               <p class="text-sm text-slate-600 mt-1">
-                Your salary is <span class="font-bold text-slate-900">exactly in line</span> with
-                the market average.
+                Your salary is
+                <span class="font-bold text-slate-900">exactly in line</span> with the market
+                average.
               </p>
             </div>
           </div>
@@ -235,37 +194,6 @@
               >
             </div>
           </div>
-
-          <!-- Historical Trend Section -->
-          <div
-            v-if="marketLastYear > 0"
-            class="flex flex-col items-center justify-between pt-4 mt-4 border-t md:flex-row border-slate-200/60">
-            <div class="flex items-center gap-3">
-              <div class="p-1.5 rounded-lg bg-indigo-50 text-secondary-600">
-                <History class="w-4 h-4" />
-              </div>
-              <div>
-                <p class="text-[10px] font-bold uppercase text-slate-400">Year over Year</p>
-                <p class="text-sm font-medium text-slate-900">
-                  Salaries are
-                  <span
-                    class="font-bold"
-                    :class="isTrendUp ? 'text-emerald-600' : 'text-negative-600'">
-                    {{ isTrendUp ? 'up' : 'down' }} {{ trendPercent }}%
-                  </span>
-                  since {{ marketDataYear - 1 }}
-                </p>
-              </div>
-            </div>
-            <div class="mt-2 text-right md:mt-0">
-              <p class="text-[10px] font-bold uppercase text-slate-400">
-                {{ marketDataYear - 1 }} Average
-              </p>
-              <p class="text-sm font-bold text-slate-500">
-                {{ currencySymbol }}{{ marketLastYear.toLocaleString() }}
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -280,6 +208,21 @@
         :regional-data="regionalData"
         :year="marketDataYear" />
 
+      <!-- The Negotiation Component -->
+      <LazySectionNegotiation
+        v-if="hasData"
+        class="lg:col-span-4"
+        :title="displayTitle"
+        :current-salary="userSalary"
+        :market-average="marketAverage"
+        :currency-symbol="currencySymbol"
+        :country="country" />
+
+      <p class="flex items-center justify-center gap-1 mt-6 text-[10px] text-center text-slate-400">
+        <Info class="w-3 h-3" />
+        Data based on recent listings from Adzuna and ONS Benchmarks.
+      </p>
+
       <!-- Ambiguity Modal -->
       <LazyModalAmbiguity
         v-if="showAmbiguityModal"
@@ -287,26 +230,16 @@
         :matches="ambiguousMatches"
         @select="handleAmbiguitySelect"
         @close="showAmbiguityModal = false" />
-
-      <!-- The Negotiation Component -->
-      <LazySectionNegotiation
-        v-if="hasData"
-        :title="displayTitle"
-        :current-salary="userSalary"
-        :market-average="marketAverage"
-        :currency-symbol="currencySymbol" />
-
-      <p class="flex items-center justify-center gap-1 mt-6 text-[10px] text-center text-slate-400">
-        <Info class="w-3 h-3" />
-        Data based on recent listings from Adzuna and ONS Benchmarks.
-      </p>
     </div>
+
+    <!-- Loading State -->
+    <AmILoader v-if="loading" message="Searching 140,000+ records..." />
   </div>
 </template>
 
 <script setup lang="ts">
 // ** imports **
-import { Home, TrendingDown, TrendingUp, Info, History, Check } from 'lucide-vue-next';
+import { TrendingDown, TrendingUp, Info, Check } from 'lucide-vue-next';
 import { computed, onMounted, watch } from 'vue';
 
 // ** data & refs **
@@ -321,7 +254,6 @@ const {
   marketAverage,
   marketHigh,
   marketLow,
-  marketLastYear,
   marketDataYear,
   matchedTitle,
   matchedLocation,
@@ -383,17 +315,6 @@ const salaryPosition = computed<number>(() => {
 
   return Math.min(Math.max(pct, 0), 100);
 });
-
-const trendPercent = computed<number>(() => {
-  const lastYear = marketLastYear?.value ?? 0;
-  const avg = marketAverage?.value ?? 0;
-  if (lastYear === 0) return 0;
-  return Math.abs(Math.round(((avg - lastYear) / lastYear) * 100));
-});
-
-const isTrendUp = computed<boolean>(
-  () => (marketAverage?.value ?? 0) >= (marketLastYear?.value ?? 0)
-);
 
 const fetchData = (t: string, l: string, c: string, p: string) => {
   if (c === 'UK') {
