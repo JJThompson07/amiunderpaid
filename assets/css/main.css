@@ -60,4 +60,41 @@
   --color-neutral-800: #0c4380;
   --color-neutral-900: #10396a;
   --color-neutral-950: #0a2447;
+
+  /* affiliates */
+  --color-purple-cv-50: #fdf3ff;
+  --color-purple-cv-100: #f9e6ff;
+  --color-purple-cv-200: #f4ccff;
+  --color-purple-cv-300: #eea4ff;
+  --color-purple-cv-400: #e56eff;
+  --color-purple-cv-500: #d537fe;
+  --color-purple-cv-600: #bc17e2;
+  --color-purple-cv-700: #a00fbc;
+  --color-purple-cv-800: #840e9a;
+  --color-purple-cv-900: #761385;
+  --color-purple-cv-950: #490055;
+
+  --color-resumeble-50: #f1fcfa;
+  --color-resumeble-100: #cff8f0;
+  --color-resumeble-200: #9ef1e1;
+  --color-resumeble-300: #66e2cf;
+  --color-resumeble-400: #36cbb8;
+  --color-resumeble-500: #20c1af;
+  --color-resumeble-600: #148d82;
+  --color-resumeble-700: #157069;
+  --color-resumeble-800: #155a55;
+  --color-resumeble-900: #164b47;
+  --color-resumeble-950: #062d2c;
+
+  --color-salary-negotiator-50: #f3f8fc;
+  --color-salary-negotiator-100: #e6f0f8;
+  --color-salary-negotiator-200: #c7e1f0;
+  --color-salary-negotiator-300: #96c8e3;
+  --color-salary-negotiator-400: #5dacd3;
+  --color-salary-negotiator-500: #368ab5;
+  --color-salary-negotiator-600: #2875a1;
+  --color-salary-negotiator-700: #225d82;
+  --color-salary-negotiator-800: #20506c;
+  --color-salary-negotiator-900: #1f435b;
+  --color-salary-negotiator-950: #152b3c;
 }
