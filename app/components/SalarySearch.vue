@@ -12,7 +12,7 @@
           :class="
             country === c ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-300 hover:text-white'
           "
-          @click="country = c">
+          @click="changeCountry(c)">
           {{ c }}
         </button>
       </div>
@@ -49,6 +49,7 @@
               :placeholder="`e.g. ${country === 'UK' ? 'London' : 'New York'}`"
               :icon="MapPin"
               :options="locationOptions"
+              optional
               @update:model-value="fetchLocations" />
           </div>
 
@@ -61,6 +62,7 @@
               label="Current Salary"
               :placeholder="currencySymbol + '0'"
               :icon="Wallet"
+              optional
               :params="periodOptions" />
           </div>
         </div>
@@ -89,6 +91,8 @@
 import { ref, computed, watch } from 'vue';
 import { Search, MapPin, CalculatorIcon, Wallet } from 'lucide-vue-next';
 import type { SearchClient } from 'algoliasearch';
+
+const emit = defineEmits(['country-change']);
 
 const url = useRequestURL();
 const country = ref(url.hostname.includes('.com') ? 'USA' : 'UK');
@@ -121,6 +125,11 @@ watch(country, (newVal) => {
   }
   titleOptions.value = [];
 });
+
+const changeCountry = (newCountry: string) => {
+  country.value = newCountry;
+  emit('country-change', newCountry);
+};
 
 const fetchUKTitles = async (searchTerm: string) => {
   const { $algolia } = useNuxtApp();
