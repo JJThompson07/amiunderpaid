@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-6 overflow-hidden bg-white border shadow-xl rounded-2xl border-slate-200">
+  <div class="overflow-hidden bg-white border shadow-xl rounded-2xl border-slate-200">
     <div class="p-6">
       <div class="flex items-center gap-3 mb-4">
         <div class="p-2 bg-indigo-50 rounded-lg text-secondary-600">

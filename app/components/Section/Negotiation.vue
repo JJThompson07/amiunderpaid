@@ -10,87 +10,118 @@
       </div>
 
       <!-- Content -->
-      <div class="relative p-6 overflow-y-auto">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="relative p-6 overflow-y-auto flex flex-col gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Card 1: Free Script (The 'Quick Win') -->
           <div
-            class="flex flex-col h-full p-5 border border-slate-200 rounded-xl bg-slate-50/50 hover:border-slate-300 transition-colors">
-            <div class="mb-4">
-              <div
-                class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-200 text-slate-600 mb-3">
-                <Mail class="w-5 h-5" />
+            class="flex flex-col gap-4 h-full p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:border-slate-300 transition-colors">
+            <div class="flex flex-col gap-4">
+              <div class="flex gap-2 items-center">
+                <div
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-200 text-slate-600">
+                  <Mail class="w-5 h-5" />
+                </div>
+                <h4 class="text-lg font-bold text-slate-900">Email Template</h4>
               </div>
-              <h4 class="text-lg font-bold text-slate-900">Email Template</h4>
-              <p class="text-xs text-slate-500 mt-1">
-                A proven script to initiate the conversation with your manager.
-              </p>
+              <div class="text-xs text-slate-500 flex flex-col gap-2">
+                <p>A template script to help you start the conversation.</p>
+                <p>
+                  Whether you're underpaid or looking to justify a raise, use this script to
+                  confidently communicate your value and set up a discussion with your manager.
+                </p>
+              </div>
             </div>
-            <div class="mt-auto pt-4">
-              <button
-                class="block w-full py-2.5 text-center text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+            <div class="mt-auto">
+              <AmIButton
+                bg-colour="bg-white"
+                animation-colour="bg-slate-200"
+                text-colour="text-slate-900"
+                class="border-slate-300 border"
                 @click="toggleScript">
                 {{ showScript ? 'Hide Script' : 'View Script' }}
-              </button>
+              </AmIButton>
             </div>
           </div>
 
           <!-- Card 2: Negotiation Course (Affiliate) -->
           <div
-            class="flex flex-col h-full p-5 border border-secondary-100 rounded-xl bg-secondary-50/50 hover:border-secondary-200 transition-colors relative overflow-hidden">
+            class="flex flex-col gap-4 h-full p-4 border border-secondary-100 rounded-xl bg-secondary-50/50 hover:border-secondary-200 transition-colors relative overflow-hidden">
             <div
               class="absolute top-0 right-0 px-2 py-1 bg-secondary-100 text-[10px] font-bold text-secondary-600 rounded-bl-lg">
               RECOMMENDED
             </div>
-            <div class="mb-4">
-              <div
-                class="w-10 h-10 flex items-center justify-center rounded-full bg-secondary-100 text-secondary-600 mb-3">
-                <TrendingUp class="w-5 h-5" />
+            <div class="flex flex-col gap-4">
+              <div class="flex gap-2 items-center">
+                <div
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-secondary-100 text-secondary-600">
+                  <TrendingUp class="w-5 h-5" />
+                </div>
+                <h4 class="text-lg font-bold text-slate-900">Master Negotiations</h4>
               </div>
-              <h4 class="text-lg font-bold text-slate-900">Master Negotiation</h4>
-              <p class="text-xs text-slate-600 mt-1">
-                <span v-if="isUnderpaid">
-                  Don't leave money on the table. Learn the exact tactics to close the
-                  {{ currencySymbol }}{{ diffAmount.toLocaleString() }} gap.
-                </span>
-                <span v-else>
-                  You're in a strong position, which effectively makes negotiating harder. Learn
-                  advanced strategies to break the ceiling.
-                </span>
-              </p>
+              <div class="text-xs text-slate-600 flex flex-col gap-2">
+                <p><strong>Knowing your value is only the first step.</strong></p>
+                <p>
+                  We've partnered with
+                  <strong class="text-salary-negotiator-500">The Salary Negotiator</strong> to help
+                  you bridge the gap. Master the exact scripts and strategies used by top executives
+                  to secure the pay you actually deserve.
+                </p>
+                <p class="text-right"><small>(Sponsored)</small></p>
+              </div>
             </div>
-            <div class="mt-auto pt-4">
-              <!-- <a
-                href="https://example.com/negotiate"
+            <div class="mt-auto">
+              <a
+                href="https://thesalarynegotiator.com/courses?ref=ndlknjh"
                 target="_blank"
-                class="block w-full py-2.5 text-center text-sm font-bold text-white bg-secondary-600 rounded-lg hover:bg-secondary-700 transition-colors shadow-sm">
-                Start Course
-              </a> -->
-              <AmIButton disabled class="text-center">Coming Soon</AmIButton>
+                rel="sponsored"
+                class="block w-full p-3 text-center text-sm font-bold text-white bg-salary-negotiator-500 rounded-lg hover:bg-salary-negotiator-700 transition-colors shadow-md"
+                >Explore Courses</a
+              >
             </div>
           </div>
 
           <!-- Card 3: CV Help (Affiliate) -->
           <div
-            class="flex flex-col h-full p-5 border border-primary-100 rounded-xl bg-primary-50/50 hover:border-primary-200 transition-colors">
-            <div class="mb-4">
-              <div
-                class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-100 text-primary-600 mb-3">
-                <FileText class="w-5 h-5" />
+            class="flex flex-col gap-4 h-full p-4 border border-primary-100 rounded-xl bg-primary-50/50 hover:border-primary-200 transition-colors">
+            <div class="mb-4 flex flex-col gap-4">
+              <div class="flex gap-2 items-center">
+                <div
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                  <FileText class="w-5 h-5" />
+                </div>
+                <h4 class="text-lg font-bold text-slate-900">Career Progression</h4>
               </div>
-              <h4 class="text-lg font-bold text-slate-900">Career Progression</h4>
-              <p class="text-xs text-slate-600 mt-1">
-                Position yourself for your next big move. Get your CV reviewed by experts to
-                highlight your achievements and unlock new opportunities.
-              </p>
+              <div v-if="country === 'USA'" class="text-xs text-slate-600 flex flex-col gap-2">
+                <p><strong>Templates alone don't win interviews.</strong></p>
+                <p>
+                  Position yourself for your next big move with a professionally written CV from
+                  <strong class="text-resumeble-700">Resumeble</strong>. Their experts design
+                  documents specifically to beat the algorithms and stand out to recruiters.
+                </p>
+                <p class="text-right"><small>(Sponsored)</small></p>
+              </div>
+              <div v-else class="text-xs text-slate-600 flex flex-col gap-2">
+                <p><strong>Templates alone don't win interviews.</strong></p>
+                <p>
+                  Position yourself for your next big move with a professionally written CV from
+                  <strong class="text-purple-cv-900">PurpleCV</strong>. Their experts design
+                  documents specifically to beat the algorithms and stand out to recruiters.
+                </p>
+                <p class="text-right"><small>(Sponsored)</small></p>
+              </div>
             </div>
-            <div class="mt-auto pt-4">
-              <!-- <a
-                href="https://example.com/cv-review"
+            <div class="mt-auto">
+              <AmIButton v-if="country === 'USA'" disabled class="text-center"
+                >Coming Soon</AmIButton
+              >
+              <a
+                v-else
+                href="https://purplecv.co.uk/cv-writing?wpam_id=1293"
                 target="_blank"
-                class="block w-full py-2.5 text-center text-sm font-bold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors shadow-sm">
-                Get Reviewed
-              </a> -->
-              <AmIButton disabled class="text-center">Coming Soon</AmIButton>
+                rel="sponsored"
+                class="block w-full p-3 text-center text-sm font-bold text-white bg-purple-cv-900 rounded-lg hover:bg-purple-cv-700 transition-colors shadow-md"
+                >PurpleCV</a
+              >
             </div>
           </div>
         </div>
@@ -98,7 +129,7 @@
         <!-- Collapsible Script Section -->
         <div
           v-if="showScript"
-          class="mt-6 pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-top-4 duration-300">
+          class="pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-top-4 duration-300">
           <div class="space-y-4">
             <div class="flex items-center justify-between">
               <h4 class="font-bold text-slate-700 text-sm">Your Custom Email Script</h4>
@@ -134,6 +165,7 @@ const props = defineProps<{
   currentSalary: number;
   marketAverage: number;
   currencySymbol: string;
+  country: string;
 }>();
 
 // ** emits **
@@ -145,7 +177,6 @@ const showScript = ref(false);
 const { trackResultAction } = useAnalytics();
 
 // ** computed properties **
-const diffAmount = computed(() => Math.abs(props.marketAverage - props.currentSalary));
 const isUnderpaid = computed(() => props.marketAverage > props.currentSalary);
 
 const emailSubject = computed(() => `Subject: Salary Review Discussion - ${props.title} Role`);

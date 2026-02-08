@@ -50,6 +50,8 @@
 
     ALGOLIA_APPLICATION_ID=your_algolia_app_id
     ALGOLIA_SEARCH_API_KEY=your_algolia_search_key
+
+    NUXT_ADMIN_ACCESS_KEY=your_secret_access_key
     ```
 
 4.  **Run the development server:**
@@ -62,4 +64,4 @@
 
 ## Admin Access
 
-To access the admin tools (`/admin/seed`, `/admin/coding-index`), you must be authenticated. The login page is located at `/login`.
+To access the admin tools (`/admin/seed`, `/admin/coding-index`), you must be authenticated. The login page is protected and located at `/login?access=YOUR_SECRET_KEY` (matching the `NUXT_ADMIN_ACCESS_KEY` in your .env file).
