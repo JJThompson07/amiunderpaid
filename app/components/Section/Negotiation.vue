@@ -188,9 +188,7 @@ const emailBody = computed(() => {
 Given my recent contributions to [Project/Team Name] and the current market rate, I would like to discuss bringing my salary closer to this benchmark (${props.currencySymbol}${props.marketAverage.toLocaleString()}).
 
 I'm keen to continue delivering value to the team and would appreciate the opportunity to discuss this further.`
-    : `I would appreciate the opportunity to schedule a brief meeting to discuss my performance and career progression.
-
-Over the past year, I have [mention 1-2 key achievements]. I am keen to discuss how my compensation can evolve to reflect these increased responsibilities and the value I am delivering to the team.
+    : `Over the past year, I have [mention 1-2 key achievements]. I am keen to discuss how my compensation can evolve to reflect these increased responsibilities and the value I am delivering to the team.
 
 When would be a good time to chat?`;
 

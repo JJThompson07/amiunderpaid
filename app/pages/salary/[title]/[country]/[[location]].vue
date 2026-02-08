@@ -366,7 +366,8 @@ watch(loading, (newLoading) => {
         navigateTo(
           {
             path: newPath,
-            query: route.query // Preserve compare/period params
+            query: route.query, // Preserve compare/period params
+            state: { ...history.state } // Preserve confirmed flag so modal doesn't reappear
           },
           { replace: true } // Use replace to avoid a broken back button history
         );
