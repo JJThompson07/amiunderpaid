@@ -90,7 +90,9 @@ import { ref, computed, watch } from 'vue';
 import { Search, MapPin, CalculatorIcon, Wallet } from 'lucide-vue-next';
 import type { SearchClient } from 'algoliasearch';
 
-const country = ref('UK');
+const url = useRequestURL();
+const country = ref(url.hostname.includes('.com') ? 'USA' : 'UK');
+
 const title = ref('');
 const location = ref('');
 const salary = ref('');
