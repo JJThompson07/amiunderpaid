@@ -179,7 +179,7 @@ const { trackResultAction } = useAnalytics();
 // ** computed properties **
 const isUnderpaid = computed(() => props.marketAverage > props.currentSalary);
 
-const emailSubject = computed(() => `Subject: Salary Review Discussion - ${props.title} Role`);
+const emailSubject = computed(() => `Salary Review Discussion - ${props.title} Role`);
 
 const emailBody = computed(() => {
   const emailBody = isUnderpaid.value
