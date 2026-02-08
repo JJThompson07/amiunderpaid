@@ -48,7 +48,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
-      adminAccessKey: process.env.NUXT_ADMIN_ACCESS_KEY
+      adminAccessKey: process.env.NUXT_ADMIN_ACCESS_KEY,
+      gtagId: 'G-EZQYZSSRW1'
     }
   },
 

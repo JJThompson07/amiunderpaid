@@ -5,7 +5,7 @@
       class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b bg-white/80 backdrop-blur-md border-slate-200/50">
       <div class="flex flex-wrap items-center justify-between min-h-16 px-4 py-2 mx-auto max-w-7xl">
         <!-- Logo -->
-        <NuxtLink href="/" class="flex items-center gap-2">
+        <NuxtLink href="/" class="flex items-center gap-2 absolute">
           <div
             class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none">
             <div class="logo h-7 w-7" aria-label="Am I" />
@@ -36,7 +36,7 @@
         </nav>
 
         <!-- CTA -->
-        <div class="flex flex-1 md:flex-0 items-center justify-end gap-4">
+        <div class="flex flex-1 md:flex-0 items-center justify-end gap-4 absolute right-4">
           <AmIButton
             v-if="user"
             bg-colour="bg-transparent"
@@ -64,6 +64,11 @@
           class="text-xs text-slate-400 hover:text-slate-600 transition-colors">
           Privacy Policy
         </NuxtLink>
+        <NuxtLink
+          to="/admin/login"
+          class="text-xs text-slate-300 hover:text-slate-500 transition-colors"
+          >Admin Access</NuxtLink
+        >
       </div>
     </footer>
   </div>

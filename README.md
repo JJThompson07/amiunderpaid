@@ -64,4 +64,4 @@
 
 ## Admin Access
 
-To access the admin tools (`/admin/seed`, `/admin/coding-index`), you must be authenticated. The login page is protected and located at `/login?access=YOUR_SECRET_KEY` (matching the `NUXT_ADMIN_ACCESS_KEY` in your .env file).
+To access the admin tools (`/admin/seed`, `/admin/coding-index`), you must be authenticated. The login page is protected and located at `/admin/login?access=YOUR_SECRET_KEY` (matching the `NUXT_ADMIN_ACCESS_KEY` in your .env file).

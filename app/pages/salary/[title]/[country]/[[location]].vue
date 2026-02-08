@@ -245,6 +245,7 @@ import { computed, onMounted, watch } from 'vue';
 // ** data & refs **
 const route = useRoute();
 const showAmbiguityModal = ref(false);
+const searchConfirmed = ref(false);
 
 const { trackAmbiguousSearch } = useAnalytics();
 
@@ -343,6 +344,7 @@ onMounted(() => {
     if (history.state.q) searchTitle.value = String(history.state.q);
     if (history.state.compare) userSalary.value = Number(history.state.compare);
     if (history.state.period) userPeriod.value = String(history.state.period);
+    if (history.state.confirmed) searchConfirmed.value = true;
   }
 
   fetchData(searchTitle.value, location.value, country.value, userPeriod.value);
@@ -364,7 +366,8 @@ watch(loading, (newLoading) => {
         navigateTo(
           {
             path: newPath,
-            query: route.query // Preserve compare/period params
+            query: route.query, // Preserve compare/period params
+            state: { ...history.state } // Preserve confirmed flag so modal doesn't reappear
           },
           { replace: true } // Use replace to avoid a broken back button history
         );
@@ -374,7 +377,7 @@ watch(loading, (newLoading) => {
 });
 
 watch(ambiguousMatches, (matches) => {
-  if (matches.length > 1) {
+  if (matches.length > 1 && !searchConfirmed.value) {
     showAmbiguityModal.value = true;
   }
 });
