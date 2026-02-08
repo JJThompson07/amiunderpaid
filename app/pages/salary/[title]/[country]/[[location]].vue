@@ -452,6 +452,7 @@ useHead({
         })
       )
     }
-  ]
+  ],
+  link: [{ rel: 'canonical', href: `${url.origin}${route.path}` }]
 });
 </script>
