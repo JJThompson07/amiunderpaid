@@ -5,7 +5,7 @@
       class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b bg-white/80 backdrop-blur-md border-slate-200/50">
       <div class="flex flex-wrap items-center justify-between min-h-16 px-4 py-2 mx-auto max-w-7xl">
         <!-- Logo -->
-        <NuxtLink href="/" class="flex items-center gap-2 absolute">
+        <NuxtLink href="/" class="flex items-center gap-2 absolute" @click="openMenu = false">
           <div
             class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none">
             <div class="logo h-7 w-7" aria-label="Am I" />
@@ -14,26 +14,7 @@
         </NuxtLink>
 
         <!-- Nav -->
-        <nav
-          class="flex-1 items-center justify-center hidden gap-8 text-sm font-medium md:flex text-slate-600">
-          <template v-if="user">
-            <NuxtLink to="/admin/seed" class="transition-colors hover:text-primary-600"
-              >Seeder</NuxtLink
-            >
-            <NuxtLink to="/admin/coding-index" class="transition-colors hover:text-primary-600"
-              >Coding Index</NuxtLink
-            >
-          </template>
-          <template v-else>
-            <a href="/how-it-works" class="transition-colors hover:text-primary-600"
-              >How it works</a
-            >
-            <a href="/data-sources" class="transition-colors hover:text-primary-600"
-              >Data Sources</a
-            >
-            <a href="/about" class="transition-colors hover:text-primary-600">About</a>
-          </template>
-        </nav>
+        <LazyAmINavBar v-if="!isMobile" :is-admin="isAdmin" />
 
         <!-- CTA -->
         <div class="flex flex-1 md:flex-0 items-center justify-end gap-4 absolute right-4">
@@ -46,9 +27,19 @@
             @click="handleLogout"
             >Sign Out</AmIButton
           >
+          <button v-if="isMobile" class="p-1" @click="openMenu = !openMenu">
+            <MenuIcon v-if="!openMenu" class="w-5 h-5" />
+            <XIcon v-else class="w-5 h-5" />
+          </button>
         </div>
       </div>
     </header>
+
+    <LazyAmINavBar
+      v-if="openMenu && isMobile"
+      :is-admin="isAdmin"
+      :is-mobile="true"
+      @close="openMenu = false" />
 
     <!-- Main Content -->
     <div class="flex-1">
@@ -77,9 +68,19 @@
 <script setup lang="ts">
 import { useCurrentUser, useFirebaseAuth } from 'vuefire';
 import { signOut } from 'firebase/auth';
+import { ref } from 'vue';
+import { useWindowSize } from '@vueuse/core';
+import { MenuIcon, XIcon } from 'lucide-vue-next';
+
+const { width } = useWindowSize();
+
+const openMenu = ref<boolean>(false);
 
 const user = useCurrentUser();
 const auth = useFirebaseAuth();
+
+const isMobile = computed(() => width.value < 768);
+const isAdmin = computed(() => Boolean(user.value?.email));
 
 const handleLogout = async () => {
   if (auth) {

@@ -58,4 +58,40 @@
 import { Square, SquareCheckBig } from 'lucide-vue-next';
 
 // Nuxt automatically imports the SalarySearch component from /components
+
+const url = useRequestURL();
+const isUSA = url.hostname.includes('.com');
+
+const title = isUSA
+  ? 'Am I Underpaid? | Check Your Salary & USA Market Rates'
+  : 'Am I Underpaid? | Check Your Salary & Average Wage for Your Role';
+
+const description = isUSA
+  ? 'Find out the average salary for your role in the USA. Compare your wage against live market data and BLS benchmarks to see if you are underpaid.'
+  : 'Find out the average salary for your role. Compare your wage against live market data and official government benchmarks (ONS) to see if you are underpaid.';
+
+useSeoMeta({
+  title,
+  description,
+  ogTitle: title,
+  ogDescription: description,
+  ogImage: `${url.origin}/og.png`, // Ensure you have a default og.png in your public folder
+  twitterCard: 'summary_large_image'
+});
+
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'Am I Underpaid?',
+        url: url.origin,
+        description: description
+      })
+    }
+  ],
+  link: [{ rel: 'canonical', href: url.href }]
+});
 </script>
