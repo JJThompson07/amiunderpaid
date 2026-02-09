@@ -11,49 +11,18 @@
 
       <!-- Content -->
       <div class="relative p-6 overflow-y-auto flex flex-col gap-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Card 1: Free Script (The 'Quick Win') -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Card 1: Negotiation Course (Affiliate) -->
           <div
-            class="flex flex-col gap-4 h-full p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:border-slate-300 transition-colors">
-            <div class="flex flex-col gap-4">
-              <div class="flex gap-2 items-center">
-                <div
-                  class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-200 text-slate-600">
-                  <Mail class="w-5 h-5" />
-                </div>
-                <h4 class="text-lg font-bold text-slate-900">Email Template</h4>
-              </div>
-              <div class="text-xs text-slate-500 flex flex-col gap-2">
-                <p>A template script to help you start the conversation.</p>
-                <p>
-                  Whether you're underpaid or looking to justify a raise, use this script to
-                  confidently communicate your value and set up a discussion with your manager.
-                </p>
-              </div>
-            </div>
-            <div class="mt-auto">
-              <AmIButton
-                bg-colour="bg-white"
-                animation-colour="bg-slate-200"
-                text-colour="text-slate-900"
-                class="border-slate-300 border"
-                @click="toggleScript">
-                {{ showScript ? 'Hide Script' : 'View Script' }}
-              </AmIButton>
-            </div>
-          </div>
-
-          <!-- Card 2: Negotiation Course (Affiliate) -->
-          <div
-            class="flex flex-col gap-4 h-full p-4 border border-secondary-100 rounded-xl bg-secondary-50/50 hover:border-secondary-200 transition-colors relative overflow-hidden">
+            class="flex flex-col gap-4 h-full p-4 border border-salary-negotiator-100 rounded-xl bg-salary-negotiator-50/50 hover:border-salary-negotiator-200 transition-colors relative overflow-hidden">
             <div
-              class="absolute top-0 right-0 px-2 py-1 bg-secondary-100 text-[10px] font-bold text-secondary-600 rounded-bl-lg">
-              RECOMMENDED
+              class="absolute top-0 right-0 px-2 py-1 bg-primary-100 text-[10px] font-bold text-primary-600 rounded-bl-lg">
+              PREMIER
             </div>
             <div class="flex flex-col gap-4">
               <div class="flex gap-2 items-center">
                 <div
-                  class="w-10 h-10 flex items-center justify-center rounded-full bg-secondary-100 text-secondary-600">
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-salary-negotiator-100 text-salary-negotiator-600">
                   <TrendingUp class="w-5 h-5" />
                 </div>
                 <h4 class="text-lg font-bold text-slate-900">Master Negotiations</h4>
@@ -80,13 +49,17 @@
             </div>
           </div>
 
-          <!-- Card 3: CV Help (Affiliate) -->
+          <!-- Card 2: CV Help (Affiliate) -->
           <div
-            class="flex flex-col gap-4 h-full p-4 border border-primary-100 rounded-xl bg-primary-50/50 hover:border-primary-200 transition-colors">
+            class="flex flex-col gap-4 h-full p-4 border border-purple-cv-100 rounded-xl bg-purple-cv-50/50 hover:border-purple-cv-200 transition-colors overflow-hidden relative">
+            <div
+              class="absolute top-0 right-0 px-2 py-1 bg-primary-100 text-2xs font-bold text-primary-600 rounded-bl-lg">
+              PREMIER
+            </div>
             <div class="mb-4 flex flex-col gap-4">
               <div class="flex gap-2 items-center">
                 <div
-                  class="w-10 h-10 flex items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-purple-cv-100 text-purple-cv-600">
                   <FileText class="w-5 h-5" />
                 </div>
                 <h4 class="text-lg font-bold text-slate-900">Career Progression</h4>
@@ -124,6 +97,69 @@
               >
             </div>
           </div>
+
+          <!-- Card 3: UK only free CV review (Affiliate)-->
+          <div
+            v-if="country === 'UK'"
+            class="flex flex-col gap-4 h-full p-4 border border-cv-library-100 rounded-xl bg-cv-library-50/50 hover:border-cv-library-200 transition-colors">
+            <div class="flex gap-2 items-center">
+              <div
+                class="w-10 h-10 flex items-center justify-center rounded-full bg-cv-library-100 text-cv-library-600">
+                <FileUser class="w-5 h-5" />
+              </div>
+              <h4 class="text-lg font-bold text-slate-900">Free CV Review</h4>
+            </div>
+            <div class="text-xs text-slate-600 flex flex-col gap-2">
+              <p><strong>Not sure if your CV is up to scratch?</strong></p>
+              <p>
+                Get a free CV review from the experts at
+                <strong class="text-cv-library-700">CVLibrary</strong>. Create an account, upload
+                your CV, and receive personalized feedback to help you stand out in the competitive
+                UK job market.
+              </p>
+              <p class="text-right"><small>(Sponsored)</small></p>
+            </div>
+            <div class="mt-auto">
+              <a
+                href="https://www.cv-library.co.uk/register?id=107202"
+                target="_blank"
+                rel="sponsored"
+                class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
+                >Get My Free Review</a
+              >
+            </div>
+          </div>
+
+          <!-- Card 4: Free Script (The 'Quick Win') -->
+          <div
+            class="flex flex-col gap-4 h-full p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:border-slate-300 transition-colors">
+            <div class="flex flex-col gap-4">
+              <div class="flex gap-2 items-center">
+                <div
+                  class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-200 text-slate-600">
+                  <Mail class="w-5 h-5" />
+                </div>
+                <h4 class="text-lg font-bold text-slate-900">Email Template</h4>
+              </div>
+              <div class="text-xs text-slate-500 flex flex-col gap-2">
+                <p>A template script to help you start the conversation.</p>
+                <p>
+                  Whether you're underpaid or looking to justify a raise, use this script to
+                  confidently communicate your value and set up a discussion with your manager.
+                </p>
+              </div>
+            </div>
+            <div class="mt-auto">
+              <AmIButton
+                bg-colour="bg-white"
+                animation-colour="bg-slate-200"
+                text-colour="text-slate-900"
+                class="border-slate-300 border"
+                @click="toggleScript">
+                {{ showScript ? 'Hide Script' : 'View Script' }}
+              </AmIButton>
+            </div>
+          </div>
         </div>
 
         <!-- Collapsible Script Section -->
@@ -154,7 +190,7 @@
 
 <script setup lang="ts">
 // imports
-import { Copy, CheckCircle2, TrendingUp, FileText, Mail } from 'lucide-vue-next';
+import { Copy, CheckCircle2, TrendingUp, FileText, Mail, FileUser } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 
 // ** type definitions **

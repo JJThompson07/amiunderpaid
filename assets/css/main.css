@@ -98,5 +98,17 @@
   --color-salary-negotiator-900: #1f435b;
   --color-salary-negotiator-950: #152b3c;
 
+  --color-cv-library-50: #f0f8ff;
+  --color-cv-library-100: #dfefff;
+  --color-cv-library-200: #b9e1fe;
+  --color-cv-library-300: #7bcafe;
+  --color-cv-library-400: #34aefc;
+  --color-cv-library-500: #0a95ed;
+  --color-cv-library-600: #0075cb;
+  --color-cv-library-700: #005da4;
+  --color-cv-library-800: #055087;
+  --color-cv-library-900: #0a4270;
+  --color-cv-library-950: #072a4a;
+
   --text-2xs: 0.625rem;
 }
