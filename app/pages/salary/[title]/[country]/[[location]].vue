@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen pt-16 pb-8 bg-slate-50">
+  <div class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6">
     <!-- Background Gradient (Only show if we have data) -->
     <div
       v-if="hasData"
@@ -17,220 +17,115 @@
       v-else
       class="absolute top-0 left-0 w-full h-125 bg-linear-to-b from-slate-800 to-slate-50 z-0"></div>
 
-    <div class="relative max-w-4xl px-4 mx-auto flex flex-col gap-6">
-      <!-- Breadcrumbs -->
-      <AmILocationBreadcrumbs
-        :route="route"
-        :display-title="displayTitle"
-        :country="country"
-        :location="location" />
+    <!-- Breadcrumbs -->
+    <AmILocationBreadcrumbs
+      class="relative"
+      :route="route"
+      :display-title="displayTitle"
+      :country="country"
+      :location="location" />
 
-      <!-- No Data Found State -->
-      <LazyAmICardNoData
-        v-if="!hasData"
-        :title="displayTitle"
-        :location="location"
-        :country="country"
-        :icon="Info"
-        :period="userPeriod" />
+    <div class="relative grid grid-cols-1 xl:grid-cols-12 px-4 gap-6">
+      <div class="relative mx-auto flex flex-col gap-6 xl:col-start-3 xl:col-end-11">
+        <!-- No Data Found State -->
+        <LazyAmICardNoData
+          v-if="!hasData"
+          :title="displayTitle"
+          :location="location"
+          :country="country"
+          :icon="Info"
+          :period="userPeriod" />
 
-      <!-- Result Headline Card (Only show if we have data) -->
-      <div v-else class="overflow-hidden bg-white border shadow-xl rounded-2xl border-slate-200">
-        <div class="p-6 text-center">
-          <p class="mb-2 text-sm font-medium text-slate-500">
-            Verdict for {{ displayTitle }} in {{ location || country }}
-          </p>
+        <!-- Result Headline Card (Only show if we have data) -->
+        <div v-else class="overflow-hidden bg-white border shadow-xl rounded-2xl border-slate-200">
+          <LazySectionSalaryVerdict
+            :display-title="displayTitle"
+            :location="location"
+            :country="country"
+            :user-salary="userSalary"
+            :market-average="marketAverage"
+            :currency-symbol="currencySymbol"
+            :matched-title="matchedTitle"
+            :matched-location="matchedLocation"
+            :search-title="searchTitle"
+            :market-data-year="marketDataYear"
+            :diff-percent="diffPercent"
+            :is-underpaid="isUnderpaid" />
 
-          <!-- Fallback Notice -->
-          <div
-            v-if="
-              (matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()) ||
-              (matchedLocation &&
-                location &&
-                matchedLocation.toLowerCase() !== location.toLowerCase())
-            "
-            class="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium border border-amber-100">
-            <Info class="w-3.5 h-3.5" />
-            <span>
-              Exact match not found. Showing {{ marketDataYear }} government data for
-              <span class="font-bold">{{ matchedTitle }}</span>
-              <span
-                v-if="
-                  matchedLocation &&
-                  location &&
-                  matchedLocation.toLowerCase() !== location.toLowerCase()
-                ">
-                in <span class="font-bold">{{ matchedLocation }}</span></span
-              >.
-            </span>
-          </div>
-
-          <!-- No Salary Input -->
-          <div v-if="userSalary === 0" class="space-y-2">
-            <h1 class="text-3xl font-black text-slate-900">
-              Market Rate: {{ currencySymbol }}{{ marketAverage.toLocaleString() }}
-            </h1>
-            <p class="text-sm text-slate-500">
-              You didn't enter a current salary, so we're comparing against the standard market
-              average.
-            </p>
-          </div>
-
-          <!-- Spot On / Fairly Paid -->
-          <div v-else-if="diffPercent === 0" class="flex flex-col items-center space-y-3">
-            <AmIChip :icon="Check" bg-colour="bg-indigo-100" text-colour="text-indigo-700">
-              Fairly Paid
-            </AmIChip>
-            <div>
-              <h2 class="text-4xl font-black text-slate-900">Spot on!</h2>
-              <p class="text-sm text-slate-600 mt-1">
-                Your salary is
-                <span class="font-bold text-slate-900">exactly in line</span> with the market
-                average.
-              </p>
-            </div>
-          </div>
-
-          <!-- Underpaid -->
-          <div v-else-if="isUnderpaid" class="flex flex-col items-center space-y-3">
-            <AmIChip
-              :icon="TrendingDown"
-              bg-colour="bg-negative-100"
-              text-colour="text-negative-700">
-              Underpaid
-            </AmIChip>
-            <div>
-              <h2 class="text-4xl font-black text-slate-900">Underpaid by {{ diffPercent }}%</h2>
-              <p class="text-sm text-slate-600 mt-1">
-                Typical {{ matchedTitle || displayTitle }}s in
-                {{ matchedLocation || location || country }} earn
-                <span class="font-bold text-slate-900"
-                  >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
-                >.
-              </p>
-            </div>
-          </div>
-
-          <!-- Above Average -->
-          <div v-else class="flex flex-col items-center space-y-3">
-            <AmIChip :icon="TrendingUp" bg-colour="bg-positive-100" text-colour="text-positive-700">
-              Above Market Average
-            </AmIChip>
-            <div>
-              <h2 class="text-4xl font-black text-slate-900">You're doing great!</h2>
-              <p class="text-sm text-slate-600 mt-1">
-                Your salary is
-                <span class="font-bold text-slate-900">{{ diffPercent }}% higher</span> than the
-                market average for your role.
-              </p>
-            </div>
-          </div>
+          <!-- Comparison Visualizer -->
+          <LazySectionSalaryVisualizer
+            :user-salary="userSalary"
+            :market-average="marketAverage"
+            :market-low="marketLow"
+            :market-high="marketHigh"
+            :currency-symbol="currencySymbol"
+            :diff-percent="diffPercent"
+            :is-underpaid="isUnderpaid" />
         </div>
 
-        <!-- Comparison Visualizer -->
-        <div class="px-6 py-5 border-t bg-slate-50 border-slate-200">
-          <div class="relative pt-8 pb-2">
-            <!-- Range Bar -->
-            <div class="relative h-3 rounded-full bg-slate-200">
-              <!-- High/Low Markers -->
-              <div class="absolute left-0 -top-6 text-[10px] font-bold text-slate-400 uppercase">
-                Low
-              </div>
-              <div class="absolute right-0 -top-6 text-[10px] font-bold text-slate-400 uppercase">
-                High
-              </div>
+        <!-- Regional Comparison Card (UK Only) -->
+        <LazySectionUKComparison
+          v-if="country === 'UK' && regionalData && location"
+          :country="country"
+          :location="location"
+          :display-title="matchedTitle || displayTitle"
+          :market-average="marketAverage"
+          :user-salary="userSalary"
+          :regional-data="regionalData"
+          :year="marketDataYear" />
 
-              <!-- Market Average Dot -->
-              <div
-                class="absolute z-10 w-5 h-5 -translate-x-1/2 -translate-y-1/2 bg-primary-600 border-[3px] border-white rounded-full shadow-md top-1/2 left-1/2">
-                <div
-                  class="absolute -translate-x-1/2 -top-6 left-1/2 text-[9px] font-black text-primary-600 whitespace-nowrap">
-                  AVG
-                </div>
-              </div>
+        <!-- The Negotiation Component -->
+        <LazySectionNegotiation
+          v-if="hasData"
+          class="lg:col-span-4"
+          :title="displayTitle"
+          :current-salary="userSalary"
+          :market-average="marketAverage"
+          :currency-symbol="currencySymbol"
+          :country="country" />
 
-              <!-- User Salary Marker -->
-              <div
-                v-if="userSalary > 0 && marketHigh > 0"
-                class="absolute z-20 w-1 h-8 transition-all duration-1000 -translate-y-1/2 top-1/2"
-                :class="
-                  diffPercent === 0
-                    ? 'bg-slate-600'
-                    : isUnderpaid
-                      ? 'bg-negative-700'
-                      : 'bg-positive-700'
-                "
-                :style="{ left: `${salaryPosition}%` }">
-                <div
-                  class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-black whitespace-nowrap"
-                  :class="
-                    diffPercent === 0
-                      ? 'text-slate-600'
-                      : isUnderpaid
-                        ? 'text-negative-700'
-                        : 'text-positive-700'
-                  ">
-                  YOU
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Key Stats Row -->
-          <div class="flex justify-between mt-6 text-xs">
-            <div class="text-center">
-              <span class="font-bold text-slate-500"
-                >{{ currencySymbol }}{{ marketLow.toLocaleString() }}</span
-              >
-            </div>
-            <div class="text-center">
-              <span class="font-bold text-primary-600"
-                >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
-              >
-            </div>
-            <div class="text-center">
-              <span class="font-bold text-slate-500"
-                >{{ currencySymbol }}{{ marketHigh.toLocaleString() }}</span
-              >
-            </div>
-          </div>
-        </div>
+        <p class="flex items-center justify-center gap-1 mt-6 text-2xs text-center text-slate-400">
+          <Info class="w-3 h-3" />
+          Data based on recent listings from Adzuna and ONS Benchmarks.
+        </p>
       </div>
 
-      <!-- Regional Comparison Card (UK Only) -->
-      <LazySectionUKComparison
-        v-if="country === 'UK' && regionalData && location"
-        :country="country"
-        :location="location"
-        :display-title="matchedTitle || displayTitle"
-        :market-average="marketAverage"
-        :user-salary="userSalary"
-        :regional-data="regionalData"
-        :year="marketDataYear" />
-
-      <!-- The Negotiation Component -->
-      <LazySectionNegotiation
-        v-if="hasData"
-        class="lg:col-span-4"
-        :title="displayTitle"
-        :current-salary="userSalary"
-        :market-average="marketAverage"
-        :currency-symbol="currencySymbol"
-        :country="country" />
-
-      <p class="flex items-center justify-center gap-1 mt-6 text-[10px] text-center text-slate-400">
-        <Info class="w-3 h-3" />
-        Data based on recent listings from Adzuna and ONS Benchmarks.
-      </p>
-
-      <!-- Ambiguity Modal -->
-      <LazyModalAmbiguity
-        v-if="showAmbiguityModal"
-        :title="displayTitle"
-        :matches="ambiguousMatches"
-        @select="handleAmbiguitySelect"
-        @close="showAmbiguityModal = false" />
+      <LazyAmICardAction
+        v-if="country === 'UK' && hasData && isXl"
+        bg-colour="bg-cv-library-50"
+        border-colour="border-cv-library-100"
+        hover-class="hover:border-cv-library-200"
+        affiliate-bg-colour="bg-cv-library-100"
+        affiliate-text-colour="text-cv-library-700"
+        :icon="FileUser"
+        header="Get Discovered"
+        strapline="Find a job that works for you, fast"
+        sponsored
+        class="rounded-lg border shadow-lg h-max xl:col-span-2 xl:w-full">
+        <template #body>
+          Register your free CV on the UK's leading job site (<strong class="text-cv-library-700"
+            >CV-Library</strong
+          >) and let top employers come to you - it's fast, easy and free.
+        </template>
+        <template #cta>
+          <a
+            href="https://www.cv-library.co.uk/register?id=107202"
+            target="_blank"
+            rel="sponsored"
+            class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
+            >Register CV</a
+          >
+        </template>
+      </LazyAmICardAction>
     </div>
+
+    <!-- Ambiguity Modal -->
+    <LazyModalAmbiguity
+      v-if="showAmbiguityModal"
+      :title="displayTitle"
+      :matches="ambiguousMatches"
+      @select="handleAmbiguitySelect"
+      @close="showAmbiguityModal = false" />
 
     <!-- Loading State -->
     <AmILoader v-if="loading" message="Searching 140,000+ records..." />
@@ -239,7 +134,7 @@
 
 <script setup lang="ts">
 // ** imports **
-import { TrendingDown, TrendingUp, Info, Check } from 'lucide-vue-next';
+import { FileUser, Info } from 'lucide-vue-next';
 import { computed, onMounted, watch } from 'vue';
 
 // ** data & refs **
@@ -281,6 +176,7 @@ const location = computed(() =>
   route.params.location ? unslugify(route.params.location as string) : ''
 );
 
+const { isXl } = useViewport();
 const userSalary = ref(Number(route.query.compare) || 0);
 const userPeriod = ref(route.query.period?.toString() || 'year');
 const searchTitle = ref((route.query.q as string) || displayTitle.value);
@@ -302,19 +198,6 @@ const diffPercent = computed<number>(() => {
   const avg = marketAverage?.value ?? 0;
   if (userSalary.value === 0 || avg === 0) return 0;
   return Math.abs(Math.round(((userSalary.value - avg) / avg) * 100));
-});
-
-// Safe percentage for the progress bar relative to the Low-High range
-const salaryPosition = computed<number>(() => {
-  const high = marketHigh?.value ?? 0;
-  const low = marketLow?.value ?? 0;
-  const range = high - low;
-  if (range <= 0) return 50;
-
-  const offset = userSalary.value - low;
-  const pct = (offset / range) * 100;
-
-  return Math.min(Math.max(pct, 0), 100);
 });
 
 const fetchData = (t: string, l: string, c: string, p: string) => {

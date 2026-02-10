@@ -71,7 +71,7 @@
           <Square class="w-6 h-6 text-slate-400" />
           Adzuna API
           <span
-            class="ml-1 text-[10px] uppercase tracking-wider bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full"
+            class="ml-1 text-2xs uppercase tracking-wider bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full"
             >Coming Soon</span
           >
         </div>
@@ -93,13 +93,17 @@ import { Square, SquareCheckBig } from 'lucide-vue-next';
 const url = useRequestURL();
 const isUSA = ref<boolean>(url.hostname.includes('.com'));
 
-const title = isUSA.value
-  ? 'Am I Underpaid? | Salary Comparison & Market Data Tool'
-  : 'Am I Underpaid? | Salary Checker & Market Pay Calculator UK';
+const title = computed(() =>
+  isUSA.value
+    ? 'Am I Underpaid? | Salary Comparison & Market Data Tool'
+    : 'Am I Underpaid? | Salary Checker & Market Pay Calculator UK'
+);
 
-const description = isUSA.value
-  ? 'Find out the average salary for your role in the USA. Compare your wage against live market data and BLS benchmarks to see if you are underpaid.'
-  : 'Find out the average salary for your role. Compare your wage against live market data and official government benchmarks (ONS) to see if you are underpaid.';
+const description = computed(() =>
+  isUSA.value
+    ? 'Find out the average salary for your role in the USA. Compare your wage against live market data and BLS benchmarks to see if you are underpaid.'
+    : 'Find out the average salary for your role. Compare your wage against live market data and official government benchmarks (ONS) to see if you are underpaid.'
+);
 
 useSeoMeta({
   title,
@@ -114,13 +118,15 @@ useHead({
   script: [
     {
       type: 'application/ld+json',
-      innerHTML: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        name: 'Am I Underpaid?',
-        url: url.origin,
-        description: description
-      })
+      innerHTML: computed(() =>
+        JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'Am I Underpaid?',
+          url: url.origin,
+          description: description.value
+        })
+      )
     }
   ],
   link: [

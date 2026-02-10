@@ -23,7 +23,7 @@
       <!-- DATABASE STATUS -->
       <div v-if="existingData.length > 0" class="mb-8">
         <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-          <h3 class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">
+          <h3 class="text-2xs font-bold uppercase tracking-widest text-slate-400 mb-3">
             Current Mappings
           </h3>
           <div class="flex flex-col justify-center gap-2">
@@ -60,7 +60,7 @@
           <!-- COUNTRY TOGGLE -->
           <div class="flex flex-col gap-2">
             <label
-              class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
+              class="text-2xs font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
               Region
             </label>
             <div class="flex p-1 bg-slate-100 rounded-xl">
@@ -82,8 +82,7 @@
 
         <!-- FILE UPLOAD -->
         <div class="flex flex-col gap-2">
-          <label
-            class="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
+          <label class="text-2xs font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
             Coding Index File
           </label>
           <label
@@ -119,7 +118,7 @@
         class="mb-8 bg-slate-900 rounded-2xl text-left overflow-hidden shadow-inner border border-slate-800">
         <div
           class="px-4 py-2 bg-slate-800/50 border-b border-slate-800 flex justify-between items-center">
-          <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider"
+          <span class="text-2xs uppercase font-bold text-slate-500 tracking-wider"
             >Processing Console</span
           >
           <span
