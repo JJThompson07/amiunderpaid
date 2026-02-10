@@ -12,112 +12,45 @@
       <!-- Content -->
       <div class="relative p-6 overflow-y-auto flex flex-col gap-6">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-3 gap-4">
-          <!-- Card 1: Negotiation Course (Affiliate) -->
-          <AmICardAction
-            :icon="TrendingUp"
-            premier
-            header="Master Negotiations"
-            strapline="Knowing your value is only the first step"
-            bg-colour="bg-salary-negotiator-50/50"
-            border-colour="border-salary-negotiator-100"
-            hover-class="hover:border-salary-negotiator-200"
-            affiliate-bg-colour="bg-salary-negotiator-100"
-            affiliate-text-colour="text-salary-negotiator-600"
-            sponsored>
+          <!-- Loop through cards -->
+          <component
+            :is="card.component || AmICardAction"
+            v-for="card in cards"
+            :key="card.header"
+            :icon="card.icon"
+            :premier="card.premier"
+            :header="card.header"
+            :strapline="card.strapline"
+            :bg-colour="card.bgColour"
+            :border-colour="card.borderColour"
+            :hover-class="card.hoverClass"
+            :affiliate-bg-colour="card.affiliateBgColour"
+            :affiliate-text-colour="card.affiliateTextColour"
+            :sponsored="card.sponsored">
             <template #body>
-              We've partnered with
-              <strong class="text-salary-negotiator-500">The Salary Negotiator</strong> to help you
-              bridge the gap. Master the exact scripts and strategies used by top executives to
-              secure the pay you actually deserve.
+              <!-- eslint-disable-next-line vue/no-v-html -->
+              <span v-html="card.bodyHtml"></span>
             </template>
             <template #cta>
+              <!-- Link CTA -->
               <a
-                href="https://thesalarynegotiator.com/courses?ref=ndlknjh"
+                v-if="card.ctaType === 'link'"
+                :href="card.ctaUrl"
                 target="_blank"
                 rel="sponsored"
-                class="block w-full p-3 text-center text-sm font-bold text-white bg-salary-negotiator-500 rounded-lg hover:bg-salary-negotiator-700 transition-colors shadow-md"
-                >Explore Courses</a
+                class="block w-full p-3 text-center text-sm font-bold text-white rounded-lg transition-colors shadow-md"
+                :class="card.ctaClass"
+                >{{ card.ctaText }}</a
               >
-            </template>
-          </AmICardAction>
-
-          <!-- Card 2: CV Help (Affiliate) -->
-          <AmICardAction
-            :icon="FileText"
-            premier
-            header="Career Progression"
-            strapline="Templates alone don't win interviews"
-            bg-colour="bg-purple-cv-50/50"
-            border-colour="border-purple-cv-100"
-            hover-class="hover:border-purple-cv-200"
-            affiliate-bg-colour="bg-purple-cv-100"
-            affiliate-text-colour="text-purple-cv-600"
-            sponsored>
-            <template #body>
-              Position yourself for your next big move with a professionally written CV from
-              <strong class="text-purple-cv-900">PurpleCV</strong>. Their experts design documents
-              specifically to beat the algorithms and stand out to recruiters.
-            </template>
-            <template #cta>
-              <a
-                href="https://purplecv.co.uk/cv-writing?wpam_id=1293"
-                target="_blank"
-                rel="sponsored"
-                class="block w-full p-3 text-center text-sm font-bold text-white bg-purple-cv-900 rounded-lg hover:bg-purple-cv-700 transition-colors shadow-md"
-                >PurpleCV</a
-              >
-            </template>
-          </AmICardAction>
-
-          <!-- Card 3: UK only free CV review (Affiliate)-->
-          <LazyAmICardAction
-            v-if="country === 'UK' && !isXl"
-            bg-colour="bg-cv-library-50/50"
-            border-colour="border-cv-library-100"
-            hover-class="hover:border-cv-library-200"
-            affiliate-bg-colour="bg-cv-library-100"
-            affiliate-text-colour="text-cv-library-700"
-            :icon="FileUser"
-            header="Get Discovered"
-            strapline="Find a job that works for you, fast"
-            sponsored>
-            <template #body>
-              Register your free CV on the UK's leading job site (<strong
-                class="text-cv-library-700"
-                >CV-Library</strong
-              >) and let top employers come to you - it's fast, easy and free.
-            </template>
-            <template #cta>
-              <a
-                href="https://www.cv-library.co.uk/register?id=107202"
-                target="_blank"
-                rel="sponsored"
-                class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
-                >Register CV</a
-              >
-            </template>
-          </LazyAmICardAction>
-
-          <!-- Card 4: Free Script (The 'Quick Win') -->
-          <AmICardAction
-            header="Email Template"
-            strapline="A template script to help you start the conversation."
-            :icon="Mail">
-            <template #body>
-              Whether you're underpaid or looking to justify a raise, use this script to confidently
-              communicate your value and set up a discussion with your manager.
-            </template>
-            <template #cta>
+              <!-- Button CTA -->
               <AmIButton
-                bg-colour="bg-white"
-                animation-colour="bg-slate-200"
-                text-colour="text-slate-900"
-                class="border-slate-300 border"
-                @click="toggleScript">
-                {{ showScript ? 'Hide Script' : 'View Script' }}
+                v-else-if="card.ctaType === 'button'"
+                v-bind="card.ctaProps"
+                @click="card.ctaAction">
+                {{ card.ctaText }}
               </AmIButton>
             </template>
-          </AmICardAction>
+          </component>
         </div>
 
         <!-- Collapsible Script Section -->
@@ -147,6 +80,7 @@
 <script setup lang="ts">
 // imports
 import { Copy, CheckCircle2, TrendingUp, FileText, Mail, FileUser } from 'lucide-vue-next';
+import { AmICardAction, LazyAmICardAction } from '#components';
 import { ref, computed } from 'vue';
 // ** type definitions **
 
@@ -213,6 +147,86 @@ const copyToClipboard = async () => {
   copied.value = true;
   setTimeout(() => (copied.value = false), 2000);
 };
+
+const cards = computed(() => {
+  const list = [
+    {
+      component: undefined,
+      header: 'Master Negotiations',
+      strapline: 'Knowing your value is only the first step',
+      icon: TrendingUp,
+      premier: true,
+      sponsored: true,
+      bgColour: 'bg-salary-negotiator-50/50',
+      borderColour: 'border-salary-negotiator-100',
+      hoverClass: 'hover:border-salary-negotiator-200',
+      affiliateBgColour: 'bg-salary-negotiator-100',
+      affiliateTextColour: 'text-salary-negotiator-600',
+      bodyHtml: `We've partnered with <strong class="text-salary-negotiator-500">The Salary Negotiator</strong> to help you bridge the gap. Master the exact scripts and strategies used by top executives to secure the pay you actually deserve.`,
+      ctaType: 'link',
+      ctaUrl: 'https://thesalarynegotiator.com/courses?ref=ndlknjh',
+      ctaText: 'Explore Courses',
+      ctaClass: 'bg-salary-negotiator-500 hover:bg-salary-negotiator-700'
+    },
+    {
+      component: undefined,
+      header: 'Career Progression',
+      strapline: "Templates alone don't win interviews",
+      icon: FileText,
+      premier: true,
+      sponsored: true,
+      bgColour: 'bg-purple-cv-50/50',
+      borderColour: 'border-purple-cv-100',
+      hoverClass: 'hover:border-purple-cv-200',
+      affiliateBgColour: 'bg-purple-cv-100',
+      affiliateTextColour: 'text-purple-cv-600',
+      bodyHtml: `Position yourself for your next big move with a professionally written CV from <strong class="text-purple-cv-900">PurpleCV</strong>. Their experts design documents specifically to beat the algorithms and stand out to recruiters.`,
+      ctaType: 'link',
+      ctaUrl: 'https://purplecv.co.uk/cv-writing?wpam_id=1293',
+      ctaText: 'PurpleCV',
+      ctaClass: 'bg-purple-cv-900 hover:bg-purple-cv-700'
+    },
+    {
+      component: undefined,
+      header: 'Email Template',
+      strapline: 'A template script to help you start the conversation.',
+      icon: Mail,
+      bodyHtml: `Whether you're underpaid or looking to justify a raise, use this script to confidently communicate your value and set up a discussion with your manager.`,
+      ctaType: 'button',
+      ctaText: showScript.value ? 'Hide Script' : 'View Script',
+      ctaAction: toggleScript,
+      ctaProps: {
+        bgColour: 'bg-white',
+        animationColour: 'bg-slate-200',
+        textColour: 'text-slate-900',
+        class: 'border-slate-300 border'
+      }
+    }
+  ];
+
+  // Conditionally add UK specific card
+  if (props.country === 'UK' && !isXl.value) {
+    list.splice(2, 0, {
+      component: LazyAmICardAction,
+      header: 'Get Discovered',
+      strapline: 'Find a job that works for you, fast',
+      icon: FileUser,
+      sponsored: true,
+      bgColour: 'bg-cv-library-50/50',
+      borderColour: 'border-cv-library-100',
+      hoverClass: 'hover:border-cv-library-200',
+      affiliateBgColour: 'bg-cv-library-100',
+      affiliateTextColour: 'text-cv-library-700',
+      bodyHtml: `Register your free CV on the UK's leading job site (<strong class="text-cv-library-700">CV-Library</strong>) and let top employers come to you - it's fast, easy and free.`,
+      ctaType: 'link',
+      ctaUrl: 'https://www.cv-library.co.uk/register?id=107202',
+      ctaText: 'Register CV',
+      ctaClass: 'bg-cv-library-700 hover:bg-cv-library-500'
+    } as any);
+  }
+
+  return list;
+});
 
 // ** watchers **
 </script>
