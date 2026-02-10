@@ -1,12 +1,11 @@
 <template>
   <nav
-    class="flex items-center gap-2 my-6 text-xs font-medium text-slate-300/80 flex-wrap"
+    class="flex items-center gap-2 my-6 text-xs font-medium text-slate-300/80 flex-wrap px-4 md:px-8"
     aria-label="Breadcrumb">
     <ol class="flex items-center gap-2 flex-wrap">
       <li>
         <NuxtLink to="/" class="flex items-center gap-1 hover:text-white transition-colors">
-          <Home class="w-3 h-3" />
-          Home
+          <HomeIcon class="w-3 h-3" />
         </NuxtLink>
       </li>
       <li class="text-slate-300 select-none">/</li>
@@ -36,6 +35,7 @@
 </template>
 
 <script setup lang="ts">
+import { HomeIcon } from 'lucide-vue-next';
 import type { RouteLocationNormalizedGeneric } from 'vue-router';
 
 defineProps<{
