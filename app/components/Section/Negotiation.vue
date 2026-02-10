@@ -2,7 +2,7 @@
   <div class="flex items-center justify-center">
     <!-- Modal Card -->
     <div
-      class="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl transform transition-all overflow-hidden flex flex-col">
+      class="relative w-full bg-white rounded-2xl shadow-2xl transform transition-all overflow-hidden flex flex-col">
       <!-- Header -->
       <div
         class="relative flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-secondary-700">
@@ -11,34 +11,26 @@
 
       <!-- Content -->
       <div class="relative p-6 overflow-y-auto flex flex-col gap-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Card 1: Negotiation Course (Affiliate) -->
-          <div
-            class="flex flex-col gap-4 h-full p-4 border border-salary-negotiator-100 rounded-xl bg-salary-negotiator-50/50 hover:border-salary-negotiator-200 transition-colors relative overflow-hidden">
-            <div
-              class="absolute top-0 right-0 px-2 py-1 bg-primary-100 text-[10px] font-bold text-primary-600 rounded-bl-lg">
-              PREMIER
-            </div>
-            <div class="flex flex-col gap-4">
-              <div class="flex gap-2 items-center">
-                <div
-                  class="w-10 h-10 flex items-center justify-center rounded-full bg-salary-negotiator-100 text-salary-negotiator-600">
-                  <TrendingUp class="w-5 h-5" />
-                </div>
-                <h4 class="text-lg font-bold text-slate-900">Master Negotiations</h4>
-              </div>
-              <div class="text-xs text-slate-600 flex flex-col gap-2">
-                <p><strong>Knowing your value is only the first step.</strong></p>
-                <p>
-                  We've partnered with
-                  <strong class="text-salary-negotiator-500">The Salary Negotiator</strong> to help
-                  you bridge the gap. Master the exact scripts and strategies used by top executives
-                  to secure the pay you actually deserve.
-                </p>
-                <p class="text-right"><small>(Sponsored)</small></p>
-              </div>
-            </div>
-            <div class="mt-auto">
+          <AmICardAction
+            :icon="TrendingUp"
+            premier
+            header="Master Negotiations"
+            strapline="Knowing your value is only the first step"
+            bg-colour="bg-salary-negotiator-50/50"
+            border-colour="border-salary-negotiator-100"
+            hover-class="hover:border-salary-negotiator-200"
+            affiliate-bg-colour="bg-salary-negotiator-100"
+            affiliate-text-colour="text-salary-negotiator-600"
+            sponsored>
+            <template #body>
+              We've partnered with
+              <strong class="text-salary-negotiator-500">The Salary Negotiator</strong> to help you
+              bridge the gap. Master the exact scripts and strategies used by top executives to
+              secure the pay you actually deserve.
+            </template>
+            <template #cta>
               <a
                 href="https://thesalarynegotiator.com/courses?ref=ndlknjh"
                 target="_blank"
@@ -46,110 +38,76 @@
                 class="block w-full p-3 text-center text-sm font-bold text-white bg-salary-negotiator-500 rounded-lg hover:bg-salary-negotiator-700 transition-colors shadow-md"
                 >Explore Courses</a
               >
-            </div>
-          </div>
+            </template>
+          </AmICardAction>
 
           <!-- Card 2: CV Help (Affiliate) -->
-          <div
-            class="flex flex-col gap-4 h-full p-4 border border-purple-cv-100 rounded-xl bg-purple-cv-50/50 hover:border-purple-cv-200 transition-colors overflow-hidden relative">
-            <div
-              class="absolute top-0 right-0 px-2 py-1 bg-primary-100 text-2xs font-bold text-primary-600 rounded-bl-lg">
-              PREMIER
-            </div>
-            <div class="mb-4 flex flex-col gap-4">
-              <div class="flex gap-2 items-center">
-                <div
-                  class="w-10 h-10 flex items-center justify-center rounded-full bg-purple-cv-100 text-purple-cv-600">
-                  <FileText class="w-5 h-5" />
-                </div>
-                <h4 class="text-lg font-bold text-slate-900">Career Progression</h4>
-              </div>
-              <div v-if="country === 'USA'" class="text-xs text-slate-600 flex flex-col gap-2">
-                <p><strong>Templates alone don't win interviews.</strong></p>
-                <p>
-                  Position yourself for your next big move with a professionally written CV from
-                  <strong class="text-resumeble-700">Resumeble</strong>. Their experts design
-                  documents specifically to beat the algorithms and stand out to recruiters.
-                </p>
-                <p class="text-right"><small>(Sponsored)</small></p>
-              </div>
-              <div v-else class="text-xs text-slate-600 flex flex-col gap-2">
-                <p><strong>Templates alone don't win interviews.</strong></p>
-                <p>
-                  Position yourself for your next big move with a professionally written CV from
-                  <strong class="text-purple-cv-900">PurpleCV</strong>. Their experts design
-                  documents specifically to beat the algorithms and stand out to recruiters.
-                </p>
-                <p class="text-right"><small>(Sponsored)</small></p>
-              </div>
-            </div>
-            <div class="mt-auto">
-              <AmIButton v-if="country === 'USA'" disabled class="text-center"
-                >Coming Soon</AmIButton
-              >
+          <AmICardAction
+            :icon="FileText"
+            premier
+            header="Career Progression"
+            strapline="Templates alone don't win interviews"
+            bg-colour="bg-purple-cv-50/50"
+            border-colour="border-purple-cv-100"
+            hover-class="hover:border-purple-cv-200"
+            affiliate-bg-colour="bg-purple-cv-100"
+            affiliate-text-colour="text-purple-cv-600"
+            sponsored>
+            <template #body>
+              Position yourself for your next big move with a professionally written CV from
+              <strong class="text-purple-cv-900">PurpleCV</strong>. Their experts design documents
+              specifically to beat the algorithms and stand out to recruiters.
+            </template>
+            <template #cta>
               <a
-                v-else
                 href="https://purplecv.co.uk/cv-writing?wpam_id=1293"
                 target="_blank"
                 rel="sponsored"
                 class="block w-full p-3 text-center text-sm font-bold text-white bg-purple-cv-900 rounded-lg hover:bg-purple-cv-700 transition-colors shadow-md"
                 >PurpleCV</a
               >
-            </div>
-          </div>
+            </template>
+          </AmICardAction>
 
           <!-- Card 3: UK only free CV review (Affiliate)-->
-          <div
-            v-if="country === 'UK'"
-            class="flex flex-col gap-4 h-full p-4 border border-cv-library-100 rounded-xl bg-cv-library-50/50 hover:border-cv-library-200 transition-colors">
-            <div class="flex gap-2 items-center">
-              <div
-                class="w-10 h-10 flex items-center justify-center rounded-full bg-cv-library-100 text-cv-library-600">
-                <FileUser class="w-5 h-5" />
-              </div>
-              <h4 class="text-lg font-bold text-slate-900">Free CV Review</h4>
-            </div>
-            <div class="text-xs text-slate-600 flex flex-col gap-2">
-              <p><strong>Not sure if your CV is up to scratch?</strong></p>
-              <p>
-                Get a free CV review from the experts at
-                <strong class="text-cv-library-700">CVLibrary</strong>. Create an account, upload
-                your CV, and receive personalized feedback to help you stand out in the competitive
-                UK job market.
-              </p>
-              <p class="text-right"><small>(Sponsored)</small></p>
-            </div>
-            <div class="mt-auto">
+          <LazyAmICardAction
+            v-if="country === 'UK' && !isXl"
+            bg-colour="bg-cv-library-50/50"
+            border-colour="border-cv-library-100"
+            hover-class="hover:border-cv-library-200"
+            affiliate-bg-colour="bg-cv-library-100"
+            affiliate-text-colour="text-cv-library-700"
+            :icon="FileUser"
+            header="Get Discovered"
+            strapline="Find a job that works for you, fast"
+            sponsored>
+            <template #body>
+              Register your free CV on the UK's leading job site (<strong
+                class="text-cv-library-700"
+                >CV-Library</strong
+              >) and let top employers come to you - it's fast, easy and free.
+            </template>
+            <template #cta>
               <a
                 href="https://www.cv-library.co.uk/register?id=107202"
                 target="_blank"
                 rel="sponsored"
                 class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
-                >Get My Free Review</a
+                >Register CV</a
               >
-            </div>
-          </div>
+            </template>
+          </LazyAmICardAction>
 
           <!-- Card 4: Free Script (The 'Quick Win') -->
-          <div
-            class="flex flex-col gap-4 h-full p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:border-slate-300 transition-colors">
-            <div class="flex flex-col gap-4">
-              <div class="flex gap-2 items-center">
-                <div
-                  class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-200 text-slate-600">
-                  <Mail class="w-5 h-5" />
-                </div>
-                <h4 class="text-lg font-bold text-slate-900">Email Template</h4>
-              </div>
-              <div class="text-xs text-slate-500 flex flex-col gap-2">
-                <p>A template script to help you start the conversation.</p>
-                <p>
-                  Whether you're underpaid or looking to justify a raise, use this script to
-                  confidently communicate your value and set up a discussion with your manager.
-                </p>
-              </div>
-            </div>
-            <div class="mt-auto">
+          <AmICardAction
+            header="Email Template"
+            strapline="A template script to help you start the conversation."
+            :icon="Mail">
+            <template #body>
+              Whether you're underpaid or looking to justify a raise, use this script to confidently
+              communicate your value and set up a discussion with your manager.
+            </template>
+            <template #cta>
               <AmIButton
                 bg-colour="bg-white"
                 animation-colour="bg-slate-200"
@@ -158,15 +116,13 @@
                 @click="toggleScript">
                 {{ showScript ? 'Hide Script' : 'View Script' }}
               </AmIButton>
-            </div>
-          </div>
+            </template>
+          </AmICardAction>
         </div>
 
         <!-- Collapsible Script Section -->
-        <div
-          v-if="showScript"
-          class="pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div class="space-y-4">
+        <ModalGeneric v-model="showScript">
+          <div class="space-y-4 p-4">
             <div class="flex items-center justify-between">
               <h4 class="font-bold text-slate-700 text-sm">Your Custom Email Script</h4>
               <button
@@ -182,7 +138,7 @@
               {{ emailBody }}
             </div>
           </div>
-        </div>
+        </ModalGeneric>
       </div>
     </div>
   </div>
@@ -192,7 +148,6 @@
 // imports
 import { Copy, CheckCircle2, TrendingUp, FileText, Mail, FileUser } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
-
 // ** type definitions **
 
 // ** props **
@@ -211,6 +166,7 @@ defineEmits(['close']);
 const copied = ref(false);
 const showScript = ref(false);
 const { trackResultAction } = useAnalytics();
+const { isXl } = useViewport();
 
 // ** computed properties **
 const isUnderpaid = computed(() => props.marketAverage > props.currentSalary);

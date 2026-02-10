@@ -83,7 +83,7 @@
         </form>
 
         <!-- FOOTER -->
-        <p class="mt-8 text-center text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+        <p class="mt-8 text-center text-2xs text-slate-400 uppercase tracking-widest font-bold">
           Protected Environment
         </p>
       </div>

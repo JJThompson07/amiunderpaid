@@ -69,17 +69,15 @@
 import { useCurrentUser, useFirebaseAuth } from 'vuefire';
 import { signOut } from 'firebase/auth';
 import { ref } from 'vue';
-import { useWindowSize } from '@vueuse/core';
 import { MenuIcon, XIcon } from 'lucide-vue-next';
 
-const { width } = useWindowSize();
+const { isMobile } = useViewport();
 
 const openMenu = ref<boolean>(false);
 
 const user = useCurrentUser();
 const auth = useFirebaseAuth();
 
-const isMobile = computed(() => width.value < 768);
 const isAdmin = computed(() => Boolean(user.value?.email));
 
 const handleLogout = async () => {

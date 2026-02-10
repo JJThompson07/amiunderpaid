@@ -71,7 +71,7 @@
           <Square class="w-6 h-6 text-slate-400" />
           Adzuna API
           <span
-            class="ml-1 text-[10px] uppercase tracking-wider bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full"
+            class="ml-1 text-2xs uppercase tracking-wider bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full"
             >Coming Soon</span
           >
         </div>

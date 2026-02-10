@@ -46,6 +46,8 @@ export default defineNuxtConfig({
   // ** 3. Runtime Config **
   // This helps Nuxt track these variables for client/server consistency
   runtimeConfig: {
+    ADZUNA_APP_ID: process.env.ADZUNA_APP_ID,
+    ADZUNA_APP_KEY: process.env.ADZUNA_APP_KEY,
     public: {
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
       adminAccessKey: process.env.NUXT_ADMIN_ACCESS_KEY,

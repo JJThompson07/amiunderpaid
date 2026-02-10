@@ -43,7 +43,7 @@
             <li>
               <strong>Adzuna Intelligence:</strong> Used for real-time job listing data.
               <span
-                class="font-bold text-secondary-600 uppercase text-[10px] tracking-wide bg-secondary-50 px-2 py-0.5 rounded-full mr-1"
+                class="font-bold text-secondary-600 uppercase text-2xs tracking-wide bg-secondary-50 px-2 py-0.5 rounded-full mr-1"
                 >Coming Soon</span
               >
             </li>

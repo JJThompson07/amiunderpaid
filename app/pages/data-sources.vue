@@ -24,7 +24,7 @@
           <h3 class="text-lg font-bold text-slate-900">Adzuna Intelligence</h3>
           <p class="mt-2 text-sm text-slate-500">
             <span
-              class="font-bold text-secondary-600 uppercase text-[10px] tracking-wide bg-secondary-50 px-2 py-0.5 rounded-full mr-1"
+              class="font-bold text-secondary-600 uppercase text-2xs tracking-wide bg-secondary-50 px-2 py-0.5 rounded-full mr-1"
               >Coming Soon</span
             >
             Our primary source for real-time market shifts. We aggregate data from millions of live
@@ -68,7 +68,7 @@
           <h3 class="text-lg font-bold text-slate-700">Crowdsourced Data</h3>
           <p class="mt-2 text-sm text-slate-500">
             <span
-              class="font-bold text-secondary-600 uppercase text-[10px] tracking-wide bg-secondary-50 px-2 py-0.5 rounded-full mr-1"
+              class="font-bold text-secondary-600 uppercase text-2xs tracking-wide bg-secondary-50 px-2 py-0.5 rounded-full mr-1"
               >Coming Soon</span
             >
             We are building a verified database of anonymous salary submissions from professionals
