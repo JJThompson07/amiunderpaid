@@ -151,6 +151,7 @@ const copyToClipboard = async () => {
 const cards = computed(() => {
   const list = [
     {
+      id: 1,
       component: undefined,
       header: 'Master Negotiations',
       strapline: 'Knowing your value is only the first step',
@@ -169,6 +170,7 @@ const cards = computed(() => {
       ctaClass: 'bg-salary-negotiator-500 hover:bg-salary-negotiator-700'
     },
     {
+      id: 2,
       component: undefined,
       header: 'Career Progression',
       strapline: "Templates alone don't win interviews",
@@ -187,6 +189,25 @@ const cards = computed(() => {
       ctaClass: 'bg-purple-cv-900 hover:bg-purple-cv-700'
     },
     {
+      id: 3,
+      component: LazyAmICardAction,
+      header: 'Get Discovered',
+      strapline: 'Find a job that works for you, fast',
+      icon: FileUser,
+      sponsored: true,
+      bgColour: 'bg-cv-library-50/50',
+      borderColour: 'border-cv-library-100',
+      hoverClass: 'hover:border-cv-library-200',
+      affiliateBgColour: 'bg-cv-library-100',
+      affiliateTextColour: 'text-cv-library-700',
+      bodyHtml: `Register your free CV on the UK's leading job site (<strong class="text-cv-library-700">CV-Library</strong>) and let top employers come to you - it's fast, easy and free.`,
+      ctaType: 'link',
+      ctaUrl: 'https://www.cv-library.co.uk/register?id=107202',
+      ctaText: 'Register CV',
+      ctaClass: 'bg-cv-library-700 hover:bg-cv-library-500'
+    },
+    {
+      id: 4,
       component: undefined,
       header: 'Email Template',
       strapline: 'A template script to help you start the conversation.',
@@ -204,28 +225,9 @@ const cards = computed(() => {
     }
   ];
 
-  // Conditionally add UK specific card
-  if (props.country === 'UK' && !isXl.value) {
-    list.splice(2, 0, {
-      component: LazyAmICardAction,
-      header: 'Get Discovered',
-      strapline: 'Find a job that works for you, fast',
-      icon: FileUser,
-      sponsored: true,
-      bgColour: 'bg-cv-library-50/50',
-      borderColour: 'border-cv-library-100',
-      hoverClass: 'hover:border-cv-library-200',
-      affiliateBgColour: 'bg-cv-library-100',
-      affiliateTextColour: 'text-cv-library-700',
-      bodyHtml: `Register your free CV on the UK's leading job site (<strong class="text-cv-library-700">CV-Library</strong>) and let top employers come to you - it's fast, easy and free.`,
-      ctaType: 'link',
-      ctaUrl: 'https://www.cv-library.co.uk/register?id=107202',
-      ctaText: 'Register CV',
-      ctaClass: 'bg-cv-library-700 hover:bg-cv-library-500'
-    } as any);
-  }
-
-  return list;
+  return !isXl.value && props.country === 'UK'
+    ? list
+    : (list.filter((item) => !item.component) as typeof list);
 });
 
 // ** watchers **

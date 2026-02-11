@@ -27,6 +27,17 @@
 
     <div class="relative grid grid-cols-1 xl:grid-cols-12 px-4 gap-6">
       <div class="relative mx-auto flex flex-col gap-6 xl:col-start-3 xl:col-end-11">
+        <!-- Adzuna Histogram -->
+        <LazySectionAdzunaComparison
+          v-if="hasDistributionData"
+          :buckets="histogramBuckets"
+          :histogram-range="histogramRange"
+          :histogram-max-count="histogramMaxCount"
+          :histogram-total-count="histogramTotalCount"
+          :is-underpaid="isUnderpaidAdzuna(userSalary)"
+          :currency-symbol="currencySymbol"
+          :average-salary="jobsData.mean"
+          :current-salary="userSalary" />
         <!-- No Data Found State -->
         <LazyAmICardNoData
           v-if="!hasData"
@@ -141,6 +152,17 @@ import { computed, onMounted, watch } from 'vue';
 const route = useRoute();
 const showAmbiguityModal = ref(false);
 const searchConfirmed = ref(false);
+const {
+  distributionData,
+  jobsData,
+  histogramBuckets,
+  hasDistributionData,
+  fetchAdzunaData,
+  histogramRange,
+  histogramMaxCount,
+  histogramTotalCount,
+  isUnderpaid: isUnderpaidAdzuna
+} = useAdzuna();
 
 const { trackAmbiguousSearch } = useAnalytics();
 
@@ -180,7 +202,6 @@ const { isXl } = useViewport();
 const userSalary = ref(Number(route.query.compare) || 0);
 const userPeriod = ref(route.query.period?.toString() || 'year');
 const searchTitle = ref((route.query.q as string) || displayTitle.value);
-
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 
 // Strict Data Check:
@@ -201,11 +222,20 @@ const diffPercent = computed<number>(() => {
 });
 
 const fetchData = (t: string, l: string, c: string, p: string) => {
-  if (c === 'UK') {
-    fetchUkMarketData(t, l, p);
-  } else {
-    fetchUSAMarketData(t, l, p);
-  }
+  Promise.all([
+    c === 'UK' ? fetchUkMarketData(t, l, p) : fetchUSAMarketData(t, l, p),
+    fetchAdzunaData(t, l, c)
+  ])
+    .then((values) => {
+      const [marketData, jobsData] = values;
+
+      console.log('Market Data:', marketData);
+      console.log('Adzuna Jobs Data:', jobsData);
+      // Handle the data as needed after both promises resolve
+    })
+    .catch((error) => {
+      console.error('Error fetching data:', error);
+    });
 };
 
 // ** methods **
@@ -263,6 +293,13 @@ watch(ambiguousMatches, (matches) => {
   if (matches.length > 1 && !searchConfirmed.value) {
     showAmbiguityModal.value = true;
   }
+});
+
+watch(distributionData, () => {
+  console.log('Distribution data updated:', distributionData.value);
+});
+watch(jobsData, () => {
+  console.log('Jobs data updated:', jobsData.value);
 });
 
 // ** SEO **
