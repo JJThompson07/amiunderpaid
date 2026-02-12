@@ -3,7 +3,7 @@
     <!-- Load Button State -->
     <div
       v-if="!hasData"
-      class="flex flex-col items-center justify-center p-8 mt-6 bg-white border shadow-xl rounded-2xl border-slate-200">
+      class="flex flex-col items-center justify-center p-8 bg-white border shadow-xl rounded-2xl border-slate-200">
       <h3 class="mb-2 text-lg font-bold text-slate-900">See Salary Distribution</h3>
       <p class="mb-6 text-sm text-center text-slate-500">
         View detailed salary breakdown based on live job listings.

@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 text-center">
+  <div class="text-center p-8">
     <p class="mb-2 text-sm font-medium text-slate-500">
       Verdict for {{ displayTitle }} in {{ location || country }}
     </p>

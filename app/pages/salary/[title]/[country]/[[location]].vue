@@ -25,8 +25,16 @@
       :country="country"
       :location="location" />
 
-    <div class="relative grid grid-cols-1 xl:grid-cols-12 px-4 gap-6">
-      <div class="relative mx-auto flex flex-col gap-6 xl:col-start-3 xl:col-end-11">
+    <LazyAmICardNoData
+      v-if="!hasData && !hasJobsData"
+      :title="displayTitle"
+      :location="location"
+      :country="country"
+      :icon="Info"
+      :period="userPeriod" />
+
+    <div v-else class="relative grid grid-cols-1 px-4 gap-6">
+      <div class="relative mx-auto flex flex-col gap-6">
         <!-- Adzuna Histogram -->
         <LazySectionAdzunaComparison
           :buckets="histogramBuckets"
@@ -40,16 +48,9 @@
           :loading="adzunaLoading"
           @fetch-data="fetchAdzunaHistogram(searchTitle, location, country)" />
         <!-- No Data Found State -->
-        <LazyAmICardNoData
-          v-if="!hasData"
-          :title="displayTitle"
-          :location="location"
-          :country="country"
-          :icon="Info"
-          :period="userPeriod" />
 
         <!-- Result Headline Card (Only show if we have data) -->
-        <div v-else class="overflow-hidden bg-white border shadow-xl rounded-2xl border-slate-200">
+        <div class="overflow-hidden bg-white border shadow-xl rounded-2xl border-slate-200">
           <LazySectionSalaryVerdict
             :display-title="displayTitle"
             :location="location"
@@ -102,7 +103,7 @@
         </p>
       </div>
 
-      <LazyAmICardAction
+      <!-- <LazyAmICardAction
         v-if="country === 'UK' && hasData && isXl"
         bg-colour="bg-cv-library-50"
         border-colour="border-cv-library-100"
@@ -128,7 +129,7 @@
             >Register CV</a
           >
         </template>
-      </LazyAmICardAction>
+      </LazyAmICardAction> -->
     </div>
 
     <!-- Ambiguity Modal -->
@@ -164,7 +165,8 @@ const {
   histogramMaxCount,
   histogramTotalCount,
   isUnderpaid: isUnderpaidAdzuna,
-  meanSalary
+  meanSalary,
+  hasJobsData
 } = useAdzuna();
 
 const { trackAmbiguousSearch } = useAnalytics();
@@ -201,7 +203,6 @@ const location = computed(() =>
   route.params.location ? unslugify(route.params.location as string) : ''
 );
 
-const { isXl } = useViewport();
 const userSalary = ref(Number(route.query.compare) || 0);
 const userPeriod = ref(route.query.period?.toString() || 'year');
 const searchTitle = ref((route.query.q as string) || displayTitle.value);
