@@ -29,15 +29,16 @@
       <div class="relative mx-auto flex flex-col gap-6 xl:col-start-3 xl:col-end-11">
         <!-- Adzuna Histogram -->
         <LazySectionAdzunaComparison
-          v-if="hasDistributionData"
           :buckets="histogramBuckets"
           :histogram-range="histogramRange"
           :histogram-max-count="histogramMaxCount"
           :histogram-total-count="histogramTotalCount"
           :is-underpaid="isUnderpaidAdzuna(userSalary)"
           :currency-symbol="currencySymbol"
-          :average-salary="jobsData.mean"
-          :current-salary="userSalary" />
+          :average-salary="meanSalary"
+          :current-salary="userSalary"
+          :loading="adzunaLoading"
+          @fetch-data="fetchAdzunaHistogram(searchTitle, location, country)" />
         <!-- No Data Found State -->
         <LazyAmICardNoData
           v-if="!hasData"
@@ -156,12 +157,14 @@ const {
   distributionData,
   jobsData,
   histogramBuckets,
-  hasDistributionData,
-  fetchAdzunaData,
+  fetchJobs: fetchAdzunaJobs,
+  fetchHistogram: fetchAdzunaHistogram,
+  loading: adzunaLoading,
   histogramRange,
   histogramMaxCount,
   histogramTotalCount,
-  isUnderpaid: isUnderpaidAdzuna
+  isUnderpaid: isUnderpaidAdzuna,
+  meanSalary
 } = useAdzuna();
 
 const { trackAmbiguousSearch } = useAnalytics();
@@ -224,13 +227,13 @@ const diffPercent = computed<number>(() => {
 const fetchData = (t: string, l: string, c: string, p: string) => {
   Promise.all([
     c === 'UK' ? fetchUkMarketData(t, l, p) : fetchUSAMarketData(t, l, p),
-    fetchAdzunaData(t, l, c)
+    fetchAdzunaJobs(t, l, c)
   ])
     .then((values) => {
-      const [marketData, jobsData] = values;
+      const [marketData] = values;
 
       console.log('Market Data:', marketData);
-      console.log('Adzuna Jobs Data:', jobsData);
+      console.log('Adzuna Jobs Data:', jobsData.value);
       // Handle the data as needed after both promises resolve
     })
     .catch((error) => {

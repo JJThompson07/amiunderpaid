@@ -1,28 +1,36 @@
 // server/api/adzuna/jobs.ts
 export default defineEventHandler(async (event) => {
-  const { title, location, country, resultsPerPage } = getQuery(event);
   const config = useRuntimeConfig();
+  const query = getQuery(event);
+  const { title, location, country, resultsPerPage } = query;
 
-  const code = country === 'us' ? 'us' : 'gb';
+  const countryParam = String(country || 'gb').toLowerCase();
+  const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
   const limit = resultsPerPage || 5;
 
-  const titleEncoded = encodeURIComponent(title as string);
+  const params: Record<string, any> = {
+    app_id: config.ADZUNA_APP_ID,
+    app_key: config.ADZUNA_APP_KEY,
+    results_per_page: limit,
+    what: title,
+    'content-type': 'application/json',
+    location0: countryCode === 'us' ? 'US' : 'UK'
+  };
 
-  // The Search endpoint provides job listings
-  let url = `https://api.adzuna.com/v1/api/jobs/${code}/search/1?app_id=${config.ADZUNA_APP_ID}&app_key=${config.ADZUNA_APP_KEY}&results_per_page=${limit}&what=${titleEncoded}&content-type=application/json`;
-
-  // Add location parameters if they exist
-  url += `&location0=${country === 'us' ? 'US' : 'UK'}`; // Country is required for Adzuna API, even if it's just "UK" or "US"
   if (location && String(location).trim() !== '') {
-    url += `&location1=${encodeURIComponent(location as string)}`;
+    params.location1 = location;
   }
 
   try {
-    const data = await $fetch(url);
-
+    const data = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1`, {
+      params
+    });
     return data;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not fetch jobs data';
-    return { error: message };
+  } catch (e) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: `Failed to fetch Adzuna jobs for ${countryCode}`,
+      data: e
+    });
   }
 });
