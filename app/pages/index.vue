@@ -89,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { Square, SquareCheckBig } from 'lucide-vue-next';
+import { SquareCheckBig } from 'lucide-vue-next';
 
 // Nuxt automatically imports the SalarySearch component from /components
 
