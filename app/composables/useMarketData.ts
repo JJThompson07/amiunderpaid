@@ -26,6 +26,7 @@ export const useMarketData = () => {
   const matchedLocation = ref('');
   const isGenericFallback = ref(false);
   const ambiguousMatches = ref<any[]>([]);
+  const titleMatches = ref<any[]>([]);
   const regionalData = ref<SalaryBenchmark | null>(null);
 
   // Reset state helper
@@ -40,6 +41,7 @@ export const useMarketData = () => {
     matchedLocation.value = '';
     isGenericFallback.value = false;
     ambiguousMatches.value = [];
+    titleMatches.value = [];
     regionalData.value = null;
     error.value = null;
   };
@@ -106,8 +108,8 @@ export const useMarketData = () => {
     let targetGroup = '';
     const groupMatch = searchTitle.match(/^(.*?)\s*\((.*?)\)$/);
     if (groupMatch) {
-      searchTitle = groupMatch[1];
-      targetGroup = groupMatch[2];
+      searchTitle = groupMatch[1] || '';
+      targetGroup = groupMatch[2] || '';
     }
 
     const country = 'UK';
@@ -134,6 +136,9 @@ export const useMarketData = () => {
         filters: `country:UK`,
         hitsPerPage: 10
       });
+
+      titleMatches.value = titleHits;
+      console.log('title hits: ', titleHits);
 
       let bestTitleMatch;
 
@@ -172,6 +177,8 @@ export const useMarketData = () => {
                 hitsPerPage: 10
               }
             );
+
+            console.log('Regional Hits:', regionalHits);
 
             const locLower = location.toLowerCase();
             const bestRegional = regionalHits.find(
@@ -237,6 +244,8 @@ export const useMarketData = () => {
           hitsPerPage: 10
         });
 
+        console.log(hits);
+
         const locLower = location.toLowerCase();
         const bestRegional = hits.find(
           (h) =>
@@ -289,6 +298,7 @@ export const useMarketData = () => {
     matchedLocation,
     isGenericFallback,
     ambiguousMatches,
+    titleMatches,
     regionalData,
     fetchUkMarketData,
     fetchUSAMarketData

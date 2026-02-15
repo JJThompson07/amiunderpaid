@@ -72,6 +72,13 @@
               :market-low="marketLow"
               :market-high="marketHigh" />
           </div>
+
+          <!-- Ambiguity Selection (Fallback when no Gov Data but Adzuna exists) -->
+          <LazySectionGovernmentUserSelection
+            v-else-if="hasJobsData && !hasGovernmentData"
+            :adzuna-category="adzunaCategory"
+            :country="country"
+            @select="handleAmbiguitySelect" />
         </div>
 
         <!-- Regional Comparison Card (UK Only) -->
@@ -207,6 +214,8 @@ const userPeriod = ref(route.query.period?.toString() || 'year');
 const searchTitle = ref((route.query.q as string) || displayTitle.value);
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 
+const adzunaCategory = computed(() => jobsData.value?.results?.[0]?.category?.label);
+
 // Strict Data Check:
 const hasGovernmentData = computed(() => {
   if ((marketAverage?.value ?? 0) === 0) return false;
@@ -241,7 +250,11 @@ const handleAmbiguitySelect = (match: any) => {
   trackAmbiguousSearch(match.title, match.group);
 
   // Re-fetch with specific group, but keep URL clean
-  fetchData(specificTitle, location.value, country.value, userPeriod.value);
+  if (country.value === 'UK') {
+    fetchUkMarketData(specificTitle, location.value, userPeriod.value);
+  } else {
+    fetchUSAMarketData(specificTitle, location.value, userPeriod.value);
+  }
   showAmbiguityModal.value = false;
 };
 

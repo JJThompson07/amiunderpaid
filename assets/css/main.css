@@ -112,3 +112,20 @@
 
   --text-2xs: 0.625rem;
 }
+
+/* Hide the scrollbar track */
+::-webkit-scrollbar {
+  width: 4px; /* or your preferred width */
+  background: transparent; /* makes the track invisible */
+}
+
+/* Style only the scrollbar thumb (the bar) */
+::-webkit-scrollbar-thumb {
+  background: #22486a50; /* your preferred color */
+  border-radius: 6px;
+}
+
+/* Optional: Hide scrollbar corner */
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
