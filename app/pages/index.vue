@@ -30,6 +30,13 @@
       <!-- The Calculator Component -->
       <SalarySearch @country-change="($event) => (isUSA = $event === 'USA')" />
 
+      <section class="max-w-4xl mx-auto p-4 select-none text-xs text-center text-slate-400">
+        <p>
+          Your privacy matters. The information provided above is used solely to generate your
+          results.
+        </p>
+      </section>
+
       <!-- Why section -->
       <section
         class="max-w-4xl mx-auto mt-20 px-4 pb-20 border-t border-slate-200 pt-16 select-none">
