@@ -10,7 +10,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo({
       path: '/admin/login',
       query: {
-        redirect: to.fullPath
+        redirect: to.fullPath,
+        access: to.query.access
       }
     });
   }

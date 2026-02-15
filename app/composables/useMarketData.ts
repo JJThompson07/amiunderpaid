@@ -13,13 +13,11 @@ export interface SalaryBenchmark {
 
 export const useMarketData = () => {
   const loading = ref(false);
-  const error = ref<string | null>(null);
 
   // Reactive state for the results
   const marketAverage = ref(0);
   const marketHigh = ref(0);
   const marketLow = ref(0);
-  const marketLastYear = ref(0);
   const marketDataYear = ref(0);
   const marketPeriod = ref('year');
   const matchedTitle = ref('');
@@ -33,7 +31,6 @@ export const useMarketData = () => {
     marketAverage.value = 0;
     marketHigh.value = 0;
     marketLow.value = 0;
-    marketLastYear.value = 0;
     marketDataYear.value = 0;
     marketPeriod.value = 'year';
     matchedTitle.value = '';
@@ -41,18 +38,11 @@ export const useMarketData = () => {
     isGenericFallback.value = false;
     ambiguousMatches.value = [];
     regionalData.value = null;
-    error.value = null;
   };
 
   // ** Internal Helpers **
 
-  const processRecord = async (
-    record: SalaryBenchmark,
-    country: string,
-    period: string,
-    nationalIndex: any,
-    regionalIndex: any
-  ) => {
+  const processRecord = async (record: SalaryBenchmark) => {
     marketAverage.value = record.salary;
     marketHigh.value = Math.round(record.salary * 1.3);
     marketLow.value = Math.round(record.salary * 0.75);
@@ -60,23 +50,6 @@ export const useMarketData = () => {
     matchedTitle.value = record.title;
     marketPeriod.value = record.period || 'year';
     matchedLocation.value = record.location;
-
-    // ** Fetch Previous Year Data (for trends) **
-    const targetIndex =
-      record.location === 'United Kingdom' || record.location === 'USA'
-        ? nationalIndex
-        : regionalIndex;
-
-    const prevYear = record.year - 1;
-
-    const { hits: prevHits } = await targetIndex.search(record.title, {
-      filters: `country:${country} AND year:${prevYear} AND period:${period}`,
-      hitsPerPage: 1
-    });
-
-    if (prevHits.length > 0 && prevHits[0]?.salary) {
-      marketLastYear.value = prevHits[0].salary;
-    }
   };
 
   const fetchGenericFallback = async (
@@ -99,7 +72,17 @@ export const useMarketData = () => {
     resetData();
 
     // Clean up title if it comes from a URL slug (e.g. "software-engineer" -> "software engineer")
-    const searchTitle = title.replace(/-/g, ' ');
+    let searchTitle = title.replace(/-/g, ' ');
+
+    // Extract group if present (e.g. "Software Engineer (Engineering)")
+    // This allows us to search for the title part only, but filter by the group part
+    let targetGroup = '';
+    const groupMatch = searchTitle.match(/^(.*?)\s*\((.*?)\)$/);
+    if (groupMatch) {
+      searchTitle = groupMatch[1] || '';
+      targetGroup = groupMatch[2] || '';
+    }
+
     const country = 'UK';
 
     try {
@@ -112,20 +95,39 @@ export const useMarketData = () => {
       let record: SalaryBenchmark | undefined;
 
       // 1. SOC Code Lookup (UK Strategy)
-      const { hits: titleHits } = await jobTitlesIndex.search<any>(searchTitle, {
+      // Sanitize query to match the cleaned database format (alphanumeric only)
+      const sanitizedQuery = searchTitle
+        .toLowerCase()
+
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const { hits: titleHits } = await jobTitlesIndex.search<any>(sanitizedQuery, {
         filters: `country:UK`,
-        hitsPerPage: 5
+        hitsPerPage: 10
       });
 
-      // Handle Ambiguity
-      if (titleHits.length > 1) {
-        const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
-        if (groups.size > 1) {
-          ambiguousMatches.value = titleHits;
-        }
+      console.log('title hits: ', titleHits);
+
+      let bestTitleMatch;
+
+      if (targetGroup) {
+        bestTitleMatch = titleHits.find(
+          (h: any) => h.group && h.group.toLowerCase() === targetGroup.toLowerCase()
+        );
       }
 
-      const bestTitleMatch = titleHits[0];
+      if (!bestTitleMatch) {
+        // Handle Ambiguity
+        if (titleHits.length > 1) {
+          const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
+          if (groups.size > 1) {
+            ambiguousMatches.value = titleHits;
+          }
+        }
+        bestTitleMatch = titleHits[0];
+      }
 
       if (bestTitleMatch && bestTitleMatch.soc) {
         // Search National Benchmarks by SOC Code
@@ -177,11 +179,10 @@ export const useMarketData = () => {
       }
 
       if (record) {
-        await processRecord(record, country, period, nationalIndex, regionalIndex);
+        await processRecord(record);
       }
     } catch (e: any) {
       console.error('Error fetching UK market data:', e);
-      error.value = e.message;
     } finally {
       loading.value = false;
     }
@@ -243,11 +244,10 @@ export const useMarketData = () => {
       }
 
       if (record) {
-        await processRecord(record, country, period, nationalIndex, regionalIndex);
+        await processRecord(record);
       }
     } catch (e: any) {
       console.error('Error fetching market data:', e);
-      error.value = e.message;
     } finally {
       loading.value = false;
     }
@@ -255,11 +255,9 @@ export const useMarketData = () => {
 
   return {
     loading,
-    error,
     marketAverage,
     marketHigh,
     marketLow,
-    marketLastYear,
     marketDataYear,
     marketPeriod,
     matchedTitle,

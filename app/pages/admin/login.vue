@@ -106,7 +106,7 @@
 
 <script setup lang="ts">
 // ** imports **
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Mail, Lock, KeyRound, ArrowLeft } from 'lucide-vue-next';
 import { useFirebaseAuth } from 'vuefire';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -148,7 +148,7 @@ const handleLogin = async () => {
     await signInWithEmailAndPassword(auth, email.value, password.value);
 
     // 4. Success redirection logic
-    const redirectPath = route.query.redirect?.toString() || '/admin/seed';
+    const redirectPath = route.query.redirect?.toString() || '/admin/coding-index';
     await navigateTo(redirectPath);
   } catch (e: any) {
     // 5. Error mapping for common Firebase codes

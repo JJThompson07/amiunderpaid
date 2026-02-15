@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="flex items-center gap-2 my-6 text-xs font-medium text-slate-300/80 flex-wrap px-4 md:px-8"
+    class="flex items-center gap-2 mt-6 text-xs font-medium text-slate-300/80 flex-wrap px-4 md:px-8"
     aria-label="Breadcrumb">
     <ol class="flex items-center gap-2 flex-wrap">
       <li>

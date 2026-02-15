@@ -1,22 +1,44 @@
 // server/api/adzuna/salary.ts
 export default defineEventHandler(async (event) => {
-  const { title, location, country } = getQuery(event);
   const config = useRuntimeConfig();
-  const countryCode = country === 'us' ? 'us' : 'gb';
+  const query = getQuery(event);
+  const { title, location, country } = query;
 
-  const titleEncoded = encodeURIComponent(title as string);
+  const countryParam = String(country || 'gb').toLowerCase();
+  const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
 
-  // The Histogram endpoint provides the salary distribution (the "buckets")
-  const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/histogram?app_id=${config.ADZUNA_APP_ID}&app_key=${config.ADZUNA_APP_KEY}&location0=${country}&location1=${location}&what=${titleEncoded}&content-type=application/json`;
+  const appId = config.ADZUNA_APP_ID || config.public?.adzunaAppId || process.env.ADZUNA_APP_ID;
+  const appKey = config.ADZUNA_APP_KEY || config.public?.adzunaAppKey || process.env.ADZUNA_APP_KEY;
+
+  if (!appId || !appKey) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Adzuna API credentials are not configured.'
+    });
+  }
+
+  const params: Record<string, any> = {
+    app_id: appId,
+    app_key: appKey,
+    what: title,
+    'content-type': 'application/json',
+    location0: countryCode === 'us' ? 'US' : 'UK'
+  };
+
+  if (location && String(location).trim() !== '') {
+    params.location1 = location;
+  }
 
   try {
-    const data = await $fetch(url);
-
-    // Adzuna returns an object where keys are salary midpoints and values are job counts
-    // Example: { "50000": 120, "60000": 85 }
+    const data = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/histogram`, {
+      params
+    });
     return data;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not fetch distribution data';
-    return { error: message };
+  } catch (e) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: `Failed to fetch Adzuna salary histogram for ${countryCode}`,
+      data: e
+    });
   }
 });

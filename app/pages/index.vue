@@ -30,6 +30,13 @@
       <!-- The Calculator Component -->
       <SalarySearch @country-change="($event) => (isUSA = $event === 'USA')" />
 
+      <section class="max-w-4xl mx-auto p-4 select-none text-xs text-center text-slate-400">
+        <p>
+          Your privacy matters. The information provided above is used solely to generate your
+          results.
+        </p>
+      </section>
+
       <!-- Why section -->
       <section
         class="max-w-4xl mx-auto mt-20 px-4 pb-20 border-t border-slate-200 pt-16 select-none">
@@ -63,21 +70,17 @@
       <div class="flex flex-wrap justify-center gap-8 mt-16 md:gap-16 opacity-50">
         <div
           class="flex items-center h-8 gap-2 font-bold text-slate-500 grayscale hover:grayscale-0 transition-all duration-500">
-          <SquareCheckBig class="w-6 h-6 text-primary-400" />
+          <SquareCheckBig class="w-6 h-6 text-primary-400" aria-hidden="true" />
           ONS Data
         </div>
         <div
           class="flex items-center h-8 gap-2 font-bold text-slate-500 grayscale hover:grayscale-0 transition-all duration-500">
-          <Square class="w-6 h-6 text-slate-400" />
+          <SquareCheckBig class="w-6 h-6 text-primary-400" aria-hidden="true" />
           Adzuna API
-          <span
-            class="ml-1 text-2xs uppercase tracking-wider bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full"
-            >Coming Soon</span
-          >
         </div>
         <div
           class="flex items-center h-8 gap-2 font-bold text-slate-500 grayscale hover:grayscale-0 transition-all duration-500">
-          <SquareCheckBig class="w-6 h-6 text-primary-400" />
+          <SquareCheckBig class="w-6 h-6 text-primary-400" aria-hidden="true" />
           BLS Data
         </div>
       </div>
@@ -86,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { Square, SquareCheckBig } from 'lucide-vue-next';
+import { SquareCheckBig } from 'lucide-vue-next';
 
 // Nuxt automatically imports the SalarySearch component from /components
 

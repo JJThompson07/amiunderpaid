@@ -2,20 +2,7 @@
   <div class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6">
     <!-- Background Gradient (Only show if we have data) -->
     <div
-      v-if="hasData"
-      class="absolute top-0 left-0 w-full h-125 bg-linear-to-b to-slate-50 z-0"
-      :class="
-        diffPercent === 0
-          ? 'from-slate-900'
-          : isUnderpaid
-            ? 'from-negative-900'
-            : 'from-positive-900'
-      "></div>
-
-    <!-- Neutral Gradient for No Data / Loading -->
-    <div
-      v-else
-      class="absolute top-0 left-0 w-full h-125 bg-linear-to-b from-slate-800 to-slate-50 z-0"></div>
+      class="fixed top-0 left-0 w-full h-125 bg-linear-to-b to-slate-50 z-0 from-secondary-900"></div>
 
     <!-- Breadcrumbs -->
     <AmILocationBreadcrumbs
@@ -25,42 +12,72 @@
       :country="country"
       :location="location" />
 
-    <div class="relative grid grid-cols-1 xl:grid-cols-12 px-4 gap-6">
-      <div class="relative mx-auto flex flex-col gap-6 xl:col-start-3 xl:col-end-11">
-        <!-- No Data Found State -->
-        <LazyAmICardNoData
-          v-if="!hasData"
-          :title="displayTitle"
-          :location="location"
-          :country="country"
-          :icon="Info"
-          :period="userPeriod" />
+    <h1 class="relative text-3xl md:text-6xl text-white font-bold px-4">{{ displayTitle }}</h1>
 
-        <!-- Result Headline Card (Only show if we have data) -->
-        <div v-else class="overflow-hidden bg-white border shadow-xl rounded-2xl border-slate-200">
-          <LazySectionSalaryVerdict
-            :display-title="displayTitle"
-            :location="location"
+    <LazySectionNoData
+      v-if="!loading && !adzunaLoading && !hasGovernmentData && !hasJobsData"
+      :title="displayTitle"
+      :location="location"
+      :country="country"
+      @select="handleAmbiguitySelect" />
+
+    <div v-else class="relative grid grid-cols-1 px-4 gap-6">
+      <div class="relative mx-auto flex flex-col gap-6">
+        <!-- Adzuna results section -->
+        <div class="flex flex-col gap-6 xl:flex-row">
+          <div v-if="hasJobsData" class="flex flex-col flex-1 gap-3 adzuna-section">
+            <LazySectionAdzunaComparison
+              class="flex-1"
+              :buckets="histogramBuckets"
+              :histogram-range="histogramRange"
+              :histogram-max-count="histogramMaxCount"
+              :histogram-total-count="histogramTotalCount"
+              :is-underpaid="isUnderpaidAdzuna(userSalary)"
+              :currency-symbol="currencySymbol"
+              :average-salary="meanSalary"
+              :current-salary="userSalary"
+              :loading="adzunaLoading"
+              :country="country"
+              :location="location"
+              :display-title="displayTitle"
+              :jobs-count="jobsCount"
+              @fetch-data="
+                fetchAdzunaHistogram(
+                  searchTitle,
+                  location,
+                  country,
+                  jobsData?.results?.[0]?.category?.tag
+                )
+              " />
+          </div>
+
+          <!-- GovernmentSection -->
+          <div v-if="hasGovernmentData" class="flex flex-col flex-1 gap-3 government-section">
+            <LazySectionGovernmentComparison
+              class="overflow-hidden"
+              :is-fallback="!hasJobsData"
+              :display-title="displayTitle"
+              :location="location"
+              :country="country"
+              :user-salary="userSalary"
+              :market-average="marketAverage"
+              :currency-symbol="currencySymbol"
+              :matched-title="matchedTitle"
+              :matched-location="matchedLocation"
+              :search-title="searchTitle"
+              :market-data-year="marketDataYear"
+              :diff-percent="diffPercent"
+              :is-underpaid="isUnderpaid"
+              :market-low="marketLow"
+              :market-high="marketHigh" />
+          </div>
+
+          <!-- Ambiguity Selection (Fallback when no Gov Data but Adzuna exists) -->
+          <LazySectionGovernmentUserSelection
+            v-else-if="hasJobsData && !hasGovernmentData"
+            :adzuna-category="adzunaCategory"
             :country="country"
-            :user-salary="userSalary"
-            :market-average="marketAverage"
-            :currency-symbol="currencySymbol"
-            :matched-title="matchedTitle"
-            :matched-location="matchedLocation"
-            :search-title="searchTitle"
-            :market-data-year="marketDataYear"
-            :diff-percent="diffPercent"
-            :is-underpaid="isUnderpaid" />
-
-          <!-- Comparison Visualizer -->
-          <LazySectionSalaryVisualizer
-            :user-salary="userSalary"
-            :market-average="marketAverage"
-            :market-low="marketLow"
-            :market-high="marketHigh"
-            :currency-symbol="currencySymbol"
-            :diff-percent="diffPercent"
-            :is-underpaid="isUnderpaid" />
+            @select="handleAmbiguitySelect" />
         </div>
 
         <!-- Regional Comparison Card (UK Only) -->
@@ -74,9 +91,37 @@
           :regional-data="regionalData"
           :year="marketDataYear" />
 
+        <LazyAmICardAction
+          v-if="country === 'UK' && isXl"
+          bg-colour="bg-cv-library-50"
+          border-colour="border-cv-library-100"
+          hover-class="hover:border-cv-library-200"
+          affiliate-bg-colour="bg-cv-library-100"
+          affiliate-text-colour="text-cv-library-700"
+          :icon="FileUser"
+          header="Get Discovered"
+          strapline="Find a job that works for you, fast"
+          sponsored
+          class="rounded-lg border shadow-lg h-max w-full">
+          <template #body>
+            Register your free CV on the UK's leading job site (<strong class="text-cv-library-700"
+              >CV-Library</strong
+            >) and let top employers come to you - it's fast, easy and free.
+          </template>
+          <template #cta>
+            <a
+              href="https://www.cv-library.co.uk/register?id=107202"
+              target="_blank"
+              rel="sponsored"
+              class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
+              >Register CV</a
+            >
+          </template>
+        </LazyAmICardAction>
+
         <!-- The Negotiation Component -->
         <LazySectionNegotiation
-          v-if="hasData"
+          v-if="hasGovernmentData || hasJobsData"
           class="lg:col-span-4"
           :title="displayTitle"
           :current-salary="userSalary"
@@ -89,34 +134,6 @@
           Data based on recent listings from Adzuna and ONS Benchmarks.
         </p>
       </div>
-
-      <LazyAmICardAction
-        v-if="country === 'UK' && hasData && isXl"
-        bg-colour="bg-cv-library-50"
-        border-colour="border-cv-library-100"
-        hover-class="hover:border-cv-library-200"
-        affiliate-bg-colour="bg-cv-library-100"
-        affiliate-text-colour="text-cv-library-700"
-        :icon="FileUser"
-        header="Get Discovered"
-        strapline="Find a job that works for you, fast"
-        sponsored
-        class="rounded-lg border shadow-lg h-max xl:col-span-2 xl:w-full">
-        <template #body>
-          Register your free CV on the UK's leading job site (<strong class="text-cv-library-700"
-            >CV-Library</strong
-          >) and let top employers come to you - it's fast, easy and free.
-        </template>
-        <template #cta>
-          <a
-            href="https://www.cv-library.co.uk/register?id=107202"
-            target="_blank"
-            rel="sponsored"
-            class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
-            >Register CV</a
-          >
-        </template>
-      </LazyAmICardAction>
     </div>
 
     <!-- Ambiguity Modal -->
@@ -135,12 +152,30 @@
 <script setup lang="ts">
 // ** imports **
 import { FileUser, Info } from 'lucide-vue-next';
-import { computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { getDiffPercentage } from '~/helpers/utility';
 
 // ** data & refs **
 const route = useRoute();
 const showAmbiguityModal = ref(false);
 const searchConfirmed = ref(false);
+const { isXl } = useViewport();
+
+// Destructure Adzuna from auto-imported composable
+const {
+  histogramBuckets,
+  fetchJobs: fetchAdzunaJobs,
+  fetchHistogram: fetchAdzunaHistogram,
+  loading: adzunaLoading,
+  histogramRange,
+  histogramMaxCount,
+  histogramTotalCount,
+  isUnderpaid: isUnderpaidAdzuna,
+  jobsCount,
+  meanSalary,
+  jobsData,
+  hasJobsData
+} = useAdzuna();
 
 const { trackAmbiguousSearch } = useAnalytics();
 
@@ -176,15 +211,15 @@ const location = computed(() =>
   route.params.location ? unslugify(route.params.location as string) : ''
 );
 
-const { isXl } = useViewport();
 const userSalary = ref(Number(route.query.compare) || 0);
 const userPeriod = ref(route.query.period?.toString() || 'year');
 const searchTitle = ref((route.query.q as string) || displayTitle.value);
-
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 
+const adzunaCategory = computed(() => jobsData.value?.results?.[0]?.category?.label);
+
 // Strict Data Check:
-const hasData = computed(() => {
+const hasGovernmentData = computed(() => {
   if ((marketAverage?.value ?? 0) === 0) return false;
   if (isGenericFallback.value && displayTitle.value.toLowerCase() !== 'professional') return false;
   return true;
@@ -197,15 +232,16 @@ const isUnderpaid = computed<boolean>(
 const diffPercent = computed<number>(() => {
   const avg = marketAverage?.value ?? 0;
   if (userSalary.value === 0 || avg === 0) return 0;
-  return Math.abs(Math.round(((userSalary.value - avg) / avg) * 100));
+  return getDiffPercentage(userSalary.value, avg);
 });
 
 const fetchData = (t: string, l: string, c: string, p: string) => {
-  if (c === 'UK') {
-    fetchUkMarketData(t, l, p);
-  } else {
-    fetchUSAMarketData(t, l, p);
-  }
+  Promise.all([
+    c === 'UK' ? fetchUkMarketData(t, l, p) : fetchUSAMarketData(t, l, p),
+    fetchAdzunaJobs(t, l, c)
+  ]).catch((error) => {
+    console.error('Error fetching data:', error);
+  });
 };
 
 // ** methods **
@@ -215,8 +251,11 @@ const handleAmbiguitySelect = (match: any) => {
   // gtag track for ambiguity selection
   trackAmbiguousSearch(match.title, match.group);
 
-  // Re-fetch with specific group, but keep URL clean
-  fetchData(specificTitle, location.value, country.value, userPeriod.value);
+  if (country.value === 'UK') {
+    fetchUkMarketData(specificTitle, location.value, userPeriod.value);
+  } else {
+    fetchUSAMarketData(specificTitle, location.value, userPeriod.value);
+  }
   showAmbiguityModal.value = false;
 };
 
@@ -242,7 +281,11 @@ watch(loading, (newLoading) => {
 
     // Redirect if user searched for a location, but we only found national data.
     // This keeps the URL canonical and improves SEO.
-    if (userLocation && hasData.value && dbLocation.toLowerCase() !== userLocation.toLowerCase()) {
+    if (
+      userLocation &&
+      hasGovernmentData.value &&
+      dbLocation.toLowerCase() !== userLocation.toLowerCase()
+    ) {
       // Check if the found location is the country itself (a national fallback)
       if (dbLocation.toLowerCase() === country.value.toLowerCase()) {
         const newPath = `/salary/${route.params.title}/${route.params.country}`;
@@ -285,7 +328,13 @@ useSeoMeta({
     const locStr = location.value || country.value;
     return `Are you being paid enough? Check the average ${displayTitle.value} salary in ${locStr} now.`;
   },
-  twitterCard: 'summary'
+  twitterCard: 'summary',
+  robots: () => {
+    if (!loading.value && !adzunaLoading.value && !hasGovernmentData.value && !hasJobsData.value) {
+      return 'noindex';
+    }
+    return 'index, follow';
+  }
 });
 
 useHead({

@@ -1,20 +1,46 @@
-// server/api/adzuna/salary.ts
+// server/api/adzuna/jobs.ts
 export default defineEventHandler(async (event) => {
-  const { title, location, country, resultsPerPage } = getQuery(event);
   const config = useRuntimeConfig();
-  const countryCode = country === 'us' ? 'us' : 'gb';
+  const query = getQuery(event);
+  const { title, location, country, resultsPerPage } = query;
 
-  const titleEncoded = encodeURIComponent(title as string);
+  const countryParam = String(country || 'gb').toLowerCase();
+  const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
+  const limit = resultsPerPage || 5;
 
-  // The Histogram endpoint provides the job search results with salary information
-  const url = `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1?app_id=${config.ADZUNA_APP_ID}&app_key=${config.ADZUNA_APP_KEY}&results_per_page=${resultsPerPage}&location0=${country}&location1=${location}&what=${titleEncoded}&content-type=application/json`;
+  const appId = config.ADZUNA_APP_ID || config.public?.adzunaAppId || process.env.ADZUNA_APP_ID;
+  const appKey = config.ADZUNA_APP_KEY || config.public?.adzunaAppKey || process.env.ADZUNA_APP_KEY;
+
+  if (!appId || !appKey) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Adzuna API credentials are not configured.'
+    });
+  }
+
+  const params: Record<string, any> = {
+    app_id: appId,
+    app_key: appKey,
+    results_per_page: limit,
+    what: title,
+    'content-type': 'application/json',
+    location0: countryCode === 'us' ? 'US' : 'UK'
+  };
+
+  if (location && String(location).trim() !== '') {
+    params.location1 = location;
+  }
 
   try {
-    const data = await $fetch(url);
-
+    const data = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1`, {
+      params
+    });
     return data;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not fetch distribution data';
-    return { error: message };
+  } catch (e) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: `Failed to fetch Adzuna jobs for ${countryCode}`,
+      data: e
+    });
   }
 });

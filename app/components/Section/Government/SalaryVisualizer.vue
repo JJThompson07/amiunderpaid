@@ -1,15 +1,15 @@
 <template>
-  <div class="px-6 py-5 border-t bg-slate-50 border-slate-200">
+  <div class="w-full relative bg-slate-100 p-4 rounded-lg">
     <div class="relative pt-8 pb-2">
       <!-- Range Bar -->
-      <div class="relative h-3 rounded-full bg-slate-200">
+      <div class="relative h-3 rounded-full bg-slate-400/50">
         <!-- High/Low Markers -->
-        <div class="absolute left-0 -top-6 text-2xs font-bold text-slate-400 uppercase">Low</div>
-        <div class="absolute right-0 -top-6 text-2xs font-bold text-slate-400 uppercase">High</div>
+        <div class="absolute left-0 -top-6 text-2xs font-bold text-slate-600 uppercase">Low</div>
+        <div class="absolute right-0 -top-6 text-2xs font-bold text-slate-600 uppercase">High</div>
 
         <!-- Market Average Dot -->
         <div
-          class="absolute z-10 w-5 h-5 -translate-x-1/2 -translate-y-1/2 bg-primary-600 border-[3px] border-white rounded-full shadow-md top-1/2 left-1/2">
+          class="absolute z-10 w-5 h-5 -translate-x-1/2 -translate-y-1/2 bg-primary-600 border-2 border-white rounded-full shadow-md top-1/2 left-1/2">
           <div
             class="absolute -translate-x-1/2 -top-6 left-1/2 text-[9px] font-black text-primary-600 whitespace-nowrap">
             AVG
@@ -19,9 +19,13 @@
         <!-- User Salary Marker -->
         <div
           v-if="userSalary > 0 && marketHigh > 0"
-          class="absolute z-20 w-1 h-8 transition-all duration-1000 -translate-y-1/2 top-1/2"
+          class="absolute z-20 w-1 h-8 transition-all duration-1000 -translate-y-1/2 top-1/2 rounded-full"
           :class="
-            diffPercent === 0 ? 'bg-slate-600' : isUnderpaid ? 'bg-negative-700' : 'bg-positive-700'
+            diffPercent === 0
+              ? 'bg-slate-600/75'
+              : isUnderpaid
+                ? 'bg-negative-700/75'
+                : 'bg-positive-700/75'
           "
           :style="{ left: `${salaryPosition}%` }">
           <div

@@ -8,7 +8,7 @@
     ">
     <template v-if="isAdmin">
       <NuxtLink
-        v-for="link in adminLinks"
+        v-for="link in visibleAdminLinks"
         :key="link.to"
         :to="link.to"
         class="transition-colors hover:text-primary-600"
@@ -18,7 +18,7 @@
     </template>
     <template v-else>
       <NuxtLink
-        v-for="link in navLinks"
+        v-for="link in visibleNavLinks"
         :key="link.to"
         :to="link.to"
         class="transition-colors text-center focus:outline-0"
@@ -42,7 +42,9 @@
 </template>
 
 <script setup lang="ts">
-defineProps({
+import { computed } from 'vue';
+
+const props = defineProps({
   isAdmin: {
     type: Boolean,
     default: false
@@ -57,16 +59,31 @@ defineEmits(['close']);
 
 const adminLinks = [
   {
+    to: '/',
+    label: 'Home',
+    mobileOnly: true
+  },
+  {
     to: '/admin/seed',
     label: 'Seeder'
   },
   {
     to: '/admin/coding-index',
     label: 'Coding Index'
+  },
+  {
+    to: '/admin/adzuna',
+    label: 'Adzuna API'
   }
 ];
 
 const navLinks = [
+  {
+    to: '/',
+    label: 'Home',
+    mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400',
+    mobileOnly: true
+  },
   {
     to: '/how-it-works',
     label: 'How it works',
@@ -83,6 +100,13 @@ const navLinks = [
     mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400'
   }
 ];
+
+const visibleAdminLinks = computed(() =>
+  adminLinks.filter((link) => !link.mobileOnly || props.isMobile)
+);
+const visibleNavLinks = computed(() =>
+  navLinks.filter((link) => !link.mobileOnly || props.isMobile)
+);
 </script>
 
 <style scoped></style>
