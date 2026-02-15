@@ -106,7 +106,7 @@
 
 <script setup lang="ts">
 // ** imports **
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Mail, Lock, KeyRound, ArrowLeft } from 'lucide-vue-next';
 import { useFirebaseAuth } from 'vuefire';
 import { signInWithEmailAndPassword } from 'firebase/auth';

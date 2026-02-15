@@ -1,6 +1,6 @@
 <template>
   <div
-    class="adzuna-comparison p-4 bg-white border shadow-xl rounded-2xl border-slate-200 relative overflow-hidden flex flex-col gap-2">
+    class="adzuna-comparison p-4 bg-white border shadow-xl rounded-2xl border-slate-200 relative overflow-hidden flex-1 flex flex-col gap-2">
     <div class="flex items-center gap-2">
       <div class="p-1.5 bg-secondary-100 rounded-lg text-secondary-600">
         <TrendingUp class="w-4 h-4" aria-hidden="true" />

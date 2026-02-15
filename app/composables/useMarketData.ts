@@ -13,20 +13,17 @@ export interface SalaryBenchmark {
 
 export const useMarketData = () => {
   const loading = ref(false);
-  const error = ref<string | null>(null);
 
   // Reactive state for the results
   const marketAverage = ref(0);
   const marketHigh = ref(0);
   const marketLow = ref(0);
-  const marketLastYear = ref(0);
   const marketDataYear = ref(0);
   const marketPeriod = ref('year');
   const matchedTitle = ref('');
   const matchedLocation = ref('');
   const isGenericFallback = ref(false);
   const ambiguousMatches = ref<any[]>([]);
-  const titleMatches = ref<any[]>([]);
   const regionalData = ref<SalaryBenchmark | null>(null);
 
   // Reset state helper
@@ -34,27 +31,18 @@ export const useMarketData = () => {
     marketAverage.value = 0;
     marketHigh.value = 0;
     marketLow.value = 0;
-    marketLastYear.value = 0;
     marketDataYear.value = 0;
     marketPeriod.value = 'year';
     matchedTitle.value = '';
     matchedLocation.value = '';
     isGenericFallback.value = false;
     ambiguousMatches.value = [];
-    titleMatches.value = [];
     regionalData.value = null;
-    error.value = null;
   };
 
   // ** Internal Helpers **
 
-  const processRecord = async (
-    record: SalaryBenchmark,
-    country: string,
-    period: string,
-    nationalIndex: any,
-    regionalIndex: any
-  ) => {
+  const processRecord = async (record: SalaryBenchmark) => {
     marketAverage.value = record.salary;
     marketHigh.value = Math.round(record.salary * 1.3);
     marketLow.value = Math.round(record.salary * 0.75);
@@ -62,23 +50,6 @@ export const useMarketData = () => {
     matchedTitle.value = record.title;
     marketPeriod.value = record.period || 'year';
     matchedLocation.value = record.location;
-
-    // ** Fetch Previous Year Data (for trends) **
-    const targetIndex =
-      record.location === 'United Kingdom' || record.location === 'USA'
-        ? nationalIndex
-        : regionalIndex;
-
-    const prevYear = record.year - 1;
-
-    const { hits: prevHits } = await targetIndex.search(record.title, {
-      filters: `country:${country} AND year:${prevYear} AND period:${period}`,
-      hitsPerPage: 1
-    });
-
-    if (prevHits.length > 0 && prevHits[0]?.salary) {
-      marketLastYear.value = prevHits[0].salary;
-    }
   };
 
   const fetchGenericFallback = async (
@@ -137,7 +108,6 @@ export const useMarketData = () => {
         hitsPerPage: 10
       });
 
-      titleMatches.value = titleHits;
       console.log('title hits: ', titleHits);
 
       let bestTitleMatch;
@@ -209,11 +179,10 @@ export const useMarketData = () => {
       }
 
       if (record) {
-        await processRecord(record, country, period, nationalIndex, regionalIndex);
+        await processRecord(record);
       }
     } catch (e: any) {
       console.error('Error fetching UK market data:', e);
-      error.value = e.message;
     } finally {
       loading.value = false;
     }
@@ -275,11 +244,10 @@ export const useMarketData = () => {
       }
 
       if (record) {
-        await processRecord(record, country, period, nationalIndex, regionalIndex);
+        await processRecord(record);
       }
     } catch (e: any) {
       console.error('Error fetching market data:', e);
-      error.value = e.message;
     } finally {
       loading.value = false;
     }
@@ -287,18 +255,15 @@ export const useMarketData = () => {
 
   return {
     loading,
-    error,
     marketAverage,
     marketHigh,
     marketLow,
-    marketLastYear,
     marketDataYear,
     marketPeriod,
     matchedTitle,
     matchedLocation,
     isGenericFallback,
     ambiguousMatches,
-    titleMatches,
     regionalData,
     fetchUkMarketData,
     fetchUSAMarketData

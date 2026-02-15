@@ -1,4 +1,4 @@
-import { getPercentage } from '~/helpers/utility';
+import { ref, computed } from 'vue';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from 'vuefire';
 
@@ -15,7 +15,7 @@ export type HistogramResponse = {
   histogram: HistogramData;
 };
 
-export const generateCacheKey = (title: string, location: string, country: string) => {
+const generateCacheKey = (title: string, location: string, country: string) => {
   // slugify the input: "Software Engineer" -> "software-engineer"
   const t = title
     .toLowerCase()
@@ -28,7 +28,7 @@ export const generateCacheKey = (title: string, location: string, country: strin
   return `${country}-${l}-${t}`; // e.g., "gb-london-software-engineer"
 };
 
-export const sanitizeAdzunaData = (data: any): any => {
+const sanitizeAdzunaData = (data: any): any => {
   if (Array.isArray(data)) {
     return data.map(sanitizeAdzunaData);
   }
@@ -48,7 +48,6 @@ export const useAdzuna = () => {
   const jobsData = ref<any>(null);
   const categories = ref<any[]>([]);
   const loading = ref(false);
-  const error = ref<any>(null);
   const db = useFirestore();
 
   const meanSalary = computed<number>(() => jobsData.value?.mean || 0);
@@ -214,7 +213,6 @@ export const useAdzuna = () => {
     location = '';
 
     loading.value = true;
-    error.value = null;
     try {
       distributionData.value = await fetchFromCacheOrApi(
         'adzuna_distribution_cache',
@@ -232,7 +230,6 @@ export const useAdzuna = () => {
       );
     } catch (e) {
       console.error('Adzuna histogram fetch error:', e);
-      error.value = e;
       distributionData.value = null;
     } finally {
       loading.value = false;
@@ -241,7 +238,6 @@ export const useAdzuna = () => {
 
   const fetchCategories = async (country: string) => {
     const countryCode = country.toLowerCase() === 'usa' ? 'us' : 'gb';
-    error.value = null;
     try {
       const response: any = await $fetch('/api/adzuna/categories', {
         params: { country: countryCode }
@@ -251,7 +247,6 @@ export const useAdzuna = () => {
       categories.value = sanitized.results || [];
     } catch (e) {
       console.error('Adzuna categories fetch error:', e);
-      error.value = e;
       throw e;
     }
   };
@@ -261,22 +256,15 @@ export const useAdzuna = () => {
     return salary < meanSalary.value;
   };
 
-  const getSalaryDiffPercentage = (salary: number): number => {
-    if (!hasJobsData.value || meanSalary.value === 0) return 0;
-    return getPercentage(Math.abs(salary - meanSalary.value), meanSalary.value);
-  };
-
   return {
     distributionData,
     jobsData,
     categories,
-    hasDistributionData,
     hasJobsData,
+    hasDistributionData,
     loading,
-    error,
     meanSalary,
     jobsCount,
-    histogramData,
     histogramBuckets,
     histogramRange,
     histogramMaxCount,
@@ -284,7 +272,6 @@ export const useAdzuna = () => {
     fetchJobs,
     fetchHistogram,
     fetchCategories,
-    isUnderpaid,
-    getSalaryDiffPercentage
+    isUnderpaid
   };
 };

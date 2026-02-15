@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-6 overflow-hidden bg-white border shadow-xl rounded-2xl border-slate-200">
+  <div class="mb-6 overflow-hidden bg-white border shadow-xl rounded-2xl border-slate-200 relative">
     <div class="p-12 text-center">
       <div class="inline-flex p-4 mb-4 bg-negative-100 rounded-full text-slate-400">
         <component :is="icon" class="w-8 h-8 text-negative-700" />

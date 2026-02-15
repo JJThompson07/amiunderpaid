@@ -14,13 +14,12 @@
 
     <h1 class="relative text-3xl md:text-6xl text-white font-bold px-4">{{ displayTitle }}</h1>
 
-    <LazyAmICardNoData
+    <LazySectionNoData
       v-if="!loading && !adzunaLoading && !hasGovernmentData && !hasJobsData"
       :title="displayTitle"
       :location="location"
       :country="country"
-      :icon="Info"
-      :period="userPeriod" />
+      @select="handleAmbiguitySelect" />
 
     <div v-else class="relative grid grid-cols-1 px-4 gap-6">
       <div class="relative mx-auto flex flex-col gap-6">
@@ -153,7 +152,7 @@
 <script setup lang="ts">
 // ** imports **
 import { Info } from 'lucide-vue-next';
-import { computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { getDiffPercentage } from '~/helpers/utility';
 
 // ** data & refs **
@@ -249,7 +248,6 @@ const handleAmbiguitySelect = (match: any) => {
   // gtag track for ambiguity selection
   trackAmbiguousSearch(match.title, match.group);
 
-  // Re-fetch with specific group, but keep URL clean
   if (country.value === 'UK') {
     fetchUkMarketData(specificTitle, location.value, userPeriod.value);
   } else {
