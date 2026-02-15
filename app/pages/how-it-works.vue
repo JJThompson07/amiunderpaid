@@ -43,11 +43,6 @@
               We query our live database of over 140,000+ recent salary benchmarks, sourced from
               government data (ONS, US BLS).
               <br />
-
-              <span
-                class="font-bold text-secondary-600 uppercase text-2xs tracking-wide bg-secondary-50 px-2 py-0.5 rounded-full mr-1"
-                >Coming Soon</span
-              >
               live job listings (Adzuna).
             </p>
           </div>

@@ -11,8 +11,7 @@
 
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
         <!-- Source 1: Adzuna (Primary for MVP) -->
-        <div
-          class="p-6 bg-slate-50 border border-slate-200 border-dashed shadow-none rounded-2xl opacity-75">
+        <div class="p-6 bg-white border border-slate-200 shadow-sm rounded-2xl">
           <div
             class="absolute top-0 right-0 px-3 py-1 bg-secondary-100 text-secondary-700 text-xs font-bold uppercase tracking-wider rounded-bl-xl flex items-center gap-1 animate-pulse">
             Live Data
@@ -23,12 +22,9 @@
           </div>
           <h3 class="text-lg font-bold text-slate-900">Adzuna Intelligence</h3>
           <p class="mt-2 text-sm text-slate-500">
-            <span
-              class="font-bold text-secondary-600 uppercase text-2xs tracking-wide bg-secondary-50 px-2 py-0.5 rounded-full mr-1"
-              >Coming Soon</span
-            >
             Our primary source for real-time market shifts. We aggregate data from millions of live
-            job listings to see exactly what employers are offering <em>right now</em>.
+            job listings to see exactly what employers are offering
+            <em class="text-secondary-600">right now</em>.
           </p>
         </div>
 

@@ -68,12 +68,8 @@
         </div>
         <div
           class="flex items-center h-8 gap-2 font-bold text-slate-500 grayscale hover:grayscale-0 transition-all duration-500">
-          <Square class="w-6 h-6 text-slate-400" aria-hidden="true" />
+          <SquareCheckBig class="w-6 h-6 text-primary-400" aria-hidden="true" />
           Adzuna API
-          <span
-            class="ml-1 text-2xs uppercase tracking-wider bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full"
-            >Coming Soon</span
-          >
         </div>
         <div
           class="flex items-center h-8 gap-2 font-bold text-slate-500 grayscale hover:grayscale-0 transition-all duration-500">

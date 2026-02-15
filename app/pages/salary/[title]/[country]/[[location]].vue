@@ -328,7 +328,13 @@ useSeoMeta({
     const locStr = location.value || country.value;
     return `Are you being paid enough? Check the average ${displayTitle.value} salary in ${locStr} now.`;
   },
-  twitterCard: 'summary'
+  twitterCard: 'summary',
+  robots: () => {
+    if (!loading.value && !adzunaLoading.value && !hasGovernmentData.value && !hasJobsData.value) {
+      return 'noindex';
+    }
+    return 'index, follow';
+  }
 });
 
 useHead({
