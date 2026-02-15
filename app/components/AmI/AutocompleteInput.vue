@@ -92,6 +92,10 @@ const props = defineProps({
   optional: {
     type: Boolean,
     default: false
+  },
+  preFilteredOptions: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -107,6 +111,8 @@ const activeIndex = ref(-1);
 // ** computed properties **
 const filteredOptions = computed(() => {
   if (!inputValue.value) return [];
+  if (props.preFilteredOptions) return props.options;
+
   const search = inputValue.value.toLowerCase();
   return props.options.filter((opt) => opt.toLowerCase().includes(search)).slice(0, 50);
 });

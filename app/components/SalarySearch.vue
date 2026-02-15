@@ -37,6 +37,7 @@
             :icon="Search"
             :options="titleOptions"
             :loading="fetching"
+            pre-filtered-options
             @update:model-value="fetchTitles" />
         </div>
 
@@ -137,14 +138,19 @@ const fetchUKTitles = async (searchTerm: string) => {
 
   const { hits } = await index.search(searchTerm, {
     filters: `country:UK`,
-    hitsPerPage: 20
+    hitsPerPage: 100
   });
+
+  console.log(hits);
 
   const results = new Set<string>();
   hits.forEach((hit: any) => {
-    const label = hit.group ? `${hit.title} (${hit.group})` : hit.title;
+    const cleanGroup = hit.group ? hit.group.replace(/\s*\(.*\)$/, '') : '';
+    const label = cleanGroup ? `${hit.title} (${cleanGroup})` : hit.title;
     results.add(label);
   });
+
+  console.log('results: ', results);
   return Array.from(results);
 };
 
