@@ -42,7 +42,14 @@
               :location="location"
               :display-title="displayTitle"
               :jobs-count="jobsCount"
-              @fetch-data="fetchAdzunaHistogram(searchTitle, location, country)" />
+              @fetch-data="
+                fetchAdzunaHistogram(
+                  searchTitle,
+                  location,
+                  country,
+                  jobsData?.results?.[0]?.category?.tag
+                )
+              " />
           </div>
 
           <!-- GovernmentSection -->
@@ -157,6 +164,7 @@ const {
   isUnderpaid: isUnderpaidAdzuna,
   jobsCount,
   meanSalary,
+  jobsData,
   hasJobsData
 } = useAdzuna();
 

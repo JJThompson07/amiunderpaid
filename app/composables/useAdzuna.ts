@@ -106,8 +106,41 @@ export const useAdzuna = () => {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        // Optional: Add expiration check here if needed
-        return data.data;
+
+        // Check expiration based on category settings
+        let isExpired = false;
+        const categoryTag = data.categoryTag;
+
+        if (categoryTag) {
+          // Construct ID matching admin panel: 'uk-tag' or 'usa-tag'
+          const adminCountry = country.toLowerCase() === 'usa' ? 'usa' : 'uk';
+          const categoryId = `${adminCountry}-${categoryTag}`.toLowerCase();
+
+          const categoryDocRef = doc(db, 'adzuna_categories', categoryId);
+          const categoryDocSnap = await getDoc(categoryDocRef);
+
+          if (categoryDocSnap.exists()) {
+            const categoryData = categoryDocSnap.data();
+            const cacheLimit = categoryData?.cache || 120;
+
+            const now = new Date();
+            const dataDate = data.timestamp?.toDate() || new Date(0);
+            const diffTime = Math.abs(now.getTime() - dataDate.getTime());
+            const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+            if (diffDays > cacheLimit) {
+              console.log(
+                `[Cache] Expired for ${categoryTag}. Age: ${diffDays.toFixed(1)} days. Limit: ${cacheLimit} days.`
+              );
+              isExpired = true;
+            }
+          }
+        }
+
+        if (!isExpired) {
+          console.log(`[Cache] Hit for ${collectionName}`);
+          return data.data;
+        }
       }
     } catch (e) {
       console.warn(`Cache fetch failed for ${collectionName}:`, e);
@@ -162,7 +195,12 @@ export const useAdzuna = () => {
     }
   };
 
-  const fetchHistogram = async (title: string, location: string, country: string) => {
+  const fetchHistogram = async (
+    title: string,
+    location: string,
+    country: string,
+    categoryTag?: string
+  ) => {
     // for now due to api limitations, ignore the location field
     location = '';
 
@@ -175,9 +213,13 @@ export const useAdzuna = () => {
         title,
         location,
         country,
-        (rawData) => ({
-          data: sanitizeAdzunaData({ histogram: rawData.histogram })
-        })
+        (rawData) => {
+          const tag = categoryTag || jobsData.value?.results?.[0]?.category?.tag;
+          return {
+            data: sanitizeAdzunaData({ histogram: rawData.histogram }),
+            categoryTag: tag
+          };
+        }
       );
     } catch (e) {
       console.error('Adzuna histogram fetch error:', e);

@@ -4,8 +4,8 @@ export default defineEventHandler(async (event) => {
   const country = query.country ? String(query.country).toLowerCase() : 'gb';
   const targetCountry = country === 'usa' ? 'us' : country;
 
-  const appId = config.adzunaAppId || config.public?.adzunaAppId || process.env.ADZUNA_APP_ID;
-  const appKey = config.adzunaAppKey || config.public?.adzunaAppKey || process.env.ADZUNA_APP_KEY;
+  const appId = config.ADZUNA_APP_ID || config.public?.adzunaAppId || process.env.ADZUNA_APP_ID;
+  const appKey = config.ADZUNA_APP_KEY || config.public?.adzunaAppKey || process.env.ADZUNA_APP_KEY;
 
   if (!appId || !appKey) {
     throw createError({

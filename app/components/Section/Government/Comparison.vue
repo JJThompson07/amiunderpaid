@@ -7,7 +7,7 @@
       </div>
       <h3 class="font-bold text-slate-900">Government Benchmarks</h3>
     </div>
-    <div class="text-center flex flex-col gap-2">
+    <div class="text-center flex flex-col flex-1 justify-start gap-2">
       <span v-if="!isFallback" class="text-2xs flex justify-center items-center gap-1">
         <component :is="InfoIcon" class="h-3 w-3 text-neutral-700"></component>
         <span>
