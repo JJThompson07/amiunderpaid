@@ -8,9 +8,19 @@ export default defineEventHandler(async (event) => {
   const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
   const limit = resultsPerPage || 5;
 
+  const appId = config.ADZUNA_APP_ID || config.public?.adzunaAppId || process.env.ADZUNA_APP_ID;
+  const appKey = config.ADZUNA_APP_KEY || config.public?.adzunaAppKey || process.env.ADZUNA_APP_KEY;
+
+  if (!appId || !appKey) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Adzuna API credentials are not configured.'
+    });
+  }
+
   const params: Record<string, any> = {
-    app_id: config.ADZUNA_APP_ID,
-    app_key: config.ADZUNA_APP_KEY,
+    app_id: appId,
+    app_key: appKey,
     results_per_page: limit,
     what: title,
     'content-type': 'application/json',

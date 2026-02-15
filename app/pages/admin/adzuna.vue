@@ -1,79 +1,55 @@
 <template>
-  <div class="min-h-screen bg-slate-50 pt-24 pb-12 px-4">
-    <div class="max-w-4xl mx-auto">
-      <h1 class="text-3xl font-bold text-slate-900 mb-8">Adzuna Categories Management</h1>
-
-      <div class="grid md:grid-cols-2 gap-6">
-        <!-- UK Card -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h2 class="text-xl font-bold text-slate-900">UK Categories</h2>
-              <p class="text-sm text-slate-500 mt-1">
-                {{ ukCategories?.results?.length || 0 }} categories cached
-              </p>
-            </div>
-            <div v-if="ukLastUpdated" class="text-xs text-slate-400 text-right">
-              Updated:<br />
-              {{ ukLastUpdated }}
-            </div>
-          </div>
-
-          <div
-            class="h-64 bg-slate-50 rounded-lg border border-slate-200 mb-4 overflow-auto p-3 text-xs font-mono">
-            <div v-if="ukCategories">
-              <div v-for="cat in ukCategories.results" :key="cat.tag" class="mb-1">
-                <span class="font-bold text-slate-700">{{ cat.label }}</span>
-                <span class="text-slate-400"> ({{ cat.tag }})</span>
-              </div>
-            </div>
-            <div v-else class="h-full flex items-center justify-center text-slate-400 italic">
-              No data cached
-            </div>
-          </div>
-
-          <AmIButton
-            :loading="loadingUK"
-            class="w-full justify-center"
-            @click="fetchCategories('gb')">
-            Fetch & Cache UK Data
-          </AmIButton>
+  <div class="min-h-screen flex items-center justify-center bg-slate-50 p-4 pt-20">
+    <div
+      class="p-8 bg-white rounded-3xl border border-slate-200 shadow-xl text-center max-w-lg w-full">
+      <!-- ICON HEADER -->
+      <div class="mb-6 flex justify-center">
+        <div
+          class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
+          <TrendingUp class="w-8 h-8" />
         </div>
+      </div>
 
-        <!-- US Card -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h2 class="text-xl font-bold text-slate-900">USA Categories</h2>
-              <p class="text-sm text-slate-500 mt-1">
-                {{ usCategories?.results?.length || 0 }} categories cached
-              </p>
+      <h1 class="text-2xl font-black mb-2 text-slate-900">Adzuna Admin</h1>
+      <p class="text-slate-500 mb-8 text-sm">Manage Adzuna API data and categories.</p>
+
+      <!-- CATEGORY SYNC SECTION -->
+      <div class="mb-8">
+        <div class="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+          <h3 class="text-2xs font-bold uppercase tracking-widest text-indigo-400 mb-3">
+            Adzuna Categories
+          </h3>
+          <div class="flex flex-col gap-3">
+            <div class="flex justify-center gap-2 mb-2">
+              <button
+                v-for="c in ['UK', 'USA']"
+                :key="c"
+                class="px-3 py-1 rounded-lg text-xs font-bold transition-all"
+                :class="
+                  targetCountry === c
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white text-slate-500 border border-slate-200'
+                "
+                @click="targetCountry = c">
+                {{ c }}
+              </button>
             </div>
-            <div v-if="usLastUpdated" class="text-xs text-slate-400 text-right">
-              Updated:<br />
-              {{ usLastUpdated }}
+
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-indigo-900 font-medium"
+                >Sync {{ targetCountry }} Categories</span
+              >
+              <button
+                :disabled="syncingCategories"
+                class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+                @click="handleSyncCategories">
+                {{ syncingCategories ? 'Syncing...' : 'Sync Now' }}
+              </button>
+            </div>
+            <div v-if="categoryStatus" class="text-xs text-indigo-600 font-mono">
+              {{ categoryStatus }}
             </div>
           </div>
-
-          <div
-            class="h-64 bg-slate-50 rounded-lg border border-slate-200 mb-4 overflow-auto p-3 text-xs font-mono">
-            <div v-if="usCategories">
-              <div v-for="cat in usCategories.results" :key="cat.tag" class="mb-1">
-                <span class="font-bold text-slate-700">{{ cat.label }}</span>
-                <span class="text-slate-400"> ({{ cat.tag }})</span>
-              </div>
-            </div>
-            <div v-else class="h-full flex items-center justify-center text-slate-400 italic">
-              No data cached
-            </div>
-          </div>
-
-          <AmIButton
-            :loading="loadingUS"
-            class="w-full justify-center"
-            @click="fetchCategories('us')">
-            Fetch & Cache USA Data
-          </AmIButton>
         </div>
       </div>
     </div>
@@ -81,88 +57,58 @@
 </template>
 
 <script setup lang="ts">
-import type { Timestamp } from 'firebase/firestore';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { ref } from 'vue';
+import { TrendingUp } from 'lucide-vue-next';
 import { useFirestore } from 'vuefire';
+import { doc, writeBatch } from 'firebase/firestore';
 
-type CategoryResponse = {
-  results: { label: string; tag: string }[];
-};
+definePageMeta({
+  middleware: 'admin'
+});
 
 const db = useFirestore();
+const { fetchCategories, categories } = useAdzuna();
 
-const loadingUK = ref(false);
-const loadingUS = ref(false);
-const ukCategories = ref<any>(null);
-const usCategories = ref<any>(null);
-const ukLastUpdated = ref<string>('');
-const usLastUpdated = ref<string>('');
+const targetCountry = ref('UK');
+const syncingCategories = ref(false);
+const categoryStatus = ref('');
 
-const formatDate = (ts: Timestamp | null) => {
-  if (!ts) return '';
-  return ts.toDate().toLocaleString();
-};
-
-const loadFromCache = async () => {
-  try {
-    const [ukSnap, usSnap] = await Promise.all([
-      getDoc(doc(db, 'adzuna_categories', 'gb')),
-      getDoc(doc(db, 'adzuna_categories', 'us'))
-    ]);
-
-    if (ukSnap.exists()) {
-      const data = ukSnap.data();
-      ukCategories.value = data.data;
-      ukLastUpdated.value = formatDate(data.updatedAt);
-    }
-
-    if (usSnap.exists()) {
-      const data = usSnap.data();
-      usCategories.value = data.data;
-      usLastUpdated.value = formatDate(data.updatedAt);
-    }
-  } catch (e) {
-    console.error('Error loading cache:', e);
-  }
-};
-
-const fetchCategories = async (country: 'gb' | 'us') => {
-  const isUK = country === 'gb';
-  if (isUK) loadingUK.value = true;
-  else loadingUS.value = true;
+const handleSyncCategories = async () => {
+  if (!db) return;
+  syncingCategories.value = true;
+  categoryStatus.value = `Fetching ${targetCountry.value} categories...`;
 
   try {
-    // 1. Fetch from API
-    const response = await $fetch('/api/adzuna/categories', {
-      params: { country }
-    });
+    await fetchCategories(targetCountry.value);
 
-    const cleanedResponse = sanitizeAdzunaData({ results: (response as CategoryResponse).results });
-
-    // 2. Save to Firestore
-    await setDoc(doc(db, 'adzuna_categories', country), {
-      data: cleanedResponse,
-      updatedAt: serverTimestamp()
-    });
-
-    // 3. Update local state
-    if (isUK) {
-      ukCategories.value = cleanedResponse;
-      ukLastUpdated.value = new Date().toLocaleString();
-    } else {
-      usCategories.value = cleanedResponse;
-      usLastUpdated.value = new Date().toLocaleString();
+    if (!categories.value || categories.value.length === 0) {
+      categoryStatus.value = 'No categories returned from API.';
+      return;
     }
-  } catch (e) {
+
+    categoryStatus.value = `Saving ${categories.value.length} categories...`;
+
+    const batch = writeBatch(db);
+
+    categories.value.forEach((cat) => {
+      const id = `${targetCountry.value}-${cat.tag}`.toLowerCase();
+      const ref = doc(db, 'adzuna_categories', id);
+      batch.set(ref, {
+        ...cat,
+        country: targetCountry.value,
+        updatedAt: new Date()
+      });
+    });
+
+    console.log(JSON.stringify(categories.value));
+
+    await batch.commit();
+    categoryStatus.value = `✅ Synced ${categories.value.length} categories.`;
+  } catch (e: any) {
     console.error(e);
-    alert('Failed to fetch categories');
+    categoryStatus.value = `❌ Error: ${e.message}`;
   } finally {
-    if (isUK) loadingUK.value = false;
-    else loadingUS.value = false;
+    syncingCategories.value = false;
   }
 };
-
-onMounted(() => {
-  loadFromCache();
-});
 </script>

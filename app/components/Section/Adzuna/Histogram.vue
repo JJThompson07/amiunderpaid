@@ -1,11 +1,13 @@
 <template>
-  <div class="histogram">
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h3 class="text-lg font-bold text-slate-900">Salary Distribution</h3>
-          <p class="text-xs text-slate-500">Based on live job listings</p>
-        </div>
+  <div class="histogram bg-slate-100 rounded-lg relative">
+    <div class="p-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-slate-900">Salary Distribution</h3>
+        <component
+          :is="XCircle"
+          class="h-5 w-5 absolute top-2 right-2 cursor-pointer hover:text-primary-600 transition-colors duration-300 ease-in-out"
+          role="button"
+          @click="$emit('close')" />
       </div>
 
       <!-- Chart -->
@@ -64,6 +66,9 @@
 import { ref, type PropType } from 'vue';
 import { getPercentage } from '~/helpers/utility';
 import type { HistogramBucket } from '~/composables/useAdzuna';
+import { XCircle } from 'lucide-vue-next';
+
+defineEmits(['close']);
 
 defineProps({
   buckets: {

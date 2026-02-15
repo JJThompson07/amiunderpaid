@@ -405,13 +405,13 @@ onMounted(() => {
     fetchSummary();
   } else {
     log('Checking authentication...');
-    navigateTo('/login');
+    navigateTo('/admin/login');
   }
 });
 
 watch(user, (newUser) => {
   if (!newUser) {
-    navigateTo('/login');
+    navigateTo('/admin/login');
   } else {
     fetchSummary();
   }

@@ -123,6 +123,7 @@ const config = useRuntimeConfig();
 
 // Check if the URL has the correct ?access=... parameter
 const isAccessGranted = computed(() => {
+  console.log(route.query.access, config.public.adminAccessKey);
   return route.query.access === config.public.adminAccessKey;
 });
 
@@ -148,7 +149,7 @@ const handleLogin = async () => {
     await signInWithEmailAndPassword(auth, email.value, password.value);
 
     // 4. Success redirection logic
-    const redirectPath = route.query.redirect?.toString() || '/admin/seed';
+    const redirectPath = route.query.redirect?.toString() || '/admin/coding-index';
     await navigateTo(redirectPath);
   } catch (e: any) {
     // 5. Error mapping for common Firebase codes

@@ -1,20 +1,33 @@
 <template>
   <div
-    class="government-comparison bg-white border shadow-xl rounded-2xl border-slate-200 flex flex-col gap-4 flex-1 flex flex-col justify-between">
-    <div class="text-center flex flex-col gap-2 p-6">
+    class="government-comparison p-4 bg-white border shadow-xl rounded-2xl border-slate-200 flex flex-col gap-2 flex-1 justify-between items-center relative">
+    <div class="flex items-center gap-2 justify-start w-full">
+      <div class="p-1.5 bg-slate-100 rounded-lg text-slate-600">
+        <LandmarkIcon class="w-4 h-4" aria-hidden="true" />
+      </div>
+      <h3 class="font-bold text-slate-900">Government Benchmarks</h3>
+    </div>
+    <div class="text-center flex flex-col gap-2">
+      <span v-if="!isFallback" class="text-2xs flex justify-center items-center gap-1">
+        <component :is="InfoIcon" class="h-3 w-3 text-neutral-700"></component>
+        <span>
+          Showing government matched data for
+          {{
+            matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()
+              ? 'market category'
+              : ''
+          }}
+          <strong>{{ matchedTitle }}</strong>
+        </span>
+      </span>
+
       <!-- Fallback Notice -->
       <div
-        v-if="
-          isFallback &&
-          ((matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()) ||
-            (matchedLocation &&
-              location &&
-              matchedLocation.toLowerCase() !== location.toLowerCase()))
+        v-else-if="
+          (matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()) ||
+          (matchedLocation && location && matchedLocation.toLowerCase() !== location.toLowerCase())
         "
         class="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium border border-amber-100">
-        <p class="mb-2 text-sm font-medium text-slate-500">
-          Verdict for {{ displayTitle }} in {{ location || country }}
-        </p>
         <InfoIcon class="w-3.5 h-3.5" />
         <span>
           Exact match not found. Showing {{ marketDataYear }} government data for
@@ -47,16 +60,6 @@
         :matched-location="matchedLocation"
         :diff-percent="diffPercent"
         :is-underpaid="isUnderpaid" />
-
-      <div v-if="!isFallback">
-        <span class="mb-2 text-sm font-medium text-slate-500"
-          >Showing government matched data for
-          {{
-            matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase() ? 'group' : ''
-          }}
-          <strong>{{ matchedTitle }}</strong></span
-        >
-      </div>
     </div>
 
     <!-- Comparison Visualizer -->
@@ -72,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { InfoIcon } from 'lucide-vue-next';
+import { InfoIcon, LandmarkIcon } from 'lucide-vue-next';
 
 defineProps<{
   isFallback: boolean;

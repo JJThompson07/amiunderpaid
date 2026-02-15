@@ -1,13 +1,15 @@
 <template>
-  <div class="text-center p-4 flex flex-col">
+  <div class="text-center p-4 flex flex-col flex-1">
     <div class="flex flex-col items-center gap-2">
-      <div class="flex flex-col sm:flex-row gap-3 items-center">
-        <AmIChip :icon="verdict.icon" :bg-colour="verdict.bg" :text-colour="verdict.text">
-          {{ verdict.label }}
-        </AmIChip>
-        <h2 class="text-3xl font-black text-slate-900">{{ verdict.title }}</h2>
+      <div class="flex flex-col sm:flex-row gap-3 items-center relative">
+        <h2
+          class="text-2xl font-bold rounded-full p-2 px-4 flex items-center justify-center gap-2"
+          :class="[verdict.text, verdict.bg]">
+          <component :is="verdict.icon" />
+          {{ verdict.title }}
+        </h2>
       </div>
-      <div>
+      <div class="flex flex-col relative">
         <p class="text-sm text-slate-600 mt-1">
           <template v-if="diffPercent === 0">
             Your salary is
@@ -62,7 +64,7 @@ const verdict = computed(() => {
       bg: 'bg-negative-100',
       text: 'text-negative-700',
       label: 'Underpaid',
-      title: `Underpaid by ${props.diffPercent}%`
+      title: `Uderpaid -${props.diffPercent}%`
     };
   }
   return {
@@ -70,7 +72,7 @@ const verdict = computed(() => {
     bg: 'bg-positive-100',
     text: 'text-positive-700',
     label: 'Above Market Average',
-    title: "You're doing great!"
+    title: `Valued ${props.diffPercent}%`
   };
 });
 </script>

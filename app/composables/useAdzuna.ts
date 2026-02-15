@@ -46,11 +46,13 @@ export const sanitizeAdzunaData = (data: any): any => {
 export const useAdzuna = () => {
   const distributionData = ref<any>(null);
   const jobsData = ref<any>(null);
+  const categories = ref<any[]>([]);
   const loading = ref(false);
   const error = ref<any>(null);
   const db = useFirestore();
 
   const meanSalary = computed<number>(() => jobsData.value?.mean || 0);
+  const jobsCount = computed<number>(() => jobsData.value?.count || 0);
   const histogramData = computed<HistogramData>(() => distributionData.value?.histogram || {});
 
   const histogramBuckets = computed<HistogramBucket[]>(() =>
@@ -132,6 +134,8 @@ export const useAdzuna = () => {
   };
 
   const fetchJobs = async (title: string, location: string, country: string) => {
+    // for now due to api limitations, ignore the location field
+    location = '';
     // We don't set global loading for jobs as it might be background or parallel
     try {
       jobsData.value = await fetchFromCacheOrApi(
@@ -159,6 +163,9 @@ export const useAdzuna = () => {
   };
 
   const fetchHistogram = async (title: string, location: string, country: string) => {
+    // for now due to api limitations, ignore the location field
+    location = '';
+
     loading.value = true;
     error.value = null;
     try {
@@ -181,6 +188,23 @@ export const useAdzuna = () => {
     }
   };
 
+  const fetchCategories = async (country: string) => {
+    const countryCode = country.toLowerCase() === 'usa' ? 'us' : 'gb';
+    error.value = null;
+    try {
+      const response: any = await $fetch('/api/adzuna/categories', {
+        params: { country: countryCode }
+      });
+
+      const sanitized = sanitizeAdzunaData(response);
+      categories.value = sanitized.results || [];
+    } catch (e) {
+      console.error('Adzuna categories fetch error:', e);
+      error.value = e;
+      throw e;
+    }
+  };
+
   const isUnderpaid = (salary: number): boolean => {
     if (!hasJobsData.value) return false;
     return salary < meanSalary.value;
@@ -194,11 +218,13 @@ export const useAdzuna = () => {
   return {
     distributionData,
     jobsData,
+    categories,
     hasDistributionData,
     hasJobsData,
     loading,
     error,
     meanSalary,
+    jobsCount,
     histogramData,
     histogramBuckets,
     histogramRange,
@@ -206,6 +232,7 @@ export const useAdzuna = () => {
     histogramTotalCount,
     fetchJobs,
     fetchHistogram,
+    fetchCategories,
     isUnderpaid,
     getSalaryDiffPercentage
   };

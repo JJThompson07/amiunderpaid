@@ -1,10 +1,27 @@
 <template>
-  <div class="adzuna-comparison p-6 bg-white border shadow-xl rounded-2xl border-slate-200">
+  <div
+    class="adzuna-comparison p-4 bg-white border shadow-xl rounded-2xl border-slate-200 relative overflow-hidden flex flex-col gap-2">
+    <div class="flex items-center gap-2">
+      <div class="p-1.5 bg-secondary-100 rounded-lg text-secondary-600">
+        <TrendingUp class="w-4 h-4" aria-hidden="true" />
+      </div>
+      <h3 class="font-bold text-slate-900">Live {{ country }} Market Analysis</h3>
+    </div>
+
+    <span class="text-2xs flex justify-center items-center gap-1">
+      <component :is="InfoIcon" class="h-3 w-3 text-neutral-700"></component>
+      Showing government matched data for
+      <strong>{{ jobsCount }}</strong> live jobs.
+    </span>
+
     <!-- Salary Verdict Section -->
-    <div v-if="currentSalary === 0" class="space-y-2 flex flex-col items-center">
-      <h2 class="text-2xl font-black text-slate-900 flex items-center">
-        <DotIcon class="w-10 h-10 animate-pulse text-primary-500" />
-        Live Market Rate: {{ currencySymbol }}{{ averageSalary.toLocaleString() }}
+    <div v-if="currentSalary === 0" class="space-y-2 flex flex-col items-center flex-1">
+      <h2 class="text-2xl font-black text-slate-900 flex flex-col gap-1 items-center">
+        <div class="flex items-center gap-2">
+          <DotIcon class="w-10 h-10 animate-pulse text-primary-500" />
+          <span> Live Market Rate</span>
+        </div>
+        <span> {{ currencySymbol }}{{ averageSalary.toLocaleString() }} </span>
       </h2>
     </div>
 
@@ -21,13 +38,9 @@
       :is-underpaid="isUnderpaid" />
 
     <!-- Load Button State -->
-    <div v-if="!hasData" class="flex flex-col items-center justify-center p-8">
-      <h3 class="mb-2 text-lg font-bold text-slate-900">See Salary Distribution</h3>
-      <p class="mb-6 text-sm text-center text-slate-500">
-        View detailed salary breakdown based on live job listings.
-      </p>
-      <AmIButton :loading="loading" title="View Distribution" @click="$emit('fetch-data')">
-        View Distribution
+    <div v-if="!hasData || !showHistogram" class="flex items-center justify-center w-full">
+      <AmIButton :loading="loading" title="View Distribution" @click="toggleHistogram">
+        View Salary Distribution
       </AmIButton>
     </div>
 
@@ -41,7 +54,8 @@
       :is-underpaid="isUnderpaid"
       :currency-symbol="currencySymbol"
       :average-salary="averageSalary"
-      :current-salary="currentSalary" />
+      :current-salary="currentSalary"
+      @close="showHistogram = false" />
   </div>
 </template>
 
@@ -50,9 +64,9 @@ import { computed, type PropType } from 'vue';
 import type { HistogramBucket } from '~/composables/useAdzuna';
 import SalaryVerdict from '../SalaryVerdict.vue';
 import { getDiffPercentage } from '~/helpers/utility';
-import { DotIcon } from 'lucide-vue-next';
+import { DotIcon, InfoIcon, TrendingUp } from 'lucide-vue-next';
 
-defineEmits(['fetch-data']);
+const emit = defineEmits(['fetch-data']);
 
 const props = defineProps({
   buckets: {
@@ -76,6 +90,10 @@ const props = defineProps({
     required: true
   },
   averageSalary: {
+    type: Number,
+    default: 0
+  },
+  jobsCount: {
     type: Number,
     default: 0
   },
@@ -105,12 +123,21 @@ const props = defineProps({
   }
 });
 
-const hasData = computed(() => props.buckets && props.buckets.length > 0);
+const showHistogram = ref<boolean>(false);
+
+const hasData = computed<boolean>(() => props.buckets && props.buckets.length > 0);
 
 const diffPercent = computed(() => {
   if (props.averageSalary === 0) return 0;
   return getDiffPercentage(props.currentSalary, props.averageSalary);
 });
+
+const toggleHistogram = () => {
+  showHistogram.value = !showHistogram.value;
+  if (!hasData.value) {
+    emit('fetch-data');
+  }
+};
 </script>
 
 <style scoped></style>

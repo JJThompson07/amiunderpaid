@@ -2,14 +2,7 @@
   <div class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6">
     <!-- Background Gradient (Only show if we have data) -->
     <div
-      class="absolute top-0 left-0 w-full h-125 bg-linear-to-b to-slate-50 z-0"
-      :class="
-        diffPercent === 0
-          ? 'from-slate-900'
-          : isUnderpaid
-            ? 'from-negative-900'
-            : 'from-positive-900'
-      "></div>
+      class="fixed top-0 left-0 w-full h-125 bg-linear-to-b to-slate-50 z-0 from-secondary-900"></div>
 
     <!-- Breadcrumbs -->
     <AmILocationBreadcrumbs
@@ -19,7 +12,7 @@
       :country="country"
       :location="location" />
 
-    <h1 class="relative text-4xl font-white text-center font-bold">{{ displayTitle }}</h1>
+    <h1 class="relative text-3xl md:text-6xl text-white font-bold px-4">{{ displayTitle }}</h1>
 
     <LazyAmICardNoData
       v-if="!hasGovernmentData && !hasJobsData"
@@ -34,12 +27,6 @@
         <!-- Adzuna results section -->
         <div class="flex flex-col gap-6 xl:flex-row">
           <div v-if="hasJobsData" class="flex flex-col flex-1 gap-3 adzuna-section">
-            <div class="flex items-center gap-2">
-              <div class="p-1.5 bg-indigo-100 rounded-lg text-indigo-600">
-                <TrendingUp class="w-4 h-4" />
-              </div>
-              <h3 class="font-bold text-slate-900">Live Market Analysis</h3>
-            </div>
             <LazySectionAdzunaComparison
               class="flex-1"
               :buckets="histogramBuckets"
@@ -54,17 +41,12 @@
               :country="country"
               :location="location"
               :display-title="displayTitle"
+              :jobs-count="jobsCount"
               @fetch-data="fetchAdzunaHistogram(searchTitle, location, country)" />
           </div>
 
           <!-- GovernmentSection -->
           <div v-if="hasGovernmentData" class="flex flex-col flex-1 gap-3 government-section">
-            <div class="flex items-center gap-2">
-              <div class="p-1.5 bg-slate-100 rounded-lg text-slate-600">
-                <Landmark class="w-4 h-4" />
-              </div>
-              <h3 class="font-bold text-slate-900">Government Benchmarks</h3>
-            </div>
             <LazySectionGovernmentComparison
               class="overflow-hidden"
               :is-fallback="!hasJobsData"
@@ -156,8 +138,7 @@
 
 <script setup lang="ts">
 // ** imports **
-import { get } from 'firebase/database';
-import { Info, TrendingUp, Landmark } from 'lucide-vue-next';
+import { Info } from 'lucide-vue-next';
 import { computed, onMounted, watch } from 'vue';
 import { getDiffPercentage } from '~/helpers/utility';
 
@@ -166,8 +147,6 @@ const route = useRoute();
 const showAmbiguityModal = ref(false);
 const searchConfirmed = ref(false);
 const {
-  distributionData,
-  jobsData,
   histogramBuckets,
   fetchJobs: fetchAdzunaJobs,
   fetchHistogram: fetchAdzunaHistogram,
@@ -176,6 +155,7 @@ const {
   histogramMaxCount,
   histogramTotalCount,
   isUnderpaid: isUnderpaidAdzuna,
+  jobsCount,
   meanSalary,
   hasJobsData
 } = useAdzuna();
@@ -240,17 +220,9 @@ const fetchData = (t: string, l: string, c: string, p: string) => {
   Promise.all([
     c === 'UK' ? fetchUkMarketData(t, l, p) : fetchUSAMarketData(t, l, p),
     fetchAdzunaJobs(t, l, c)
-  ])
-    .then((values) => {
-      const [marketData] = values;
-
-      console.log('Market Data:', marketData);
-      console.log('Adzuna Jobs Data:', jobsData.value);
-      // Handle the data as needed after both promises resolve
-    })
-    .catch((error) => {
-      console.error('Error fetching data:', error);
-    });
+  ]).catch((error) => {
+    console.error('Error fetching data:', error);
+  });
 };
 
 // ** methods **
@@ -312,13 +284,6 @@ watch(ambiguousMatches, (matches) => {
   if (matches.length > 1 && !searchConfirmed.value) {
     showAmbiguityModal.value = true;
   }
-});
-
-watch(distributionData, () => {
-  console.log('Distribution data updated:', distributionData.value);
-});
-watch(jobsData, () => {
-  console.log('Jobs data updated:', jobsData.value);
 });
 
 // ** SEO **

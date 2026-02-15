@@ -63,6 +63,10 @@ const adminLinks = [
   {
     to: '/admin/coding-index',
     label: 'Coding Index'
+  },
+  {
+    to: '/admin/adzuna',
+    label: 'Adzuna API'
   }
 ];
 
