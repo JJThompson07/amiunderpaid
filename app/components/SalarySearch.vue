@@ -51,6 +51,7 @@
               :icon="MapPin"
               :options="locationOptions"
               optional
+              pre-filtered-options
               @update:model-value="fetchLocations" />
           </div>
 
