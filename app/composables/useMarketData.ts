@@ -99,7 +99,17 @@ export const useMarketData = () => {
     resetData();
 
     // Clean up title if it comes from a URL slug (e.g. "software-engineer" -> "software engineer")
-    const searchTitle = title.replace(/-/g, ' ');
+    let searchTitle = title.replace(/-/g, ' ');
+
+    // Extract group if present (e.g. "Software Engineer (Engineering)")
+    // This allows us to search for the title part only, but filter by the group part
+    let targetGroup = '';
+    const groupMatch = searchTitle.match(/^(.*?)\s*\((.*?)\)$/);
+    if (groupMatch) {
+      searchTitle = groupMatch[1];
+      targetGroup = groupMatch[2];
+    }
+
     const country = 'UK';
 
     try {
@@ -112,20 +122,37 @@ export const useMarketData = () => {
       let record: SalaryBenchmark | undefined;
 
       // 1. SOC Code Lookup (UK Strategy)
-      const { hits: titleHits } = await jobTitlesIndex.search<any>(searchTitle, {
+      // Sanitize query to match the cleaned database format (alphanumeric only)
+      const sanitizedQuery = searchTitle
+        .toLowerCase()
+
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const { hits: titleHits } = await jobTitlesIndex.search<any>(sanitizedQuery, {
         filters: `country:UK`,
-        hitsPerPage: 5
+        hitsPerPage: 10
       });
 
-      // Handle Ambiguity
-      if (titleHits.length > 1) {
-        const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
-        if (groups.size > 1) {
-          ambiguousMatches.value = titleHits;
-        }
+      let bestTitleMatch;
+
+      if (targetGroup) {
+        bestTitleMatch = titleHits.find(
+          (h: any) => h.group && h.group.toLowerCase() === targetGroup.toLowerCase()
+        );
       }
 
-      const bestTitleMatch = titleHits[0];
+      if (!bestTitleMatch) {
+        // Handle Ambiguity
+        if (titleHits.length > 1) {
+          const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
+          if (groups.size > 1) {
+            ambiguousMatches.value = titleHits;
+          }
+        }
+        bestTitleMatch = titleHits[0];
+      }
 
       if (bestTitleMatch && bestTitleMatch.soc) {
         // Search National Benchmarks by SOC Code
@@ -145,8 +172,6 @@ export const useMarketData = () => {
                 hitsPerPage: 10
               }
             );
-
-            console.log('Regional Hits:', regionalHits);
 
             const locLower = location.toLowerCase();
             const bestRegional = regionalHits.find(
@@ -211,8 +236,6 @@ export const useMarketData = () => {
           optionalWords: searchTitle, // Allow fuzzy matching on title if location matches well
           hitsPerPage: 10
         });
-
-        console.log(hits);
 
         const locLower = location.toLowerCase();
         const bestRegional = hits.find(

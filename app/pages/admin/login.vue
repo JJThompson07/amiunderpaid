@@ -123,7 +123,6 @@ const config = useRuntimeConfig();
 
 // Check if the URL has the correct ?access=... parameter
 const isAccessGranted = computed(() => {
-  console.log(route.query.access, config.public.adminAccessKey);
   return route.query.access === config.public.adminAccessKey;
 });
 

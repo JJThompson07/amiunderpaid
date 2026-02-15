@@ -169,12 +169,19 @@ export const useAdzuna = () => {
   const fetchJobs = async (title: string, location: string, country: string) => {
     // for now due to api limitations, ignore the location field
     location = '';
-    // We don't set global loading for jobs as it might be background or parallel
+    loading.value = true;
+
+    // Clean title for Adzuna: remove (Group) and non-alphanumeric
+    const cleanTitle = title
+      .replace(/\s*\(.*?\)\s*/g, '')
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .trim();
+
     try {
       jobsData.value = await fetchFromCacheOrApi(
         'adzuna_jobs_cache',
         '/api/adzuna/jobs',
-        title,
+        cleanTitle,
         location,
         country,
         (rawData) => {
@@ -192,6 +199,8 @@ export const useAdzuna = () => {
     } catch (e) {
       console.error('Adzuna jobs fetch error:', e);
       jobsData.value = null;
+    } finally {
+      loading.value = false;
     }
   };
 

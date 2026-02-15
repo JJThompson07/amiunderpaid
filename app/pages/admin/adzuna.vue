@@ -155,8 +155,6 @@ const handleSyncCategories = async () => {
       });
     });
 
-    console.log(JSON.stringify(categories.value));
-
     await batch.commit();
     categoryStatus.value = `✅ Synced ${categories.value.length} categories.`;
     await fetchStoredCategories();

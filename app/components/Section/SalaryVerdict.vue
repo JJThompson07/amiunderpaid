@@ -24,7 +24,10 @@
           <template v-else>
             Your salary is
             <span class="font-bold text-slate-900">{{ diffPercent }}% higher</span> than the market
-            average for your role.
+            average,
+            <span class="font-bold text-slate-900"
+              >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
+            >, for your role.
           </template>
         </p>
       </div>

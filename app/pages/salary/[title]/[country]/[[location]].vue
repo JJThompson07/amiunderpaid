@@ -15,7 +15,7 @@
     <h1 class="relative text-3xl md:text-6xl text-white font-bold px-4">{{ displayTitle }}</h1>
 
     <LazyAmICardNoData
-      v-if="!hasGovernmentData && !hasJobsData"
+      v-if="!loading && !adzunaLoading && !hasGovernmentData && !hasJobsData"
       :title="displayTitle"
       :location="location"
       :country="country"
@@ -87,7 +87,7 @@
 
         <!-- The Negotiation Component -->
         <LazySectionNegotiation
-          v-if="hasGovernmentData"
+          v-if="hasGovernmentData || hasJobsData"
           class="lg:col-span-4"
           :title="displayTitle"
           :current-salary="userSalary"

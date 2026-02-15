@@ -5,7 +5,7 @@
       class="relative w-full bg-white rounded-2xl shadow-2xl transform transition-all overflow-hidden flex flex-col">
       <!-- Header -->
       <div
-        class="relative flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-secondary-700">
+        class="relative flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-secondary-800">
         <h3 class="font-bold text-slate-50">Ready To Take Action?</h3>
       </div>
 

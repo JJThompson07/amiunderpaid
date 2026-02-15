@@ -16,10 +16,11 @@
 
     <!-- Salary Verdict Section -->
     <div v-if="currentSalary === 0" class="space-y-2 flex flex-col items-center flex-1">
-      <h2 class="text-2xl font-black text-slate-900 flex flex-col gap-1 items-center">
+      <h2
+        class="text-2xl font-black text-slate-900 flex flex-col gap-1 items-center justify-center">
         <div class="flex items-center gap-2">
           <DotIcon class="w-10 h-10 animate-pulse text-primary-500" />
-          <span> Live Market Rate</span>
+          <span>Live Market Rate</span>
         </div>
         <span> {{ currencySymbol }}{{ averageSalary.toLocaleString() }} </span>
       </h2>

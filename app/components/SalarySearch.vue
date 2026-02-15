@@ -141,8 +141,6 @@ const fetchUKTitles = async (searchTerm: string) => {
     hitsPerPage: 100
   });
 
-  console.log(hits);
-
   const results = new Set<string>();
   hits.forEach((hit: any) => {
     const cleanGroup = hit.group ? hit.group.replace(/\s*\(.*\)$/, '') : '';
@@ -150,7 +148,6 @@ const fetchUKTitles = async (searchTerm: string) => {
     results.add(label);
   });
 
-  console.log('results: ', results);
   return Array.from(results);
 };
 
