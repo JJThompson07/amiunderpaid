@@ -1,8 +1,14 @@
 <template>
   <div ref="containerRef" class="ami-input relative w-full group">
     <label v-if="label" class="ml-1 text-xs font-bold uppercase tracking-wider text-slate-500">
-      {{ label }} <span v-if="optional" class="text-slate-400 text-2xs">(optional)</span>
+      {{ label }}<span v-if="optional" class="text-slate-400 text-2xs"> (optional)</span
+      ><span v-else class="text-secondary-600">*</span>
     </label>
+    <span
+      v-if="helper"
+      class="ml-1 text-2xs font-semibold text-slate-400 uppercase tracking-normal block sm:inline-block"
+      >{{ helper }}</span
+    >
     <div class="relative flex">
       <div v-if="icon" class="absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
         <component
@@ -81,6 +87,10 @@ const props = defineProps({
     default: ''
   },
   label: {
+    type: String,
+    default: ''
+  },
+  helper: {
     type: String,
     default: ''
   },

@@ -21,10 +21,15 @@
         </h1>
 
         <!-- Subtitle -->
-        <h2 class="max-w-2xl mx-auto text-lg font-light md:text-xl text-indigo-100/80">
+        <h2 class="max-w-2xl mx-auto font-light text-lg md:text-xl text-white/80">
+          Feeling undervalued? Curious about the market rate?
+        </h2>
+
+        <!-- Subtitle -->
+        <p class="max-w-2xl mx-auto font-light text-sm md:text-base text-white/80">
           Stop guessing. Check your salary against 140,000+ live job listings and official
           government benchmarks in seconds.
-        </h2>
+        </p>
       </div>
 
       <!-- The Calculator Component -->

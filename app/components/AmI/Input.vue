@@ -14,6 +14,7 @@
         :type="type"
         :disabled="disabled"
         :placeholder="placeholder"
+        :step="step"
         class="w-full pl-10 pr-4 py-3 font-medium transition-all border bg-slate-50 border-slate-200 focus:outline-none text-slate-900 placeholder:text-slate-400"
         :class="param ? 'rounded-l-xl' : 'rounded-xl'" />
       <div v-if="param" class="relative">
@@ -76,6 +77,10 @@ const props = defineProps({
   optional: {
     type: Boolean,
     default: false
+  },
+  step: {
+    type: Number,
+    default: undefined
   }
 });
 
