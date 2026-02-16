@@ -33,6 +33,7 @@
           <AmIAutocompleteInput
             v-model="title"
             label="Job Title"
+            helper="Type any title, we will try to find the best match"
             placeholder="e.g. Software Engineer"
             :icon="Search"
             :options="titleOptions"
@@ -61,8 +62,9 @@
               v-model="salary"
               v-model:param-value="period"
               type="number"
+              :step="10"
               label="Current Salary"
-              :placeholder="currencySymbol + '0'"
+              :placeholder="currencySymbol + '55,000'"
               :icon="Wallet"
               optional
               :params="periodOptions" />
