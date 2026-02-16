@@ -278,11 +278,11 @@ const handleSearch = async () => {
   await navigateTo({
     path,
     query: {
+      q: title.value,
       compare: salary.value || undefined,
       period: period.value !== 'year' ? period.value : undefined
     },
     state: {
-      q: title.value, // Pass original title for accurate lookup
       confirmed: true
     }
   });
