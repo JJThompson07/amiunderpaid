@@ -51,6 +51,9 @@
     ALGOLIA_APPLICATION_ID=your_algolia_app_id
     ALGOLIA_SEARCH_API_KEY=your_algolia_search_key
 
+    ADZUNA_APP_ID=your_adzuna_app_id
+    ADZUNA_APP_KEY=your_adzuna_app_key
+
     NUXT_ADMIN_ACCESS_KEY=your_secret_access_key
     ```
 
