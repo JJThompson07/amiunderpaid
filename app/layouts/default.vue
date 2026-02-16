@@ -90,7 +90,7 @@ const handleLogout = async () => {
 
 <style>
 .logo {
-  background: url('../../assets/img/logo.png') no-repeat center center;
+  background: url('../assets/img/logo.png') no-repeat center center;
   background-size: cover;
 }
 </style>

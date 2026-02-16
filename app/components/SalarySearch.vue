@@ -94,10 +94,14 @@ import { ref, computed, watch } from 'vue';
 import { Search, MapPin, CalculatorIcon, Wallet } from 'lucide-vue-next';
 import type { SearchClient } from 'algoliasearch';
 
+const props = defineProps<{
+  initialCountry?: string;
+}>();
+
 const emit = defineEmits(['country-change']);
 
 const url = useRequestURL();
-const country = ref(url.hostname.includes('.com') ? 'USA' : 'UK');
+const country = ref(props.initialCountry || (url.hostname.includes('.com') ? 'USA' : 'UK'));
 
 const title = ref('');
 const location = ref('');

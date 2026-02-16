@@ -29,6 +29,8 @@ export default defineNuxtConfig({
     '/': { swr: 86400 }
   },
 
+  css: ['~/assets/css/main.css'],
+
   // ** 3. Register Modules **
   modules: ['@nuxt/eslint', '@vueuse/nuxt', 'nuxt-vuefire', 'nuxt-gtag', '@nuxtjs/algolia'],
 
