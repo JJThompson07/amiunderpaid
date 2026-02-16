@@ -91,33 +91,36 @@
           :regional-data="regionalData"
           :year="marketDataYear" />
 
-        <LazyAmICardAction
-          v-if="country === 'UK' && isXl"
-          bg-colour="bg-cv-library-50"
-          border-colour="border-cv-library-100"
-          hover-class="hover:border-cv-library-200"
-          affiliate-bg-colour="bg-cv-library-100"
-          affiliate-text-colour="text-cv-library-700"
-          :icon="Binoculars"
-          header="Get Discovered"
-          strapline="Find a job that works for you, fast"
-          sponsored
-          class="rounded-lg border shadow-lg h-max w-full">
-          <template #body>
-            Register your free CV on the UK's leading job site (<strong class="text-cv-library-700"
-              >CV-Library</strong
-            >) and let top employers come to you - it's fast, easy and free.
-          </template>
-          <template #cta>
-            <a
-              href="https://www.cv-library.co.uk/register?id=107202"
-              target="_blank"
-              rel="sponsored"
-              class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
-              >Register CV</a
-            >
-          </template>
-        </LazyAmICardAction>
+        <ClientOnly>
+          <LazyAmICardAction
+            v-if="country === 'UK' && isXl"
+            bg-colour="bg-cv-library-50"
+            border-colour="border-cv-library-100"
+            hover-class="hover:border-cv-library-200"
+            affiliate-bg-colour="bg-cv-library-100"
+            affiliate-text-colour="text-cv-library-700"
+            :icon="Binoculars"
+            header="Get Discovered"
+            strapline="Find a job that works for you, fast"
+            sponsored
+            class="rounded-lg border shadow-lg h-max w-full">
+            <template #body>
+              Register your free CV on the UK's leading job site (<strong
+                class="text-cv-library-700"
+                >CV-Library</strong
+              >) and let top employers come to you - it's fast, easy and free.
+            </template>
+            <template #cta>
+              <a
+                href="https://www.cv-library.co.uk/register?id=107202"
+                target="_blank"
+                rel="sponsored"
+                class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
+                >Register CV</a
+              >
+            </template>
+          </LazyAmICardAction>
+        </ClientOnly>
 
         <!-- The Negotiation Component -->
         <LazySectionNegotiation

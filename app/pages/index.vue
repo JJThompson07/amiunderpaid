@@ -94,7 +94,7 @@ import { SquareCheckBig } from 'lucide-vue-next';
 // Nuxt automatically imports the SalarySearch component from /components
 
 const url = useRequestURL();
-const isUSA = ref<boolean>(url.hostname.includes('.com'));
+const isUSA = useState<boolean>('landing-is-usa', () => url.hostname.includes('.com'));
 
 const title = computed(() =>
   isUSA.value

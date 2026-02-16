@@ -2,7 +2,7 @@
   <nav
     class="flex flex-1 items-center gap-6 font-medium"
     :class="
-      isMobile
+      safeIsMobile
         ? 'fixed inset-0 bg-slate-200 z-40 p-4 pt-20 flex-col text-slate-800 gap-6 animate-in slide-in-from-top-10 fade-in duration-300'
         : 'text-sm text-slate-600 justify-center gap-8'
     ">
@@ -23,7 +23,7 @@
         :to="link.to"
         class="transition-colors text-center focus:outline-0"
         :class="
-          isMobile
+          safeIsMobile
             ? `shadow-md w-full p-4 rounded-lg ${link.mobileColorClass}`
             : 'hover:text-primary-600 focus:text-primary-600'
         "
@@ -31,7 +31,7 @@
         >{{ link.label }}</NuxtLink
       >
       <NuxtLink
-        v-if="isMobile"
+        v-if="safeIsMobile"
         to="/privacy-policy"
         class="transition-colors text-center text-primary-600 bg-slate-100 shadow-md w-full p-4 rounded-lg focus:text-slate-900 focus:outline-0 focus:bg-slate-300"
         @click="$emit('close')"
@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 
 const props = defineProps({
   isAdmin: {
@@ -56,6 +56,12 @@ const props = defineProps({
 });
 
 defineEmits(['close']);
+
+const isMounted = ref(false);
+onMounted(() => {
+  isMounted.value = true;
+});
+const safeIsMobile = computed(() => isMounted.value && props.isMobile);
 
 const adminLinks = [
   {
@@ -102,10 +108,10 @@ const navLinks = [
 ];
 
 const visibleAdminLinks = computed(() =>
-  adminLinks.filter((link) => !link.mobileOnly || props.isMobile)
+  adminLinks.filter((link) => !link.mobileOnly || safeIsMobile.value)
 );
 const visibleNavLinks = computed(() =>
-  navLinks.filter((link) => !link.mobileOnly || props.isMobile)
+  navLinks.filter((link) => !link.mobileOnly || safeIsMobile.value)
 );
 </script>
 
