@@ -81,7 +81,7 @@
 // imports
 import { Copy, CheckCircle2, TrendingUp, FileText, Mail, Binoculars } from 'lucide-vue-next';
 import { AmICardAction, LazyAmICardAction } from '#components';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 // ** type definitions **
 
 // ** props **
@@ -100,7 +100,15 @@ defineEmits(['close']);
 const copied = ref(false);
 const showScript = ref(false);
 const { trackResultAction } = useAnalytics();
-const { isXl } = useViewport();
+const { isXl: viewportIsXl } = useViewport();
+
+// Ensure isXl is false during SSR/Hydration to match server rendering
+const isMounted = ref(false);
+const isXl = computed(() => isMounted.value && viewportIsXl.value);
+
+onMounted(() => {
+  isMounted.value = true;
+});
 
 // ** computed properties **
 const isUnderpaid = computed(() => props.marketAverage > props.currentSalary);
