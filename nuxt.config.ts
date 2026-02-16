@@ -23,10 +23,9 @@ export default defineNuxtConfig({
     '/about': { swr: 86400 },
     '/how-it-works': { swr: 86400 },
     '/data-sources': { swr: 86400 },
-    '/privacy-policy': { swr: 86400 },
+    '/privacy-policy': { swr: 86400 }
 
     // Homepage can be shorter if you feature "trending" jobs, otherwise 24h is fine too
-    '/': { swr: 86400 }
   },
 
   css: ['~/assets/css/main.css'],
