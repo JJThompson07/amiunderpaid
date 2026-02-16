@@ -6,25 +6,6 @@ if (!process.env.FIREBASE_API_KEY) {
   console.warn('⚠️  WARNING: FIREBASE_API_KEY is missing from process.env!');
 }
 
-// // --- ADD THIS DEBUG BLOCK ---
-// console.log('-------------------------------------------');
-// console.log(
-//   'DEBUG: GOOGLE_SERVICE_ACCOUNT length:',
-//   process.env.GOOGLE_SERVICE_ACCOUNT?.length || 0
-// );
-// if (process.env.GOOGLE_SERVICE_ACCOUNT) {
-//   try {
-//     JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-//     console.log('DEBUG: JSON Parse Success! ✅');
-//   } catch (e) {
-//     console.error('DEBUG: JSON Parse FAILED ❌', e.message);
-//   }
-// } else {
-//   console.log('DEBUG: Variable is undefined/empty');
-// }
-// console.log('-------------------------------------------');
-// // ----------------------------
-
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
@@ -72,25 +53,6 @@ export default defineNuxtConfig({
       appId: process.env.FIREBASE_APP_ID || '',
       measurementId: process.env.FIREBASE_MEASUREMENT_ID || ''
     }
-    // admin: {
-    //   serviceAccount: (() => {
-    //     if (!process.env.GOOGLE_SERVICE_ACCOUNT) return undefined;
-
-    //     try {
-    //       const sa = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-
-    //       // CRITICAL FIX: Replace literal "\n" strings with actual newline characters
-    //       if (sa.private_key) {
-    //         sa.private_key = sa.private_key.replace(/\\n/g, '\n');
-    //       }
-
-    //       return sa;
-    //     } catch (e) {
-    //       console.error('Failed to parse GOOGLE_SERVICE_ACCOUNT', e);
-    //       return undefined;
-    //     }
-    //   })()
-    // }
   },
 
   gtag: {
