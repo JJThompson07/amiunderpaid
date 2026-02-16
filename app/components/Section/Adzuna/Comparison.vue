@@ -1,71 +1,64 @@
 <template>
-  <div
-    class="adzuna-comparison p-4 bg-white border shadow-xl rounded-2xl border-slate-200 relative overflow-hidden flex-1 flex flex-col gap-2">
-    <div class="flex items-center gap-2">
-      <div class="p-1.5 bg-secondary-100 rounded-lg text-secondary-600">
-        <TrendingUp class="w-4 h-4" aria-hidden="true" />
+  <CardResult
+    class="adzuna-comparison"
+    :icon="TrendingUp"
+    icon-bg="bg-secondary-100"
+    icon-colour="bg-secondary-600"
+    :title="`Live ${country} Market Analysis`">
+    <template #info>
+      <span>
+        Showing government matched data for
+        <strong>{{ jobsCount }}</strong> live jobs.
+      </span>
+    </template>
+    <template #verdict>
+      <div v-if="currentSalary === 0" class="space-y-2 text-center">
+        <h2 class="text-2xl font-black text-slate-900">
+          Live Market Rate: {{ currencySymbol }}{{ Math.round(averageSalary).toLocaleString() }}
+        </h2>
       </div>
-      <h3 class="font-bold text-slate-900">Live {{ country }} Market Analysis</h3>
-    </div>
 
-    <span class="text-2xs flex justify-center items-center gap-1">
-      <component :is="InfoIcon" class="h-3 w-3 text-neutral-700"></component>
-      Showing government matched data for
-      <strong>{{ jobsCount }}</strong> live jobs.
-    </span>
+      <SectionSalaryVerdict
+        v-else
+        :display-title="displayTitle"
+        :location="location"
+        :country="country"
+        :market-average="averageSalary"
+        :currency-symbol="currencySymbol"
+        matched-title=""
+        :matched-location="location"
+        :diff-percent="diffPercent"
+        :is-underpaid="isUnderpaid" />
+    </template>
+    <template #footer>
+      <!-- Load Button State -->
+      <div v-if="!hasData || !showHistogram" class="flex items-center justify-center w-full">
+        <AmIButton :loading="loading" title="View Distribution" @click="toggleHistogram">
+          View Salary Distribution
+        </AmIButton>
+      </div>
 
-    <!-- Salary Verdict Section -->
-    <div v-if="currentSalary === 0" class="space-y-2 flex flex-col items-center flex-1">
-      <h2
-        class="text-2xl font-black text-slate-900 flex flex-col gap-1 items-center justify-center">
-        <div class="flex items-center gap-2">
-          <DotIcon class="w-10 h-10 animate-pulse text-primary-500" />
-          <span>Live Market Rate</span>
-        </div>
-        <span> {{ currencySymbol }}{{ averageSalary.toLocaleString() }} </span>
-      </h2>
-    </div>
-
-    <SalaryVerdict
-      v-else
-      :display-title="displayTitle"
-      :location="location"
-      :country="country"
-      :market-average="averageSalary"
-      :currency-symbol="currencySymbol"
-      matched-title=""
-      :matched-location="location"
-      :diff-percent="diffPercent"
-      :is-underpaid="isUnderpaid" />
-
-    <!-- Load Button State -->
-    <div v-if="!hasData || !showHistogram" class="flex items-center justify-center w-full">
-      <AmIButton :loading="loading" title="View Distribution" @click="toggleHistogram">
-        View Salary Distribution
-      </AmIButton>
-    </div>
-
-    <!-- Histogram -->
-    <LazySectionAdzunaHistogram
-      v-else
-      :buckets="buckets"
-      :histogram-range="histogramRange"
-      :histogram-max-count="histogramMaxCount"
-      :histogram-total-count="histogramTotalCount"
-      :is-underpaid="isUnderpaid"
-      :currency-symbol="currencySymbol"
-      :average-salary="averageSalary"
-      :current-salary="currentSalary"
-      @close="showHistogram = false" />
-  </div>
+      <!-- Histogram -->
+      <LazySectionAdzunaHistogram
+        v-else
+        :buckets="buckets"
+        :histogram-range="histogramRange"
+        :histogram-max-count="histogramMaxCount"
+        :histogram-total-count="histogramTotalCount"
+        :is-underpaid="isUnderpaid"
+        :currency-symbol="currencySymbol"
+        :average-salary="averageSalary"
+        :current-salary="currentSalary"
+        @close="showHistogram = false" />
+    </template>
+  </CardResult>
 </template>
 
 <script setup lang="ts">
 import { computed, type PropType } from 'vue';
 import type { HistogramBucket } from '~/composables/useAdzuna';
-import SalaryVerdict from '../SalaryVerdict.vue';
 import { getDiffPercentage } from '~/helpers/utility';
-import { DotIcon, InfoIcon, TrendingUp } from 'lucide-vue-next';
+import { TrendingUp } from 'lucide-vue-next';
 
 const emit = defineEmits(['fetch-data']);
 

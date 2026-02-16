@@ -1,49 +1,39 @@
 <template>
-  <div
-    class="government-comparison p-4 bg-white border shadow-xl rounded-2xl border-slate-200 flex flex-col gap-2 flex-1 justify-between items-center relative">
-    <div class="flex items-center gap-2 justify-start w-full">
-      <div class="p-1.5 bg-slate-100 rounded-lg text-slate-600">
-        <LandmarkIcon class="w-4 h-4" aria-hidden="true" />
-      </div>
-      <h3 class="font-bold text-slate-900">Government Benchmarks</h3>
-    </div>
-    <div class="text-center flex flex-col flex-1 justify-start gap-2">
-      <span v-if="!isFallback" class="text-2xs flex justify-center items-center gap-1">
-        <component :is="InfoIcon" class="h-3 w-3 text-neutral-700"></component>
-        <span>
-          Showing government matched data for
-          {{
-            matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()
-              ? 'market category'
-              : ''
-          }}
-          <strong>{{ matchedTitle }}</strong>
-        </span>
+  <CardResult
+    class="government-comparison"
+    :icon="Landmark"
+    title="Government Benchmarks"
+    :warning="
+      isFallback &&
+      Boolean(
+        (matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()) ||
+        (matchedLocation && location && matchedLocation.toLowerCase() !== location.toLowerCase())
+      )
+    ">
+    <template #info>
+      <span v-if="!isFallback">
+        Showing government matched data for
+        {{
+          matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()
+            ? 'market category'
+            : ''
+        }}
+        <strong>{{ matchedTitle }}</strong>
       </span>
+      <span v-else>
+        Exact match not found. Showing {{ marketDataYear }} government data for
+        <span class="font-bold">{{ matchedTitle }}</span>
+        <span
+          v-if="
+            matchedLocation && location && matchedLocation.toLowerCase() !== location.toLowerCase()
+          ">
+          in <span class="font-bold">{{ matchedLocation }}</span></span
+        >.
+      </span>
+    </template>
 
-      <!-- Fallback Notice -->
-      <div
-        v-else-if="
-          (matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()) ||
-          (matchedLocation && location && matchedLocation.toLowerCase() !== location.toLowerCase())
-        "
-        class="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium border border-amber-100">
-        <InfoIcon class="w-3.5 h-3.5" />
-        <span>
-          Exact match not found. Showing {{ marketDataYear }} government data for
-          <span class="font-bold">{{ matchedTitle }}</span>
-          <span
-            v-if="
-              matchedLocation &&
-              location &&
-              matchedLocation.toLowerCase() !== location.toLowerCase()
-            ">
-            in <span class="font-bold">{{ matchedLocation }}</span></span
-          >.
-        </span>
-      </div>
-      <!-- No Salary Input -->
-      <div v-if="userSalary === 0" class="space-y-2 flex flex-col items-center">
+    <template #verdict>
+      <div v-if="userSalary === 0" class="space-y-2 text-center">
         <h2 class="text-2xl font-black text-slate-900">
           Market Rate: {{ currencySymbol }}{{ marketAverage.toLocaleString() }}
         </h2>
@@ -60,22 +50,23 @@
         :matched-location="matchedLocation"
         :diff-percent="diffPercent"
         :is-underpaid="isUnderpaid" />
-    </div>
+    </template>
 
-    <!-- Comparison Visualizer -->
-    <LazySectionGovernmentSalaryVisualizer
-      :user-salary="userSalary"
-      :market-average="marketAverage"
-      :market-low="marketLow"
-      :market-high="marketHigh"
-      :currency-symbol="currencySymbol"
-      :diff-percent="diffPercent"
-      :is-underpaid="isUnderpaid" />
-  </div>
+    <template #footer>
+      <LazySectionGovernmentSalaryVisualizer
+        :user-salary="userSalary"
+        :market-average="marketAverage"
+        :market-low="marketLow"
+        :market-high="marketHigh"
+        :currency-symbol="currencySymbol"
+        :diff-percent="diffPercent"
+        :is-underpaid="isUnderpaid" />
+    </template>
+  </CardResult>
 </template>
 
 <script setup lang="ts">
-import { InfoIcon, LandmarkIcon } from 'lucide-vue-next';
+import { Landmark } from 'lucide-vue-next';
 
 defineProps<{
   isFallback: boolean;
