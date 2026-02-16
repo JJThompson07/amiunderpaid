@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from 'vuefire';
 
@@ -44,11 +44,18 @@ const sanitizeAdzunaData = (data: any): any => {
 };
 
 export const useAdzuna = () => {
-  const distributionData = ref<any>(null);
-  const jobsData = ref<any>(null);
-  const categories = ref<any[]>([]);
-  const loading = ref(false);
-  const db = useFirestore();
+  const distributionData = useState<any>('adzuna_distribution', () => null);
+  const jobsData = useState<any>('adzuna_jobs', () => null);
+  const categories = useState<any[]>('adzuna_categories', () => []);
+  const loading = useState<boolean>('adzuna_loading', () => false);
+
+  let db: any;
+  try {
+    db = useFirestore();
+  } catch (e) {
+    console.error((e as Error).message);
+    // Handle SSR case where firebase might not be ready
+  }
 
   const meanSalary = computed<number>(() => jobsData.value?.mean || 0);
   const jobsCount = computed<number>(() => jobsData.value?.count || 0);
@@ -97,6 +104,18 @@ export const useAdzuna = () => {
     })
   ) => {
     const countryCode = country.toLowerCase() === 'usa' ? 'us' : 'gb';
+
+    if (!db) {
+      const rawData = await $fetch(apiEndpoint, {
+        params: {
+          title,
+          location,
+          country: countryCode
+        }
+      });
+      return transform(rawData).data;
+    }
+
     const cacheKey = generateCacheKey(title, location, countryCode);
     const docRef = doc(db, collectionName, cacheKey);
 

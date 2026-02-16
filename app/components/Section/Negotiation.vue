@@ -79,7 +79,7 @@
 
 <script setup lang="ts">
 // imports
-import { Copy, CheckCircle2, TrendingUp, FileText, Mail, FileUser } from 'lucide-vue-next';
+import { Copy, CheckCircle2, TrendingUp, FileText, Mail, Binoculars } from 'lucide-vue-next';
 import { AmICardAction, LazyAmICardAction } from '#components';
 import { ref, computed } from 'vue';
 // ** type definitions **
@@ -193,7 +193,7 @@ const cards = computed(() => {
       component: LazyAmICardAction,
       header: 'Get Discovered',
       strapline: 'Find a job that works for you, fast',
-      icon: FileUser,
+      icon: Binoculars,
       sponsored: true,
       bgColour: 'bg-cv-library-50/50',
       borderColour: 'border-cv-library-100',

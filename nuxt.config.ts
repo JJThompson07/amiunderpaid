@@ -1,3 +1,4 @@
+// nuxt.config.ts
 import tailwindcss from '@tailwindcss/vite';
 
 // Debug: Check if env vars are loaded
@@ -9,11 +10,26 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
-  // ** Server-Side Rendering **
-  // disable globally for SEO
-  ssr: false,
+  // ** 1. ENABLE SERVER-SIDE RENDERING **
+  // This must be true for SEO and Caching to work
+  ssr: true,
 
-  // ** 1. Register Modules **
+  // ** 2. CONFIGURE CACHING (Route Rules) **
+  routeRules: {
+    // Cache salary pages for 24 hours (86400 seconds)
+    '/salary/**': { swr: 86400 },
+
+    // Keep static pages at 24 hours
+    '/about': { swr: 86400 },
+    '/how-it-works': { swr: 86400 },
+    '/data-sources': { swr: 86400 },
+    '/privacy-policy': { swr: 86400 },
+
+    // Homepage can be shorter if you feature "trending" jobs, otherwise 24h is fine too
+    '/': { swr: 86400 }
+  },
+
+  // ** 3. Register Modules **
   modules: ['@nuxt/eslint', '@vueuse/nuxt', 'nuxt-vuefire', 'nuxt-gtag', '@nuxtjs/algolia'],
 
   algolia: {
@@ -21,14 +37,14 @@ export default defineNuxtConfig({
     applicationId: process.env.ALGOLIA_APPLICATION_ID
   },
 
-  // ** 2. VueFire Configuration **
+  // ** 4. VueFire Configuration **
   vuefire: {
     auth: {
       enabled: true,
-      sessionCookie: false
+      // CHANGE THIS TO TRUE so the server knows the user is logged in
+      sessionCookie: true
     },
     config: {
-      // Using fallback strings to prevent the SDK from crashing if .env fails to load
       apiKey: process.env.FIREBASE_API_KEY || '',
       authDomain: process.env.FIREBASE_AUTH_DOMAIN || '',
       projectId: process.env.FIREBASE_PROJECT_ID || '',
@@ -43,8 +59,7 @@ export default defineNuxtConfig({
     id: 'G-EZQYZSSRW1'
   },
 
-  // ** 3. Runtime Config **
-  // This helps Nuxt track these variables for client/server consistency
+  // ** 5. Runtime Config **
   runtimeConfig: {
     ADZUNA_APP_ID: process.env.ADZUNA_APP_ID,
     ADZUNA_APP_KEY: process.env.ADZUNA_APP_KEY,
@@ -55,7 +70,7 @@ export default defineNuxtConfig({
     }
   },
 
-  // ** 4. Vite / Tailwind **
+  // ** 6. Vite / Tailwind **
   vite: {
     plugins: [tailwindcss()],
     build: {

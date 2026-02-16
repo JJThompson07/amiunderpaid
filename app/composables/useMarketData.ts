@@ -1,4 +1,3 @@
-import { ref } from 'vue';
 import type { SearchClient, SearchIndex } from 'algoliasearch';
 
 export interface SalaryBenchmark {
@@ -12,19 +11,19 @@ export interface SalaryBenchmark {
 }
 
 export const useMarketData = () => {
-  const loading = ref(false);
+  const loading = useState<boolean>('market_loading', () => false);
 
   // Reactive state for the results
-  const marketAverage = ref(0);
-  const marketHigh = ref(0);
-  const marketLow = ref(0);
-  const marketDataYear = ref(0);
-  const marketPeriod = ref('year');
-  const matchedTitle = ref('');
-  const matchedLocation = ref('');
-  const isGenericFallback = ref(false);
-  const ambiguousMatches = ref<any[]>([]);
-  const regionalData = ref<SalaryBenchmark | null>(null);
+  const marketAverage = useState<number>('market_average', () => 0);
+  const marketHigh = useState<number>('market_high', () => 0);
+  const marketLow = useState<number>('market_low', () => 0);
+  const marketDataYear = useState<number>('market_year', () => 0);
+  const marketPeriod = useState<string>('market_period', () => 'year');
+  const matchedTitle = useState<string>('market_matched_title', () => '');
+  const matchedLocation = useState<string>('market_matched_location', () => '');
+  const isGenericFallback = useState<boolean>('market_generic_fallback', () => false);
+  const ambiguousMatches = useState<any[]>('market_ambiguous_matches', () => []);
+  const regionalData = useState<SalaryBenchmark | null>('market_regional_data', () => null);
 
   // Reset state helper
   const resetData = () => {
