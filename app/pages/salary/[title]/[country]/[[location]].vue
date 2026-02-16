@@ -91,36 +91,33 @@
           :regional-data="regionalData"
           :year="marketDataYear" />
 
-        <ClientOnly>
-          <LazyAmICardAction
-            v-if="country === 'UK' && isXl"
-            bg-colour="bg-cv-library-50"
-            border-colour="border-cv-library-100"
-            hover-class="hover:border-cv-library-200"
-            affiliate-bg-colour="bg-cv-library-100"
-            affiliate-text-colour="text-cv-library-700"
-            :icon="Binoculars"
-            header="Get Discovered"
-            strapline="Find a job that works for you, fast"
-            sponsored
-            class="rounded-lg border shadow-lg h-max w-full">
-            <template #body>
-              Register your free CV on the UK's leading job site (<strong
-                class="text-cv-library-700"
-                >CV-Library</strong
-              >) and let top employers come to you - it's fast, easy and free.
-            </template>
-            <template #cta>
-              <a
-                href="https://www.cv-library.co.uk/register?id=107202"
-                target="_blank"
-                rel="sponsored"
-                class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
-                >Register CV</a
-              >
-            </template>
-          </LazyAmICardAction>
-        </ClientOnly>
+        <LazyAmICardAction
+          v-if="country === 'UK' && isXl"
+          bg-colour="bg-cv-library-50"
+          border-colour="border-cv-library-100"
+          hover-class="hover:border-cv-library-200"
+          affiliate-bg-colour="bg-cv-library-100"
+          affiliate-text-colour="text-cv-library-700"
+          :icon="FileUser"
+          header="Get Discovered"
+          strapline="Find a job that works for you, fast"
+          sponsored
+          class="rounded-lg border shadow-lg h-max w-full">
+          <template #body>
+            Register your free CV on the UK's leading job site (<strong class="text-cv-library-700"
+              >CV-Library</strong
+            >) and let top employers come to you - it's fast, easy and free.
+          </template>
+          <template #cta>
+            <a
+              href="https://www.cv-library.co.uk/register?id=107202"
+              target="_blank"
+              rel="sponsored"
+              class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
+              >Register CV</a
+            >
+          </template>
+        </LazyAmICardAction>
 
         <!-- The Negotiation Component -->
         <LazySectionNegotiation
@@ -154,7 +151,7 @@
 
 <script setup lang="ts">
 // ** imports **
-import { Binoculars, Info } from 'lucide-vue-next';
+import { FileUser, Info } from 'lucide-vue-next';
 import { ref, computed, watch } from 'vue';
 import { getDiffPercentage } from '~/helpers/utility';
 
@@ -247,20 +244,15 @@ const asyncDataKey = computed(
 await useAsyncData(
   asyncDataKey.value,
   async () => {
-    // We await the composable methods here so the server waits for them
     await Promise.all([
       country.value === 'UK'
         ? fetchUkMarketData(searchTitle.value, location.value, userPeriod.value)
         : fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value),
       fetchAdzunaJobs(searchTitle.value, location.value, country.value)
     ]);
-
-    // We must return something to indicate success,
-    // but the composables update their own state (refs), which is fine.
     return true;
   },
   {
-    // Watch these sources to re-fetch if the user changes filters/URL
     watch: [searchTitle, location, country, userPeriod]
   }
 );
