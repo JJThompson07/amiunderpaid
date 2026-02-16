@@ -24,8 +24,15 @@
         @keydown.up.prevent="navigateOptions(-1)"
         @keydown.enter.prevent="selectActiveOption" />
 
+      <div
+        class="absolute right-0 top-0 bottom-0 px-4 text-slate-600 hover:bg-slate-300/50 flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out rounded-r-xl"
+        :class="inputValue.length > 0 ? 'opacity-100' : 'opacity-0'"
+        @click="inputValue = ''">
+        <XIcon class="h-4 w-4" />
+      </div>
+
       <!-- Loading Indicator -->
-      <div v-if="loading" class="absolute right-3 top-1/2 -translate-y-1/2">
+      <div v-if="loading" class="absolute right-12 top-1/2 -translate-y-1/2">
         <div
           class="w-4 h-4 border-2 border-slate-200 border-t-primary-500 rounded-full animate-spin"></div>
       </div>
@@ -57,6 +64,7 @@
 import { ref, computed, watch } from 'vue';
 import { onClickOutside } from '@vueuse/core';
 import type { Component, PropType } from 'vue';
+import { XIcon } from 'lucide-vue-next';
 
 // ** props **
 const props = defineProps({
