@@ -98,7 +98,7 @@
           hover-class="hover:border-cv-library-200"
           affiliate-bg-colour="bg-cv-library-100"
           affiliate-text-colour="text-cv-library-700"
-          :icon="FileUser"
+          :icon="Binoculars"
           header="Get Discovered"
           strapline="Find a job that works for you, fast"
           sponsored
@@ -151,8 +151,8 @@
 
 <script setup lang="ts">
 // ** imports **
-import { FileUser, Info } from 'lucide-vue-next';
-import { ref, computed, onMounted, watch } from 'vue';
+import { Binoculars, Info } from 'lucide-vue-next';
+import { ref, computed, watch } from 'vue';
 import { getDiffPercentage } from '~/helpers/utility';
 
 // ** data & refs **
@@ -235,14 +235,32 @@ const diffPercent = computed<number>(() => {
   return getDiffPercentage(userSalary.value, avg);
 });
 
-const fetchData = (t: string, l: string, c: string, p: string) => {
-  Promise.all([
-    c === 'UK' ? fetchUkMarketData(t, l, p) : fetchUSAMarketData(t, l, p),
-    fetchAdzunaJobs(t, l, c)
-  ]).catch((error) => {
-    console.error('Error fetching data:', error);
-  });
-};
+// 1. Create a unique key for caching based on the URL params
+const asyncDataKey = computed(
+  () => `salary-${country.value}-${location.value}-${searchTitle.value}-${userPeriod.value}`
+);
+
+// 2. Use useAsyncData to fetch on the Server (and hydrate on Client)
+await useAsyncData(
+  asyncDataKey.value,
+  async () => {
+    // We await the composable methods here so the server waits for them
+    await Promise.all([
+      country.value === 'UK'
+        ? fetchUkMarketData(searchTitle.value, location.value, userPeriod.value)
+        : fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value),
+      fetchAdzunaJobs(searchTitle.value, location.value, country.value)
+    ]);
+
+    // We must return something to indicate success,
+    // but the composables update their own state (refs), which is fine.
+    return true;
+  },
+  {
+    // Watch these sources to re-fetch if the user changes filters/URL
+    watch: [searchTitle, location, country, userPeriod]
+  }
+);
 
 // ** methods **
 const handleAmbiguitySelect = (match: any) => {
@@ -258,19 +276,6 @@ const handleAmbiguitySelect = (match: any) => {
   }
   showAmbiguityModal.value = false;
 };
-
-// ** lifecycle **
-onMounted(() => {
-  // Check history state for cleaner navigation data (passed from search)
-  if (history.state) {
-    if (history.state.q) searchTitle.value = String(history.state.q);
-    if (history.state.compare) userSalary.value = Number(history.state.compare);
-    if (history.state.period) userPeriod.value = String(history.state.period);
-    if (history.state.confirmed) searchConfirmed.value = true;
-  }
-
-  fetchData(searchTitle.value, location.value, country.value, userPeriod.value);
-});
 
 // ** watchers **
 watch(loading, (newLoading) => {
