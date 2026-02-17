@@ -353,15 +353,10 @@ const deleteRecords = async (country: string, year: number, period: string, scop
   }
 
   const collectionName = scope === 'National' ? 'salary_benchmarks' : 'regional_salary_benchmarks';
-  const q = query(
-    collection(db, collectionName),
-    where('country', '==', country),
-    where('year', '==', year),
-    where('period', '==', period)
-  );
+  const filters = { country, year, period };
 
   // 1. Delete from Firestore
-  await batchDelete(q, `${country} ${year} (${period}) data`);
+  await batchDelete(collectionName, filters, `${country} ${year} (${period}) data`);
 
   // 2. Delete from Algolia
   log(`Clearing Algolia records for ${country} ${year}...`);
@@ -438,7 +433,7 @@ const seedToFirestore = async () => {
 
   try {
     // 1. Prepare and Save to Firestore
-    await batchSeed(parsedData.value, (record: any) => {
+    parsedData.value.forEach((record: any) => {
       // Create deterministic IDs
       const cleanTitle = record.title
         .toLowerCase()
@@ -451,8 +446,6 @@ const seedToFirestore = async () => {
       const docId =
         `${record.country}-${cleanLocation}-${cleanTitle}-${record.year}-${record.period}`.toLowerCase();
 
-      const docRef = doc(db, collectionName, docId);
-
       const finalRecord = {
         ...record,
         searchTitle: record.title.toLowerCase(),
@@ -462,12 +455,9 @@ const seedToFirestore = async () => {
       };
 
       recordsToSync.push(finalRecord);
-
-      return {
-        ref: docRef,
-        data: finalRecord
-      };
     });
+
+    await batchSeed(recordsToSync, collectionName);
 
     // 2. Sync to Algolia
     log(`Syncing ${recordsToSync.length} records to Algolia index '${collectionName}'...`);

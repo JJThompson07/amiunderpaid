@@ -156,7 +156,6 @@ export const useAdzuna = () => {
         }
 
         if (!isExpired) {
-          console.log(`[Cache] Hit for ${collectionName}`);
           return data.data;
         }
       }

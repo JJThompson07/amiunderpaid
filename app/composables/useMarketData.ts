@@ -107,8 +107,6 @@ export const useMarketData = () => {
         hitsPerPage: 10
       });
 
-      console.log('title hits: ', titleHits);
-
       let bestTitleMatch;
 
       if (targetGroup) {
@@ -146,8 +144,6 @@ export const useMarketData = () => {
                 hitsPerPage: 10
               }
             );
-
-            console.log('Regional Hits:', regionalHits);
 
             const locLower = location.toLowerCase();
             const bestRegional = regionalHits.find(
@@ -211,8 +207,6 @@ export const useMarketData = () => {
           optionalWords: searchTitle, // Allow fuzzy matching on title if location matches well
           hitsPerPage: 10
         });
-
-        console.log(hits);
 
         const locLower = location.toLowerCase();
         const bestRegional = hits.find(

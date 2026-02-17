@@ -56,24 +56,7 @@ const options = computed(() => {
   return Array.from(unique);
 });
 
-const handleSearch = async (val: string) => {
-  // Check if selected
-  const selected = hits.value.find((hit) => {
-    const cleanGroup = hit.group ? hit.group.replace(/\s*\(.*\)$/, '') : '';
-    const label = cleanGroup ? `${hit.title} (${cleanGroup})` : hit.title;
-    return label === val;
-  });
-
-  if (selected) {
-    emit('select', selected);
-    return;
-  }
-
-  if (!val || val.length < 2) {
-    hits.value = [];
-    return;
-  }
-
+const performSearch = useDebounceFn(async (val: string) => {
   loading.value = true;
   try {
     const { $algolia } = useNuxtApp();
@@ -91,5 +74,26 @@ const handleSearch = async (val: string) => {
   } finally {
     loading.value = false;
   }
+}, 300);
+
+const handleSearch = (val: string) => {
+  // Check if selected
+  const selected = hits.value.find((hit) => {
+    const cleanGroup = hit.group ? hit.group.replace(/\s*\(.*\)$/, '') : '';
+    const label = cleanGroup ? `${hit.title} (${cleanGroup})` : hit.title;
+    return label === val;
+  });
+
+  if (selected) {
+    emit('select', selected);
+    return;
+  }
+
+  if (!val || val.length < 2) {
+    hits.value = [];
+    return;
+  }
+
+  performSearch(val);
 };
 </script>
