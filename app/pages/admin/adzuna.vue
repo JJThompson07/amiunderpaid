@@ -114,6 +114,10 @@ import { TrendingUp, Save, RefreshCw } from 'lucide-vue-next';
 import { useFirestore } from 'vuefire';
 import { doc, writeBatch, collection, query, where, getDocs } from 'firebase/firestore';
 
+/**
+ * PAGE METADATA
+ * * Registers the 'admin' middleware to protect this route.
+ */
 definePageMeta({
   middleware: 'admin'
 });

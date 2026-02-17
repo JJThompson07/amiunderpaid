@@ -1,12 +1,71 @@
 // server/api/adzuna/salary.ts
+import { FieldValue } from 'firebase-admin/firestore';
+
+// Helper to sanitize data before saving to Firestore
+const sanitizeAdzunaData = (data: any): any => {
+  if (Array.isArray(data)) {
+    return data.map(sanitizeAdzunaData);
+  }
+  if (data !== null && typeof data === 'object') {
+    return Object.keys(data).reduce((acc, key) => {
+      // Remove keys that start and end with '__' (reserved by Firestore)
+      if (!key.startsWith('__') || !key.endsWith('__')) {
+        acc[key] = sanitizeAdzunaData(data[key]);
+      }
+      return acc;
+    }, {} as any);
+  }
+  return data;
+};
+
+const generateCacheKey = (title: string, location: string, country: string) => {
+  const t = title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-');
+  const l = location
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-');
+  return `${country}-${l}-${t}`;
+};
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const query = getQuery(event);
   const { title, location, country } = query;
 
+  if (!title) {
+    throw createError({ statusCode: 400, statusMessage: 'Job title is required' });
+  }
+
+  const titleStr = String(title);
+  const locationStr = location ? String(location) : '';
   const countryParam = String(country || 'gb').toLowerCase();
   const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
 
+  // 1. Check Cache (Server-Side)
+  const db = useAdminFirestore();
+  const cacheKey = generateCacheKey(titleStr, locationStr, countryCode);
+  const cacheRef = db.collection('adzuna_distribution_cache').doc(cacheKey);
+
+  try {
+    const docSnap = await cacheRef.get();
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      // Cache valid for 7 days (604,800,000 ms)
+      const now = new Date().getTime();
+      const cachedTime = data?.timestamp?.toMillis() || 0;
+
+      if (now - cachedTime < 604800000) {
+        return data?.data;
+      }
+    }
+  } catch (e) {
+    console.warn('Firestore cache read failed:', e);
+  }
+
+  // 2. Prepare API Credentials
   const appId = config.ADZUNA_APP_ID || config.public?.adzunaAppId || process.env.ADZUNA_APP_ID;
   const appKey = config.ADZUNA_APP_KEY || config.public?.adzunaAppKey || process.env.ADZUNA_APP_KEY;
 
@@ -20,20 +79,31 @@ export default defineEventHandler(async (event) => {
   const params: Record<string, any> = {
     app_id: appId,
     app_key: appKey,
-    what: title,
-    'content-type': 'application/json',
-    location0: countryCode === 'us' ? 'US' : 'UK'
+    what: titleStr,
+    'content-type': 'application/json'
+    // location0: countryCode === 'us' ? 'US' : 'UK'
   };
 
-  if (location && String(location).trim() !== '') {
-    params.location1 = location;
+  if (locationStr.trim() !== '') {
+    params.location1 = locationStr;
   }
 
+  // 3. Fetch from Adzuna API
   try {
-    const data = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/histogram`, {
+    const rawData = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/histogram`, {
       params
     });
-    return data;
+
+    const cleanData = sanitizeAdzunaData(rawData);
+
+    // 4. Save to Cache (Server-Side)
+    await cacheRef.set({
+      data: cleanData,
+      timestamp: FieldValue.serverTimestamp(),
+      searchParams: { title: titleStr, location: locationStr, country: countryCode }
+    });
+
+    return rawData;
   } catch (e) {
     throw createError({
       statusCode: 500,

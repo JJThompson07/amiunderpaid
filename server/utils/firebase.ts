@@ -1,4 +1,4 @@
-import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, type App, type ServiceAccount } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import type { H3Event } from 'h3';
@@ -7,15 +7,25 @@ export const useAdminApp = (): App => {
   const apps = getApps();
   if (apps.length > 0) return apps[0]!;
 
-  let serviceAccount;
-  try {
-    serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-      : undefined;
-  } catch (e) {
-    console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e);
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+  let serviceAccount: ServiceAccount | undefined;
+
+  if (serviceAccountJson) {
+    try {
+      serviceAccount = JSON.parse(serviceAccountJson);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e) {
+      // CRITICAL: If the env var is present but invalid, FAIL FAST.
+      // Do not silently fall back to default credentials.
+      console.error('CRITICAL CONFIG ERROR: FIREBASE_SERVICE_ACCOUNT is not valid JSON.');
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Server configuration error: Invalid Firebase credentials.'
+      });
+    }
   }
 
+  // Initialize with specific credentials if provided, otherwise try Application Default Credentials (ADC)
   return initializeApp(serviceAccount ? { credential: cert(serviceAccount) } : undefined);
 };
 

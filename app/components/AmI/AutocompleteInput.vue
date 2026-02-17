@@ -22,7 +22,7 @@
         :disabled="disabled"
         :placeholder="placeholder"
         autocomplete="off"
-        class="w-full pr-4 py-3 font-medium transition-all border bg-slate-50 border-slate-200 focus:outline-none text-slate-900 placeholder:text-slate-400 focus:ring-0 rounded-xl"
+        class="w-full pr-10 py-3 font-medium transition-all border bg-slate-50 border-slate-200 focus:outline-none text-slate-900 placeholder:text-slate-400 focus:ring-0 rounded-xl"
         :class="[icon ? 'pl-10' : 'pl-4']"
         @focus="onFocus"
         @input="onInput"
@@ -31,7 +31,7 @@
         @keydown.enter.prevent="selectActiveOption" />
 
       <div
-        class="absolute right-0 top-0 bottom-0 px-4 text-slate-600 hover:bg-slate-300/50 flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out rounded-r-xl"
+        class="absolute right-0 top-0 bottom-0 px-3 bg-slate-100 text-slate-600 hover:bg-slate-300/50 flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out rounded-r-xl"
         :class="inputValue.length > 0 ? 'opacity-100' : 'opacity-0'"
         @click="inputValue = ''">
         <X class="h-4 w-4" />
