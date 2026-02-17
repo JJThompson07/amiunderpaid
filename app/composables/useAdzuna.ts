@@ -1,6 +1,5 @@
+// app/composables/useAdzuna.ts
 import { computed } from 'vue';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { useFirestore } from 'vuefire';
 
 export type HistogramBucket = {
   value: number;
@@ -11,30 +10,14 @@ export type HistogramData = {
   [salary: number]: number;
 };
 
-export type HistogramResponse = {
-  histogram: HistogramData;
-};
-
-const generateCacheKey = (title: string, location: string, country: string) => {
-  // slugify the input: "Software Engineer" -> "software-engineer"
-  const t = title
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-');
-  const l = location
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-');
-  return `${country}-${l}-${t}`; // e.g., "gb-london-software-engineer"
-};
-
+// Helper to recursively clean data
 const sanitizeAdzunaData = (data: any): any => {
   if (Array.isArray(data)) {
     return data.map(sanitizeAdzunaData);
   }
   if (data !== null && typeof data === 'object') {
     return Object.keys(data).reduce((acc, key) => {
-      if (!key.startsWith('__') || !key.endsWith('__')) {
+      if (!key.startsWith('__') && !key.endsWith('__')) {
         acc[key] = sanitizeAdzunaData(data[key]);
       }
       return acc;
@@ -48,14 +31,6 @@ export const useAdzuna = () => {
   const jobsData = useState<any>('adzuna_jobs', () => null);
   const categories = useState<any[]>('adzuna_categories', () => []);
   const loading = useState<boolean>('adzuna_loading', () => false);
-
-  let db: any;
-  try {
-    db = useFirestore();
-  } catch (e) {
-    console.error((e as Error).message);
-    // Handle SSR case where firebase might not be ready
-  }
 
   const meanSalary = computed<number>(() => jobsData.value?.mean || 0);
   const jobsCount = computed<number>(() => jobsData.value?.count || 0);
@@ -93,126 +68,32 @@ export const useAdzuna = () => {
     () => jobsData.value !== null && jobsData.value !== undefined
   );
 
-  const fetchFromCacheOrApi = async (
-    collectionName: string,
-    apiEndpoint: string,
-    title: string,
-    location: string,
-    country: string,
-    transform: (data: any) => { data: any; [key: string]: any } = (data) => ({
-      data: sanitizeAdzunaData(data)
-    })
-  ) => {
-    const countryCode = country.toLowerCase() === 'usa' ? 'us' : 'gb';
-
-    if (!db) {
-      const rawData = await $fetch(apiEndpoint, {
-        params: {
-          title,
-          location,
-          country: countryCode
-        }
-      });
-      return transform(rawData).data;
-    }
-
-    const cacheKey = generateCacheKey(title, location, countryCode);
-    const docRef = doc(db, collectionName, cacheKey);
-
-    // 1. Try Cache
-    try {
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-
-        // Check expiration based on category settings
-        let isExpired = false;
-        const categoryTag = data.categoryTag;
-
-        if (categoryTag) {
-          // Construct ID matching admin panel: 'uk-tag' or 'usa-tag'
-          const adminCountry = country.toLowerCase() === 'usa' ? 'usa' : 'uk';
-          const categoryId = `${adminCountry}-${categoryTag}`.toLowerCase();
-
-          const categoryDocRef = doc(db, 'adzuna_categories', categoryId);
-          const categoryDocSnap = await getDoc(categoryDocRef);
-
-          if (categoryDocSnap.exists()) {
-            const categoryData = categoryDocSnap.data();
-            const cacheLimit = categoryData?.cache || 120;
-
-            const now = new Date();
-            const dataDate = data.timestamp?.toDate() || new Date(0);
-            const diffTime = Math.abs(now.getTime() - dataDate.getTime());
-            const diffDays = diffTime / (1000 * 60 * 60 * 24);
-
-            if (diffDays > cacheLimit) {
-              console.log(
-                `[Cache] Expired for ${categoryTag}. Age: ${diffDays.toFixed(1)} days. Limit: ${cacheLimit} days.`
-              );
-              isExpired = true;
-            }
-          }
-        }
-
-        if (!isExpired) {
-          return data.data;
-        }
-      }
-    } catch (e) {
-      console.warn(`Cache fetch failed for ${collectionName}:`, e);
-    }
-
-    // 2. Fetch API
-    const rawData = await $fetch(apiEndpoint, {
-      params: {
-        title,
-        location,
-        country: countryCode
-      }
-    });
-
-    // 3. Set Cache (Fire and forget)
-    const { data, ...extraFields } = transform(rawData);
-    setDoc(docRef, {
-      data,
-      timestamp: serverTimestamp(),
-      ...extraFields
-    }).catch((e) => console.warn(`Cache set failed for ${collectionName}:`, e));
-
-    return data;
-  };
-
   const fetchJobs = async (title: string, location: string, country: string) => {
     // for now due to api limitations, ignore the location field
     location = '';
     loading.value = true;
 
-    // Clean title for Adzuna: remove (Group) and non-alphanumeric
+    // Clean title for Adzuna
     const cleanTitle = title
       .replace(/\s*\(.*?\)\s*/g, '')
       .replace(/[^a-zA-Z0-9\s]/g, '')
       .trim();
 
     try {
-      jobsData.value = await fetchFromCacheOrApi(
-        'adzuna_jobs_cache',
-        '/api/adzuna/jobs',
-        cleanTitle,
-        location,
-        country,
-        (rawData) => {
-          const categoryTag = rawData?.results?.[0]?.category?.tag;
-          return {
-            data: sanitizeAdzunaData({
-              mean: rawData.mean,
-              count: rawData.count,
-              results: rawData.results
-            }), // You can replace this with explicit keys: { mean: rawData.mean, results: ... }
-            categoryTag
-          };
+      // Calls server/api/adzuna/jobs.ts
+      const rawData: any = await $fetch('/api/adzuna/jobs', {
+        params: {
+          title: cleanTitle,
+          location,
+          country
         }
-      );
+      });
+
+      jobsData.value = sanitizeAdzunaData({
+        mean: rawData.mean,
+        count: rawData.count,
+        results: rawData.results
+      });
     } catch (e) {
       console.error('Adzuna jobs fetch error:', e);
       jobsData.value = null;
@@ -221,31 +102,22 @@ export const useAdzuna = () => {
     }
   };
 
-  const fetchHistogram = async (
-    title: string,
-    location: string,
-    country: string,
-    categoryTag?: string
-  ) => {
+  const fetchHistogram = async (title: string, location: string, country: string) => {
     // for now due to api limitations, ignore the location field
     location = '';
-
     loading.value = true;
+
     try {
-      distributionData.value = await fetchFromCacheOrApi(
-        'adzuna_distribution_cache',
-        '/api/adzuna/salary',
-        title,
-        location,
-        country,
-        (rawData) => {
-          const tag = categoryTag || jobsData.value?.results?.[0]?.category?.tag;
-          return {
-            data: sanitizeAdzunaData({ histogram: rawData.histogram }),
-            categoryTag: tag
-          };
+      // Calls server/api/adzuna/salary.ts
+      const rawData: any = await $fetch('/api/adzuna/salary', {
+        params: {
+          title,
+          location,
+          country
         }
-      );
+      });
+
+      distributionData.value = sanitizeAdzunaData({ histogram: rawData.histogram });
     } catch (e) {
       console.error('Adzuna histogram fetch error:', e);
       distributionData.value = null;
