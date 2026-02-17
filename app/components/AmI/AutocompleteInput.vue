@@ -34,7 +34,7 @@
         class="absolute right-0 top-0 bottom-0 px-4 text-slate-600 hover:bg-slate-300/50 flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out rounded-r-xl"
         :class="inputValue.length > 0 ? 'opacity-100' : 'opacity-0'"
         @click="inputValue = ''">
-        <XIcon class="h-4 w-4" />
+        <X class="h-4 w-4" />
       </div>
 
       <!-- Loading Indicator -->
@@ -70,7 +70,7 @@
 import { ref, computed, watch } from 'vue';
 import { onClickOutside } from '@vueuse/core';
 import type { Component, PropType } from 'vue';
-import { XIcon } from 'lucide-vue-next';
+import { X } from 'lucide-vue-next';
 
 // ** props **
 const props = defineProps({

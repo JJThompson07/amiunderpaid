@@ -1,18 +1,45 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
+import type { H3Event } from 'h3';
+
+export const useAdminApp = (): App => {
+  const apps = getApps();
+  if (apps.length > 0) return apps[0]!;
+
+  let serviceAccount;
+  try {
+    serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : undefined;
+  } catch (e) {
+    console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e);
+  }
+
+  return initializeApp(serviceAccount ? { credential: cert(serviceAccount) } : undefined);
+};
 
 export const useAdminFirestore = () => {
-  const apps = getApps();
+  return getFirestore(useAdminApp());
+};
 
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : undefined;
+export const verifyAdmin = async (event: H3Event) => {
+  const sessionCookie = getCookie(event, '__session');
+  if (!sessionCookie) {
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized: No session cookie' });
+  }
 
-  const app = apps.length
-    ? apps[0]!
-    : initializeApp(serviceAccount ? { credential: cert(serviceAccount) } : undefined);
+  try {
+    const auth = getAuth(useAdminApp());
+    await auth.verifySessionCookie(sessionCookie, true);
+  } catch (error) {
+    const message = (error as Error).message;
 
-  return getFirestore(app);
+    throw createError({
+      statusCode: 401,
+      statusMessage: message ?? 'Unauthorized: Invalid session'
+    });
+  }
 };
 
 export const batchDelete = async (collectionName: string, filters: Record<string, any>) => {
