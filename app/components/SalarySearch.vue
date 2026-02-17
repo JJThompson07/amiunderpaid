@@ -211,7 +211,7 @@ const fetchUSALocations = async (searchTerm: string) => {
   return facetHits.map((h: any) => h.value);
 };
 
-const fetchTitles = async (val: string) => {
+const fetchTitles = useDebounceFn(async (val: string) => {
   if (!val || val.length < 2) {
     titleOptions.value = [];
     return;
@@ -231,9 +231,9 @@ const fetchTitles = async (val: string) => {
   } finally {
     fetching.value = false;
   }
-};
+}, 300);
 
-const fetchLocations = async (val: string) => {
+const fetchLocations = useDebounceFn(async (val: string) => {
   if (!val || val.length < 2) {
     locationOptions.value = [];
     return;
@@ -253,7 +253,7 @@ const fetchLocations = async (val: string) => {
   } finally {
     fetching.value = false;
   }
-};
+}, 300);
 
 const handleSearch = async () => {
   loading.value = true;

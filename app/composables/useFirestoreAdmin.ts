@@ -1,49 +1,30 @@
 import { ref } from 'vue';
-import { useFirestore } from 'vuefire';
-import {
-  writeBatch,
-  getDocs,
-  query,
-  limit,
-  type Query,
-  type DocumentReference,
-  type DocumentData
-} from 'firebase/firestore';
 
 export const useFirestoreAdmin = (log: (msg: string) => void) => {
-  const db = useFirestore();
   const loading = ref(false);
 
   /**
    * Deletes all documents matching the query in batches.
    */
-  const batchDelete = async (q: Query, description: string) => {
-    if (!db) return;
+  const batchDelete = async (
+    collectionName: string,
+    filters: Record<string, any>,
+    description: string
+  ) => {
     loading.value = true;
     log(`Preparing to delete ${description}...`);
 
     try {
-      let deletedCount = 0;
+      const response = await $fetch<{ success: boolean; count: number }>('/api/admin/delete', {
+        method: 'POST',
+        body: { collectionName, filters }
+      });
 
-      while (true) {
-        // Fetch only a chunk of documents to avoid memory issues
-        const qChunk = query(q, limit(400));
-        const snapshot = await getDocs(qChunk);
-
-        if (snapshot.empty) {
-          if (deletedCount === 0) log('No records found.');
-          break;
-        }
-
-        const batch = writeBatch(db);
-        snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-        await batch.commit();
-
-        deletedCount += snapshot.size;
-        log(`Deleted batch... (Total: ${deletedCount})`);
+      if (response.count > 0) {
+        log(`✅ Successfully deleted ${response.count} records.`);
+      } else {
+        log('No records found to delete.');
       }
-
-      if (deletedCount > 0) log(`✅ Successfully deleted ${deletedCount} records.`);
     } catch (e: any) {
       log(`❌ Delete Error: ${e.message}`);
       throw e;
@@ -55,37 +36,19 @@ export const useFirestoreAdmin = (log: (msg: string) => void) => {
   /**
    * Seeds data in batches.
    * @param data Array of data to seed
-   * @param docMapper Function to map a data item to a DocumentReference and data object
-   * @param chunkSize Batch size (default 400)
    */
-  const batchSeed = async <T>(
-    data: T[],
-    docMapper: (item: T) => { ref: DocumentReference; data: DocumentData },
-    chunkSize = 400
-  ) => {
-    if (!db || data.length === 0) return;
+  const batchSeed = async <T>(data: T[], collectionName: string) => {
+    if (data.length === 0) return;
     loading.value = true;
-    log('Starting Firestore Batch Sync...');
+    log('Starting Firestore Batch Sync (Server-Side)...');
 
     try {
-      const total = data.length;
-      let processed = 0;
+      const response = await $fetch<{ success: boolean; count: number }>('/api/admin/seed', {
+        method: 'POST',
+        body: { collectionName, data }
+      });
 
-      for (let i = 0; i < total; i += chunkSize) {
-        const batch = writeBatch(db);
-        const chunk = data.slice(i, i + chunkSize);
-
-        chunk.forEach((item) => {
-          const { ref, data } = docMapper(item);
-          batch.set(ref, data);
-        });
-
-        await batch.commit();
-        processed += chunk.length;
-        log(`Committed ${processed} records...`);
-      }
-
-      log(`\n🏆 ALL DONE: ${total} records are now live.`);
+      log(`\n🏆 ALL DONE: ${response.count} records are now live.`);
     } catch (e: any) {
       log(`\n❌ FIREBASE ERROR: ${e.message}`);
       console.error('Firestore Error:', e);

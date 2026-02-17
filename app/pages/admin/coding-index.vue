@@ -305,10 +305,8 @@ const deleteRecords = async (country: string) => {
     return;
   }
 
-  const q = query(collection(db, 'job_titles'), where('country', '==', country));
-
   // 1. Delete from Firestore
-  await batchDelete(q, `${country} mappings`);
+  await batchDelete('job_titles', { country }, `${country} mappings`);
 
   // 2. Delete from Algolia
   log(`Clearing Algolia records for ${country}...`);
@@ -419,10 +417,8 @@ const seedToFirestore = async () => {
     // 2. Batch write new records
     const recordsToSync: any[] = [];
 
-    await batchSeed(recordsToSeed, (record) => {
+    recordsToSeed.forEach((record) => {
       const docId = getRecordId(record);
-      const docRef = doc(db, 'job_titles', docId);
-
       const finalRecord = {
         title: record.title,
         searchTitle: record.title
@@ -438,12 +434,9 @@ const seedToFirestore = async () => {
       };
 
       recordsToSync.push(finalRecord);
-
-      return {
-        ref: docRef,
-        data: finalRecord
-      };
     });
+
+    await batchSeed(recordsToSync, 'job_titles');
 
     // 3. Sync to Algolia
     log(`Syncing to Algolia index 'job_titles'...`);

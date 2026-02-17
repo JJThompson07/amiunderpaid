@@ -1,0 +1,9 @@
+export default defineEventHandler(async (event) => {
+  await verifyAdmin(event);
+
+  const body = await readBody(event);
+  const { collectionName, filters } = body;
+
+  const count = await batchDelete(collectionName, filters);
+  return { success: true, count };
+});
