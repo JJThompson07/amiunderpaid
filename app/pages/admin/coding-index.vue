@@ -256,7 +256,7 @@ const user = useCurrentUser();
 
 const parsing = ref(false);
 const { status, consoleRef, log } = useConsoleLog();
-const { loading, batchDelete, batchSeed } = useFirestoreAdmin(log);
+const { loading, batchDelete, batchSeed } = useAdminClient(log);
 
 const targetCountry = ref('UK');
 const overwrite = ref(false);

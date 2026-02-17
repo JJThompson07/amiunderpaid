@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 
-export const useFirestoreAdmin = (log: (msg: string) => void) => {
+export const useAdminClient = (log: (msg: string) => void) => {
   const loading = ref(false);
 
   /**
@@ -26,7 +26,8 @@ export const useFirestoreAdmin = (log: (msg: string) => void) => {
         log('No records found to delete.');
       }
     } catch (e: any) {
-      log(`❌ Delete Error: ${e.message}`);
+      const message = e instanceof Error ? e.message : String(e);
+      log(`❌ Delete Error: ${message}`);
       throw e;
     } finally {
       loading.value = false;
@@ -50,7 +51,8 @@ export const useFirestoreAdmin = (log: (msg: string) => void) => {
 
       log(`\n🏆 ALL DONE: ${response.count} records are now live.`);
     } catch (e: any) {
-      log(`\n❌ FIREBASE ERROR: ${e.message}`);
+      const message = e instanceof Error ? e.message : String(e);
+      log(`\n❌ FIREBASE ERROR: ${message}`);
       console.error('Firestore Error:', e);
       throw e;
     } finally {

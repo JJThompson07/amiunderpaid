@@ -237,7 +237,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { Database, UploadCloud, CheckCircle2, Lock, LoaderCircle, X } from 'lucide-vue-next';
 import { useFirestore, useCurrentUser } from 'vuefire';
-import { doc, collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { collection, query, where, getCountFromServer } from 'firebase/firestore';
 import type { SalaryRecord } from '../../../utils/seedData';
 
 /**
@@ -254,7 +254,7 @@ const user = useCurrentUser();
 
 const parsing = ref(false);
 const { status, consoleRef, log } = useConsoleLog();
-const { loading, batchDelete, batchSeed } = useFirestoreAdmin(log);
+const { loading, batchDelete, batchSeed } = useAdminClient(log);
 
 const targetScope = ref('national'); // 'national' | 'regional'
 const targetCountry = ref('UK');
