@@ -1,34 +1,6 @@
 // server/api/adzuna/salary.ts
 import { FieldValue } from 'firebase-admin/firestore';
-
-// Helper to sanitize data before saving to Firestore
-const sanitizeAdzunaData = (data: any): any => {
-  if (Array.isArray(data)) {
-    return data.map(sanitizeAdzunaData);
-  }
-  if (data !== null && typeof data === 'object') {
-    return Object.keys(data).reduce((acc, key) => {
-      // Remove keys that start and end with '__' (reserved by Firestore)
-      if (!key.startsWith('__') || !key.endsWith('__')) {
-        acc[key] = sanitizeAdzunaData(data[key]);
-      }
-      return acc;
-    }, {} as any);
-  }
-  return data;
-};
-
-const generateCacheKey = (title: string, location: string, country: string) => {
-  const t = title
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-');
-  const l = location
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-');
-  return `${country}-${l}-${t}`;
-};
+import { generateCacheKey, sanitizeAdzunaData } from '~~/server/utils/adzuna';
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -40,9 +12,20 @@ export default defineEventHandler(async (event) => {
   }
 
   const titleStr = String(title);
-  const locationStr = location ? String(location) : '';
   const countryParam = String(country || 'gb').toLowerCase();
   const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
+
+  let locationStr = location ? String(location) : '';
+
+  // If the location is just the country name, treat it as empty to get national stats
+  const countryAliases =
+    countryCode === 'us'
+      ? ['us', 'usa', 'united states', 'america']
+      : ['uk', 'gb', 'united kingdom', 'britain'];
+
+  if (countryAliases.includes(locationStr.toLowerCase().trim())) {
+    locationStr = '';
+  }
 
   // 1. Check Cache (Server-Side)
   const db = useAdminFirestore();
