@@ -69,8 +69,11 @@ export const useAdzuna = () => {
   );
 
   const fetchJobs = async (title: string, location: string, country: string) => {
-    // for now due to api limitations, ignore the location field
-    location = '';
+    // for now due to api limitations for the uk, ignore the location field
+    if (country === 'UK' || country === 'gb') {
+      location = '';
+    }
+
     loading.value = true;
 
     // Clean title for Adzuna
@@ -103,8 +106,11 @@ export const useAdzuna = () => {
   };
 
   const fetchHistogram = async (title: string, location: string, country: string) => {
-    // for now due to api limitations, ignore the location field
-    location = '';
+    // for now due to api limitations for the uk, ignore the location field
+    if (country === 'UK' || country === 'gb') {
+      location = '';
+    }
+
     loading.value = true;
 
     try {

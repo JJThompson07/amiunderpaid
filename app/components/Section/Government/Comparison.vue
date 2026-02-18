@@ -19,6 +19,7 @@
             : ''
         }}
         <strong>{{ matchedTitle }}</strong>
+        in {{ country === 'USA' ? matchedLocation : 'The UK' }}
       </span>
       <span v-else>
         Exact match not found. Showing {{ marketDataYear }} government data for

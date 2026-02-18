@@ -164,7 +164,7 @@ const fetchUSATitles = async (searchTerm: string) => {
   const index = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
 
   let filters = `country:USA`;
-  if (location.value) {
+  if (location.value && locationOptions.value.length > 0) {
     const locVal = location.value.toLowerCase().replace(/"/g, '\\"');
     filters += ` AND searchLocation:"${locVal}"`;
   }
@@ -198,7 +198,7 @@ const fetchUSALocations = async (searchTerm: string) => {
   const index = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
 
   let filters = `country:USA`;
-  if (title.value) {
+  if (title.value && titleOptions.value.length > 0) {
     const titleVal = title.value.toLowerCase().replace(/"/g, '\\"');
     filters += ` AND searchTitle:"${titleVal}"`;
   }

@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6">
+  <div
+    :key="route.fullPath"
+    class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6">
     <!-- Background Gradient (Only show if we have data) -->
     <div
       class="fixed top-0 left-0 w-full h-125 bg-linear-to-b to-slate-50 z-0 from-secondary-900"></div>
@@ -15,13 +17,15 @@
     <h1 class="relative text-3xl md:text-6xl text-white font-bold px-4">{{ displayTitle }}</h1>
 
     <LazySectionNoData
-      v-if="!loading && !adzunaLoading && !hasGovernmentData && !hasJobsData"
+      v-if="!pending && !adzunaLoading && !hasGovernmentData && !hasJobsData"
       :title="displayTitle"
       :location="location"
       :country="country"
       @select="handleAmbiguitySelect" />
 
-    <div v-else class="relative grid grid-cols-1 px-4 gap-6">
+    <div
+      v-show="!pending && (hasGovernmentData || hasJobsData)"
+      class="relative grid grid-cols-1 px-4 gap-6">
       <div class="relative mx-auto flex flex-col gap-6">
         <!-- Adzuna results section -->
         <div class="flex flex-col gap-6 xl:flex-row">
@@ -41,14 +45,7 @@
               :location="location"
               :display-title="displayTitle"
               :jobs-count="jobsCount"
-              @fetch-data="
-                fetchAdzunaHistogram(
-                  searchTitle,
-                  location,
-                  country,
-                  jobsData?.results?.[0]?.category?.tag
-                )
-              " />
+              @fetch-data="fetchAdzunaHistogram(searchTitle, location, country)" />
           </div>
 
           <!-- GovernmentSection -->
@@ -145,7 +142,7 @@
       @close="showAmbiguityModal = false" />
 
     <!-- Loading State -->
-    <AmILoader v-if="loading" message="Searching 140,000+ records..." />
+    <AmILoader v-if="pending || adzunaLoading" message="Searching 140,000+ records..." />
   </div>
 </template>
 
@@ -241,21 +238,20 @@ const asyncDataKey = computed(
 );
 
 // 2. Use useAsyncData to fetch on the Server (and hydrate on Client)
-await useAsyncData(
-  asyncDataKey.value,
-  async () => {
-    await Promise.all([
-      country.value === 'UK'
-        ? fetchUkMarketData(searchTitle.value, location.value, userPeriod.value)
-        : fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value),
-      fetchAdzunaJobs(searchTitle.value, location.value, country.value)
-    ]);
-    return true;
-  },
-  {
-    watch: [searchTitle, location, country, userPeriod]
-  }
-);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { data, refresh, pending } = await useAsyncData(asyncDataKey.value, async () => {
+  // Explicitly reset your composable states here before fetching
+  // This ensures old "Austin" data is cleared before the new request starts
+  // (Assuming you've exported these from your composables)
+
+  await Promise.all([
+    country.value === 'UK'
+      ? fetchUkMarketData(searchTitle.value, location.value, userPeriod.value)
+      : fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value),
+    fetchAdzunaJobs(searchTitle.value, location.value, country.value)
+  ]);
+  return true;
+});
 
 // ** methods **
 const handleAmbiguitySelect = (match: any) => {
@@ -271,6 +267,10 @@ const handleAmbiguitySelect = (match: any) => {
   }
   showAmbiguityModal.value = false;
 };
+
+watch(asyncDataKey, () => refresh(), {
+  immediate: true
+});
 
 // ** watchers **
 watch(loading, (newLoading) => {

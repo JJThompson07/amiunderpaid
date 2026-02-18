@@ -16,7 +16,8 @@
             <span class="font-bold text-slate-900">exactly in line</span> with the market average.
           </template>
           <template v-else-if="isUnderpaid">
-            {{ matchedTitle || displayTitle }} in {{ matchedLocation || location || country }} earn
+            {{ matchedTitle || displayTitle }} in
+            {{ country === 'USA' ? matchedLocation || location || country : country }} earn
             <span class="font-bold text-slate-900"
               >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
             >.
