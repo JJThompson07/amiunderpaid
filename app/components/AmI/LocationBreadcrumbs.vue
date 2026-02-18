@@ -15,7 +15,10 @@
       <li class="text-slate-300 select-none">/</li>
       <li>
         <NuxtLink
-          :to="`/salary/${route.params.title}/${route.params.country}`"
+          :to="{
+            path: `/salary/${route.params.title}/${route.params.country}`,
+            query: route.query
+          }"
           class="hover:text-white transition-colors">
           {{ displayTitle }}
         </NuxtLink>
@@ -23,7 +26,10 @@
       <li class="text-slate-300 select-none">/</li>
       <li>
         <NuxtLink
-          :to="`/salary/${route.params.title}/${route.params.country}`"
+          :to="{
+            path: `/salary/${route.params.title}/${route.params.country}`,
+            query: route.query
+          }"
           class="hover:text-white transition-colors">
           {{ country }}
         </NuxtLink>

@@ -224,7 +224,10 @@ export const useMarketData = () => {
       if (!record) {
         const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
           filters: `country:USA AND period:${period}`,
-          hitsPerPage: 1
+          queryLanguages: ['en'],
+          optionalWords: searchTitle, // Allow fuzzy matching on title if location matches well
+          hitsPerPage: 10,
+          removeWordsIfNoResults: 'allOptional'
         });
         if (hits.length > 0) {
           record = hits[0];
