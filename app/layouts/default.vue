@@ -68,10 +68,16 @@
 <script setup lang="ts">
 import { useCurrentUser, useFirebaseAuth } from 'vuefire';
 import { signOut } from 'firebase/auth';
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { MenuIcon, XIcon } from 'lucide-vue-next';
 
-const { isMobile } = useViewport();
+const { isMobile: viewportIsMobile } = useViewport();
+
+const isMounted = ref(false);
+onMounted(() => {
+  isMounted.value = true;
+});
+const isMobile = computed(() => isMounted.value && viewportIsMobile.value);
 
 const openMenu = ref<boolean>(false);
 

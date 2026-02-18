@@ -27,14 +27,14 @@
             ? `shadow-md w-full p-4 rounded-lg ${link.mobileColorClass}`
             : 'hover:text-primary-600 focus:text-primary-600'
         "
-        @click="$emit('close')"
+        @click="handleClick(link.to)"
         >{{ link.label }}</NuxtLink
       >
       <NuxtLink
         v-if="safeIsMobile"
         to="/privacy-policy"
         class="transition-colors text-center text-primary-600 bg-slate-100 shadow-md w-full p-4 rounded-lg focus:text-slate-900 focus:outline-0 focus:bg-slate-300"
-        @click="$emit('close')"
+        @click="handleClick('/privacy-policy')"
         >Privacy Policy</NuxtLink
       >
     </template>
@@ -55,13 +55,15 @@ const props = defineProps({
   }
 });
 
-defineEmits(['close']);
+const emit = defineEmits(['close']);
 
 const isMounted = ref(false);
 onMounted(() => {
   isMounted.value = true;
 });
 const safeIsMobile = computed(() => isMounted.value && props.isMobile);
+
+const { trackPageNav } = useAnalytics();
 
 const adminLinks = [
   {
@@ -113,6 +115,11 @@ const visibleAdminLinks = computed(() =>
 const visibleNavLinks = computed(() =>
   navLinks.filter((link) => !link.mobileOnly || safeIsMobile.value)
 );
+
+const handleClick = (to: string) => {
+  emit('close');
+  trackPageNav(to);
+};
 </script>
 
 <style scoped></style>
