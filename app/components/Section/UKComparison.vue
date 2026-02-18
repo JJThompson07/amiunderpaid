@@ -15,7 +15,7 @@
         </div>
         <div>
           <p class="text-sm text-slate-500 font-bold px-1">
-            AVG: £{{ regionalData.salary.toLocaleString() }}
+            AVG: £{{ regionalData?.salary.toLocaleString() }}
           </p>
         </div>
       </div>
@@ -117,7 +117,7 @@ const props = defineProps({
     default: 0
   },
   regionalData: {
-    type: Object as PropType<SalaryBenchmark>,
+    type: Object as PropType<SalaryBenchmark | null>,
     default: null
   },
   year: {

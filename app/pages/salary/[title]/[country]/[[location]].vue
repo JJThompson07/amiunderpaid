@@ -71,15 +71,15 @@
 
           <!-- Ambiguity Selection (Fallback when no Gov Data but Adzuna exists) -->
           <LazySectionGovernmentUserSelection
-            v-else-if="hasJobsData && !hasGovernmentData"
+            v-if="hasJobsData && !hasGovernmentData"
             :adzuna-category="adzunaCategory"
             :country="country"
             @select="handleAmbiguitySelect" />
         </div>
 
         <!-- Regional Comparison Card (UK Only) -->
-        <LazySectionUKComparison
-          v-if="country === 'UK' && regionalData && location"
+        <SectionUKComparison
+          v-show="country === 'UK' && regionalData && location"
           :country="country"
           :location="location"
           :display-title="matchedTitle || displayTitle"
@@ -118,7 +118,7 @@
 
         <!-- The Negotiation Component -->
         <LazySectionNegotiation
-          v-if="hasGovernmentData || hasJobsData"
+          v-show="hasGovernmentData || hasJobsData"
           class="lg:col-span-4"
           :title="displayTitle"
           :current-salary="userSalary"
