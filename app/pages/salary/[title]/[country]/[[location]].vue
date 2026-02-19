@@ -142,7 +142,9 @@
       @close="showAmbiguityModal = false" />
 
     <!-- Loading State -->
-    <AmILoader v-if="pending || adzunaLoading" message="Searching 140,000+ records..." />
+    <ClientOnly>
+      <AmILoader v-if="pending || adzunaLoading" message="Searching 140,000+ records..." />
+    </ClientOnly>
   </div>
 </template>
 
@@ -268,9 +270,7 @@ const handleAmbiguitySelect = (match: any) => {
   showAmbiguityModal.value = false;
 };
 
-watch(asyncDataKey, () => refresh(), {
-  immediate: true
-});
+watch(asyncDataKey, () => refresh());
 
 // ** watchers **
 watch(loading, (newLoading) => {
