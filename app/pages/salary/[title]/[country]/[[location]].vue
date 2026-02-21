@@ -2,11 +2,9 @@
   <div
     :key="route.fullPath"
     class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6">
-    <!-- Background Gradient (Only show if we have data) -->
     <div
       class="fixed top-0 left-0 w-full h-125 bg-linear-to-b to-slate-50 z-0 from-secondary-900"></div>
 
-    <!-- Breadcrumbs -->
     <AmILocationBreadcrumbs
       class="relative"
       :route="route"
@@ -27,9 +25,8 @@
       v-show="!pending && (hasGovernmentData || hasJobsData)"
       class="relative grid grid-cols-1 px-4 gap-6">
       <div class="relative mx-auto flex flex-col gap-6">
-        <!-- Adzuna results section -->
         <div class="flex flex-col gap-6 xl:flex-row">
-          <div v-if="hasJobsData" class="flex flex-col flex-1 gap-3 adzuna-section">
+          <div v-if="hasJobsData" class="flex flex-col flex-1 min-w-0 gap-3 adzuna-section">
             <LazySectionAdzunaComparison
               class="flex-1"
               :buckets="histogramBuckets"
@@ -48,12 +45,11 @@
               @fetch-data="fetchAdzunaHistogram(searchTitle, location, country)" />
           </div>
 
-          <!-- GovernmentSection -->
           <div
-            v-if="hasGovernmentData"
-            class="flex flex-col flex-1 gap-3 government-section relative">
+            v-if="hasGovernmentData && !showUserSelection"
+            class="flex flex-col flex-1 min-w-0 gap-3 government-section relative">
             <LazySectionGovernmentComparison
-              class="overflow-hidden"
+              class="overflow-hidden flex-1"
               :is-fallback="!hasJobsData"
               :display-title="displayTitle"
               :location="location"
@@ -71,21 +67,23 @@
               :market-high="marketHigh" />
             <AmIButton
               v-if="!userSelected && !showUserSelection"
-              class="absolute! right-2 top-2 text-2xs"
+              class="absolute! right-2 top-2 text-2xs shadow-md"
               @click="showUserSelection = true"
               >Not the best match?</AmIButton
             >
           </div>
 
-          <!-- Ambiguity Selection (Fallback when no Gov Data but Adzuna exists) -->
-          <LazySectionGovernmentUserSelection
+          <div
             v-if="(hasJobsData && !hasGovernmentData) || showUserSelection"
-            :adzuna-category="adzunaCategory"
-            :country="country"
-            @select="handleAmbiguitySelect" />
+            class="flex flex-col flex-1 min-w-0 gap-3 relative">
+            <LazySectionGovernmentUserSelection
+              class="flex-1 w-full"
+              :adzuna-category="adzunaCategory"
+              :country="country"
+              @select="handleAmbiguitySelect" />
+          </div>
         </div>
 
-        <!-- Regional Comparison Card (UK Only) -->
         <SectionUKComparison
           v-show="country === 'UK' && regionalData && location"
           :country="country"
@@ -124,7 +122,6 @@
           </template>
         </LazyAmICardAction>
 
-        <!-- The Negotiation Component -->
         <LazySectionNegotiation
           v-show="hasGovernmentData || hasJobsData"
           class="lg:col-span-4"
@@ -141,7 +138,6 @@
       </div>
     </div>
 
-    <!-- Ambiguity Modal -->
     <LazyModalAmbiguity
       v-if="showAmbiguityModal"
       :title="displayTitle"
@@ -149,7 +145,6 @@
       @select="handleAmbiguitySelect"
       @close="showAmbiguityModal = false" />
 
-    <!-- Loading State -->
     <ClientOnly>
       <AmILoader v-if="pending || adzunaLoading" message="Searching 140,000+ records..." />
     </ClientOnly>
@@ -164,8 +159,11 @@ import { getDiffPercentage } from '~/helpers/utility';
 
 // ** data & refs **
 const route = useRoute();
+const govId = ref((route.query.gov_id as string) || undefined);
 const showAmbiguityModal = ref(false);
-const searchConfirmed = ref(false);
+const searchConfirmed = ref(
+  (import.meta.client ? history.state?.confirmed : false) || !!govId.value || false
+);
 const showUserSelection = ref(false);
 const userSelected = ref(false);
 
@@ -223,9 +221,11 @@ const location = computed(() =>
 
 const userSalary = ref(Number(route.query.compare) || 0);
 const userPeriod = ref(route.query.period?.toString() || 'year');
-const searchTitle = ref((route.query.q as string) || displayTitle.value);
-const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 
+// Clean title for Adzuna and display purposes
+const searchTitle = ref((route.query.q as string) || displayTitle.value);
+
+const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 const adzunaCategory = computed(() => jobsData.value?.results?.[0]?.category?.label);
 
 // Strict Data Check:
@@ -245,22 +245,19 @@ const diffPercent = computed<number>(() => {
   return getDiffPercentage(userSalary.value, avg);
 });
 
-// 1. Create a unique key for caching based on the URL params
+// 1. Create a unique key for caching based on all parameters
 const asyncDataKey = computed(
-  () => `salary-${country.value}-${location.value}-${searchTitle.value}-${userPeriod.value}`
+  () =>
+    `salary-${country.value}-${location.value}-${searchTitle.value}-${userPeriod.value}-${govId.value}`
 );
 
 // 2. Use useAsyncData to fetch on the Server (and hydrate on Client)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { data, refresh, pending } = await useAsyncData(asyncDataKey.value, async () => {
-  // Explicitly reset your composable states here before fetching
-  // This ensures old "Austin" data is cleared before the new request starts
-  // (Assuming you've exported these from your composables)
-
   await Promise.all([
     country.value === 'UK'
-      ? fetchUkMarketData(searchTitle.value, location.value, userPeriod.value)
-      : fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value),
+      ? fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, govId.value)
+      : fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value, govId.value),
     fetchAdzunaJobs(searchTitle.value, location.value, country.value)
   ]);
   return true;
@@ -268,19 +265,22 @@ const { data, refresh, pending } = await useAsyncData(asyncDataKey.value, async 
 
 // ** methods **
 const handleAmbiguitySelect = (match: any) => {
-  const specificTitle = match.group ? `${match.title} (${match.group})` : match.title;
+  // Grab the strict ID based on which index the user clicked an option from
+  const exactId = match.id_code || match.soc || match.objectID;
+  govId.value = exactId; // Set the ref to update the cache key if needed
 
-  // gtag track for ambiguity selection
   trackAmbiguousSearch(match.title, match.group);
 
   if (country.value === 'UK') {
-    fetchUkMarketData(specificTitle, location.value, userPeriod.value);
+    fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, exactId);
   } else {
-    fetchUSAMarketData(specificTitle, location.value, userPeriod.value);
+    fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value, exactId);
   }
+
   showAmbiguityModal.value = false;
   showUserSelection.value = false;
   userSelected.value = true;
+  searchConfirmed.value = true;
 };
 
 watch(asyncDataKey, () => refresh());
@@ -305,7 +305,7 @@ watch(loading, (newLoading) => {
         navigateTo(
           {
             path: newPath,
-            query: route.query, // Preserve compare/period params
+            query: route.query, // Preserve compare/period/gov_id params
             state: { ...history.state } // Preserve confirmed flag so modal doesn't reappear
           },
           { replace: true } // Use replace to avoid a broken back button history

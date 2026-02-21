@@ -2,7 +2,6 @@
   <div class="min-h-screen flex items-center justify-center bg-slate-50 p-4 pt-20">
     <div
       class="p-8 bg-white rounded-3xl border border-slate-200 shadow-xl text-center max-w-lg w-full">
-      <!-- ICON HEADER -->
       <div class="mb-6 flex justify-center">
         <div
           class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
@@ -20,7 +19,6 @@
         }}</span>
       </p>
 
-      <!-- DATABASE STATUS -->
       <div v-if="existingData.length > 0" class="mb-8">
         <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
           <h3 class="text-2xs font-bold uppercase tracking-widest text-slate-400 mb-3">
@@ -54,10 +52,8 @@
         </div>
       </div>
 
-      <!-- CONFIGURATION SECTION -->
       <div class="mb-8 space-y-6">
         <div class="grid grid-cols-1 gap-4">
-          <!-- COUNTRY TOGGLE -->
           <div class="flex flex-col gap-2">
             <label
               class="text-2xs font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
@@ -80,7 +76,6 @@
           </div>
         </div>
 
-        <!-- FILE UPLOAD -->
         <div class="flex flex-col gap-2">
           <label class="text-2xs font-bold uppercase tracking-widest text-slate-400 text-left ml-1">
             Coding Index File
@@ -97,7 +92,6 @@
           </label>
         </div>
 
-        <!-- OVERWRITE TOGGLE -->
         <div class="flex items-center gap-3 px-2">
           <input
             id="overwrite"
@@ -112,7 +106,6 @@
         </div>
       </div>
 
-      <!-- PROCESSING CONSOLE -->
       <div
         v-if="status"
         class="mb-8 bg-slate-900 rounded-2xl text-left overflow-hidden shadow-inner border border-slate-800">
@@ -132,7 +125,6 @@
         </div>
       </div>
 
-      <!-- ACTION BUTTONS -->
       <div class="space-y-3">
         <AmIButton
           v-if="parsedData.length > 0"
@@ -163,51 +155,6 @@
           </div>
         </AmIButton>
       </div>
-
-      <!-- MAINTENANCE SECTION -->
-      <div class="mt-8 pt-6 border-t border-slate-100">
-        <h3 class="text-2xs font-bold uppercase tracking-widest text-slate-400 mb-3">
-          Maintenance
-        </h3>
-        <AmIButton
-          :loading="loading"
-          bg-colour="bg-amber-100"
-          text-colour="text-amber-700"
-          hover-class="hover:bg-amber-200"
-          title="Sanitise Search Titles"
-          @click="sanitizeSearchTitles">
-          <div class="flex items-center justify-center gap-2">
-            <Eraser class="w-4 h-4" />
-            <span>Sanitise Search Titles</span>
-          </div>
-        </AmIButton>
-        <AmIButton
-          :loading="loading"
-          bg-colour="bg-indigo-100"
-          text-colour="text-indigo-700"
-          hover-class="hover:bg-indigo-200"
-          class="mt-3"
-          title="Resync Algolia"
-          @click="resyncAlgolia">
-          <div class="flex items-center justify-center gap-2">
-            <UploadCloud class="w-4 h-4" />
-            <span>Resync Algolia Index</span>
-          </div>
-        </AmIButton>
-        <AmIButton
-          :loading="loading"
-          bg-colour="bg-slate-100"
-          text-colour="text-slate-700"
-          hover-class="hover:bg-slate-200"
-          class="mt-3"
-          title="Configure Index Settings"
-          @click="configureAlgolia">
-          <div class="flex items-center justify-center gap-2">
-            <Settings class="w-4 h-4" />
-            <span>Configure Index Settings</span>
-          </div>
-        </AmIButton>
-      </div>
     </div>
   </div>
 </template>
@@ -215,27 +162,9 @@
 <script setup lang="ts">
 // ** imports **
 import { ref, onMounted, watch } from 'vue';
-import {
-  BookOpen,
-  UploadCloud,
-  CheckCircle2,
-  Lock,
-  LoaderCircle,
-  X,
-  Eraser,
-  Settings
-} from 'lucide-vue-next';
+import { BookOpen, UploadCloud, CheckCircle2, Lock, LoaderCircle, X } from 'lucide-vue-next';
 import { useFirestore, useCurrentUser } from 'vuefire';
-import {
-  doc,
-  collection,
-  query,
-  where,
-  getCountFromServer,
-  getDoc,
-  getDocs,
-  writeBatch
-} from 'firebase/firestore';
+import { doc, collection, query, where, getCountFromServer, getDoc } from 'firebase/firestore';
 
 interface JobTitleRecord {
   title: string;
@@ -452,120 +381,6 @@ const seedToFirestore = async () => {
     await fetchSummary();
   } catch (e: any) {
     log(`❌ Error: ${e.message}`);
-    loading.value = false;
-  }
-};
-
-const sanitizeSearchTitles = async () => {
-  if (!db) return;
-  if (
-    !confirm(
-      'This will remove all non-alphanumeric characters (except spaces) from searchTitle fields in the job_titles collection. Continue?'
-    )
-  )
-    return;
-
-  loading.value = true;
-  log('Starting sanitization...');
-
-  try {
-    const q = query(collection(db, 'job_titles'));
-    const snapshot = await getDocs(q);
-    const total = snapshot.size;
-    let updatedCount = 0;
-    let batch = writeBatch(db);
-    let batchCount = 0;
-
-    for (const docSnap of snapshot.docs) {
-      const data = docSnap.data();
-      const original = data.searchTitle || '';
-      // Remove non-alphanumeric characters, keep spaces
-      const sanitized = original
-        .replace(/[^a-z0-9\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      if (original !== sanitized) {
-        batch.update(docSnap.ref, { searchTitle: sanitized });
-        batchCount++;
-        updatedCount++;
-      }
-
-      if (batchCount >= 400) {
-        await batch.commit();
-        batch = writeBatch(db);
-        batchCount = 0;
-        log(`Processed batch... (${updatedCount} updates so far)`);
-      }
-    }
-
-    if (batchCount > 0) {
-      await batch.commit();
-    }
-
-    log(`✅ Sanitization complete. Updated ${updatedCount} records out of ${total}.`);
-  } catch (e: any) {
-    log(`❌ Error: ${e.message}`);
-  } finally {
-    loading.value = false;
-  }
-};
-
-const resyncAlgolia = async () => {
-  if (!db) return;
-  if (
-    !confirm('This will overwrite the Algolia job_titles index with data from Firestore. Continue?')
-  )
-    return;
-
-  loading.value = true;
-  log('Starting Algolia resync...');
-
-  try {
-    const q = query(collection(db, 'job_titles'));
-    const snapshot = await getDocs(q);
-    const records: any[] = [];
-
-    snapshot.forEach((doc) => {
-      records.push({
-        objectID: doc.id,
-        ...doc.data()
-      });
-    });
-
-    log(`Fetched ${records.length} records. Sending to Algolia...`);
-
-    await $fetch('/api/admin/sync-algolia', {
-      method: 'POST',
-      body: { data: records, indexName: 'job_titles' }
-    });
-
-    log('✅ Algolia Sync Complete.');
-  } catch (e: any) {
-    log(`❌ Error: ${e.message}`);
-  } finally {
-    loading.value = false;
-  }
-};
-
-const configureAlgolia = async () => {
-  if (
-    !confirm(
-      'This will update Algolia index settings (searchableAttributes, typoTolerance). Continue?'
-    )
-  )
-    return;
-  loading.value = true;
-  log('Updating Algolia settings...');
-  try {
-    await $fetch('/api/admin/configure-algolia', {
-      method: 'POST',
-      body: { indexName: 'job_titles' }
-    });
-    log('✅ Algolia Settings Updated.');
-  } catch (e: any) {
-    log(`❌ Error: ${e.message}`);
-  } finally {
     loading.value = false;
   }
 };

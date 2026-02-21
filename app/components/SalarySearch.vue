@@ -1,6 +1,5 @@
 <template>
   <div class="relative w-full max-w-5xl mx-auto mt-8">
-    <!-- Country Toggles -->
     <div class="flex justify-center mb-6">
       <div
         class="inline-flex p-1 rounded-full bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-lg">
@@ -28,7 +27,6 @@
 
     <div class="p-3 bg-white shadow-2xl rounded-3xl ring-1 ring-slate-900/5">
       <form class="flex flex-col gap-3" @submit.prevent="handleSearch">
-        <!-- Job Title -->
         <div class="flex-1">
           <AmIAutocompleteInput
             v-model="title"
@@ -43,7 +41,6 @@
         </div>
 
         <div class="flex flex-col md:flex-row gap-3">
-          <!-- Location -->
           <div class="flex-1">
             <AmIAutocompleteInput
               v-model="location"
@@ -56,7 +53,6 @@
               @update:model-value="fetchLocations" />
           </div>
 
-          <!-- Salary -->
           <div class="flex-1">
             <AmIInput
               v-model="salary"
@@ -71,7 +67,6 @@
           </div>
         </div>
 
-        <!-- Submit -->
         <div class="mt-4">
           <AmIAnimatedBorder class="rounded-xl" :loading="loading">
             <AmIButton
@@ -115,6 +110,9 @@ const titleOptions = ref<string[]>([]);
 const locationOptions = ref<string[]>([]);
 const showCalc = ref<boolean>(false);
 
+// Map to temporarily hold the IDs for the selected labels
+const labelToIdMap = ref<Record<string, string>>({});
+
 const { trackSearch } = useAnalytics();
 
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
@@ -152,6 +150,12 @@ const fetchUKTitles = async (searchTerm: string) => {
   hits.forEach((hit: any) => {
     const cleanGroup = hit.group ? hit.group.replace(/\s*\(.*\)$/, '') : '';
     const label = cleanGroup ? `${hit.title} (${cleanGroup})` : hit.title;
+
+    // Store the SOC code linked to this specific label
+    if (hit.soc) {
+      labelToIdMap.value[label] = hit.soc;
+    }
+
     results.add(label);
   });
 
@@ -176,6 +180,11 @@ const fetchUSATitles = async (searchTerm: string) => {
 
   const results = new Set<string>();
   hits.forEach((hit: any) => {
+    // Store the ID code linked to this specific title
+    const id = hit.id_code || hit.objectID;
+    if (id) {
+      labelToIdMap.value[hit.title] = id;
+    }
     results.add(hit.title);
   });
   return Array.from(results);
@@ -258,16 +267,18 @@ const fetchLocations = useDebounceFn(async (val: string) => {
 const handleSearch = async () => {
   loading.value = true;
 
+  // 1. Get exact ID if they picked an option from the autocomplete dropdown
+  const exactGovId = labelToIdMap.value[title.value];
+
+  // 2. Remove parent group in parentheses to give Adzuna a clean job title
+  const cleanTitle = title.value.replace(/\s*\(.*\)$/, '');
+
   const slugify = (str: string) => {
-    // 1. Remove parent group in parentheses at the end of the string
-    let cleanStr = str.replace(/\s*\(.*\)$/, '');
-    // 2. Remove commas
-    cleanStr = cleanStr.replace(/,/g, '');
-    // 3. Lowercase, trim, and replace spaces/multiple dashes with a single dash
+    const cleanStr = str.replace(/,/g, '');
     return cleanStr.toLowerCase().trim().replace(/\s+/g, '-').replace(/-+/g, '-');
   };
 
-  const titleSlug = slugify(title.value);
+  const titleSlug = slugify(cleanTitle);
   const countrySlug = country.value.toLowerCase();
   const locationSlug = location.value ? slugify(location.value) : '';
 
@@ -275,17 +286,18 @@ const handleSearch = async () => {
     ? `/salary/${titleSlug}/${countrySlug}/${locationSlug}`
     : `/salary/${titleSlug}/${countrySlug}`;
 
-  trackSearch(title.value, country.value, location.value, salary.value);
+  trackSearch(cleanTitle.trim(), country.value, location.value, salary.value);
 
   await navigateTo({
     path,
     query: {
-      q: title.value,
+      q: cleanTitle.trim(),
+      gov_id: exactGovId, // Send exact DB ID for 100% accurate Government matching
       compare: salary.value || undefined,
       period: period.value !== 'year' ? period.value : undefined
     },
     state: {
-      confirmed: true
+      confirmed: !!exactGovId
     }
   });
   loading.value = false;
