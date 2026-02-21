@@ -74,7 +74,7 @@
           </div>
 
           <div
-            v-if="(hasJobsData && !hasGovernmentData) || showUserSelection"
+            v-if="(hasJobsData && !hasGovernmentData && !loading && !pending) || showUserSelection"
             class="flex flex-col flex-1 min-w-0 gap-3 relative">
             <LazySectionGovernmentUserSelection
               class="flex-1 w-full"
@@ -182,7 +182,8 @@ const {
   jobsCount,
   meanSalary,
   jobsData,
-  hasJobsData
+  hasJobsData,
+  cachedGovIdCode // Now used to bypass Algolia sequentially
 } = useAdzuna();
 
 const { trackAmbiguousSearch } = useAnalytics();
@@ -196,6 +197,7 @@ const {
   marketDataYear,
   matchedTitle,
   matchedLocation,
+  matchedIdCode,
   isGenericFallback,
   ambiguousMatches,
   regionalData,
@@ -251,25 +253,47 @@ const asyncDataKey = computed(
     `salary-${country.value}-${location.value}-${searchTitle.value}-${userPeriod.value}-${govId.value}`
 );
 
-// 2. Use useAsyncData to fetch on the Server (and hydrate on Client)
+// 2. Use useAsyncData to fetch sequentially
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { data, refresh, pending } = await useAsyncData(asyncDataKey.value, async () => {
-  await Promise.all([
-    country.value === 'UK'
-      ? fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, govId.value)
-      : fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value, govId.value),
-    fetchAdzunaJobs(searchTitle.value, location.value, country.value)
-  ]);
+  // Wait for Adzuna first to check for cached IDs
+  await fetchAdzunaJobs(searchTitle.value, location.value, country.value);
+
+  // Determine the ID to pass to Algolia (User URL param > Cached DB Param > undefined)
+  const targetGovId = govId.value || cachedGovIdCode.value;
+
+  // Fetch Government Match
+  if (country.value === 'UK') {
+    await fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
+  } else {
+    await fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
+  }
+
   return true;
 });
 
 // ** methods **
-const handleAmbiguitySelect = (match: any) => {
-  // Grab the strict ID based on which index the user clicked an option from
+const handleAmbiguitySelect = async (match: any) => {
   const exactId = match.id_code || match.soc || match.objectID;
-  govId.value = exactId; // Set the ref to update the cache key if needed
+  govId.value = exactId;
 
   trackAmbiguousSearch(match.title, match.group);
+
+  // Log user's manual correction securely
+  try {
+    await $fetch('/api/adzuna/update-match', {
+      method: 'POST',
+      body: {
+        title: searchTitle.value,
+        location: location.value,
+        country: country.value === 'USA' ? 'us' : 'gb',
+        gov_id_code: exactId,
+        is_automatic: false
+      }
+    });
+  } catch (err) {
+    console.error('Failed to log manual match suggestion', err);
+  }
 
   if (country.value === 'UK') {
     fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, exactId);
@@ -287,28 +311,44 @@ watch(asyncDataKey, () => refresh());
 
 // ** watchers **
 watch(loading, (newLoading) => {
-  // When data fetching is complete
   if (newLoading === false) {
     const userLocation = location.value;
     const dbLocation = matchedLocation.value;
 
-    // Redirect if user searched for a location, but we only found national data.
-    // This keeps the URL canonical and improves SEO.
+    // Securely log automatic matches for admin review/approval
+    if (
+      import.meta.client &&
+      hasGovernmentData.value &&
+      !isGenericFallback.value &&
+      matchedIdCode.value &&
+      !govId.value
+    ) {
+      $fetch('/api/adzuna/update-match', {
+        method: 'POST',
+        body: {
+          title: searchTitle.value,
+          location: location.value,
+          country: country.value === 'USA' ? 'us' : 'gb',
+          gov_id_code: matchedIdCode.value,
+          is_automatic: true
+        }
+      }).catch((err) => console.error('Silent background suggestion log failed', err));
+    }
+
     if (
       userLocation &&
       hasGovernmentData.value &&
       dbLocation.toLowerCase() !== userLocation.toLowerCase()
     ) {
-      // Check if the found location is the country itself (a national fallback)
       if (dbLocation.toLowerCase() === country.value.toLowerCase()) {
         const newPath = `/salary/${route.params.title}/${route.params.country}`;
         navigateTo(
           {
             path: newPath,
-            query: route.query, // Preserve compare/period/gov_id params
-            state: { ...history.state } // Preserve confirmed flag so modal doesn't reappear
+            query: route.query,
+            state: { ...history.state }
           },
-          { replace: true } // Use replace to avoid a broken back button history
+          { replace: true }
         );
       }
     }

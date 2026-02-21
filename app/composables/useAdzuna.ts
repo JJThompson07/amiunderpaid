@@ -1,4 +1,3 @@
-// app/composables/useAdzuna.ts
 import { computed } from 'vue';
 
 export type HistogramBucket = {
@@ -10,7 +9,6 @@ export type HistogramData = {
   [salary: number]: number;
 };
 
-// Helper to recursively clean data
 const sanitizeAdzunaData = (data: any): any => {
   if (Array.isArray(data)) {
     return data.map(sanitizeAdzunaData);
@@ -31,6 +29,7 @@ export const useAdzuna = () => {
   const jobsData = useState<any>('adzuna_jobs', () => null);
   const categories = useState<any[]>('adzuna_categories', () => []);
   const loading = useState<boolean>('adzuna_loading', () => false);
+  const cachedGovIdCode = useState<string | undefined>('adzuna_cached_gov_id', () => undefined);
 
   const meanSalary = computed<number>(() => jobsData.value?.mean || 0);
   const jobsCount = computed<number>(() => jobsData.value?.count || 0);
@@ -69,21 +68,19 @@ export const useAdzuna = () => {
   );
 
   const fetchJobs = async (title: string, location: string, country: string) => {
-    // for now due to api limitations for the uk, ignore the location field
     if (country === 'UK' || country === 'gb') {
       location = '';
     }
 
     loading.value = true;
+    cachedGovIdCode.value = undefined;
 
-    // Clean title for Adzuna
     const cleanTitle = title
       .replace(/\s*\(.*?\)\s*/g, '')
       .replace(/[^a-zA-Z0-9\s]/g, '')
       .trim();
 
     try {
-      // Calls server/api/adzuna/jobs.ts
       const rawData: any = await $fetch('/api/adzuna/jobs', {
         params: {
           title: cleanTitle,
@@ -91,6 +88,10 @@ export const useAdzuna = () => {
           country
         }
       });
+
+      if (rawData.gov_id_code) {
+        cachedGovIdCode.value = rawData.gov_id_code;
+      }
 
       jobsData.value = sanitizeAdzunaData({
         mean: rawData.mean,
@@ -106,7 +107,6 @@ export const useAdzuna = () => {
   };
 
   const fetchHistogram = async (title: string, location: string, country: string) => {
-    // for now due to api limitations for the uk, ignore the location field
     if (country === 'UK' || country === 'gb') {
       location = '';
     }
@@ -114,7 +114,6 @@ export const useAdzuna = () => {
     loading.value = true;
 
     try {
-      // Calls server/api/adzuna/salary.ts
       const rawData: any = await $fetch('/api/adzuna/salary', {
         params: {
           title,
@@ -165,6 +164,7 @@ export const useAdzuna = () => {
     histogramRange,
     histogramMaxCount,
     histogramTotalCount,
+    cachedGovIdCode,
     fetchJobs,
     fetchHistogram,
     fetchCategories,

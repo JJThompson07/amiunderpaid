@@ -41,7 +41,10 @@ export default defineEventHandler(async (event) => {
       const cachedTime = data?.timestamp?.toMillis() || 0;
 
       if (now - cachedTime < 604800000) {
-        return data?.data;
+        return {
+          ...data?.data,
+          gov_id_code: data?.gov_id_code || null
+        };
       }
     }
   } catch (e) {
