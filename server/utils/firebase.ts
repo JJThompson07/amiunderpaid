@@ -14,7 +14,7 @@ export const useAdminApp = (): App => {
     try {
       let parsed = JSON.parse(serviceAccountJson);
 
-      // --- Handle double-stringified JSON from .env files ---
+      // Fix for double-stringified JSON from .env files
       if (typeof parsed === 'string') {
         parsed = JSON.parse(parsed);
       }
@@ -22,8 +22,6 @@ export const useAdminApp = (): App => {
       serviceAccount = parsed;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      // CRITICAL: If the env var is present but invalid, FAIL FAST.
-      // Do not silently fall back to default credentials.
       console.error('CRITICAL CONFIG ERROR: FIREBASE_SERVICE_ACCOUNT is not valid JSON.');
       throw createError({
         statusCode: 500,
@@ -32,7 +30,6 @@ export const useAdminApp = (): App => {
     }
   }
 
-  // Initialize with specific credentials if provided, otherwise try Application Default Credentials (ADC)
   return initializeApp(serviceAccount ? { credential: cert(serviceAccount) } : undefined);
 };
 
@@ -73,7 +70,6 @@ export const batchDelete = async (collectionName: string, filters: Record<string
   let count = 0;
   const docs = snapshot.docs;
 
-  // Firestore batch limit is 500
   for (let i = 0; i < docs.length; i += 500) {
     const chunk = docs.slice(i, i + 500);
     const batch = db.batch();
@@ -99,7 +95,6 @@ export const batchSeed = async (collectionName: string, data: any[]) => {
         ? db.collection(collectionName).doc(objectID)
         : db.collection(collectionName).doc();
 
-      // Ensure dates are handled if passed as strings
       if (rest.updatedAt) {
         rest.updatedAt = new Date(rest.updatedAt);
       }

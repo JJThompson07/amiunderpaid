@@ -29,7 +29,7 @@ export const useAdzuna = () => {
   const jobsData = useState<any>('adzuna_jobs', () => null);
   const categories = useState<any[]>('adzuna_categories', () => []);
   const loading = useState<boolean>('adzuna_loading', () => false);
-  const cachedGovIdCode = useState<string | undefined>('adzuna_cached_gov_id', () => undefined); // NEW
+  const cachedGovIdCode = useState<string | undefined>('adzuna_cached_gov_id', () => undefined);
 
   const meanSalary = computed<number>(() => jobsData.value?.mean || 0);
   const jobsCount = computed<number>(() => jobsData.value?.count || 0);
@@ -73,7 +73,7 @@ export const useAdzuna = () => {
     }
 
     loading.value = true;
-    cachedGovIdCode.value = undefined; // Reset on new fetch
+    cachedGovIdCode.value = undefined;
 
     const cleanTitle = title
       .replace(/\s*\(.*?\)\s*/g, '')
@@ -89,7 +89,6 @@ export const useAdzuna = () => {
         }
       });
 
-      // Save the cached gov_id_code if the server returned it
       if (rawData.gov_id_code) {
         cachedGovIdCode.value = rawData.gov_id_code;
       }
@@ -165,7 +164,7 @@ export const useAdzuna = () => {
     histogramRange,
     histogramMaxCount,
     histogramTotalCount,
-    cachedGovIdCode, // Exported to be used in UI
+    cachedGovIdCode,
     fetchJobs,
     fetchHistogram,
     fetchCategories,

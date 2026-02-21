@@ -74,7 +74,7 @@
           </div>
 
           <div
-            v-if="(hasJobsData && !hasGovernmentData) || showUserSelection"
+            v-if="(hasJobsData && !hasGovernmentData && !loading && !pending) || showUserSelection"
             class="flex flex-col flex-1 min-w-0 gap-3 relative">
             <LazySectionGovernmentUserSelection
               class="flex-1 w-full"
@@ -183,7 +183,7 @@ const {
   meanSalary,
   jobsData,
   hasJobsData,
-  cachedGovIdCode
+  cachedGovIdCode // Now used to bypass Algolia sequentially
 } = useAdzuna();
 
 const { trackAmbiguousSearch } = useAnalytics();
@@ -197,7 +197,7 @@ const {
   marketDataYear,
   matchedTitle,
   matchedLocation,
-  matchedIdCode, // NEW: Retrieved so we can save it silently
+  matchedIdCode,
   isGenericFallback,
   ambiguousMatches,
   regionalData,
@@ -253,17 +253,16 @@ const asyncDataKey = computed(
     `salary-${country.value}-${location.value}-${searchTitle.value}-${userPeriod.value}-${govId.value}`
 );
 
-// 2. Use useAsyncData to fetch on the Server (and hydrate on Client)
+// 2. Use useAsyncData to fetch sequentially
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { data, refresh, pending } = await useAsyncData(asyncDataKey.value, async () => {
-  // 1. Fetch Adzuna jobs FIRST
+  // Wait for Adzuna first to check for cached IDs
   await fetchAdzunaJobs(searchTitle.value, location.value, country.value);
 
-  // 2. Determine which ID to use for the Government fetch
-  // Use the URL parameter if it exists, otherwise use the cached ID from Adzuna (if it exists)
+  // Determine the ID to pass to Algolia (User URL param > Cached DB Param > undefined)
   const targetGovId = govId.value || cachedGovIdCode.value;
 
-  // 3. Fetch Government data SECOND, passing in our target ID
+  // Fetch Government Match
   if (country.value === 'UK') {
     await fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
   } else {
@@ -275,14 +274,12 @@ const { data, refresh, pending } = await useAsyncData(asyncDataKey.value, async 
 
 // ** methods **
 const handleAmbiguitySelect = async (match: any) => {
-  // Updated to async
-  // Grab the strict ID based on which index the user clicked an option from
   const exactId = match.id_code || match.soc || match.objectID;
-  govId.value = exactId; // Set the ref to update the cache key if needed
+  govId.value = exactId;
 
   trackAmbiguousSearch(match.title, match.group);
 
-  // --- NEW: Update the database cache with manual user override ---
+  // Log user's manual correction securely
   try {
     await $fetch('/api/adzuna/update-match', {
       method: 'POST',
@@ -290,13 +287,13 @@ const handleAmbiguitySelect = async (match: any) => {
         title: searchTitle.value,
         location: location.value,
         country: country.value === 'USA' ? 'us' : 'gb',
-        gov_id_code: exactId
+        gov_id_code: exactId,
+        is_automatic: false
       }
     });
   } catch (err) {
-    console.error('Failed to update cache with manually selected match', err);
+    console.error('Failed to log manual match suggestion', err);
   }
-  // ----------------------------------------------------------------
 
   if (country.value === 'UK') {
     fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, exactId);
@@ -314,14 +311,13 @@ watch(asyncDataKey, () => refresh());
 
 // ** watchers **
 watch(loading, (newLoading) => {
-  // When data fetching is complete
   if (newLoading === false) {
     const userLocation = location.value;
     const dbLocation = matchedLocation.value;
 
-    // --- NEW: Silent Background Cache Update ---
-    // If Algolia found a good match automatically and no manual override was set, cache it!
+    // Securely log automatic matches for admin review/approval
     if (
+      import.meta.client &&
       hasGovernmentData.value &&
       !isGenericFallback.value &&
       matchedIdCode.value &&
@@ -333,13 +329,12 @@ watch(loading, (newLoading) => {
           title: searchTitle.value,
           location: location.value,
           country: country.value === 'USA' ? 'us' : 'gb',
-          gov_id_code: matchedIdCode.value
+          gov_id_code: matchedIdCode.value,
+          is_automatic: true
         }
-      }).catch((err) => console.error('Silent background cache update failed', err));
+      }).catch((err) => console.error('Silent background suggestion log failed', err));
     }
-    // -------------------------------------------
 
-    // Redirect if user searched for a location, but we only found national data.
     if (
       userLocation &&
       hasGovernmentData.value &&

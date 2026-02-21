@@ -1,8 +1,6 @@
-import { generateCacheKey } from '~~/server/utils/adzuna';
-
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  const { title, location, country, gov_id_code, limit } = body;
+  const { title, location, country, gov_id_code, is_automatic } = body;
 
   if (!title || !gov_id_code) {
     throw createError({ statusCode: 400, statusMessage: 'Title and gov_id_code are required' });
@@ -16,7 +14,6 @@ export default defineEventHandler(async (event) => {
       .trim();
 
   // Gov IDs/SOC codes should generally just be alphanumeric (and maybe dashes)
-  // This strips out absolutely everything else.
   const sanitizedGovId = String(gov_id_code)
     .replace(/[^a-zA-Z0-9-]/g, '')
     .trim();
@@ -30,32 +27,26 @@ export default defineEventHandler(async (event) => {
   const countryCode = sanitizeText(country || 'gb').toLowerCase();
   const locationStr = sanitizeText(location);
 
-  // Ensure limit is actually a number, and bound it between 1 and 50
-  const safeLimit = Math.min(Math.max(Number(limit) || 5, 1), 50);
-
   const db = useAdminFirestore();
 
-  // Ensure we match the exact cache key structure from jobs.ts
-  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${safeLimit}`;
-  const cacheRef = db.collection('adzuna_jobs_cache').doc(cacheKey);
-
   try {
-    // Merge: true ensures we add gov_id_code without overwriting the Adzuna job data
-    await cacheRef.set(
-      {
-        gov_id_code: sanitizedGovId,
-        is_user_verified: true, // Flag to indicate if it was manually corrected
-        updatedAt: new Date()
-      },
-      { merge: true }
-    );
+    // SECURITY FIX: Write to a suggestions collection for admin review
+    // instead of overwriting the live adzuna_jobs_cache directly.
+    const suggestionRef = db.collection('user_match_suggestions').doc();
 
-    return { success: true, message: 'Jobs cache updated with safely sanitized government match.' };
-  } catch (e) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Failed to update jobs cache with government match.',
-      data: e
+    await suggestionRef.set({
+      title: titleStr,
+      location: locationStr,
+      country: countryCode,
+      suggested_gov_id: sanitizedGovId,
+      is_automatic_system_save: !!is_automatic, // Tracks if this was a user click or a background save
+      timestamp: new Date(),
+      // Grab IP to help you filter out spam/bots if needed later
+      ip_address: getRequestHeader(event, 'x-forwarded-for') || 'unknown'
     });
+
+    return { success: true, message: 'Match suggestion securely logged for review.' };
+  } catch (e) {
+    throw createError({ statusCode: 500, statusMessage: 'Failed to log suggestion.', data: e });
   }
 });
