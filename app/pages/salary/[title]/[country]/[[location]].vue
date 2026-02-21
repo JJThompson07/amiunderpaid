@@ -49,7 +49,9 @@
           </div>
 
           <!-- GovernmentSection -->
-          <div v-if="hasGovernmentData" class="flex flex-col flex-1 gap-3 government-section">
+          <div
+            v-if="hasGovernmentData"
+            class="flex flex-col flex-1 gap-3 government-section relative">
             <LazySectionGovernmentComparison
               class="overflow-hidden"
               :is-fallback="!hasJobsData"
@@ -67,11 +69,17 @@
               :is-underpaid="isUnderpaid"
               :market-low="marketLow"
               :market-high="marketHigh" />
+            <AmIButton
+              v-if="!userSelected && !showUserSelection"
+              class="absolute! right-2 top-2 text-2xs"
+              @click="showUserSelection = true"
+              >Not the best match?</AmIButton
+            >
           </div>
 
           <!-- Ambiguity Selection (Fallback when no Gov Data but Adzuna exists) -->
           <LazySectionGovernmentUserSelection
-            v-if="hasJobsData && !hasGovernmentData"
+            v-if="(hasJobsData && !hasGovernmentData) || showUserSelection"
             :adzuna-category="adzunaCategory"
             :country="country"
             @select="handleAmbiguitySelect" />
@@ -158,6 +166,9 @@ import { getDiffPercentage } from '~/helpers/utility';
 const route = useRoute();
 const showAmbiguityModal = ref(false);
 const searchConfirmed = ref(false);
+const showUserSelection = ref(false);
+const userSelected = ref(false);
+
 const { isXl } = useViewport();
 
 // Destructure Adzuna from auto-imported composable
@@ -268,6 +279,8 @@ const handleAmbiguitySelect = (match: any) => {
     fetchUSAMarketData(specificTitle, location.value, userPeriod.value);
   }
   showAmbiguityModal.value = false;
+  showUserSelection.value = false;
+  userSelected.value = true;
 };
 
 watch(asyncDataKey, () => refresh());
