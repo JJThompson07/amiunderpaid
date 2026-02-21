@@ -182,7 +182,8 @@ const {
   jobsCount,
   meanSalary,
   jobsData,
-  hasJobsData
+  hasJobsData,
+  cachedGovIdCode
 } = useAdzuna();
 
 const { trackAmbiguousSearch } = useAnalytics();
@@ -196,6 +197,7 @@ const {
   marketDataYear,
   matchedTitle,
   matchedLocation,
+  matchedIdCode, // NEW: Retrieved so we can save it silently
   isGenericFallback,
   ambiguousMatches,
   regionalData,
@@ -254,22 +256,47 @@ const asyncDataKey = computed(
 // 2. Use useAsyncData to fetch on the Server (and hydrate on Client)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { data, refresh, pending } = await useAsyncData(asyncDataKey.value, async () => {
-  await Promise.all([
-    country.value === 'UK'
-      ? fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, govId.value)
-      : fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value, govId.value),
-    fetchAdzunaJobs(searchTitle.value, location.value, country.value)
-  ]);
+  // 1. Fetch Adzuna jobs FIRST
+  await fetchAdzunaJobs(searchTitle.value, location.value, country.value);
+
+  // 2. Determine which ID to use for the Government fetch
+  // Use the URL parameter if it exists, otherwise use the cached ID from Adzuna (if it exists)
+  const targetGovId = govId.value || cachedGovIdCode.value;
+
+  // 3. Fetch Government data SECOND, passing in our target ID
+  if (country.value === 'UK') {
+    await fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
+  } else {
+    await fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
+  }
+
   return true;
 });
 
 // ** methods **
-const handleAmbiguitySelect = (match: any) => {
+const handleAmbiguitySelect = async (match: any) => {
+  // Updated to async
   // Grab the strict ID based on which index the user clicked an option from
   const exactId = match.id_code || match.soc || match.objectID;
   govId.value = exactId; // Set the ref to update the cache key if needed
 
   trackAmbiguousSearch(match.title, match.group);
+
+  // --- NEW: Update the database cache with manual user override ---
+  try {
+    await $fetch('/api/adzuna/update-match', {
+      method: 'POST',
+      body: {
+        title: searchTitle.value,
+        location: location.value,
+        country: country.value === 'USA' ? 'us' : 'gb',
+        gov_id_code: exactId
+      }
+    });
+  } catch (err) {
+    console.error('Failed to update cache with manually selected match', err);
+  }
+  // ----------------------------------------------------------------
 
   if (country.value === 'UK') {
     fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, exactId);
@@ -292,23 +319,41 @@ watch(loading, (newLoading) => {
     const userLocation = location.value;
     const dbLocation = matchedLocation.value;
 
+    // --- NEW: Silent Background Cache Update ---
+    // If Algolia found a good match automatically and no manual override was set, cache it!
+    if (
+      hasGovernmentData.value &&
+      !isGenericFallback.value &&
+      matchedIdCode.value &&
+      !govId.value
+    ) {
+      $fetch('/api/adzuna/update-match', {
+        method: 'POST',
+        body: {
+          title: searchTitle.value,
+          location: location.value,
+          country: country.value === 'USA' ? 'us' : 'gb',
+          gov_id_code: matchedIdCode.value
+        }
+      }).catch((err) => console.error('Silent background cache update failed', err));
+    }
+    // -------------------------------------------
+
     // Redirect if user searched for a location, but we only found national data.
-    // This keeps the URL canonical and improves SEO.
     if (
       userLocation &&
       hasGovernmentData.value &&
       dbLocation.toLowerCase() !== userLocation.toLowerCase()
     ) {
-      // Check if the found location is the country itself (a national fallback)
       if (dbLocation.toLowerCase() === country.value.toLowerCase()) {
         const newPath = `/salary/${route.params.title}/${route.params.country}`;
         navigateTo(
           {
             path: newPath,
-            query: route.query, // Preserve compare/period/gov_id params
-            state: { ...history.state } // Preserve confirmed flag so modal doesn't reappear
+            query: route.query,
+            state: { ...history.state }
           },
-          { replace: true } // Use replace to avoid a broken back button history
+          { replace: true }
         );
       }
     }

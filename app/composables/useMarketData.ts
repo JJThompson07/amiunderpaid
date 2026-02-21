@@ -13,7 +13,6 @@ export interface SalaryBenchmark {
 export const useMarketData = () => {
   const loading = useState<boolean>('market_loading', () => false);
 
-  // Reactive state for the results
   const marketAverage = useState<number>('market_average', () => 0);
   const marketHigh = useState<number>('market_high', () => 0);
   const marketLow = useState<number>('market_low', () => 0);
@@ -21,11 +20,11 @@ export const useMarketData = () => {
   const marketPeriod = useState<string>('market_period', () => 'year');
   const matchedTitle = useState<string>('market_matched_title', () => '');
   const matchedLocation = useState<string>('market_matched_location', () => '');
+  const matchedIdCode = useState<string | undefined>('market_matched_id_code', () => undefined); // NEW
   const isGenericFallback = useState<boolean>('market_generic_fallback', () => false);
   const ambiguousMatches = useState<any[]>('market_ambiguous_matches', () => []);
   const regionalData = useState<SalaryBenchmark | null>('market_regional_data', () => null);
 
-  // Reset state helper
   const resetData = () => {
     marketAverage.value = 0;
     marketHigh.value = 0;
@@ -34,12 +33,11 @@ export const useMarketData = () => {
     marketPeriod.value = 'year';
     matchedTitle.value = '';
     matchedLocation.value = '';
+    matchedIdCode.value = undefined; // NEW
     isGenericFallback.value = false;
     ambiguousMatches.value = [];
     regionalData.value = null;
   };
-
-  // ** Internal Helpers **
 
   const processRecord = async (record: SalaryBenchmark) => {
     marketAverage.value = record.salary;
@@ -49,6 +47,7 @@ export const useMarketData = () => {
     matchedTitle.value = record.title;
     marketPeriod.value = record.period || 'year';
     matchedLocation.value = record.location;
+    matchedIdCode.value = record.id_code; // NEW
   };
 
   const fetchGenericFallback = async (
@@ -65,7 +64,6 @@ export const useMarketData = () => {
     return hits.length > 0 ? (hits[0] as unknown as SalaryBenchmark) : undefined;
   };
 
-  // ** UK Specific Logic **
   const fetchUkMarketData = async (
     title: string,
     location: string,
@@ -94,7 +92,6 @@ export const useMarketData = () => {
 
       let record: SalaryBenchmark | undefined;
 
-      // 1. EXACT ID LOOKUP (Bypasses fuzzy text matching completely)
       if (idCode) {
         const { hits: benchmarkHits } = await nationalIndex.search<SalaryBenchmark>('', {
           filters: `id_code:${idCode} AND country:UK AND period:${period}`,
@@ -104,7 +101,6 @@ export const useMarketData = () => {
         if (benchmarkHits.length > 0) {
           record = benchmarkHits[0];
 
-          // ** UK Regional Fetch (Secondary) **
           if (location && location.length > 2) {
             const { hits: regionalHits } = await regionalIndex.search<SalaryBenchmark>('', {
               filters: `country:UK AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
@@ -123,7 +119,6 @@ export const useMarketData = () => {
         }
       }
 
-      // 2. SOC Code Text Lookup (Fallback if no exact idCode provided)
       if (!record) {
         const sanitizedQuery = searchTitle
           .toLowerCase()
@@ -180,7 +175,6 @@ export const useMarketData = () => {
         }
       }
 
-      // 3. Direct Title Match Fallback
       if (!record) {
         const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
           filters: `country:UK AND period:${period}`,
@@ -191,7 +185,6 @@ export const useMarketData = () => {
         }
       }
 
-      // 4. Generic Fallback
       if (!record) {
         record = await fetchGenericFallback(country, period, nationalIndex);
       }
@@ -206,7 +199,6 @@ export const useMarketData = () => {
     }
   };
 
-  // ** USA Specific Logic **
   const fetchUSAMarketData = async (
     title: string,
     location: string,
@@ -226,9 +218,7 @@ export const useMarketData = () => {
 
       let record: SalaryBenchmark | undefined;
 
-      // 1. EXACT ID LOOKUP
       if (idCode) {
-        // Try Regional first if location is provided
         if (location && location.length > 2) {
           const { hits } = await regionalIndex.search<SalaryBenchmark>('', {
             filters: `id_code:${idCode} AND country:USA AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
@@ -237,7 +227,6 @@ export const useMarketData = () => {
           if (hits.length > 0) record = hits[0];
         }
 
-        // Fallback to national
         if (!record) {
           const { hits } = await nationalIndex.search<SalaryBenchmark>('', {
             filters: `id_code:${idCode} AND country:USA AND period:${period}`,
@@ -247,13 +236,11 @@ export const useMarketData = () => {
         }
       }
 
-      // 2. Regional Text Search Fallback
       if (!record && location && location.length > 2) {
         const { hits } = await regionalIndex.search<SalaryBenchmark>(searchTitle, {
           filters: `country:USA AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
           queryLanguages: ['en'],
-          // REMOVE optionalWords: searchTitle
-          removeWordsIfNoResults: 'allOptional', // ADD THIS INSTEAD
+          removeWordsIfNoResults: 'allOptional',
           hitsPerPage: 10
         });
 
@@ -269,13 +256,11 @@ export const useMarketData = () => {
         }
       }
 
-      // 3. National Text Search Fallback
       if (!record) {
         const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
           filters: `country:USA AND period:${period}`,
           queryLanguages: ['en'],
-          // REMOVE optionalWords: searchTitle
-          removeWordsIfNoResults: 'allOptional', // ALREADY HERE, JUST ENSURE IT REMAINS
+          removeWordsIfNoResults: 'allOptional',
           hitsPerPage: 10
         });
         if (hits.length > 0) {
@@ -283,7 +268,6 @@ export const useMarketData = () => {
         }
       }
 
-      // 4. Generic Fallback
       if (!record) {
         record = await fetchGenericFallback(country, period, nationalIndex);
       }
@@ -307,6 +291,7 @@ export const useMarketData = () => {
     marketPeriod,
     matchedTitle,
     matchedLocation,
+    matchedIdCode, // NEW
     isGenericFallback,
     ambiguousMatches,
     regionalData,

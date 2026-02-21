@@ -1,4 +1,3 @@
-// server/api/adzuna/jobs.ts
 import { FieldValue } from 'firebase-admin/firestore';
 import { generateCacheKey, sanitizeAdzunaData } from '~~/server/utils/adzuna';
 
@@ -18,7 +17,6 @@ export default defineEventHandler(async (event) => {
 
   let locationStr = location ? String(location) : '';
 
-  // If the location is just the country name, treat it as empty to get national stats
   const countryAliases =
     countryCode === 'us'
       ? ['us', 'usa', 'united states', 'america']
@@ -30,7 +28,6 @@ export default defineEventHandler(async (event) => {
 
   // 1. Check Cache
   const db = useAdminFirestore();
-  // Include limit in cache key so requesting 10 results doesn't return a cached 5 results
   const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${limit}`;
   const cacheRef = db.collection('adzuna_jobs_cache').doc(cacheKey);
 
@@ -43,7 +40,10 @@ export default defineEventHandler(async (event) => {
 
       if (now - cachedTime < 86400000) {
         // 24 hours
-        return data?.data;
+        return {
+          ...data?.data,
+          gov_id_code: data?.gov_id_code || undefined // Return the matched ID if we have one
+        };
       }
     }
   } catch (e) {
@@ -76,7 +76,6 @@ export default defineEventHandler(async (event) => {
       params
     });
 
-    // ** FIX: Sanitize data to remove '__CLASS__' before saving **
     const cleanData = sanitizeAdzunaData(rawData);
 
     // 4. Save to Cache
@@ -86,9 +85,11 @@ export default defineEventHandler(async (event) => {
       searchParams: { title: titleStr, location: locationStr, country: countryCode }
     });
 
-    return cleanData;
+    return {
+      ...cleanData,
+      gov_id_code: undefined // Explicitly show no ID is cached yet
+    };
   } catch (e: any) {
-    // Return detailed error if something goes wrong
     throw createError({
       statusCode: 500,
       statusMessage: `Failed to fetch Adzuna jobs for ${countryCode}`,

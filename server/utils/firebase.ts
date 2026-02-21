@@ -12,7 +12,14 @@ export const useAdminApp = (): App => {
 
   if (serviceAccountJson) {
     try {
-      serviceAccount = JSON.parse(serviceAccountJson);
+      let parsed = JSON.parse(serviceAccountJson);
+
+      // --- Handle double-stringified JSON from .env files ---
+      if (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed);
+      }
+
+      serviceAccount = parsed;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       // CRITICAL: If the env var is present but invalid, FAIL FAST.
