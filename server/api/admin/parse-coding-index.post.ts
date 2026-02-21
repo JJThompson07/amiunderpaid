@@ -57,8 +57,8 @@ export default defineEventHandler(async (event) => {
       // Look for "SOC_2020" or "SOC2020" for the code
       const s = row.findIndex((c) => c === 'soc_2020' || c === 'soc2020');
 
-      // Look for "SOC2020_unit_group_title" for the group
-      const g = row.findIndex((c) => c.includes('unit_group') || c.includes('group_title'));
+      // Look for "SOC2020_ext_SUG_title" for the group
+      const g = row.findIndex((c) => c === 'soc2020_ext_sug_title' || c.includes('ext_sug_title'));
 
       if (t > -1 && s > -1) {
         headerRowIndex = i;

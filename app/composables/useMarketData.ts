@@ -66,15 +66,16 @@ export const useMarketData = () => {
   };
 
   // ** UK Specific Logic **
-  const fetchUkMarketData = async (title: string, location: string, period: string = 'year') => {
+  const fetchUkMarketData = async (
+    title: string,
+    location: string,
+    period: string = 'year',
+    idCode?: string
+  ) => {
     loading.value = true;
     resetData();
 
-    // Clean up title if it comes from a URL slug (e.g. "software-engineer" -> "software engineer")
     let searchTitle = title.replace(/-/g, ' ');
-
-    // Extract group if present (e.g. "Software Engineer (Engineering)")
-    // This allows us to search for the title part only, but filter by the group part
     let targetGroup = '';
     const groupMatch = searchTitle.match(/^(.*?)\s*\((.*?)\)$/);
     if (groupMatch) {
@@ -93,57 +94,22 @@ export const useMarketData = () => {
 
       let record: SalaryBenchmark | undefined;
 
-      // 1. SOC Code Lookup (UK Strategy)
-      // Sanitize query to match the cleaned database format (alphanumeric only)
-      const sanitizedQuery = searchTitle
-        .toLowerCase()
-
-        .replace(/[^a-z0-9\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      const { hits: titleHits } = await jobTitlesIndex.search<any>(sanitizedQuery, {
-        filters: `country:UK`,
-        hitsPerPage: 10
-      });
-
-      let bestTitleMatch;
-
-      if (targetGroup) {
-        bestTitleMatch = titleHits.find(
-          (h: any) => h.group && h.group.toLowerCase() === targetGroup.toLowerCase()
-        );
-      }
-
-      if (!bestTitleMatch) {
-        // Handle Ambiguity
-        if (titleHits.length > 1) {
-          const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
-          if (groups.size > 1) {
-            ambiguousMatches.value = titleHits;
-          }
-        }
-        bestTitleMatch = titleHits[0];
-      }
-
-      if (bestTitleMatch && bestTitleMatch.soc) {
-        // Search National Benchmarks by SOC Code
+      // 1. EXACT ID LOOKUP (Bypasses fuzzy text matching completely)
+      if (idCode) {
         const { hits: benchmarkHits } = await nationalIndex.search<SalaryBenchmark>('', {
-          filters: `id_code:${bestTitleMatch.soc} AND country:UK AND period:${period}`,
+          filters: `id_code:${idCode} AND country:UK AND period:${period}`,
           hitsPerPage: 1
         });
+
         if (benchmarkHits.length > 0) {
           record = benchmarkHits[0];
 
           // ** UK Regional Fetch (Secondary) **
           if (location && location.length > 2) {
-            const { hits: regionalHits } = await regionalIndex.search<SalaryBenchmark>(
-              '', // UK Regional data is aggregate (Title = 'All'), so we don't search by job title.
-              {
-                filters: `country:UK AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
-                hitsPerPage: 10
-              }
-            );
+            const { hits: regionalHits } = await regionalIndex.search<SalaryBenchmark>('', {
+              filters: `country:UK AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
+              hitsPerPage: 10
+            });
 
             const locLower = location.toLowerCase();
             const bestRegional = regionalHits.find(
@@ -157,7 +123,64 @@ export const useMarketData = () => {
         }
       }
 
-      // 2. Direct Title Match Fallback
+      // 2. SOC Code Text Lookup (Fallback if no exact idCode provided)
+      if (!record) {
+        const sanitizedQuery = searchTitle
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        const { hits: titleHits } = await jobTitlesIndex.search<any>(sanitizedQuery, {
+          filters: `country:UK`,
+          hitsPerPage: 10
+        });
+
+        let bestTitleMatch;
+
+        if (targetGroup) {
+          bestTitleMatch = titleHits.find(
+            (h: any) => h.group && h.group.toLowerCase() === targetGroup.toLowerCase()
+          );
+        }
+
+        if (!bestTitleMatch) {
+          if (titleHits.length > 1) {
+            const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
+            if (groups.size > 1) {
+              ambiguousMatches.value = titleHits;
+            }
+          }
+          bestTitleMatch = titleHits[0];
+        }
+
+        if (bestTitleMatch && bestTitleMatch.soc) {
+          const { hits: benchmarkHits } = await nationalIndex.search<SalaryBenchmark>('', {
+            filters: `id_code:${bestTitleMatch.soc} AND country:UK AND period:${period}`,
+            hitsPerPage: 1
+          });
+          if (benchmarkHits.length > 0) {
+            record = benchmarkHits[0];
+
+            if (location && location.length > 2) {
+              const { hits: regionalHits } = await regionalIndex.search<SalaryBenchmark>('', {
+                filters: `country:UK AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
+                hitsPerPage: 10
+              });
+
+              const locLower = location.toLowerCase();
+              const bestRegional = regionalHits.find(
+                (h) =>
+                  h.location.toLowerCase().includes(locLower) ||
+                  locLower.includes(h.location.toLowerCase())
+              );
+              if (bestRegional) regionalData.value = bestRegional;
+            }
+          }
+        }
+      }
+
+      // 3. Direct Title Match Fallback
       if (!record) {
         const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
           filters: `country:UK AND period:${period}`,
@@ -168,7 +191,7 @@ export const useMarketData = () => {
         }
       }
 
-      // 3. Generic Fallback
+      // 4. Generic Fallback
       if (!record) {
         record = await fetchGenericFallback(country, period, nationalIndex);
       }
@@ -184,7 +207,12 @@ export const useMarketData = () => {
   };
 
   // ** USA Specific Logic **
-  const fetchUSAMarketData = async (title: string, location: string, period: string = 'year') => {
+  const fetchUSAMarketData = async (
+    title: string,
+    location: string,
+    period: string = 'year',
+    idCode?: string
+  ) => {
     loading.value = true;
     resetData();
 
@@ -198,13 +226,34 @@ export const useMarketData = () => {
 
       let record: SalaryBenchmark | undefined;
 
-      // 1. Regional Search (Primary for USA)
-      if (location && location.length > 2) {
-        // Search for Title + Location in Regional Index
+      // 1. EXACT ID LOOKUP
+      if (idCode) {
+        // Try Regional first if location is provided
+        if (location && location.length > 2) {
+          const { hits } = await regionalIndex.search<SalaryBenchmark>('', {
+            filters: `id_code:${idCode} AND country:USA AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
+            hitsPerPage: 1
+          });
+          if (hits.length > 0) record = hits[0];
+        }
+
+        // Fallback to national
+        if (!record) {
+          const { hits } = await nationalIndex.search<SalaryBenchmark>('', {
+            filters: `id_code:${idCode} AND country:USA AND period:${period}`,
+            hitsPerPage: 1
+          });
+          if (hits.length > 0) record = hits[0];
+        }
+      }
+
+      // 2. Regional Text Search Fallback
+      if (!record && location && location.length > 2) {
         const { hits } = await regionalIndex.search<SalaryBenchmark>(searchTitle, {
           filters: `country:USA AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
           queryLanguages: ['en'],
-          optionalWords: searchTitle, // Allow fuzzy matching on title if location matches well
+          // REMOVE optionalWords: searchTitle
+          removeWordsIfNoResults: 'allOptional', // ADD THIS INSTEAD
           hitsPerPage: 10
         });
 
@@ -220,21 +269,21 @@ export const useMarketData = () => {
         }
       }
 
-      // 2. National Fallback
+      // 3. National Text Search Fallback
       if (!record) {
         const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
           filters: `country:USA AND period:${period}`,
           queryLanguages: ['en'],
-          optionalWords: searchTitle, // Allow fuzzy matching on title if location matches well
-          hitsPerPage: 10,
-          removeWordsIfNoResults: 'allOptional'
+          // REMOVE optionalWords: searchTitle
+          removeWordsIfNoResults: 'allOptional', // ALREADY HERE, JUST ENSURE IT REMAINS
+          hitsPerPage: 10
         });
         if (hits.length > 0) {
           record = hits[0];
         }
       }
 
-      // 3. Generic Fallback
+      // 4. Generic Fallback
       if (!record) {
         record = await fetchGenericFallback(country, period, nationalIndex);
       }
