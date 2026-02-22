@@ -165,7 +165,7 @@ const suggestions = computed(() => suggestionsData.value?.suggestions || []);
 
 const approveMatch = async (suggestion: any) => {
   try {
-    await $fetch('/api/admin/approve-suggestion', {
+    await $fetch('/api/admin/approve-suggestions', {
       method: 'POST',
       body: {
         suggestionId: suggestion.id,
