@@ -1,6 +1,3 @@
-import { verifyAdmin, useAdminFirestore } from '~~/server/utils/firebase';
-import { generateCacheKey } from '~~/server/utils/adzuna';
-
 export default defineEventHandler(async (event) => {
   // Security check
   await verifyAdmin(event);

@@ -1,5 +1,4 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import { generateCacheKey, sanitizeAdzunaData } from '~~/server/utils/adzuna';
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -74,8 +73,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // 2. Prepare API Credentials
-  const appId = config.ADZUNA_APP_ID || config.public?.adzunaAppId || process.env.ADZUNA_APP_ID;
-  const appKey = config.ADZUNA_APP_KEY || config.public?.adzunaAppKey || process.env.ADZUNA_APP_KEY;
+  const appId = config.adzunaAppId || config.public?.adzunaAppId || process.env.adzunaAppId;
+  const appKey = config.adzunaAppKey || config.public?.adzunaAppKey || process.env.adzunaAppKey;
 
   if (!appId || !appKey) {
     throw createError({
