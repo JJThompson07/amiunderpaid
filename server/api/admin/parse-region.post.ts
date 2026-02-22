@@ -174,10 +174,10 @@ export default defineEventHandler(async (event) => {
       data: normalizedData
     };
   } catch (error: any) {
-    console.error('[Region Parser API Error]:', error);
     throw createError({
       statusCode: error.statusCode || 500,
-      message: error.message || 'Internal Server Error during parsing'
+      message: error.message || 'Internal Server Error during parsing',
+      cause: error
     });
   }
 });

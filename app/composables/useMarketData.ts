@@ -81,7 +81,6 @@ export const useMarketData = () => {
     period: string,
     nationalIndex: SearchIndex
   ) => {
-    console.log('No role match, retrieving generic baseline...');
     isGenericFallback.value = true;
     const { hits } = await nationalIndex.search('professional', {
       filters: `country:${country} AND period:${period}`,
@@ -243,7 +242,11 @@ export const useMarketData = () => {
         await processRecord(record);
       }
     } catch (e: any) {
-      console.error('Error fetching UK market data:', e);
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Error fetching UK market data',
+        cause: e
+      });
     } finally {
       loading.value = false;
     }
@@ -341,7 +344,11 @@ export const useMarketData = () => {
         await processRecord(record);
       }
     } catch (e: any) {
-      console.error('Error fetching USA market data:', e);
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Error fetching USA market data',
+        cause: e
+      });
     } finally {
       loading.value = false;
     }

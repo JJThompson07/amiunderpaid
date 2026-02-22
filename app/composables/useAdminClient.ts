@@ -53,7 +53,6 @@ export const useAdminClient = (log: (msg: string) => void) => {
     } catch (e: any) {
       const message = e instanceof Error ? e.message : String(e);
       log(`\n❌ FIREBASE ERROR: ${message}`);
-      console.error('Firestore Error:', e);
       throw e;
     } finally {
       loading.value = false;
