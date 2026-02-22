@@ -7,6 +7,10 @@ if (!process.env.FIREBASE_API_KEY) {
 }
 
 export default defineNuxtConfig({
+  // Enable Nuxt 4 features and directory structure
+  future: {
+    compatibilityVersion: 4
+  },
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
@@ -60,8 +64,10 @@ export default defineNuxtConfig({
 
   // ** 5. Runtime Config **
   runtimeConfig: {
-    ADZUNA_APP_ID: process.env.ADZUNA_APP_ID,
-    ADZUNA_APP_KEY: process.env.ADZUNA_APP_KEY,
+    adzunaAppId: process.env.ADZUNA_APP_ID,
+    adzunaAppKey: process.env.ADZUNA_APP_KEY,
+    firebaseServiceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
+
     public: {
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
       adminAccessKey: process.env.NUXT_ADMIN_ACCESS_KEY,
@@ -71,7 +77,7 @@ export default defineNuxtConfig({
 
   // ** 6. Vite / Tailwind **
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss() as any],
     build: {
       rollupOptions: {
         output: {

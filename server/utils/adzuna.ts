@@ -1,5 +1,3 @@
-// server/utils/adzuna.ts
-
 // Helper to recursively clean data before saving to Firestore
 export const sanitizeAdzunaData = (data: any): any => {
   if (Array.isArray(data)) {

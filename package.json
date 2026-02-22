@@ -14,31 +14,31 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "firebase": "^12.8.0",
-    "firebase-admin": "^13.6.0",
+    "@nuxtjs/algolia": "^1.11.2",
+    "algoliasearch": "^4.26.0",
+    "firebase": "^12.9.0",
+    "firebase-admin": "^13.6.1",
     "lucide-vue-next": "^0.563.0",
-    "nuxt": "^4.3.0",
+    "nuxt": "^4.3.1",
     "nuxt-gtag": "4.1.0",
     "nuxt-vuefire": "^1.1.0",
-    "vue": "^3.5.27",
+    "vue": "^3.5.28",
     "vue-router": "^4.6.4",
     "vuefire": "^3.2.2",
-    "xlsx": "^0.18.5",
-    "@nuxtjs/algolia": "^1.11.0",
-    "algoliasearch": "^4.22.1"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@nuxt/eslint": "^0.7.6",
-    "@tailwindcss/vite": "^4.1.18",
+    "@tailwindcss/vite": "^4.2.0",
     "@types/estree": "^1.0.8",
     "@types/json-schema": "^7.0.15",
     "@types/tough-cookie": "^4.0.5",
     "@types/web-bluetooth": "^0.0.21",
-    "@vueuse/core": "^14.2.0",
-    "@vueuse/nuxt": "^14.2.0",
-    "eslint": "^9.19.0",
-    "eslint-config-prettier": "^10.0.1",
-    "prettier": "^3.4.2",
-    "tailwindcss": "^4.1.18"
+    "@vueuse/core": "^14.2.1",
+    "@vueuse/nuxt": "^14.2.1",
+    "eslint": "^9.39.3",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1",
+    "tailwindcss": "^4.2.0"
   }
 }

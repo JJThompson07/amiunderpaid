@@ -1,5 +1,3 @@
-import { verifyAdmin, useAdminFirestore } from '~~/server/utils/firebase';
-
 export default defineEventHandler(async (event) => {
   await verifyAdmin(event);
 
