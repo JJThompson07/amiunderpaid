@@ -292,8 +292,8 @@ const handleAmbiguitySelect = async (match: any) => {
         is_automatic: false
       }
     });
-  } catch (err) {
-    console.error('Failed to log manual match suggestion', err);
+  } catch {
+    // Silently ignore so it doesn't disrupt the user's flow
   }
 
   if (country.value === 'UK') {
@@ -334,7 +334,9 @@ watch(loading, (newLoading) => {
           gov_title: matchedTitle.value,
           is_automatic: true
         }
-      }).catch((err) => console.error('Silent background suggestion log failed', err));
+      }).catch(() => {
+        // Let it fail silently in the background
+      });
     }
 
     if (

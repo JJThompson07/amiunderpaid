@@ -148,8 +148,8 @@ const runCleanup = async () => {
     const res: any = await $fetch('/api/admin/clean-cache', { method: 'POST' });
     cleanupStats.value = res.stats;
   } catch (error) {
-    console.error('Failed to clean cache', error);
-    alert('Failed to clean cache. Check console for details.');
+    const message = error instanceof Error ? error.message : 'Failed to clean cache.';
+    alert(message);
   } finally {
     isCleaning.value = false;
   }
@@ -178,8 +178,8 @@ const approveMatch = async (suggestion: any) => {
     // Remove it from the UI immediately to feel fast
     refreshSuggestions();
   } catch (err) {
-    console.error('Approval failed', err);
-    alert('Failed to approve match.');
+    const message = err instanceof Error ? err.message : 'Failed to approve match.';
+    alert(message);
   }
 };
 
@@ -194,8 +194,8 @@ const rejectMatch = async (id: string) => {
     });
     refreshSuggestions();
   } catch (err) {
-    console.error('Rejection failed', err);
-    alert('Failed to reject match.');
+    const message = err instanceof Error ? err.message : 'Failed to reject match.';
+    alert(message);
   }
 };
 </script>

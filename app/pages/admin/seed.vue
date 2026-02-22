@@ -305,8 +305,8 @@ const fetchSummary = async () => {
                 if (count > 0) {
                   results.push({ country, year, period, count, scope: col.scope });
                 }
-              } catch (e) {
-                console.warn(`Failed to fetch summary for ${col.name}:`, e);
+              } catch {
+                // Silently continue checking other collections
               }
             })()
           );
@@ -475,7 +475,6 @@ const seedToFirestore = async () => {
     fileName.value = '';
     await fetchSummary();
   } catch (e: any) {
-    console.error(e);
     loading.value = false;
     if (e.code === 'permission-denied') {
       log(

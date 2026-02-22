@@ -69,8 +69,9 @@ const performSearch = useDebounceFn(async (val: string) => {
     });
 
     hits.value = results;
-  } catch (e) {
-    console.error(e);
+  } catch {
+    // Silent fail for search
+    hits.value = [];
   } finally {
     loading.value = false;
   }
