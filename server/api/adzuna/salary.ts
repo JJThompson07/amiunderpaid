@@ -36,30 +36,37 @@ export default defineEventHandler(async (event) => {
     if (docSnap.exists) {
       const data = docSnap.data();
       const now = new Date().getTime();
-      const cachedTime = data?.timestamp?.toMillis() || 0;
 
-      // Look for the tag at the root, or fall back to looking inside data
-      const categoryTag = data?.categoryTag || data?.data?.categoryTag || '';
-
-      // Default to 120 days
-      let categoryCacheMilli = 120 * 24 * 60 * 60 * 1000;
-
-      // FIX 1: Only query Firestore if we actually have a tag!
-      if (categoryTag) {
-        const categoryCacheRef = db.collection('adzuna_category').doc(categoryTag);
-        const categorySnap = await categoryCacheRef.get();
-        if (categorySnap.exists) {
-          const categoryData = categorySnap.data();
-          const categoryCacheDays = Number(categoryData?.cache || 120);
-          categoryCacheMilli = categoryCacheDays * 24 * 60 * 60 * 1000;
+      // --- OPTIMIZED CACHE CHECK ---
+      if (data?.expiresAt) {
+        if (now < data.expiresAt.toMillis()) {
+          return {
+            ...data?.data,
+            gov_id_code: data?.gov_id_code || null
+          };
         }
-      }
+      } else {
+        // --- LEGACY CACHE CHECK (Backwards compatibility for old cache) ---
+        const cachedTime = data?.timestamp?.toMillis() || 0;
+        const categoryTag = data?.categoryTag || data?.data?.categoryTag || '';
+        let categoryCacheMilli = 120 * 24 * 60 * 60 * 1000;
 
-      if (now - cachedTime < categoryCacheMilli) {
-        return {
-          ...data?.data,
-          gov_id_code: data?.gov_id_code || null
-        };
+        if (categoryTag) {
+          const categoryCacheRef = db.collection('adzuna_category').doc(categoryTag);
+          const categorySnap = await categoryCacheRef.get();
+          if (categorySnap.exists) {
+            const categoryData = categorySnap.data();
+            const categoryCacheDays = Number(categoryData?.cache || 120);
+            categoryCacheMilli = categoryCacheDays * 24 * 60 * 60 * 1000;
+          }
+        }
+
+        if (now - cachedTime < categoryCacheMilli) {
+          return {
+            ...data?.data,
+            gov_id_code: data?.gov_id_code || null
+          };
+        }
       }
     }
   } catch (e) {
@@ -110,11 +117,28 @@ export default defineEventHandler(async (event) => {
       console.warn('Could not pull category tag from jobs cache', err);
     }
 
+    // --- CALCULATE EXPIRES AT ---
+    let cacheDays = 120; // Default
+    if (categoryTag !== 'unknown') {
+      try {
+        const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
+        if (catSnap.exists) {
+          cacheDays = Number(catSnap.data()?.cache || 120);
+        }
+      } catch (err) {
+        console.warn('Could not fetch category rules for expiration time', err);
+      }
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + cacheDays);
+
     // 4. Save to Cache (Server-Side)
     await cacheRef.set({
-      categoryTag, // Now the admin cleanup script won't delete this!
+      categoryTag,
       data: cleanData,
       timestamp: FieldValue.serverTimestamp(),
+      expiresAt: expiresAt, // <-- Save the exact expiration date!
       searchParams: { title: titleStr, location: locationStr, country: countryCode }
     });
 
