@@ -82,6 +82,10 @@ const adminLinks = [
   {
     to: '/admin/adzuna',
     label: 'Adzuna API'
+  },
+  {
+    to: '/admin/jobs-cache',
+    label: 'Jobs Cache'
   }
 ];
 

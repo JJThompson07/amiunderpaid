@@ -1,6 +1,6 @@
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  const { title, location, country, gov_id_code, is_automatic } = body;
+  const { title, location, country, gov_id_code, gov_title, is_automatic } = body;
 
   if (!title || !gov_id_code) {
     throw createError({ statusCode: 400, statusMessage: 'Title and gov_id_code are required' });
@@ -39,6 +39,7 @@ export default defineEventHandler(async (event) => {
       location: locationStr,
       country: countryCode,
       suggested_gov_id: sanitizedGovId,
+      suggested_gov_title: sanitizeText(gov_title || 'Unknown Role'),
       is_automatic_system_save: !!is_automatic, // Tracks if this was a user click or a background save
       timestamp: new Date(),
       // Grab IP to help you filter out spam/bots if needed later

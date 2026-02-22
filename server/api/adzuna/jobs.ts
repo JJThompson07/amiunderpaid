@@ -38,8 +38,24 @@ export default defineEventHandler(async (event) => {
       const now = new Date().getTime();
       const cachedTime = data?.timestamp?.toMillis() || 0;
 
-      if (now - cachedTime < 86400000) {
-        // 24 hours
+      // Look for the tag at the root, or fall back to looking inside data
+      const categoryTag = data?.categoryTag || data?.data?.categoryTag || '';
+
+      // Default to 120 days
+      let categoryCacheMilli = 120 * 24 * 60 * 60 * 1000;
+
+      // FIX 1: Only query Firestore if we actually have a tag!
+      if (categoryTag) {
+        const categoryCacheRef = db.collection('adzuna_category').doc(categoryTag);
+        const categorySnap = await categoryCacheRef.get();
+        if (categorySnap.exists) {
+          const categoryData = categorySnap.data();
+          const categoryCacheDays = Number(categoryData?.cache || 120);
+          categoryCacheMilli = categoryCacheDays * 24 * 60 * 60 * 1000;
+        }
+      }
+
+      if (now - cachedTime < categoryCacheMilli) {
         return {
           ...data?.data,
           gov_id_code: data?.gov_id_code || undefined // Return the matched ID if we have one
@@ -78,8 +94,12 @@ export default defineEventHandler(async (event) => {
 
     const cleanData = sanitizeAdzunaData(rawData);
 
+    // FIX 2: Safely check if results exist using optional chaining (?.)
+    const categoryTag = cleanData.results?.[0]?.category?.tag || 'unknown';
+
     // 4. Save to Cache
     await cacheRef.set({
+      categoryTag, // Save at the root level for easy indexing/cleanup
       data: cleanData,
       timestamp: FieldValue.serverTimestamp(),
       searchParams: { title: titleStr, location: locationStr, country: countryCode }

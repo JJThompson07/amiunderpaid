@@ -1,4 +1,4 @@
-import { initializeApp, getApps, cert, type App, type ServiceAccount } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import type { H3Event } from 'h3';
@@ -7,27 +7,38 @@ export const useAdminApp = (): App => {
   const apps = getApps();
   if (apps.length > 0) return apps[0]!;
 
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
-  let serviceAccount: ServiceAccount | undefined;
+  let serviceAccount: any;
+  let rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT || '';
 
-  if (serviceAccountJson) {
+  if (rawEnv) {
     try {
-      let parsed = JSON.parse(serviceAccountJson);
-
-      // Fix for double-stringified JSON from .env files
-      if (typeof parsed === 'string') {
-        parsed = JSON.parse(parsed);
+      // 1. If the host double-wrapped the JSON in string quotes, strip the outer quotes manually
+      if (rawEnv.startsWith('"') && rawEnv.endsWith('"')) {
+        rawEnv = rawEnv.substring(1, rawEnv.length - 1);
       }
 
-      serviceAccount = parsed;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // 2. If the host escaped the newlines (\\n instead of \n), fix them
+      rawEnv = rawEnv.replace(/\\n/g, '\n');
+
+      // 3. Parse it into a strict JavaScript Object
+      serviceAccount = JSON.parse(rawEnv);
+
+      // 4. Just in case it was TRIPLE stringified, catch it here
+      if (typeof serviceAccount === 'string') {
+        serviceAccount = JSON.parse(serviceAccount);
+      }
     } catch (e) {
-      console.error('CRITICAL CONFIG ERROR: FIREBASE_SERVICE_ACCOUNT is not valid JSON.');
+      console.error('CRITICAL: Failed to parse FIREBASE_SERVICE_ACCOUNT. Is it valid JSON?', e);
       throw createError({
         statusCode: 500,
         statusMessage: 'Server configuration error: Invalid Firebase credentials.'
       });
     }
+  }
+
+  // We explicitly check that it is an object before passing it to cert()
+  if (serviceAccount && typeof serviceAccount !== 'object') {
+    throw new Error('Firebase credentials are still a string! Parsing failed.');
   }
 
   return initializeApp(serviceAccount ? { credential: cert(serviceAccount) } : undefined);

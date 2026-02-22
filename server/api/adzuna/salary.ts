@@ -1,4 +1,3 @@
-// server/api/adzuna/salary.ts
 import { FieldValue } from 'firebase-admin/firestore';
 import { generateCacheKey, sanitizeAdzunaData } from '~~/server/utils/adzuna';
 
@@ -36,11 +35,27 @@ export default defineEventHandler(async (event) => {
     const docSnap = await cacheRef.get();
     if (docSnap.exists) {
       const data = docSnap.data();
-      // Cache valid for 7 days (604,800,000 ms)
       const now = new Date().getTime();
       const cachedTime = data?.timestamp?.toMillis() || 0;
 
-      if (now - cachedTime < 604800000) {
+      // Look for the tag at the root, or fall back to looking inside data
+      const categoryTag = data?.categoryTag || data?.data?.categoryTag || '';
+
+      // Default to 120 days
+      let categoryCacheMilli = 120 * 24 * 60 * 60 * 1000;
+
+      // FIX 1: Only query Firestore if we actually have a tag!
+      if (categoryTag) {
+        const categoryCacheRef = db.collection('adzuna_category').doc(categoryTag);
+        const categorySnap = await categoryCacheRef.get();
+        if (categorySnap.exists) {
+          const categoryData = categorySnap.data();
+          const categoryCacheDays = Number(categoryData?.cache || 120);
+          categoryCacheMilli = categoryCacheDays * 24 * 60 * 60 * 1000;
+        }
+      }
+
+      if (now - cachedTime < categoryCacheMilli) {
         return {
           ...data?.data,
           gov_id_code: data?.gov_id_code || null
@@ -67,7 +82,6 @@ export default defineEventHandler(async (event) => {
     app_key: appKey,
     what: titleStr,
     'content-type': 'application/json'
-    // location0: countryCode === 'us' ? 'US' : 'UK'
   };
 
   if (locationStr.trim() !== '') {
@@ -82,14 +96,30 @@ export default defineEventHandler(async (event) => {
 
     const cleanData = sanitizeAdzunaData(rawData);
 
+    // FIX 2: Adzuna histogram data doesn't contain categories!
+    // Let's try to steal the category tag from the jobs cache for this exact search.
+    let categoryTag = 'unknown';
+    try {
+      // The default limit for jobs is 5, so we check that cache key
+      const jobsCacheKey = `${cacheKey}-5`;
+      const jobsDoc = await db.collection('adzuna_jobs_cache').doc(jobsCacheKey).get();
+      if (jobsDoc.exists) {
+        categoryTag = jobsDoc.data()?.categoryTag || 'unknown';
+      }
+    } catch (err) {
+      console.warn('Could not pull category tag from jobs cache', err);
+    }
+
     // 4. Save to Cache (Server-Side)
     await cacheRef.set({
+      categoryTag, // Now the admin cleanup script won't delete this!
       data: cleanData,
       timestamp: FieldValue.serverTimestamp(),
       searchParams: { title: titleStr, location: locationStr, country: countryCode }
     });
 
-    return rawData;
+    // FIX 3: Return the safely sanitized data instead of rawData
+    return cleanData;
   } catch (e) {
     throw createError({
       statusCode: 500,

@@ -288,6 +288,7 @@ const handleAmbiguitySelect = async (match: any) => {
         location: location.value,
         country: country.value === 'USA' ? 'us' : 'gb',
         gov_id_code: exactId,
+        gov_title: match.title,
         is_automatic: false
       }
     });
@@ -330,6 +331,7 @@ watch(loading, (newLoading) => {
           location: location.value,
           country: country.value === 'USA' ? 'us' : 'gb',
           gov_id_code: matchedIdCode.value,
+          gov_title: matchedTitle.value,
           is_automatic: true
         }
       }).catch((err) => console.error('Silent background suggestion log failed', err));
