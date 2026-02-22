@@ -1,52 +1,76 @@
+import { FieldValue } from 'firebase-admin/firestore';
+import { useAdminFirestore } from '~~/server/utils/firebase';
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  const { title, location, country, gov_id_code, is_automatic } = body;
+  const { title, location, country, gov_id_code, is_automatic, gov_title } = body;
 
   if (!title || !gov_id_code) {
-    throw createError({ statusCode: 400, statusMessage: 'Title and gov_id_code are required' });
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Missing required fields for suggestion.'
+    });
   }
 
-  // 1. Strict Sanitization Helpers
-  // Removes HTML tags (< >) to prevent basic XSS if this data is ever rendered
-  const sanitizeText = (str: any) =>
-    String(str || '')
-      .replace(/[<>]/g, '')
-      .trim();
+  // Sanitize and format inputs securely
+  const titleStr = String(title).trim().toLowerCase();
+  const locationStr = location ? String(location).trim().toLowerCase() : '';
+  const countryCode = String(country || 'gb').toLowerCase();
+  const sanitizedGovId = String(gov_id_code).trim();
+  const sanitizedGovTitle = gov_title ? String(gov_title).trim() : 'Unknown Role';
 
-  // Gov IDs/SOC codes should generally just be alphanumeric (and maybe dashes)
-  const sanitizedGovId = String(gov_id_code)
-    .replace(/[^a-zA-Z0-9-]/g, '')
-    .trim();
-
-  if (!sanitizedGovId) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid gov_id_code format' });
-  }
-
-  // 2. Apply Sanitization
-  const titleStr = sanitizeText(title);
-  const countryCode = sanitizeText(country || 'gb').toLowerCase();
-  const locationStr = sanitizeText(location);
+  const ipAddress = getRequestHeader(event, 'x-forwarded-for') || 'unknown';
 
   const db = useAdminFirestore();
+  const suggestionsRef = db.collection('user_match_suggestions');
 
   try {
-    // SECURITY FIX: Write to a suggestions collection for admin review
-    // instead of overwriting the live adzuna_jobs_cache directly.
-    const suggestionRef = db.collection('user_match_suggestions').doc();
+    // 1. DEDUPLICATION: Check if this exact Title + Gov ID combo already exists in the queue
+    const existingSnap = await suggestionsRef
+      .where('title', '==', titleStr)
+      .where('suggested_gov_id', '==', sanitizedGovId)
+      .where('country', '==', countryCode)
+      .limit(1)
+      .get();
 
-    await suggestionRef.set({
+    if (!existingSnap.empty) {
+      // 2. SPAM PREVENTION: It already exists! Just bump the vote count.
+      const existingDoc = existingSnap.docs[0];
+
+      if (existingDoc) {
+        await existingDoc.ref.update({
+          votes: FieldValue.increment(1),
+          last_suggested_at: new Date(),
+          // If a human manually clicked it (is_automatic = false), override the system flag so you know it was verified
+          is_automatic_system_save: is_automatic
+            ? existingDoc.data().is_automatic_system_save
+            : false
+        });
+
+        return { success: true, message: 'Suggestion vote incremented!' };
+      }
+    }
+
+    // 3. NEW SUGGESTION: Only create a new document if we've never seen this combo before
+    await suggestionsRef.add({
       title: titleStr,
       location: locationStr,
       country: countryCode,
       suggested_gov_id: sanitizedGovId,
-      is_automatic_system_save: !!is_automatic, // Tracks if this was a user click or a background save
+      suggested_gov_title: sanitizedGovTitle,
+      is_automatic_system_save: !!is_automatic,
       timestamp: new Date(),
-      // Grab IP to help you filter out spam/bots if needed later
-      ip_address: getRequestHeader(event, 'x-forwarded-for') || 'unknown'
+      last_suggested_at: new Date(),
+      votes: 1, // Start the counter
+      ip_address: ipAddress
     });
 
-    return { success: true, message: 'Match suggestion securely logged for review.' };
-  } catch (e) {
-    throw createError({ statusCode: 500, statusMessage: 'Failed to log suggestion.', data: e });
+    return { success: true, message: 'New match suggestion logged safely!' };
+  } catch (e: any) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Failed to log suggestion',
+      data: e.message
+    });
   }
 });

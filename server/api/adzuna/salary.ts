@@ -1,4 +1,3 @@
-// server/api/adzuna/salary.ts
 import { FieldValue } from 'firebase-admin/firestore';
 import { generateCacheKey, sanitizeAdzunaData } from '~~/server/utils/adzuna';
 
@@ -36,15 +35,38 @@ export default defineEventHandler(async (event) => {
     const docSnap = await cacheRef.get();
     if (docSnap.exists) {
       const data = docSnap.data();
-      // Cache valid for 7 days (604,800,000 ms)
       const now = new Date().getTime();
-      const cachedTime = data?.timestamp?.toMillis() || 0;
 
-      if (now - cachedTime < 604800000) {
-        return {
-          ...data?.data,
-          gov_id_code: data?.gov_id_code || null
-        };
+      // --- OPTIMIZED CACHE CHECK ---
+      if (data?.expiresAt) {
+        if (now < data.expiresAt.toMillis()) {
+          return {
+            ...data?.data,
+            gov_id_code: data?.gov_id_code || null
+          };
+        }
+      } else {
+        // --- LEGACY CACHE CHECK (Backwards compatibility for old cache) ---
+        const cachedTime = data?.timestamp?.toMillis() || 0;
+        const categoryTag = data?.categoryTag || data?.data?.categoryTag || '';
+        let categoryCacheMilli = 120 * 24 * 60 * 60 * 1000;
+
+        if (categoryTag) {
+          const categoryCacheRef = db.collection('adzuna_category').doc(categoryTag);
+          const categorySnap = await categoryCacheRef.get();
+          if (categorySnap.exists) {
+            const categoryData = categorySnap.data();
+            const categoryCacheDays = Number(categoryData?.cache || 120);
+            categoryCacheMilli = categoryCacheDays * 24 * 60 * 60 * 1000;
+          }
+        }
+
+        if (now - cachedTime < categoryCacheMilli) {
+          return {
+            ...data?.data,
+            gov_id_code: data?.gov_id_code || null
+          };
+        }
       }
     }
   } catch (e) {
@@ -67,7 +89,6 @@ export default defineEventHandler(async (event) => {
     app_key: appKey,
     what: titleStr,
     'content-type': 'application/json'
-    // location0: countryCode === 'us' ? 'US' : 'UK'
   };
 
   if (locationStr.trim() !== '') {
@@ -82,14 +103,47 @@ export default defineEventHandler(async (event) => {
 
     const cleanData = sanitizeAdzunaData(rawData);
 
+    // FIX 2: Adzuna histogram data doesn't contain categories!
+    // Let's try to steal the category tag from the jobs cache for this exact search.
+    let categoryTag = 'unknown';
+    try {
+      // The default limit for jobs is 5, so we check that cache key
+      const jobsCacheKey = `${cacheKey}-5`;
+      const jobsDoc = await db.collection('adzuna_jobs_cache').doc(jobsCacheKey).get();
+      if (jobsDoc.exists) {
+        categoryTag = jobsDoc.data()?.categoryTag || 'unknown';
+      }
+    } catch (err) {
+      console.warn('Could not pull category tag from jobs cache', err);
+    }
+
+    // --- CALCULATE EXPIRES AT ---
+    let cacheDays = 120; // Default
+    if (categoryTag !== 'unknown') {
+      try {
+        const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
+        if (catSnap.exists) {
+          cacheDays = Number(catSnap.data()?.cache || 120);
+        }
+      } catch (err) {
+        console.warn('Could not fetch category rules for expiration time', err);
+      }
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + cacheDays);
+
     // 4. Save to Cache (Server-Side)
     await cacheRef.set({
+      categoryTag,
       data: cleanData,
       timestamp: FieldValue.serverTimestamp(),
+      expiresAt: expiresAt, // <-- Save the exact expiration date!
       searchParams: { title: titleStr, location: locationStr, country: countryCode }
     });
 
-    return rawData;
+    // FIX 3: Return the safely sanitized data instead of rawData
+    return cleanData;
   } catch (e) {
     throw createError({
       statusCode: 500,
