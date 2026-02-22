@@ -3,7 +3,7 @@
     v-if="isAccessGranted"
     class="min-h-screen flex items-center justify-center bg-slate-50 p-4 relative overflow-hidden">
     <div
-      class="absolute top-0 left-0 w-full h-[400px] bg-linear-to-b from-secondary-900 to-slate-50 z-0"></div>
+      class="absolute top-0 left-0 w-full h-100 bg-linear-to-b from-secondary-900 to-slate-50 z-0"></div>
 
     <div class="relative z-10 w-full max-w-md">
       <!-- 
@@ -152,7 +152,6 @@ const handleLogin = async () => {
     await navigateTo(redirectPath);
   } catch (e: any) {
     // 5. Error mapping for common Firebase codes
-    console.error('[Login Error]:', e.code);
 
     switch (e.code) {
       case 'auth/invalid-credential':

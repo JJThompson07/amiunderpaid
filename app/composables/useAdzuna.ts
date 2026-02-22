@@ -98,8 +98,7 @@ export const useAdzuna = () => {
         count: rawData.count,
         results: rawData.results
       });
-    } catch (e) {
-      console.error('Adzuna jobs fetch error:', e);
+    } catch {
       jobsData.value = null;
     } finally {
       loading.value = false;
@@ -123,8 +122,7 @@ export const useAdzuna = () => {
       });
 
       distributionData.value = sanitizeAdzunaData({ histogram: rawData.histogram });
-    } catch (e) {
-      console.error('Adzuna histogram fetch error:', e);
+    } catch {
       distributionData.value = null;
     } finally {
       loading.value = false;
@@ -133,17 +131,14 @@ export const useAdzuna = () => {
 
   const fetchCategories = async (country: string) => {
     const countryCode = country.toLowerCase() === 'usa' ? 'us' : 'gb';
-    try {
-      const response: any = await $fetch('/api/adzuna/categories', {
-        params: { country: countryCode }
-      });
 
-      const sanitized = sanitizeAdzunaData(response);
-      categories.value = sanitized.results || [];
-    } catch (e) {
-      console.error('Adzuna categories fetch error:', e);
-      throw e;
-    }
+    // No try/catch needed! If $fetch fails, the error automatically bubbles up.
+    const response: any = await $fetch('/api/adzuna/categories', {
+      params: { country: countryCode }
+    });
+
+    const sanitized = sanitizeAdzunaData(response);
+    categories.value = sanitized.results || [];
   };
 
   const isUnderpaid = (salary: number): boolean => {

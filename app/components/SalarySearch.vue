@@ -235,8 +235,8 @@ const fetchTitles = useDebounceFn(async (val: string) => {
     } else {
       titleOptions.value = await fetchUSATitles(searchTerm);
     }
-  } catch (e) {
-    console.error(e);
+  } catch {
+    // Silent fail for autocomplete
   } finally {
     fetching.value = false;
   }
@@ -256,9 +256,8 @@ const fetchLocations = useDebounceFn(async (val: string) => {
     } else {
       locationOptions.value = await fetchUSALocations(val);
     }
-  } catch (e) {
+  } catch {
     // Silent fail for autocomplete
-    console.error(e);
   } finally {
     fetching.value = false;
   }

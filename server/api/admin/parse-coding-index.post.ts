@@ -102,10 +102,10 @@ export default defineEventHandler(async (event) => {
       data: normalizedData
     };
   } catch (error: any) {
-    console.error('[Coding Index Parser Error]:', error);
     return {
       success: false,
-      error: error.message || 'An unknown error occurred during parsing'
+      error: error.message || 'An unknown error occurred during parsing',
+      cause: error
     };
   }
 });

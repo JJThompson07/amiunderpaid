@@ -20,7 +20,6 @@ export default defineEventHandler(async (event) => {
     await index.deleteBy({ filters });
     return { success: true };
   } catch (error: any) {
-    console.error('Algolia Clear Error:', error);
     throw createError({ statusCode: 500, message: error.message });
   }
 });

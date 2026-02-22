@@ -81,7 +81,7 @@
 
         <div
           v-else
-          class="flex flex-col gap-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200">
+          class="flex flex-col gap-2 max-h-100 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200">
           <div
             v-for="cat in storedCategories"
             :key="cat.id"
@@ -90,7 +90,7 @@
               <div class="text-xs font-bold truncate text-slate-700" :title="cat.label">
                 {{ cat.label }}
               </div>
-              <div class="text-[10px] text-slate-400 font-mono truncate" :title="cat.tag">
+              <div class="text-2xs text-slate-400 font-mono truncate" :title="cat.tag">
                 {{ cat.tag }}
               </div>
             </div>
@@ -163,7 +163,6 @@ const handleSyncCategories = async () => {
     categoryStatus.value = `✅ Synced ${categories.value.length} categories.`;
     await fetchStoredCategories();
   } catch (e: any) {
-    console.error(e);
     categoryStatus.value = `❌ Error: ${e.message}`;
   } finally {
     syncingCategories.value = false;
@@ -185,8 +184,8 @@ const fetchStoredCategories = async () => {
         ...doc.data()
       }))
       .sort((a: any, b: any) => a.label.localeCompare(b.label));
-  } catch (e) {
-    console.error('Error fetching stored categories:', e);
+  } catch {
+    // Silent fail for fetching categories
   } finally {
     loadingStored.value = false;
   }
@@ -202,8 +201,7 @@ const saveStoredCategories = async () => {
       batch.update(ref, { cache: cat.cache });
     });
     await batch.commit();
-  } catch (e) {
-    console.error('Error saving categories:', e);
+  } catch {
     alert('Failed to save categories');
   } finally {
     loadingStored.value = false;

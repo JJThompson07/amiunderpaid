@@ -28,17 +28,20 @@ export const useAdminApp = (): App => {
         serviceAccount = JSON.parse(serviceAccount);
       }
     } catch (e) {
-      console.error('CRITICAL: Failed to parse FIREBASE_SERVICE_ACCOUNT. Is it valid JSON?', e);
       throw createError({
         statusCode: 500,
-        statusMessage: 'Server configuration error: Invalid Firebase credentials.'
+        statusMessage: 'Server configuration error: Invalid Firebase credentials.',
+        cause: e
       });
     }
   }
 
   // We explicitly check that it is an object before passing it to cert()
   if (serviceAccount && typeof serviceAccount !== 'object') {
-    throw new Error('Firebase credentials are still a string! Parsing failed.');
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Server configuration error: Firebase credentials parsing failed.'
+    });
   }
 
   return initializeApp(serviceAccount ? { credential: cert(serviceAccount) } : undefined);

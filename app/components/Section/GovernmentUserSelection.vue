@@ -65,12 +65,13 @@ const performSearch = useDebounceFn(async (val: string) => {
 
     const { hits: results } = await index.search(val, {
       filters: `country:${props.country}`,
-      hitsPerPage: 20
+      hitsPerPage: 50
     });
 
     hits.value = results;
-  } catch (e) {
-    console.error(e);
+  } catch {
+    // Silent fail for search
+    hits.value = [];
   } finally {
     loading.value = false;
   }

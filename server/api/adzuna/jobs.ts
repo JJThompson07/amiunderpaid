@@ -69,8 +69,8 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
-  } catch (e) {
-    console.warn('Firestore cache read failed:', e);
+  } catch {
+    // Silently ignore cache read errors and fall back to fetching from the Adzuna API
   }
 
   // 2. Prepare API Credentials
@@ -110,8 +110,8 @@ export default defineEventHandler(async (event) => {
         if (catSnap.exists) {
           cacheDays = Number(catSnap.data()?.cache || 120);
         }
-      } catch (err) {
-        console.warn('Could not fetch category rules for expiration time', err);
+      } catch {
+        // Silently ignore failures and default to 120 cacheDays
       }
     }
 

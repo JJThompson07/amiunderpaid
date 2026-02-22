@@ -46,7 +46,10 @@ export default defineEventHandler(async (event) => {
       message: `Synced ${objectIDs.length} records to Algolia index '${indexName}'`
     };
   } catch (error: any) {
-    console.error('Algolia Sync Error:', error);
-    throw createError({ statusCode: 500, message: error.message });
+    throw createError({
+      statusCode: 500,
+      message: error.message || 'Error syncing algolia index',
+      cause: error
+    });
   }
 });

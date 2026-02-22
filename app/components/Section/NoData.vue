@@ -95,8 +95,8 @@ const performSearch = useDebounceFn(async (val: string) => {
     });
 
     hits.value = results;
-  } catch (e) {
-    console.error(e);
+  } catch {
+    // Fail silently for autocomplete so it doesn't disrupt the user
   } finally {
     loading.value = false;
   }
