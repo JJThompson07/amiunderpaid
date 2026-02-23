@@ -1,37 +1,6 @@
 // nuxt.config.ts
 import tailwindcss from '@tailwindcss/vite';
 
-let parsedServiceAccount;
-if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-  try {
-    let rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
-
-    // Strip outer double quotes if present
-    if (rawEnv.startsWith('"') && rawEnv.endsWith('"')) {
-      rawEnv = rawEnv.substring(1, rawEnv.length - 1);
-    }
-    // Strip outer single quotes if present
-    if (rawEnv.startsWith("'") && rawEnv.endsWith("'")) {
-      rawEnv = rawEnv.substring(1, rawEnv.length - 1);
-    }
-
-    // 1. Parse the JSON first! (Do not replace newlines in the raw string)
-    parsedServiceAccount = JSON.parse(rawEnv);
-    if (typeof parsedServiceAccount === 'string') {
-      parsedServiceAccount = JSON.parse(parsedServiceAccount);
-    }
-
-    // 2. Fix the private key newlines AFTER it is safely parsed into an object
-    if (parsedServiceAccount.private_key) {
-      parsedServiceAccount.private_key = parsedServiceAccount.private_key.replace(/\\n/g, '\n');
-    }
-  } catch {
-    throw new Error(
-      'FATAL CONFIG ERROR: FIREBASE_SERVICE_ACCOUNT is not valid JSON. Please check the formatting of your environment variable.'
-    );
-  }
-}
-
 // Debug: Check if env vars are loaded
 if (!process.env.FIREBASE_API_KEY) {
   // if no key then we want to fail immediately
@@ -78,11 +47,7 @@ export default defineNuxtConfig({
   vuefire: {
     auth: {
       enabled: true,
-      // CHANGE THIS TO TRUE so the server knows the user is logged in
       sessionCookie: true
-    },
-    admin: {
-      serviceAccount: parsedServiceAccount
     },
     config: {
       apiKey: process.env.FIREBASE_API_KEY || '',
