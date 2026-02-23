@@ -1,0 +1,18 @@
+{
+  "heading": "How It Works",
+  "description": "We calculate your salary potential in three simple steps.",
+  "step": {
+    "1": {
+      "heading": "Enter Your Role",
+      "body": "Tell us your job title, location, and current salary. Our smart autocomplete helps you match standard industry roles for better accuracy."
+    },
+    "2": {
+      "heading": "We Check the Data",
+      "body": "We query our live database of over 140,000+ recent salary benchmarks, sourced from government data (BLS) as well as live job listings (Adzuna)."
+    },
+    "3": {
+      "heading": "Get Your Salary Comparison",
+      "body": "Find out instantly if you are underpaid, fairly paid, or leading the market. We'll even give you a custom script to negotiate a raise."
+    }
+  }
+}

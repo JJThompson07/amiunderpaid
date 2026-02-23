@@ -3,9 +3,11 @@
     <div class="max-w-3xl px-4 mx-auto">
       <!-- Header -->
       <div class="mb-12 text-center">
-        <h1 class="text-3xl font-black text-slate-900 md:text-4xl">How It Works</h1>
+        <h1 class="text-3xl font-black text-slate-900 md:text-4xl">
+          {{ $t('how-it-works.heading') }}
+        </h1>
         <p class="mt-4 text-lg text-slate-500">
-          We calculate your salary potential in three simple steps.
+          {{ $t('how-it-works.description') }}
         </p>
       </div>
 
@@ -21,10 +23,9 @@
           </div>
           <div
             class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-900 mb-2">Enter Your Role</h3>
+            <h3 class="font-bold text-slate-900 mb-2">{{ $t('how-it-works.step.1.heading') }}</h3>
             <p class="text-sm text-slate-500 leading-relaxed">
-              Tell us your job title, location, and current salary. Our smart autocomplete helps you
-              match standard industry roles for better accuracy.
+              {{ $t('how-it-works.step.1.body') }}
             </p>
           </div>
         </div>
@@ -38,12 +39,9 @@
           </div>
           <div
             class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-900 mb-2">We Check the Data</h3>
+            <h3 class="font-bold text-slate-900 mb-2">{{ $t('how-it-works.step.2.heading') }}</h3>
             <p class="text-sm text-slate-500 leading-relaxed">
-              We query our live database of over 140,000+ recent salary benchmarks, sourced from
-              government data (ONS, US BLS).
-              <br />
-              live job listings (Adzuna).
+              {{ $t('how-it-works.step.2.body') }}
             </p>
           </div>
         </div>
@@ -57,10 +55,9 @@
           </div>
           <div
             class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-900 mb-2">Get Your Verdict</h3>
+            <h3 class="font-bold text-slate-900 mb-2">{{ $t('how-it-works.step.3.heading') }}</h3>
             <p class="text-sm text-slate-500 leading-relaxed">
-              Find out instantly if you are underpaid, fairly paid, or leading the market. We'll
-              even give you a custom script to negotiate a raise.
+              {{ $t('how-it-works.step.3.body') }}
             </p>
           </div>
         </div>
@@ -69,7 +66,9 @@
       <!-- CTA -->
       <div class="mt-16 text-center">
         <NuxtLink to="/">
-          <AmIButton title="Go to salary search" size="lg">Check My Salary Now</AmIButton>
+          <AmIButton title="Go to salary search" size="lg">{{
+            $t('buttons.check-salary-now')
+          }}</AmIButton>
         </NuxtLink>
       </div>
     </div>

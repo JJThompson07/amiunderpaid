@@ -9,6 +9,8 @@ if (!process.env.FIREBASE_API_KEY) {
   );
 }
 
+const isDev = process.env.NODE_ENV === 'development';
+
 export default defineNuxtConfig({
   // Enable Nuxt 4 features and directory structure
   future: {
@@ -36,7 +38,14 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   // ** 3. Register Modules **
-  modules: ['@nuxt/eslint', '@vueuse/nuxt', 'nuxt-vuefire', 'nuxt-gtag', '@nuxtjs/algolia'],
+  modules: [
+    '@nuxt/eslint',
+    '@vueuse/nuxt',
+    'nuxt-vuefire',
+    'nuxt-gtag',
+    '@nuxtjs/algolia',
+    '@nuxtjs/i18n'
+  ],
 
   algolia: {
     apiKey: process.env.ALGOLIA_SEARCH_API_KEY,
@@ -57,6 +66,47 @@ export default defineNuxtConfig({
       messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '',
       appId: process.env.FIREBASE_APP_ID || '',
       measurementId: process.env.FIREBASE_MEASUREMENT_ID || ''
+    }
+  },
+
+  i18n: {
+    langDir: 'locales',
+
+    // 1. Set the default locale to your UK code
+    defaultLocale: 'en-GB',
+    fallbackLocale: 'en-GB',
+    strategy: 'no_prefix',
+
+    differentDomains: true,
+
+    // 2. Set the baseUrl to your default domain for canonical fallbacks
+    baseUrl: isDev ? 'http://localhost:3000' : 'https://www.amiunderpaid.co.uk',
+
+    locales: [
+      {
+        code: 'en',
+        iso: 'en',
+        file: 'en-GB/index.ts'
+      },
+      {
+        code: 'en-GB',
+        iso: 'en-GB',
+        domain: 'www.amiunderpaid.co.uk',
+        file: 'en-GB/index.ts'
+      },
+      {
+        code: 'en-US',
+        iso: 'en-US',
+        domain: 'www.amiunderpaid.com',
+        file: 'en-US/index.ts'
+      }
+    ],
+
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'i18n_redirected',
+      redirectOn: 'root',
+      fallbackLocale: 'en-GB'
     }
   },
 
