@@ -5,28 +5,16 @@ import type { H3Event } from 'h3';
 
 export const useAdminApp = (): App => {
   const apps = getApps();
+  // If VueFire already initialized the app via nuxt.config.ts, just use it!
   if (apps.length > 0) return apps[0]!;
 
   let serviceAccount: any;
-  let rawEnv = process.env.FIREBASE_SERVICE_ACCOUNT || '';
+  const b64Env = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
 
-  if (rawEnv) {
+  if (b64Env) {
     try {
-      // 1. If the host double-wrapped the JSON in string quotes, strip the outer quotes manually
-      if (rawEnv.startsWith('"') && rawEnv.endsWith('"')) {
-        rawEnv = rawEnv.substring(1, rawEnv.length - 1);
-      }
-
-      // 2. If the host escaped the newlines (\\n instead of \n), fix them
-      rawEnv = rawEnv.replace(/\\n/g, '\n');
-
-      // 3. Parse it into a strict JavaScript Object
-      serviceAccount = JSON.parse(rawEnv);
-
-      // 4. Just in case it was TRIPLE stringified, catch it here
-      if (typeof serviceAccount === 'string') {
-        serviceAccount = JSON.parse(serviceAccount);
-      }
+      const decoded = Buffer.from(b64Env, 'base64').toString('utf-8');
+      serviceAccount = JSON.parse(decoded);
     } catch (e) {
       throw createError({
         statusCode: 500,
@@ -34,14 +22,6 @@ export const useAdminApp = (): App => {
         cause: e
       });
     }
-  }
-
-  // We explicitly check that it is an object before passing it to cert()
-  if (serviceAccount && typeof serviceAccount !== 'object') {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Server configuration error: Firebase credentials parsing failed.'
-    });
   }
 
   return initializeApp(serviceAccount ? { credential: cert(serviceAccount) } : undefined);

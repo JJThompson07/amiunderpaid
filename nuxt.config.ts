@@ -47,7 +47,6 @@ export default defineNuxtConfig({
   vuefire: {
     auth: {
       enabled: true,
-      // CHANGE THIS TO TRUE so the server knows the user is logged in
       sessionCookie: true
     },
     config: {
