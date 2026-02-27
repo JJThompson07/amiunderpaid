@@ -8,6 +8,7 @@ import dataSources from './data-sources.json';
 import privacyPolicy from './privacy-policy.json';
 import sections from './sections.json';
 import search from './search.json';
+import navbar from './navbar.json';
 
 export default defineI18nLocale(async () => {
   return {
@@ -20,6 +21,7 @@ export default defineI18nLocale(async () => {
     'data-sources': dataSources,
     'privacy-policy': privacyPolicy,
     sections,
-    search
+    search,
+    navbar
   };
 });
