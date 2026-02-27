@@ -7,13 +7,11 @@
       <div class="p-6 border-b border-slate-100 bg-slate-50/50">
         <h3 class="text-lg font-black text-slate-900">{{ $t('modals.ambiguity.title') }}</h3>
         <p class="text-sm text-slate-500 mt-1">
-          <ClientOnly>
-            <i18n-t keypath="modals.ambiguity.content" tag="p" class="leading-relaxed">
-              <template #title>
-                <span class="font-bold">{{ title }}</span>
-              </template>
-            </i18n-t>
-          </ClientOnly>
+          <i18n-t keypath="modals.ambiguity.content" tag="p" class="leading-relaxed">
+            <template #title>
+              <span class="font-bold">{{ title }}</span>
+            </template>
+          </i18n-t>
         </p>
       </div>
 

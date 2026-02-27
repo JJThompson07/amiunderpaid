@@ -12,23 +12,21 @@
     ">
     <template #info>
       <span v-if="!isFallback">
-        <ClientOnly>
-          <i18n-t keypath="sections.government.showing" tag="span" class="leading-relaxed">
-            <template #title>
-              <span class="font-bold">{{ matchedTitle }}</span>
-            </template>
-            <template #type>
-              {{
-                matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()
-                  ? 'market category '
-                  : ''
-              }}
-            </template>
-            <template #location>
-              {{ country === 'USA' ? matchedLocation : $t('common.the-uk') }}
-            </template>
-          </i18n-t>
-        </ClientOnly>
+        <i18n-t keypath="sections.government.showing" tag="span" class="leading-relaxed">
+          <template #title>
+            <span class="font-bold">{{ matchedTitle }}</span>
+          </template>
+          <template #type>
+            {{
+              matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()
+                ? 'market category '
+                : ''
+            }}
+          </template>
+          <template #location>
+            {{ country === 'USA' ? matchedLocation : $t('common.the-uk') }}
+          </template>
+        </i18n-t>
       </span>
       <span v-else>
         {{ $t('sections.government.not-found', { marketDataYear }) }}

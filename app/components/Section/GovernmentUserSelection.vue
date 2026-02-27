@@ -9,13 +9,11 @@
     </div>
     <div class="p-5 flex-1 flex flex-col gap-4">
       <p class="text-xs text-slate-600">
-        <ClientOnly>
-          <i18n-t keypath="sections.gov-user-selection.content" tag="span" class="leading-relaxed">
-            <template #category>
-              <span class="font-bold">{{ adzunaCategory }}</span>
-            </template>
-          </i18n-t>
-        </ClientOnly>
+        <i18n-t keypath="sections.gov-user-selection.content" tag="span" class="leading-relaxed">
+          <template #category>
+            <span class="font-bold">{{ adzunaCategory }}</span>
+          </template>
+        </i18n-t>
       </p>
 
       <AmIAutocompleteInput

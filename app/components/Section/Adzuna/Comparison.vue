@@ -6,13 +6,11 @@
     icon-colour="bg-secondary-600"
     :title="`Live ${country} Market Analysis`">
     <template #info>
-      <ClientOnly>
-        <i18n-t keypath="sections.adzuna.results" tag="span" class="leading-relaxed">
-          <template #jobsCount>
-            <span class="font-bold">{{ jobsCount }}</span>
-          </template>
-        </i18n-t>
-      </ClientOnly>
+      <i18n-t keypath="sections.adzuna.results" tag="span" class="leading-relaxed">
+        <template #jobsCount>
+          <span class="font-bold">{{ jobsCount }}</span>
+        </template>
+      </i18n-t>
     </template>
     <template #verdict>
       <div v-if="currentSalary === 0" class="space-y-2 text-center">

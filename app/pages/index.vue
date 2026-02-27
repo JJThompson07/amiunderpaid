@@ -48,17 +48,15 @@
           <div>
             <h3 class="text-xl font-bold text-secondary-900 mb-4">Why check your market rate?</h3>
             <p class="leading-relaxed">
-              <ClientOnly>
-                <i18n-t
-                  keypath="landing.why.body"
-                  tag="p"
-                  class="leading-relaxed"
-                  :values="{ year: new Date().getFullYear() }">
-                  <template #benchmarks>
-                    <strong>{{ $t('landing.why.benchmarks_bold') }}</strong>
-                  </template>
-                </i18n-t>
-              </ClientOnly>
+              <i18n-t
+                keypath="landing.why.body"
+                tag="p"
+                class="leading-relaxed"
+                :values="{ year: new Date().getFullYear() }">
+                <template #benchmarks>
+                  <strong>{{ $t('landing.why.benchmarks_bold') }}</strong>
+                </template>
+              </i18n-t>
             </p>
           </div>
           <div>
@@ -66,17 +64,15 @@
               {{ $t('landing.data.heading') }}
             </h3>
             <p class="leading-relaxed">
-              <ClientOnly>
-                <i18n-t
-                  keypath="landing.data.body"
-                  tag="p"
-                  class="leading-relaxed"
-                  :values="{ comparison: $t('landing.data.comparison_bold') }">
-                  <template #comparison>
-                    <strong>{{ $t('landing.data.comparison_bold') }}</strong>
-                  </template>
-                </i18n-t>
-              </ClientOnly>
+              <i18n-t
+                keypath="landing.data.body"
+                tag="p"
+                class="leading-relaxed"
+                :values="{ comparison: $t('landing.data.comparison_bold') }">
+                <template #comparison>
+                  <strong>{{ $t('landing.data.comparison_bold') }}</strong>
+                </template>
+              </i18n-t>
             </p>
           </div>
         </div>

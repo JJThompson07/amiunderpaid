@@ -7,16 +7,14 @@
         </div>
         <div class="flex-1">
           <h3 class="text-lg font-bold text-slate-900">{{ location }}</h3>
-          <ClientOnly>
-            <i18n-t
-              keypath="sections.uk-comparison.comparing"
-              tag="span"
-              class="leading-relaxed text-xs text-slate-500">
-              <template #year>
-                <span class="font-bold text-slate-900">{{ year }}</span>
-              </template>
-            </i18n-t>
-          </ClientOnly>
+          <i18n-t
+            keypath="sections.uk-comparison.comparing"
+            tag="span"
+            class="leading-relaxed text-xs text-slate-500">
+            <template #year>
+              <span class="font-bold text-slate-900">{{ year }}</span>
+            </template>
+          </i18n-t>
         </div>
         <div>
           <p class="text-sm text-slate-500 font-bold px-1">
@@ -40,16 +38,14 @@
             " />
           <div class="flex items-center">
             <p class="text-sm text-slate-700 leading-relaxed">
-              <ClientOnly>
-                <i18n-t
-                  keypath="sections.uk-comparison.average-salary"
-                  tag="span"
-                  class="leading-relaxed">
-                  <template #role>
-                    <span class="font-bold">{{ displayTitle }}</span>
-                  </template>
-                </i18n-t>
-              </ClientOnly>
+              <i18n-t
+                keypath="sections.uk-comparison.average-salary"
+                tag="span"
+                class="leading-relaxed">
+                <template #role>
+                  <span class="font-bold">{{ displayTitle }}</span>
+                </template>
+              </i18n-t>
               <strong v-if="jobTrend === 0"> {{ $t('sections.uk-comparison.same') }}</strong>
               <span
                 v-else
@@ -87,16 +83,14 @@
             " />
           <div class="flex items-center">
             <p class="text-sm text-slate-700 leading-relaxed">
-              <ClientOnly>
-                <i18n-t
-                  keypath="sections.uk-comparison.your-salary"
-                  tag="span"
-                  class="leading-relaxed">
-                  <template #salary>
-                    <span class="font-bold">£{{ userSalary.toLocaleString() }}</span>
-                  </template>
-                </i18n-t>
-              </ClientOnly>
+              <i18n-t
+                keypath="sections.uk-comparison.your-salary"
+                tag="span"
+                class="leading-relaxed">
+                <template #salary>
+                  <span class="font-bold">£{{ userSalary.toLocaleString() }}</span>
+                </template>
+              </i18n-t>
               <strong v-if="userTrend === 0"> {{ $t('sections.uk-comparison.same') }}</strong>
               <span
                 v-else

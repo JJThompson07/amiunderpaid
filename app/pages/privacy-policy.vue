@@ -43,41 +43,29 @@
           </p>
           <ul class="list-disc pl-5 mt-2 space-y-1">
             <li>
-              <ClientOnly>
-                <i18n-t
-                  keypath="privacy-policy.sources.body.list.1"
-                  tag="p"
-                  class="leading-relaxed">
-                  <template #ons>
-                    <strong>{{ $t('privacy-policy.sources.body.list.ons') }}</strong>
-                  </template>
-                </i18n-t>
-              </ClientOnly>
+              <i18n-t keypath="privacy-policy.sources.body.list.1" tag="p" class="leading-relaxed">
+                <template #ons>
+                  <strong>{{ $t('privacy-policy.sources.body.list.ons') }}</strong>
+                </template>
+              </i18n-t>
             </li>
             <li>
-              <ClientOnly>
-                <i18n-t
-                  keypath="privacy-policy.sources.body.list.2"
-                  tag="p"
-                  class="leading-relaxed">
-                  <template #bls>
-                    <strong>{{ $t('privacy-policy.sources.body.list.bls') }}</strong>
-                  </template>
-                </i18n-t>
-              </ClientOnly>
+              <i18n-t keypath="privacy-policy.sources.body.list.2" tag="p" class="leading-relaxed">
+                <template #bls>
+                  <strong>{{ $t('privacy-policy.sources.body.list.bls') }}</strong>
+                </template>
+              </i18n-t>
             </li>
             <li>
               <div class="flex gap-1 items-center">
-                <ClientOnly>
-                  <i18n-t
-                    keypath="privacy-policy.sources.body.list.3"
-                    tag="p"
-                    class="leading-relaxed">
-                    <template #adzuna>
-                      <strong>{{ $t('privacy-policy.sources.body.list.adzuna') }}</strong>
-                    </template>
-                  </i18n-t>
-                </ClientOnly>
+                <i18n-t
+                  keypath="privacy-policy.sources.body.list.3"
+                  tag="p"
+                  class="leading-relaxed">
+                  <template #adzuna>
+                    <strong>{{ $t('privacy-policy.sources.body.list.adzuna') }}</strong>
+                  </template>
+                </i18n-t>
               </div>
             </li>
           </ul>

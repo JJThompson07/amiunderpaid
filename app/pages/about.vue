@@ -13,17 +13,15 @@
         </p>
 
         <p>
-          <ClientOnly>
-            <i18n-t
-              keypath="about.body.middle"
-              tag="p"
-              class="leading-relaxed"
-              :values="{ app: $t('about.body.app-name') }">
-              <template #app-name>
-                <span class="font-bold text-indigo-600">{{ $t('about.body.app-name') }}</span>
-              </template>
-            </i18n-t>
-          </ClientOnly>
+          <i18n-t
+            keypath="about.body.middle"
+            tag="p"
+            class="leading-relaxed"
+            :values="{ app: $t('about.body.app-name') }">
+            <template #app-name>
+              <span class="font-bold text-indigo-600">{{ $t('about.body.app-name') }}</span>
+            </template>
+          </i18n-t>
         </p>
 
         <p>
