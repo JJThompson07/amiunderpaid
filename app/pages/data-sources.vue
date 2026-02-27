@@ -73,7 +73,7 @@
         <p class="text-sm font-medium text-slate-600">
           {{ $t('data-sources.db-update') }}
           <span class="font-bold text-secondary-600">{{
-            new Date(2026, 1).toLocaleDateString($t('locale'), {
+            new Date(2026, 1).toLocaleDateString(locale, {
               year: 'numeric',
               month: 'long'
             })
@@ -87,4 +87,5 @@
 <script setup lang="ts">
 // ** imports **
 import { Building2, Search, Users, Flag } from 'lucide-vue-next';
+const { locale } = useI18n();
 </script>
