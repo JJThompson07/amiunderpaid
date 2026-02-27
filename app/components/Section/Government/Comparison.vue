@@ -12,17 +12,26 @@
     ">
     <template #info>
       <span v-if="!isFallback">
-        Showing government matched data for
-        {{
-          matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()
-            ? 'market category'
-            : ''
-        }}
-        <strong>{{ matchedTitle }}</strong>
-        in {{ country === 'USA' ? matchedLocation : 'The UK' }}
+        <ClientOnly>
+          <i18n-t keypath="sections.government.showing" tag="span" class="leading-relaxed">
+            <template #title>
+              <span class="font-bold">{{ matchedTitle }}</span>
+            </template>
+            <template #type>
+              {{
+                matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()
+                  ? 'market category '
+                  : ''
+              }}
+            </template>
+            <template #location>
+              {{ country === 'USA' ? matchedLocation : $t('common.the-uk') }}
+            </template>
+          </i18n-t>
+        </ClientOnly>
       </span>
       <span v-else>
-        Exact match not found. Showing {{ marketDataYear }} government data for
+        {{ $t('sections.government.not-found', { marketDataYear }) }}
         <span class="font-bold">{{ matchedTitle }}</span>
         <span
           v-if="
@@ -36,7 +45,8 @@
     <template #verdict>
       <div v-if="userSalary === 0" class="space-y-2 text-center">
         <h2 class="text-2xl font-black text-slate-900">
-          Market Rate: {{ currencySymbol }}{{ marketAverage.toLocaleString() }}
+          {{ $t('sections.government.rate') }} {{ currencySymbol
+          }}{{ marketAverage.toLocaleString() }}
         </h2>
       </div>
 

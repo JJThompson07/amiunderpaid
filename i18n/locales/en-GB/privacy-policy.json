@@ -1,0 +1,33 @@
+{
+  "heading": "Privacy Policy",
+  "updated": "Last updated: {date}",
+  "collection": {
+    "heading": "1. Data Collection & Usage",
+    "body": {
+      "1": "We prioritize your privacy. \"Am I Underpaid?\" does not require you to create an account or provide personal identification to use our salary benchmarking tools.",
+      "2": "The salary information and job titles you enter into our calculator are processed to provide you with a comparison against our database. We do not store your specific entry linked to your personal identity.",
+      "3": "We use Google Analytics to anonymously track website usage and improve our services. This data is aggregated and cannot be used to identify you personally."
+    }
+  },
+  "sources": {
+    "heading": "2. Our Data Sources",
+    "body": {
+      "desc": "Our benchmarking data is aggregated from publicly available government statistics and real-time market data to ensure accuracy.",
+      "list": {
+        "1": "{ons} Used for UK job titles and salary benchmarks.",
+        "ons": "ONS (Office for National Statistics):",
+        "2": "{bls} Used for USA job titles and salary benchmarks.",
+        "bls": "BLS (Bureau of Labor Statistics):",
+        "3": "{adzuna} Used for real-time job listing data.",
+        "adzuna": "Adzuna Intelligence:"
+      }
+    }
+  },
+  "affiliate": {
+    "heading": "3. Affiliate Disclosure",
+    "body": {
+      "1": "This website contains affiliate links. If you click on a link for a third-party service (such as CV writing services or negotiation courses) and make a purchase, we may earn a commission at no extra cost to you.",
+      "2": "We believe the only way to successfully progress in your career is to invest in yourself, and we only recommend services that provide genuine value to our users. We carefully vet all affiliate partners to ensure they meet our standards for quality and relevance to career development."
+    }
+  }
+}

@@ -12,23 +12,35 @@
       <div class="flex flex-col relative">
         <p class="text-sm text-slate-600 mt-1">
           <template v-if="diffPercent === 0">
-            Your salary is
-            <span class="font-bold text-slate-900">exactly in line</span> with the market average.
+            <ClientOnly>
+              <i18n-t keypath="sections.verdict.in-line" tag="span" class="leading-relaxed">
+                <template #exactly>
+                  <span class="font-bold text-slate-900">exactly in line</span>
+                </template>
+              </i18n-t>
+            </ClientOnly>
           </template>
           <template v-else-if="isUnderpaid">
             {{ matchedTitle || displayTitle }} in
-            {{ country === 'USA' ? matchedLocation || location || country : country }} earn
+            {{ country === 'USA' ? matchedLocation || location || country : country }}
+            {{ $t('sections.verdict.earn') }}
             <span class="font-bold text-slate-900"
               >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
             >.
           </template>
           <template v-else>
-            Your salary is
-            <span class="font-bold text-slate-900">{{ diffPercent }}% higher</span> than the market
-            average,
-            <span class="font-bold text-slate-900"
-              >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
-            >, for your role.
+            <ClientOnly>
+              <i18n-t keypath="sections.verdict.higher" tag="span" class="leading-relaxed">
+                <template #percent>
+                  <span class="font-bold text-slate-900">{{ diffPercent }}% higher</span>
+                </template>
+                <template #average>
+                  <span class="font-bold text-slate-900"
+                    >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
+                  >
+                </template>
+              </i18n-t>
+            </ClientOnly>
           </template>
         </p>
       </div>

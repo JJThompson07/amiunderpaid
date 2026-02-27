@@ -2,7 +2,9 @@
   <div class="histogram bg-slate-100 rounded-lg relative">
     <div class="p-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-bold text-slate-900">Salary Distribution</h3>
+        <h3 class="text-lg font-bold text-slate-900">
+          {{ $t('sections.adzuna.salary-distribution') }}
+        </h3>
         <component
           :is="XCircle"
           class="h-5 w-5 absolute top-2 right-2 cursor-pointer hover:text-primary-600 transition-colors duration-300 ease-in-out"

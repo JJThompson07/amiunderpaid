@@ -6,7 +6,7 @@
       <!-- Header -->
       <div
         class="relative flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-secondary-800">
-        <h3 class="font-bold text-slate-50">Ready To Take Action?</h3>
+        <h3 class="font-bold text-slate-50">{{ $t('sections.negotiation.title') }}</h3>
       </div>
 
       <!-- Content -->
@@ -61,12 +61,14 @@
         <ModalGeneric v-model="showScript">
           <div class="space-y-4 p-4">
             <div class="flex items-center justify-between">
-              <h4 class="font-bold text-slate-700 text-sm">Your Custom Email Script</h4>
+              <h4 class="font-bold text-slate-700 text-sm">
+                {{ $t('sections.negotiation.custom-email-script') }}
+              </h4>
               <button
                 class="text-xs font-bold text-secondary-600 flex items-center gap-1 hover:text-secondary-800"
                 @click="copyToClipboard">
                 <component :is="copied ? CheckCircle2 : Copy" class="w-3 h-3" />
-                {{ copied ? 'Copied!' : 'Copy to Clipboard' }}
+                {{ copied ? $t('sections.negotiation.copied') : $t('sections.negotiation.copy') }}
               </button>
             </div>
 
@@ -165,8 +167,8 @@ const cards = computed(() => {
     {
       id: 1,
       component: undefined,
-      header: 'Master Negotiations',
-      strapline: 'Knowing your value is only the first step',
+      header: $t('sections.negotiation.salary-negotiator.title'),
+      strapline: $t('sections.negotiation.salary-negotiator.strapline'),
       icon: TrendingUp,
       premier: true,
       sponsored: true,
@@ -175,17 +177,19 @@ const cards = computed(() => {
       hoverClass: 'hover:border-salary-negotiator-200',
       affiliateBgColour: 'bg-salary-negotiator-100',
       affiliateTextColour: 'text-salary-negotiator-600',
-      bodyHtml: `We've partnered with <strong class="text-salary-negotiator-500">The Salary Negotiator</strong> to help you bridge the gap. Master the exact scripts and strategies used by top executives to secure the pay you actually deserve.`,
+      bodyHtml: $t('sections.negotiation.salary-negotiator.body-html', {
+        name: `<strong class="text-salary-negotiator-500">${$t('sections.negotiation.salary-negotiator.name')}</strong>`
+      }),
       ctaType: 'link',
       ctaUrl: 'https://thesalarynegotiator.com/courses?ref=ndlknjh',
-      ctaText: 'Explore Courses',
+      ctaText: $t('sections.negotiation.salary-negotiator.cta'),
       ctaClass: 'bg-salary-negotiator-500 hover:bg-salary-negotiator-700'
     },
     {
       id: 2,
       component: undefined,
-      header: 'Career Progression',
-      strapline: "Templates alone don't win interviews",
+      header: $t('sections.negotiation.purple-cv.title'),
+      strapline: $t('sections.negotiation.purple-cv.strapline'),
       icon: FileText,
       premier: true,
       sponsored: true,
@@ -194,17 +198,19 @@ const cards = computed(() => {
       hoverClass: 'hover:border-purple-cv-200',
       affiliateBgColour: 'bg-purple-cv-100',
       affiliateTextColour: 'text-purple-cv-600',
-      bodyHtml: `Position yourself for your next big move with a professionally written CV from <strong class="text-purple-cv-900">PurpleCV</strong>. Their experts design documents specifically to beat the algorithms and stand out to recruiters.`,
+      bodyHtml: $t('sections.negotiation.purple-cv.body-html', {
+        name: `<strong class="text-purple-cv-700">${$t('sections.negotiation.purple-cv.name')}</strong>`
+      }),
       ctaType: 'link',
       ctaUrl: 'https://purplecv.co.uk/cv-writing?wpam_id=1293',
-      ctaText: 'PurpleCV',
+      ctaText: $t('sections.negotiation.purple-cv.cta'),
       ctaClass: 'bg-purple-cv-900 hover:bg-purple-cv-700'
     },
     {
       id: 3,
       component: LazyAmICardAction,
-      header: 'Get Discovered',
-      strapline: 'Find a job that works for you, fast',
+      header: $t('sections.negotiation.cv-library.title'),
+      strapline: $t('sections.negotiation.cv-library.strapline'),
       icon: Binoculars,
       sponsored: true,
       bgColour: 'bg-cv-library-50/50',
@@ -212,21 +218,25 @@ const cards = computed(() => {
       hoverClass: 'hover:border-cv-library-200',
       affiliateBgColour: 'bg-cv-library-100',
       affiliateTextColour: 'text-cv-library-700',
-      bodyHtml: `Register your free CV on the UK's leading job site (<strong class="text-cv-library-700">CV-Library</strong>) and let top employers come to you - it's fast, easy and free.`,
+      bodyHtml: $t('sections.negotiation.cv-library.body-html', {
+        name: `<strong class="text-cv-library-700">${$t('sections.negotiation.cv-library.name')}</strong>`
+      }),
       ctaType: 'link',
       ctaUrl: 'https://www.cv-library.co.uk/register?id=107202',
-      ctaText: 'Register CV',
+      ctaText: $t('sections.negotiation.cv-library.cta'),
       ctaClass: 'bg-cv-library-700 hover:bg-cv-library-500'
     },
     {
       id: 4,
       component: undefined,
-      header: 'Email Template',
-      strapline: 'A template script to help you start the conversation.',
+      header: $t('sections.negotiation.custom.title'),
+      strapline: $t('sections.negotiation.custom.strapline'),
       icon: Mail,
-      bodyHtml: `Whether you're underpaid or looking to justify a raise, use this script to confidently communicate your value and set up a discussion with your manager.`,
+      bodyHtml: $t('sections.negotiation.custom.body-html'),
       ctaType: 'button',
-      ctaText: showScript.value ? 'Hide Script' : 'View Script',
+      ctaText: showScript.value
+        ? $t('sections.negotiation.custom.cta-hide')
+        : $t('sections.negotiation.custom.cta-show'),
       ctaAction: toggleScript,
       ctaProps: {
         bgColour: 'bg-white',

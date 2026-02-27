@@ -7,11 +7,16 @@
         </div>
         <div class="flex-1">
           <h3 class="text-lg font-bold text-slate-900">{{ location }}</h3>
-          <p class="text-xs text-slate-500">
-            Comparing against the regional average for all jobs<span v-if="year">
-              from {{ year }}</span
-            >.
-          </p>
+          <ClientOnly>
+            <i18n-t
+              keypath="sections.uk-comparison.comparing"
+              tag="span"
+              class="leading-relaxed text-xs text-slate-500">
+              <template #year>
+                <span class="font-bold text-slate-900">{{ year }}</span>
+              </template>
+            </i18n-t>
+          </ClientOnly>
         </div>
         <div>
           <p class="text-sm text-slate-500 font-bold px-1">
@@ -35,8 +40,17 @@
             " />
           <div class="flex items-center">
             <p class="text-sm text-slate-700 leading-relaxed">
-              The average salary for <span class="font-bold">{{ displayTitle }}</span> is
-              <strong v-if="jobTrend === 0"> The Same</strong>
+              <ClientOnly>
+                <i18n-t
+                  keypath="sections.uk-comparison.average-salary"
+                  tag="span"
+                  class="leading-relaxed">
+                  <template #role>
+                    <span class="font-bold">{{ displayTitle }}</span>
+                  </template>
+                </i18n-t>
+              </ClientOnly>
+              <strong v-if="jobTrend === 0"> {{ $t('sections.uk-comparison.same') }}</strong>
               <span
                 v-else
                 class="font-bold px-1 py-0.5 rounded-md text-center"
@@ -45,9 +59,14 @@
                     ? 'bg-positive-100 text-positive-700'
                     : 'bg-negative-100 text-negative-700'
                 ">
-                {{ Math.abs(jobVsLocationDiff) }}% {{ jobTrend > 0 ? 'higher' : 'lower' }}
+                {{ Math.abs(jobVsLocationDiff) }}%
+                {{
+                  jobTrend > 0
+                    ? $t('sections.uk-comparison.higher')
+                    : $t('sections.uk-comparison.lower')
+                }}
               </span>
-              than the average salary for all jobs in <strong>{{ location }}</strong
+              {{ $t('sections.uk-comparison.than') }} <strong>{{ location }}</strong
               >.
             </p>
           </div>
@@ -68,8 +87,17 @@
             " />
           <div class="flex items-center">
             <p class="text-sm text-slate-700 leading-relaxed">
-              Your salary of <span class="font-bold">£{{ userSalary.toLocaleString() }}</span> is
-              <strong v-if="userTrend === 0"> The Same</strong>
+              <ClientOnly>
+                <i18n-t
+                  keypath="sections.uk-comparison.your-salary"
+                  tag="span"
+                  class="leading-relaxed">
+                  <template #salary>
+                    <span class="font-bold">£{{ userSalary.toLocaleString() }}</span>
+                  </template>
+                </i18n-t>
+              </ClientOnly>
+              <strong v-if="userTrend === 0"> {{ $t('sections.uk-comparison.same') }}</strong>
               <span
                 v-else
                 class="font-bold px-1 py-0.5 rounded-md text-center"
@@ -79,9 +107,13 @@
                     : 'bg-negative-100 text-negative-700'
                 ">
                 {{ Math.abs(userVsLocationDiff) }}%
-                {{ userTrend > 0 ? 'higher' : 'lower' }}
+                {{
+                  userTrend > 0
+                    ? $t('sections.uk-comparison.higher')
+                    : $t('sections.uk-comparison.lower')
+                }}
               </span>
-              than the average salary for all jobs in <strong>{{ location }}</strong
+              {{ $t('sections.uk-comparison.than') }} <strong>{{ location }}</strong
               >.
             </p>
           </div>

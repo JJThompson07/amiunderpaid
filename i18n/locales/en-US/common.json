@@ -1,5 +1,8 @@
 {
   "live-market-data": "Live {year} market data",
   "live-data": "Live Data",
-  "coming-soon": "Coming soon"
+  "coming-soon": "Coming soon",
+  "currency-symbol": "$",
+  "close": "Close",
+  "the-uk": "the UK"
 }
