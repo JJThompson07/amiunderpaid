@@ -1,0 +1,14 @@
+{
+  "title": {
+    "label": "Job Title",
+    "helper": "Type any title, we will try to find the best match",
+    "placeholder": "e.g. Software Engineer"
+  },
+  "location": {
+    "label": "Location",
+    "placeholder": "e.g. London"
+  },
+  "salary": {
+    "label": "Current Salary"
+  }
+}

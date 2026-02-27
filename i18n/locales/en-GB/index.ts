@@ -7,6 +7,7 @@ import howItWorks from './how-it-works.json';
 import dataSources from './data-sources.json';
 import privacyPolicy from './privacy-policy.json';
 import sections from './sections.json';
+import search from './search.json';
 
 export default defineI18nLocale(async () => {
   return {
@@ -18,6 +19,7 @@ export default defineI18nLocale(async () => {
     'how-it-works': howItWorks,
     'data-sources': dataSources,
     'privacy-policy': privacyPolicy,
-    sections
+    sections,
+    search
   };
 });

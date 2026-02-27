@@ -4,5 +4,7 @@
   "coming-soon": "Coming soon",
   "currency-symbol": "£",
   "close": "Close",
-  "the-uk": "the UK"
+  "the-uk": "the UK",
+  "loading": "Loading...",
+  "optional": "optional"
 }

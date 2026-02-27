@@ -4,14 +4,20 @@
       <div class="inline-flex p-4 mb-4 bg-negative-100 rounded-full text-slate-400">
         <component :is="icon" class="w-8 h-8 text-negative-700" />
       </div>
-      <h2 class="text-2xl font-bold text-slate-900 mb-2">No data found for this role</h2>
+      <h2 class="text-2xl font-bold text-slate-900 mb-2">{{ $t('card.no-data.heading') }}</h2>
       <p class="text-slate-500 max-w-md mx-auto mb-8">
-        We couldn't find enough {{ period }}ly salary data for <strong>{{ title }}</strong> in
-        <strong>{{ location || country }}</strong> to give you an accurate verdict.
+        <i18n-t keypath="card.no-data.body" tag="p" class="leading-relaxed">
+          <template #role>
+            <span class="font-bold">{{ title }}</span>
+          </template>
+          <template #location>
+            <span class="font-bold">{{ location || country }}</span>
+          </template>
+        </i18n-t>
       </p>
       <NuxtLink to="/">
         <AmIButton title="Try a different search" text-colour="text-white">
-          Try a different search
+          {{ $t('card.no-data.try-different') }}
         </AmIButton>
       </NuxtLink>
     </div>

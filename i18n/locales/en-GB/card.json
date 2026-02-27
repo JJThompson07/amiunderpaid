@@ -1,0 +1,11 @@
+{
+  "no-data": {
+    "heading": "No data found for this role",
+    "body": "We couldn't find enough salary data for {role} in {location} to give you and accurate verdict.",
+    "try-different": "Try a different search"
+  },
+  "action": {
+    "premier": "Premier",
+    "sponsored": "Sponsored"
+  }
+}

@@ -4,8 +4,8 @@
     :class="[borderColour, bgColour, hoverClass, { 'h-full': fullHeight }]">
     <div
       v-if="premier"
-      class="absolute top-0 right-0 px-2 py-1 bg-primary-100 text-2xs font-bold text-primary-600 rounded-bl-lg">
-      PREMIER
+      class="absolute top-0 right-0 px-2 py-1 bg-primary-100 text-2xs font-bold text-primary-600 rounded-bl-lg uppercase">
+      {{ $t('card.action.premier') }}
     </div>
     <div class="flex flex-col gap-4">
       <div class="flex gap-2 items-center">
@@ -23,7 +23,9 @@
         <p>
           <slot name="body" />
         </p>
-        <p v-if="sponsored" class="text-right"><small>(Sponsored)</small></p>
+        <p v-if="sponsored" class="text-right">
+          <small>({{ $t('card.action.sponsored') }})</small>
+        </p>
       </div>
     </div>
     <div class="mt-auto">
