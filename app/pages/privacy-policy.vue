@@ -8,7 +8,7 @@
         <p class="mt-4 text-lg text-slate-500">
           {{
             $t('privacy-policy.updated', {
-              date: new Date(2026, 1).toLocaleDateString($t('locale'), {
+              date: new Date(2026, 1).toLocaleDateString(locale, {
                 year: 'numeric',
                 month: 'long'
               })
@@ -88,6 +88,7 @@
 </template>
 
 <script setup lang="ts">
+const { locale } = useI18n();
 useSeoMeta({
   title: 'Privacy Policy | Am I Underpaid?',
   description: 'Privacy policy, data sources, and affiliate disclosure for Am I Underpaid?'
