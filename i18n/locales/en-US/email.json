@@ -1,0 +1,9 @@
+{
+  "subject": "Subject: {subject}\n\n",
+  "intro": "Hi [Manager Name],\n\nI hope you're having a good week.\n\nI'm writing to request a meeting to discuss my current role and a salary alignment.\n\n",
+  "body": {
+    "underpaid": "Based on my recent research into the current market for {title} roles, the average benchmark is currently {currency}{average}.\n\nGiven my recent contributions to [Project/Team Name] and the current market rate, I would like to discuss bringing my salary closer to this benchmark ({currency}{average}).\n\nI'm keen to continue delivering value to the team and would appreciate the opportunity to discuss this further.",
+    "incentive": "Over the past year, I have [mention 1-2 key achievements]. I am keen to discuss how my compensation can evolve to reflect these increased responsibilities and the value I am delivering to the team.\n\nWhen would be a good time to chat?"
+  },
+  "closing": "\n\nBest regards,\n[Your Name]"
+}

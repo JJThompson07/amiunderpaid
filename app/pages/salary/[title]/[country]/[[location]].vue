@@ -134,7 +134,7 @@
           class="lg:col-span-4"
           :title="displayTitle"
           :current-salary="userSalary"
-          :market-average="marketAverage"
+          :market-average="meanSalary || marketAverage"
           :currency-symbol="currencySymbol"
           :country="country" />
 

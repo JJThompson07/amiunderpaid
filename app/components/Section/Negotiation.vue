@@ -123,27 +123,14 @@ const emailSubject = computed(() => `Salary Review Discussion - ${props.title} R
 
 const emailBody = computed(() => {
   const emailBody = isUnderpaid.value
-    ? `Based on my recent research into the current market for ${props.title} roles, the average benchmark is currently ${props.currencySymbol}${props.marketAverage.toLocaleString()}.
+    ? $t('email.body.underpaid', {
+        title: props.title,
+        currency: props.currencySymbol,
+        average: props.marketAverage.toLocaleString()
+      })
+    : $t('email.body.incentive');
 
-Given my recent contributions to [Project/Team Name] and the current market rate, I would like to discuss bringing my salary closer to this benchmark (${props.currencySymbol}${props.marketAverage.toLocaleString()}).
-
-I'm keen to continue delivering value to the team and would appreciate the opportunity to discuss this further.`
-    : `Over the past year, I have [mention 1-2 key achievements]. I am keen to discuss how my compensation can evolve to reflect these increased responsibilities and the value I am delivering to the team.
-
-When would be a good time to chat?`;
-
-  return `Subject: ${emailSubject.value}
-
-Hi [Manager Name],
-
-I hope you're having a good week.
-
-I'm writing to request a meeting to discuss my current role and a salary alignment. 
-
-${emailBody}
-
-Best regards,
-[Your Name]`;
+  return `${$t('email.subject', { subject: emailSubject.value })}${$t('email.intro')}${emailBody}${$t('email.closing')}`;
 });
 
 // ** methods **

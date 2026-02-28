@@ -11,6 +11,7 @@ import search from './search.json';
 import navbar from './navbar.json';
 import meta from './meta.json';
 import card from './card.json';
+import email from './email.json';
 
 export default defineI18nLocale(async () => {
   return {
@@ -26,6 +27,7 @@ export default defineI18nLocale(async () => {
     search,
     navbar,
     meta,
-    card
+    card,
+    email
   };
 });
