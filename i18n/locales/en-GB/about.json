@@ -1,0 +1,10 @@
+{
+  "heading": "About Us",
+  "body": {
+    "bold": "Salary transparency is broken.",
+    "intro": "Most people rely on awkward conversations with colleagues or outdated reports to know what they are worth.",
+    "middle": "We built {app-name} to change that.",
+    "app-name": "Am I Underpaid?",
+    "outro": "Our mission is simple: to give every employee the data they need to negotiate with confidence. We believe that when salary data is open and accessible, the pay gap closes and everyone wins."
+  }
+}

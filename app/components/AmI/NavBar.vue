@@ -68,47 +68,47 @@ const { trackPageNav } = useAnalytics();
 const adminLinks = [
   {
     to: '/',
-    label: 'Home',
+    label: $t('navbar.home'),
     mobileOnly: true
   },
   {
     to: '/admin/seed',
-    label: 'Seeder'
+    label: $t('navbar.seeder')
   },
   {
     to: '/admin/coding-index',
-    label: 'Coding Index'
+    label: $t('navbar.coding-index')
   },
   {
     to: '/admin/adzuna',
-    label: 'Adzuna API'
+    label: $t('navbar.adzuna-api')
   },
   {
     to: '/admin/jobs-cache',
-    label: 'Jobs Cache'
+    label: $t('navbar.jobs-cache')
   }
 ];
 
 const navLinks = [
   {
     to: '/',
-    label: 'Home',
+    label: $t('navbar.home'),
     mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400',
     mobileOnly: true
   },
   {
     to: '/how-it-works',
-    label: 'How it works',
+    label: $t('navbar.how-it-works'),
     mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400'
   },
   {
     to: '/data-sources',
-    label: 'Data Sources',
+    label: $t('navbar.data-sources'),
     mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400'
   },
   {
     to: '/about',
-    label: 'About',
+    label: $t('navbar.about'),
     mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400'
   }
 ];

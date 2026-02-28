@@ -5,10 +5,13 @@
       class="w-full max-w-md bg-white shadow-2xl rounded-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
       <!-- Header -->
       <div class="p-6 border-b border-slate-100 bg-slate-50/50">
-        <h3 class="text-lg font-black text-slate-900">Which role fits best?</h3>
+        <h3 class="text-lg font-black text-slate-900">{{ $t('modals.ambiguity.title') }}</h3>
         <p class="text-sm text-slate-500 mt-1">
-          We found multiple groups for <span class="font-bold text-slate-900">{{ title }}</span
-          >. Select the one that matches your job.
+          <i18n-t keypath="modals.ambiguity.content" tag="p" class="leading-relaxed">
+            <template #title>
+              <span class="font-bold">{{ title }}</span>
+            </template>
+          </i18n-t>
         </p>
       </div>
 
@@ -38,7 +41,7 @@
         <button
           class="text-xs font-bold text-slate-400 hover:text-slate-600 px-4 py-2"
           @click="$emit('close')">
-          Use Default Match
+          {{ $t('modals.ambiguity.use-default') }}
         </button>
       </div>
     </div>

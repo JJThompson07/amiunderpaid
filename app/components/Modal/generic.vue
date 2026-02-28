@@ -19,7 +19,7 @@
           <button
             class="text-xs font-bold text-slate-400 hover:text-slate-600 px-4 py-2"
             @click="$emit('update:modelValue', false)">
-            Close
+            {{ $t('common.close') }}
           </button>
         </div>
       </div>

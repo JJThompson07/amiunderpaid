@@ -1,0 +1,89 @@
+{
+  "adzuna": {
+    "results": "Showing matched data for {jobsCount} live jobs.",
+    "live-rate": "Live Market Rate: {currency}{rate}",
+    "view-salary-distribution": "View Salary Distribution",
+    "salary-distribution": "Salary Distribution",
+    "no-data": "No live data available for this role and location."
+  },
+  "government": {
+    "showing": "Showing government matched data for {type}{title} in {location}.",
+    "not-found": " Exact match not found. Showing {marketDataYear} government data for",
+    "rate": "Market Rate:"
+  },
+  "visualiser": {
+    "low": "Low",
+    "high": "High",
+    "average": "AVG",
+    "you": "YOU"
+  },
+  "gov-user-selection": {
+    "title": "Refine Government Match",
+    "content": "We found live job data for {category}, but couldn't automatically match a government benchmark. Please search for the most relevant government category below:",
+    "search": "Search government categories",
+    "search-placeholder": "e.g. Engineering professionals"
+  },
+  "negotiation": {
+    "title": "Ready To Take Action?",
+    "custom-email-script": "Your Custom Negotiation Script",
+    "copied": "Copied!",
+    "copy": "Copy to Clipboard",
+    "salary-negotiator": {
+      "title": "Master Negotiations",
+      "strapline": "Knowing your value is only the first step",
+      "body-html": "We've partnered with {name} to help you bridge the gap. Master the exact scripts and strategies used by top executives to secure the pay you actually deserve.",
+      "name": "The Salary Negotiator",
+      "cta": "Explore Courses"
+    },
+    "purple-cv": {
+      "title": "Career Progression",
+      "strapline": "Templates alone don't win interviews",
+      "body-html": "Position yourself for your next big move with a professionally written CV from {name}. Their experts design documents specifically to beat the algorithms and stand out to recruiters.",
+      "name": "PurpleCV",
+      "cta": "PurpleCV"
+    },
+    "cv-library": {
+      "title": "Get Discovered",
+      "strapline": "Find a job that works for you, fast",
+      "body-html": "Register your free CV on the UK's leading job site ({name}) and let top employers come to you - it's fast, easy and free.",
+      "name": "CV-Library",
+      "cta": "Register CV"
+    },
+    "custom": {
+      "title": "Email Template",
+      "strapline": "A template script to help you start the conversation.",
+      "body-html": "Whether you're underpaid or looking to justify a raise, use this script to confidently communicate your value and set up a discussion with your manager.",
+      "cta-show": "Show Script",
+      "cta-hide": "Hide Script"
+    }
+  },
+  "no-data": {
+    "title": "No exact match found",
+    "could-not-find": "We couldn't find enough data for",
+    "option-1": {
+      "title": "Try a broader search",
+      "description": "Check for typos or try a broader job title.",
+      "button": "Start New Search"
+    },
+    "option-2": {
+      "title": "Find By Category",
+      "description": "Select a government category to find relevant salary data.",
+      "label": "Search Categories",
+      "placeholder": "e.g. Engineering"
+    }
+  },
+  "verdict": {
+    "in-line": " Your salary is {exactly} with the market average.",
+    "higher": "Your salary is {percent} than the market average {average} for your role.",
+    "earn": "earn"
+  },
+  "uk-comparison": {
+    "comparing": "Comparing against the regional average for all jobs from {year}",
+    "average-salary": "The average salary for {role} is ",
+    "same": "The Same",
+    "higher": "Higher",
+    "lower": "Lower",
+    "than": "than the average salary for all jobs in",
+    "your-salary": "Your salary of {salary} is "
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "live-market-data": "Live {year} market data",
+  "live-data": "Live Data",
+  "coming-soon": "Coming soon",
+  "currency-symbol": "£",
+  "close": "Close",
+  "the-uk": "the UK",
+  "loading": "Loading...",
+  "optional": "optional",
+  "underpaid": "Underpaid",
+  "footer": {
+    "copy": "2026 Am I Underpaid. All rights reserved."
+  },
+  "data": {
+    "disclaimer": "Data based on recent listings from Adzuna and ONS Benchmarks."
+  },
+  "searching": "Searching 140,000+ records..."
+}

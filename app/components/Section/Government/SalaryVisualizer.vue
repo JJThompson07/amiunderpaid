@@ -4,15 +4,19 @@
       <!-- Range Bar -->
       <div class="relative h-3 rounded-full bg-slate-400/50">
         <!-- High/Low Markers -->
-        <div class="absolute left-0 -top-6 text-2xs font-bold text-slate-600 uppercase">Low</div>
-        <div class="absolute right-0 -top-6 text-2xs font-bold text-slate-600 uppercase">High</div>
+        <div class="absolute left-0 -top-6 text-2xs font-bold text-slate-600 uppercase">
+          {{ $t('sections.visualiser.low') }}
+        </div>
+        <div class="absolute right-0 -top-6 text-2xs font-bold text-slate-600 uppercase">
+          {{ $t('sections.visualiser.high') }}
+        </div>
 
         <!-- Market Average Dot -->
         <div
           class="absolute z-10 w-5 h-5 -translate-x-1/2 -translate-y-1/2 bg-primary-600 border-2 border-white rounded-full shadow-md top-1/2 left-1/2">
           <div
             class="absolute -translate-x-1/2 -top-6 left-1/2 text-[9px] font-black text-primary-600 whitespace-nowrap">
-            AVG
+            {{ $t('sections.visualiser.average') }}
           </div>
         </div>
 
@@ -37,7 +41,7 @@
                   ? 'text-negative-700'
                   : 'text-positive-700'
             ">
-            YOU
+            {{ $t('sections.visualiser.you') }}
           </div>
         </div>
       </div>

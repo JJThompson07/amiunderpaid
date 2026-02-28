@@ -2,66 +2,84 @@
   <div class="min-h-screen pt-24 pb-12 bg-slate-50">
     <div class="max-w-3xl px-4 mx-auto">
       <div class="mb-12 text-center">
-        <h1 class="text-3xl font-black text-slate-900 md:text-4xl">Privacy Policy</h1>
-        <p class="mt-4 text-lg text-slate-500">Last updated: February 2026</p>
+        <h1 class="text-3xl font-black text-slate-900 md:text-4xl">
+          {{ $t('privacy-policy.heading') }}
+        </h1>
+        <p class="mt-4 text-lg text-slate-500">
+          {{
+            $t('privacy-policy.updated', {
+              date: new Date(2026, 1).toLocaleDateString(locale, {
+                year: 'numeric',
+                month: 'long'
+              })
+            })
+          }}
+        </p>
       </div>
 
       <div
         class="p-8 space-y-8 bg-white border shadow-xl rounded-3xl border-slate-200 text-slate-600 leading-relaxed">
         <section>
-          <h2 class="text-xl font-bold text-slate-900 mb-4">1. Data Collection & Usage</h2>
+          <h2 class="text-xl font-bold text-slate-900 mb-4">
+            {{ $t('privacy-policy.collection.heading') }}
+          </h2>
           <p>
-            We prioritize your privacy. "Am I Underpaid?" does not require you to create an account
-            or provide personal identification to use our salary benchmarking tools.
+            {{ $t('privacy-policy.collection.body.1') }}
           </p>
           <p class="mt-2">
-            The salary information and job titles you enter into our calculator are processed to
-            provide you with a comparison against our database. We do not store your specific entry
-            linked to your personal identity.
+            {{ $t('privacy-policy.collection.body.2') }}
           </p>
           <p class="mt-2">
-            We use Google Analytics to anonymously track website usage and improve our services.
-            This data is aggregated and cannot be used to identify you personally.
+            {{ $t('privacy-policy.collection.body.3') }}
           </p>
         </section>
 
         <section>
-          <h2 class="text-xl font-bold text-slate-900 mb-4">2. Our Data Sources</h2>
+          <h2 class="text-xl font-bold text-slate-900 mb-4">
+            {{ $t('privacy-policy.sources.heading') }}
+          </h2>
           <p>
-            Our benchmarking data is aggregated from publicly available government statistics and
-            real-time market data to ensure accuracy.
+            {{ $t('privacy-policy.sources.body.desc') }}
           </p>
           <ul class="list-disc pl-5 mt-2 space-y-1">
             <li>
-              <strong>ONS (Office for National Statistics):</strong> Used for UK job titles and
-              salary benchmarks.
+              <i18n-t keypath="privacy-policy.sources.body.list.1" tag="p" class="leading-relaxed">
+                <template #ons>
+                  <strong>{{ $t('privacy-policy.sources.body.list.ons') }}</strong>
+                </template>
+              </i18n-t>
             </li>
             <li>
-              <strong>BLS (Bureau of Labor Statistics):</strong> Used for USA job titles and salary
-              benchmarks.
+              <i18n-t keypath="privacy-policy.sources.body.list.2" tag="p" class="leading-relaxed">
+                <template #bls>
+                  <strong>{{ $t('privacy-policy.sources.body.list.bls') }}</strong>
+                </template>
+              </i18n-t>
             </li>
             <li>
-              <strong>Adzuna Intelligence:</strong> Used for real-time job listing data.
-              <span
-                class="font-bold text-secondary-600 uppercase text-2xs tracking-wide bg-secondary-50 px-2 py-0.5 rounded-full mr-1"
-                >Coming Soon</span
-              >
+              <div class="flex gap-1 items-center">
+                <i18n-t
+                  keypath="privacy-policy.sources.body.list.3"
+                  tag="p"
+                  class="leading-relaxed">
+                  <template #adzuna>
+                    <strong>{{ $t('privacy-policy.sources.body.list.adzuna') }}</strong>
+                  </template>
+                </i18n-t>
+              </div>
             </li>
           </ul>
         </section>
 
         <section>
-          <h2 class="text-xl font-bold text-slate-900 mb-4">3. Affiliate Disclosure</h2>
+          <h2 class="text-xl font-bold text-slate-900 mb-4">
+            {{ $t('privacy-policy.affiliate.heading') }}
+          </h2>
           <p>
-            This website contains affiliate links. If you click on a link for a third-party service
-            (such as CV writing services or negotiation courses) and make a purchase, we may earn a
-            commission at no extra cost to you.
+            {{ $t('privacy-policy.affiliate.body.1') }}
           </p>
           <p class="mt-2">
-            We believe the only way to successfully progress in your career is to invest in
-            yourself, and we only recommend services that provide genuine value to our users. We
-            carefully vet all affiliate partners to ensure they meet our standards for quality and
-            relevance to career development.
+            {{ $t('privacy-policy.affiliate.body.2') }}
           </p>
         </section>
       </div>
@@ -70,6 +88,7 @@
 </template>
 
 <script setup lang="ts">
+const { locale } = useI18n();
 useSeoMeta({
   title: 'Privacy Policy | Am I Underpaid?',
   description: 'Privacy policy, data sources, and affiliate disclosure for Am I Underpaid?'

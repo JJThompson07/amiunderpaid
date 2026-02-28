@@ -1,0 +1,21 @@
+{
+  "heading": "Our Data Sources",
+  "description": "We combine official government statistics with real-time market data to give you the most accurate benchmark.",
+  "adzuna": {
+    "heading": "Adzuna Intelligence",
+    "body": "Our primary source for real-time market shifts. We aggregate data from millions of live job listings to see exactly what employers are offering right now."
+  },
+  "ons": {
+    "heading": "ONS (UK Government)",
+    "body": "Official labour market statistics from the Office for National Statistics (Annual Survey of Hours and Earnings), providing the definitive historical benchmark for UK salaries."
+  },
+  "bls": {
+    "heading": "US Bureau of Labor Statistics",
+    "body": "Comprehensive wage data from the BLS Occupational Employment and Wage Statistics (OEWS) program, ensuring accuracy for our US-based benchmarks."
+  },
+  "crowd": {
+    "heading": "Crowdsourced Data",
+    "body": "We are building a verified database of anonymous salary submissions from professionals like you to further refine our models."
+  },
+  "db-update": "Last database update:"
+}

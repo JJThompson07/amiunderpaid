@@ -5,21 +5,21 @@
       <div class="p-1.5 bg-amber-100 rounded-lg text-amber-600">
         <AlertCircle class="w-4 h-4" aria-hidden="true" />
       </div>
-      <h3 class="font-bold text-slate-900">Refine Government Match</h3>
+      <h3 class="font-bold text-slate-900">{{ $t('sections.gov-user-selection.title') }}</h3>
     </div>
     <div class="p-5 flex-1 flex flex-col gap-4">
       <p class="text-xs text-slate-600">
-        We found live job data
-        <span v-if="adzunaCategory"
-          >in <strong>{{ adzunaCategory }}</strong></span
-        >, but couldn't automatically match a government benchmark. Please search for the most
-        relevant government category below:
+        <i18n-t keypath="sections.gov-user-selection.content" tag="span" class="leading-relaxed">
+          <template #category>
+            <span class="font-bold">{{ adzunaCategory }}</span>
+          </template>
+        </i18n-t>
       </p>
 
       <AmIAutocompleteInput
         v-model="searchQuery"
-        label="Search Government Categories"
-        placeholder="e.g. Engineering professionals"
+        :label="$t('sections.gov-user-selection.search')"
+        :placeholder="$t('sections.gov-user-selection.search-placeholder')"
         :icon="Search"
         :options="options"
         :loading="loading"

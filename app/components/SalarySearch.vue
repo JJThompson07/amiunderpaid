@@ -30,9 +30,9 @@
         <div class="flex-1">
           <AmIAutocompleteInput
             v-model="title"
-            label="Job Title"
-            helper="Type any title, we will try to find the best match"
-            placeholder="e.g. Software Engineer"
+            :label="$t('search.title.label')"
+            :helper="$t('search.title.helper')"
+            :placeholder="$t('search.title.placeholder')"
             :icon="Search"
             :options="titleOptions"
             :loading="fetching"
@@ -44,8 +44,8 @@
           <div class="flex-1">
             <AmIAutocompleteInput
               v-model="location"
-              label="Location"
-              :placeholder="`e.g. ${country === 'UK' ? 'London' : 'New York'}`"
+              :label="$t('search.location.label')"
+              :placeholder="$t('search.location.placeholder')"
               :icon="MapPin"
               :options="locationOptions"
               optional
@@ -59,7 +59,7 @@
               v-model:param-value="period"
               type="number"
               :step="10"
-              label="Current Salary"
+              :label="$t('search.salary.label')"
               :placeholder="currencySymbol + '55,000'"
               :icon="Wallet"
               optional
@@ -75,9 +75,9 @@
               class="w-full text-center"
               :loading="loading"
               :disabled="title === ''"
-              title="Check salary"
+              :title="$t('buttons.check-salary')"
               @click.prevent="handleSearch">
-              Check Salary
+              {{ $t('buttons.check-salary') }}
             </AmIButton>
           </AmIAnimatedBorder>
         </div>

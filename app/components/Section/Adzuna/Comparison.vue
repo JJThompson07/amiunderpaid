@@ -6,15 +6,21 @@
     icon-colour="bg-secondary-600"
     :title="`Live ${country} Market Analysis`">
     <template #info>
-      <span>
-        Showing government matched data for
-        <strong>{{ jobsCount }}</strong> live jobs.
-      </span>
+      <i18n-t keypath="sections.adzuna.results" tag="span" class="leading-relaxed">
+        <template #jobsCount>
+          <span class="font-bold">{{ jobsCount }}</span>
+        </template>
+      </i18n-t>
     </template>
     <template #verdict>
       <div v-if="currentSalary === 0" class="space-y-2 text-center">
         <h2 class="text-2xl font-black text-slate-900">
-          Live Market Rate: {{ currencySymbol }}{{ Math.round(averageSalary).toLocaleString() }}
+          {{
+            $t('sections.adzuna.live-rate', {
+              currency: currencySymbol,
+              rate: Math.round(averageSalary).toLocaleString()
+            })
+          }}
         </h2>
       </div>
 
@@ -33,8 +39,11 @@
     <template #footer>
       <!-- Load Button State -->
       <div v-if="!hasData || !showHistogram" class="flex items-center justify-center w-full">
-        <AmIButton :loading="loading" title="View Distribution" @click="toggleHistogram">
-          View Salary Distribution
+        <AmIButton
+          :loading="loading"
+          :title="$t('sections.adzuna.view-salary-distribution')"
+          @click="toggleHistogram">
+          {{ $t('sections.adzuna.view-salary-distribution') }}
         </AmIButton>
       </div>
 

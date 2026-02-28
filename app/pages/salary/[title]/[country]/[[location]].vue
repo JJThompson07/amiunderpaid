@@ -69,7 +69,7 @@
               v-if="!userSelected && !showUserSelection"
               class="absolute! right-2 top-2 text-2xs shadow-md"
               @click="showUserSelection = true"
-              >Not the best match?</AmIButton
+              >{{ $t('buttons.not-best-match') }}</AmIButton
             >
           </div>
 
@@ -102,14 +102,21 @@
           affiliate-bg-colour="bg-cv-library-100"
           affiliate-text-colour="text-cv-library-700"
           :icon="FileUser"
-          header="Get Discovered"
-          strapline="Find a job that works for you, fast"
+          :header="$t('sections.negotiation.cv-library.title')"
+          :strapline="$t('sections.negotiation.cv-library.strapline')"
           sponsored
           class="rounded-lg border shadow-lg h-max w-full">
           <template #body>
-            Register your free CV on the UK's leading job site (<strong class="text-cv-library-700"
-              >CV-Library</strong
-            >) and let top employers come to you - it's fast, easy and free.
+            <i18n-t
+              keypath="sections.negotiation.cv-library.body-html"
+              tag="span"
+              class="leading-relaxed">
+              <template #name>
+                <strong class="text-cv-library-700">{{
+                  $t('sections.negotiation.cv-library.name')
+                }}</strong>
+              </template>
+            </i18n-t>
           </template>
           <template #cta>
             <a
@@ -117,7 +124,7 @@
               target="_blank"
               rel="sponsored"
               class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
-              >Register CV</a
+              >{{ $t('sections.negotiation.cv-library.cta') }}</a
             >
           </template>
         </LazyAmICardAction>
@@ -127,13 +134,13 @@
           class="lg:col-span-4"
           :title="displayTitle"
           :current-salary="userSalary"
-          :market-average="marketAverage"
+          :market-average="meanSalary || marketAverage"
           :currency-symbol="currencySymbol"
           :country="country" />
 
         <p class="flex items-center justify-center gap-1 mt-6 text-2xs text-center text-slate-400">
           <Info class="w-3 h-3" />
-          Data based on recent listings from Adzuna and ONS Benchmarks.
+          {{ $t('common.data.disclaimer') }}
         </p>
       </div>
     </div>
@@ -146,7 +153,7 @@
       @close="showAmbiguityModal = false" />
 
     <ClientOnly>
-      <AmILoader v-if="pending || adzunaLoading" message="Searching 140,000+ records..." />
+      <AmILoader v-if="pending || adzunaLoading" :message="$t('common.searching')" />
     </ClientOnly>
   </div>
 </template>
@@ -371,19 +378,33 @@ const url = useRequestURL();
 useSeoMeta({
   title: () => {
     const locStr = location.value ? `${location.value}, ` : '';
-    return `Average ${displayTitle.value} Salary in ${locStr}${country.value} | Am I Underpaid?`;
+    return $t('meta.location.title', {
+      displayTitle: displayTitle.value,
+      locStr,
+      country: country.value
+    });
   },
   description: () => {
     const locStr = location.value || country.value;
-    return `Find out the average ${displayTitle.value} salary in ${locStr}. Compare your pay against live market data and government benchmarks.`;
+    return $t('meta.location.description', {
+      displayTitle: displayTitle.value,
+      locStr
+    });
   },
   ogTitle: () => {
     const locStr = location.value ? `${location.value}, ` : '';
-    return `Average ${displayTitle.value} Salary in ${locStr}${country.value}`;
+    return $t('meta.location.ogTitle', {
+      displayTitle: displayTitle.value,
+      locStr,
+      country: country.value
+    });
   },
   ogDescription: () => {
     const locStr = location.value || country.value;
-    return `Are you being paid enough? Check the average ${displayTitle.value} salary in ${locStr} now.`;
+    return $t('meta.location.ogDescription', {
+      displayTitle: displayTitle.value,
+      locStr
+    });
   },
   ogImage: `${url.origin}/og.png`,
   twitterCard: 'summary',
@@ -407,13 +428,13 @@ useHead({
             {
               '@type': 'ListItem',
               position: 1,
-              name: 'Home',
+              name: $t('navbar.home'),
               item: url.origin
             },
             {
               '@type': 'ListItem',
               position: 2,
-              name: `Salary for ${displayTitle.value}`,
+              name: $t('meta.locations.header.title', { displayTitle: displayTitle.value }),
               item: `${url.origin}${route.path}`
             },
             {

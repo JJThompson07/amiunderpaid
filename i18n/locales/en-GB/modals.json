@@ -1,0 +1,12 @@
+{
+  "converter": {
+    "title": "Don't Get Paid Annually?",
+    "content": "Use our calculator to convert your hourly, daily, or weekly wage into an annual salary equivalent for a more accurate comparison.",
+    "result": "Your annual salary equivalent is:"
+  },
+  "ambiguity": {
+    "title": "Which role fits best?",
+    "content": "We found multiple groups for {title}. Select the one that matches your job.",
+    "use-default": "Use Default Match"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "heading": "Am I Underpaid?",
+  "subheading": "Feeling undervalued? Curious about the market rate?",
+  "subheading-context": "Stop guessing. Check your salary against 140,000+ live job listings and official government benchmarks in seconds.",
+  "privacy-note": "Your privacy matters. The information provided above is used solely to generate your results.",
+  "why": {
+    "heading": "Why check your market rate?",
+    "body": "In the rapidly shifting {year} job market, staying informed about {benchmarks} is essential for fair compensation. Whether you are preparing for a performance review or exploring new opportunities, our tool provides the transparency you need to negotiate with confidence.",
+    "benchmarks_bold": "salary benchmarks"
+  },
+  "data": {
+    "heading": "Data-Driven Insights",
+    "body": "We aggregate data from the {bureau} and analyze thousands of live job listings. This ensures your {comparison} reflects real-world economic conditions and regional pay variations.",
+    "comparison_bold": "salary comparison",
+    "bureau": {
+      "usa": "Bureau of Labor Statistics (BLS)",
+      "uk": "Office for National Statistics (ONS)"
+    }
+  },
+  "sources": {
+    "ons": "ONS Data",
+    "adzuna": "Adzuna API",
+    "bls": "BLS Data"
+  }
+}
