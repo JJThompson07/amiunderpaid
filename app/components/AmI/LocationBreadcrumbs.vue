@@ -10,7 +10,9 @@
       </li>
       <li class="text-slate-300 select-none">/</li>
       <li>
-        <NuxtLink to="/" class="hover:text-white transition-colors"> Salaries </NuxtLink>
+        <NuxtLink to="/" class="hover:text-white transition-colors">{{
+          $t('buttons.salaries')
+        }}</NuxtLink>
       </li>
       <li class="text-slate-300 select-none">/</li>
       <li>

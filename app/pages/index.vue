@@ -131,7 +131,7 @@ useHead({
       innerHTML: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        name: 'Am I Underpaid?',
+        name: $t('meta.index.name'),
         url: url.origin,
         description: description.value
       })

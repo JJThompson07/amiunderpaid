@@ -371,19 +371,33 @@ const url = useRequestURL();
 useSeoMeta({
   title: () => {
     const locStr = location.value ? `${location.value}, ` : '';
-    return `Average ${displayTitle.value} Salary in ${locStr}${country.value} | Am I Underpaid?`;
+    return $t('meta.location.title', {
+      displayTitle: displayTitle.value,
+      locStr,
+      country: country.value
+    });
   },
   description: () => {
     const locStr = location.value || country.value;
-    return `Find out the average ${displayTitle.value} salary in ${locStr}. Compare your pay against live market data and government benchmarks.`;
+    return $t('meta.location.description', {
+      displayTitle: displayTitle.value,
+      locStr
+    });
   },
   ogTitle: () => {
     const locStr = location.value ? `${location.value}, ` : '';
-    return `Average ${displayTitle.value} Salary in ${locStr}${country.value}`;
+    return $t('meta.location.ogTitle', {
+      displayTitle: displayTitle.value,
+      locStr,
+      country: country.value
+    });
   },
   ogDescription: () => {
     const locStr = location.value || country.value;
-    return `Are you being paid enough? Check the average ${displayTitle.value} salary in ${locStr} now.`;
+    return $t('meta.location.ogDescription', {
+      displayTitle: displayTitle.value,
+      locStr
+    });
   },
   ogImage: `${url.origin}/og.png`,
   twitterCard: 'summary',

@@ -15,7 +15,7 @@
 defineProps({
   message: {
     type: String,
-    default: $t('common.loading')
+    default: 'Loading...'
   }
 });
 </script>
