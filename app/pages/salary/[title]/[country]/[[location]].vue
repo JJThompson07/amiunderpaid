@@ -428,7 +428,7 @@ useHead({
             {
               '@type': 'ListItem',
               position: 1,
-              name: 'Home',
+              name: $t('navbar.home'),
               item: url.origin
             },
             {
