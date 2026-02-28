@@ -1,44 +1,22 @@
 <template>
-  <div class="text-center p-4 flex flex-col flex-1">
+  <div class="flex flex-col flex-1">
     <div class="flex flex-col items-center gap-2">
-      <div class="flex flex-col sm:flex-row gap-3 items-center relative">
-        <h2
-          class="text-2xl font-bold rounded-full p-2 px-4 flex items-center justify-center gap-2"
-          :class="[verdict.text, verdict.bg]">
-          <component :is="verdict.icon" />
-          {{ verdict.title }}
-        </h2>
-      </div>
-      <div class="flex flex-col relative">
-        <p class="text-sm text-slate-600 mt-1">
-          <template v-if="diffPercent === 0">
-            <i18n-t keypath="sections.verdict.in-line" tag="span" class="leading-relaxed">
-              <template #exactly>
-                <span class="font-bold text-slate-900">exactly in line</span>
-              </template>
-            </i18n-t>
-          </template>
-          <template v-else-if="isUnderpaid">
-            {{ matchedTitle || displayTitle }} in
-            {{ country === 'USA' ? matchedLocation || location || country : country }}
-            {{ $t('sections.verdict.earn') }}
-            <span class="font-bold text-slate-900"
-              >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
-            >.
-          </template>
-          <template v-else>
-            <i18n-t keypath="sections.verdict.higher" tag="span" class="leading-relaxed">
-              <template #percent>
-                <span class="font-bold text-slate-900">{{ diffPercent }}% higher</span>
-              </template>
-              <template #average>
-                <span class="font-bold text-slate-900"
-                  >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
-                >
-              </template>
-            </i18n-t>
-          </template>
-        </p>
+      <div
+        class="flex flex-row gap-3 relative flex-1 w-full rounded-lg p-4 items-center"
+        :class="[verdict.text, verdict.bg]">
+        <component :is="verdict.icon" />
+        <div class="flex flex-col gap-1">
+          <p class="text-sm">
+            {{ verdict.title }}
+          </p>
+          <p class="text-sm">
+            <span class="text-base font-bold"
+              >{{ diffPercent < 0 ? '-' : '+' }}{{ props.currencySymbol
+              }}{{ diff.toLocaleString() }}</span
+            >
+            ({{ diffPercent }}%)
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -49,42 +27,36 @@ import { computed } from 'vue';
 import { Check, TrendingDown, TrendingUp } from 'lucide-vue-next';
 
 const props = defineProps<{
-  displayTitle: string;
-  location: string;
-  country: string;
   marketAverage: number;
   currencySymbol: string;
-  matchedTitle: string;
-  matchedLocation: string;
+  diff: number;
   diffPercent: number;
   isUnderpaid: boolean;
+  comparison: number;
 }>();
 
 const verdict = computed(() => {
-  if (props.diffPercent === 0) {
+  if (props.comparison === 0) {
     return {
       icon: Check,
-      bg: 'bg-indigo-100',
-      text: 'text-indigo-700',
-      label: 'Fairly Paid',
-      title: 'Spot on!'
+      bg: 'bg-neutral-100/50',
+      text: 'text-neutral-700',
+      title: $t('sections.verdict.fairly-paid')
     };
   }
-  if (props.isUnderpaid) {
+  if (props.comparison === -1) {
     return {
       icon: TrendingDown,
-      bg: 'bg-negative-100',
+      bg: 'bg-negative-100/50',
       text: 'text-negative-700',
-      label: 'Underpaid',
-      title: `Uderpaid -${props.diffPercent}%`
+      title: $t('sections.verdict.variance')
     };
   }
   return {
     icon: TrendingUp,
-    bg: 'bg-positive-100',
+    bg: 'bg-positive-100/50',
     text: 'text-positive-700',
-    label: 'Above Market Average',
-    title: `Valued ${props.diffPercent}%`
+    title: $t('sections.verdict.variance')
   };
 });
 </script>

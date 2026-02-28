@@ -1,5 +1,5 @@
 <template>
-  <div class="histogram bg-slate-100 rounded-lg relative">
+  <div class="histogram rounded-lg relative">
     <div class="p-4">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-bold text-slate-900">
@@ -14,7 +14,7 @@
 
       <!-- Chart -->
       <div class="histogram relative">
-        <div class="flex items-end justify-between h-40 gap-2 mt-4 relative">
+        <div class="flex items-end justify-between h-32 gap-2 mt-4 relative">
           <div
             v-for="(bucket, index) in buckets"
             :key="index"
@@ -23,7 +23,7 @@
             @mouseleave="activeIndex = -1">
             <!-- Bar -->
             <div
-              class="w-full bg-primary-500 rounded-t-sm transition-all duration-300 group-hover:bg-primary-400 relative"
+              class="w-full bg-primary-500 rounded-t-sm transition-all duration-300 group-hover:bg-primary-400 relative animate-bar-enter"
               :style="{ height: `${(bucket.count / histogramMaxCount) * 100}%` }" />
 
             <!-- Tooltip -->
@@ -54,8 +54,10 @@
         <div
           v-for="(bucket, index) in buckets"
           :key="index"
-          class="sm:flex-1 text-center text-2xs font-bold text-slate-400 uppercase tracking-wider"
-          :class="index !== 0 && index !== buckets.length - 1 ? 'hidden sm:block' : ''">
+          class="sm:flex-1 md:flex-0 lg:flex-1 text-center text-2xs font-bold text-slate-400 uppercase tracking-wider"
+          :class="
+            index !== 0 && index !== buckets.length - 1 ? 'hidden sm:block md:hidden lg:block' : ''
+          ">
           {{ currencySymbol
           }}{{ Number(bucket.value).toLocaleString() + (index === buckets.length - 1 ? '+' : '') }}
         </div>
@@ -109,3 +111,15 @@ defineProps({
 
 const activeIndex = ref(-1);
 </script>
+
+<style scoped>
+.animate-bar-enter {
+  animation: barEnter 0.7s ease-out forwards;
+}
+
+@keyframes barEnter {
+  0% {
+    height: 0;
+  }
+}
+</style>

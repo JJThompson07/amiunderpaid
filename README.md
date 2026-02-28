@@ -1,39 +1,58 @@
-# Am I Underpaid?
+<div align="center">
 
-"Am I Underpaid?" is a high-performance salary benchmarking tool that helps professionals compare their compensation against live market data and official government statistics (ONS for UK, BLS for USA).
+# 💸 Am I Underpaid?
+
+**High-performance salary benchmarking for professionals.**
+
+[![Nuxt 4](https://img.shields.io/badge/Nuxt-4.0-00DC82?style=for-the-badge&logo=nuxt.js&logoColor=white)](https://nuxt.com)
+[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+[![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
+[![Algolia](https://img.shields.io/badge/Algolia-003DFF?style=for-the-badge&logo=algolia&logoColor=white)](https://www.algolia.com)
+
+_"Am I Underpaid?" helps you compare your compensation against live market data and official government statistics (ONS for UK, BLS for USA)._
+
+</div>
+
+---
 
 ## 🚀 Nuxt 4 Evolution
 
-This project has been updated to Nuxt 4, leveraging the new directory structure and performance enhancements. Key updates include:
+This project has been updated to **Nuxt 4**, leveraging the new directory structure and performance enhancements.
 
-- **Unified App Directory**: All frontend logic (pages, components, composables, plugins) now resides in the `app/` folder, clearly separating client code from server configurations.
-- **Tailwind CSS v4**: Powered by `@tailwindcss/vite` for lightning-fast builds, zero-runtime CSS, and simplified configuration.
-- **SWR Caching**: Salary results are cached on the edge for 24 hours (`swr: 86400`) to ensure near-instant page loads for recurring searches.
-- **Optimized Firebase Chunking**: Firebase dependencies are manually chunked to prevent main thread blocking, drastically improving Time-to-Interactive.
+| Feature                   | Description                                                                                                                                            |
+| :------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Unified App Directory** | All frontend logic (`pages`, `components`, `composables`, `plugins`) now resides in `app/`, clearly separating client code from server configurations. |
+| **Tailwind CSS v4**       | Powered by `@tailwindcss/vite` for lightning-fast builds, zero-runtime CSS, and simplified configuration.                                              |
+| **SWR Caching**           | Salary results are cached on the edge for 24 hours (`swr: 86400`) to ensure near-instant page loads for recurring searches.                            |
+| **Optimized Firebase**    | Dependencies are manually chunked to prevent main thread blocking, drastically improving Time-to-Interactive.                                          |
 
-## Features
+## ✨ Features
 
+### 🌍 Core Functionality
+
+- **Domain-Level i18n & SEO**: Fully internationalized architecture mapping `en-GB` to `.co.uk` and `en-US` to `.com` for precise regional formatting and Google indexing.
 - **Salary Search**: Check your salary against 140,000+ job listings and benchmarks in real-time.
 - **Location Analysis**: Compare your salary against regional and national averages.
 - **Salary Converter**: Convert hourly, daily, or weekly wages to an annual equivalent.
 - **Negotiation Support**: Get custom email scripts and actionable tips to negotiate a raise.
 
-### Admin Portal
+### 🛡️ Admin Portal
 
 - **Data Seeder**: Upload CSV/XLSX files to seed Firestore with official government data.
 - **Verified Cache**: Manually approve SOC code matches to bypass Algolia fuzzy searches for future users, improving both speed and accuracy.
 
-## Tech Stack
+## 🛠 Tech Stack
 
 - **Framework**: Nuxt 4 (Vue 3.5+)
 - **Styling**: Tailwind CSS v4
 - **Database & Auth**: Firebase (Firestore, Authentication)
 - **Search**: Algolia
 - **Icons**: Lucide Vue Next
+- **Localization**: @nuxtjs/i18n
 
-## Project Structure
+## 📂 Project Structure
 
-```
+```bash
 ├── app/                # Nuxt 4 Frontend Layer
 │   ├── assets/         # Global CSS and Images
 │   ├── components/     # Vue Components (Auto-imported)
@@ -41,17 +60,22 @@ This project has been updated to Nuxt 4, leveraging the new directory structure 
 │   ├── layouts/        # Page Layout Wrappers
 │   ├── middleware/     # Route Navigation Guards (e.g., Admin Auth)
 │   ├── pages/          # File-based Routing
-│   ├── plugins/        # Client/Server Plugins (e.g., Google Analytics)
+│   ├── plugins/        # Client/Server Plugins
 │   └── app.vue         # Main Application Entry Point
 ├── server/             # Nitro Backend Layer (API & Server Utils)
-│   ├── api/            # API Endpoints (Adzuna integrations, Admin routes)
-│   ├── routes/         # Sitemap & Robots.txt generation
-│   └── utils/          # Server Utilities (Firebase Admin Auth & DB)
+│   ├── api/            # API Endpoints
+│   ├── routes/         # Sitemap & Robots.txt
+│   └── utils/          # Server Utilities
 ├── public/             # Static Assets (favicon, OG images)
 └── nuxt.config.ts      # Project Configuration & Runtime Config
 ```
 
 ## Setup & Local Development
+
+### Prerequisites
+
+- **Node.js**: v18.0.0 or higher (v20+ recommended)
+- **pnpm**: v8 or higher
 
 1.  **Clone the repository:**
 
@@ -106,3 +130,7 @@ This project has been updated to Nuxt 4, leveraging the new directory structure 
 ## Admin Access
 
 To access the administrative tools (`/admin/seed`, `/admin/coding-index`), you must be authenticated. The login page is protected and securely located at `/admin/login?access=YOUR_SECRET_KEY` (where the key matches `NUXT_ADMIN_ACCESS_KEY` in your environment variables). Authentication is persisted securely via Firebase Session Cookies.
+
+## Deployment
+
+Because this project uses Nuxt Server-Side Rendering (SSR) and Nitro edge-caching rules (`swr`), it is optimized for deployment on serverless platforms such as Vercel, Netlify, or Cloudflare Pages.

@@ -1,5 +1,6 @@
 {
   "adzuna": {
+    "title": "Live {country} Market Comparison",
     "results": "Showing matched data for {jobsCount} live jobs.",
     "live-rate": "Live Market Rate: {currency}{rate}",
     "view-salary-distribution": "View Salary Distribution",
@@ -7,15 +8,15 @@
     "no-data": "No live data available for this role and location."
   },
   "government": {
-    "showing": "Showing government matched data for {type}{title} in {location}.",
-    "not-found": " Exact match not found. Showing {marketDataYear} government data for",
-    "rate": "Market Rate:"
+    "title": "Government Benchmarks",
+    "market-category": "Government category",
+    "market-role": "Government role: ",
+    "not-found": " Exact match not found. Showing {marketDataYear} government data for"
   },
   "visualiser": {
     "low": "Low",
     "high": "High",
-    "average": "AVG",
-    "you": "YOU"
+    "average": "AVG"
   },
   "gov-user-selection": {
     "title": "Refine Government Match",
@@ -73,9 +74,8 @@
     }
   },
   "verdict": {
-    "in-line": " Your salary is {exactly} with the market average.",
-    "higher": "Your salary is {percent} than the market average {average} for your role.",
-    "earn": "earn"
+    "fairly-paid": "Less than 2.5% variance from market average",
+    "variance": "Variance from the market average"
   },
   "uk-comparison": {
     "comparing": "Comparing against the regional average for all jobs from {year}",

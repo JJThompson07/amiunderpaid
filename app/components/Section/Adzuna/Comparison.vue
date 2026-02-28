@@ -4,8 +4,15 @@
     :icon="TrendingUp"
     icon-bg="bg-secondary-100"
     icon-colour="bg-secondary-600"
-    :title="`Live ${country} Market Analysis`">
+    :title="$t('sections.adzuna.title', { country })"
+    :user-salary="currentSalary"
+    :market-average="averageSalary"
+    :currency-symbol="currencySymbol"
+    :comparison="comparison">
     <template #info>
+      <h4 class="font-bold text-xl lg:text-2xl md:line-clamp-1" :title="displayTitle">
+        {{ displayTitle }}
+      </h4>
       <i18n-t keypath="sections.adzuna.results" tag="span" class="leading-relaxed">
         <template #jobsCount>
           <span class="font-bold">{{ jobsCount }}</span>
@@ -13,27 +20,13 @@
       </i18n-t>
     </template>
     <template #verdict>
-      <div v-if="currentSalary === 0" class="space-y-2 text-center">
-        <h2 class="text-2xl font-black text-slate-900">
-          {{
-            $t('sections.adzuna.live-rate', {
-              currency: currencySymbol,
-              rate: Math.round(averageSalary).toLocaleString()
-            })
-          }}
-        </h2>
-      </div>
-
       <SectionSalaryVerdict
-        v-else
-        :display-title="displayTitle"
-        :location="location"
-        :country="country"
+        v-if="currentSalary > 0"
         :market-average="averageSalary"
         :currency-symbol="currencySymbol"
-        matched-title=""
-        :matched-location="location"
+        :diff="Math.abs(currentSalary - averageSalary)"
         :diff-percent="diffPercent"
+        :comparison="comparison"
         :is-underpaid="isUnderpaid" />
     </template>
     <template #footer>
@@ -66,7 +59,7 @@
 <script setup lang="ts">
 import { computed, type PropType } from 'vue';
 import type { HistogramBucket } from '~/composables/useAdzuna';
-import { getDiffPercentage } from '~/helpers/utility';
+import { getRawDiffPercentage } from '~/helpers/utility';
 import { TrendingUp } from 'lucide-vue-next';
 
 const emit = defineEmits(['fetch-data']);
@@ -132,7 +125,17 @@ const hasData = computed<boolean>(() => props.buckets && props.buckets.length > 
 
 const diffPercent = computed(() => {
   if (props.averageSalary === 0) return 0;
-  return getDiffPercentage(props.currentSalary, props.averageSalary);
+  return getRawDiffPercentage(props.currentSalary, props.averageSalary);
+});
+
+const comparison = computed<number>(() => {
+  if (diffPercent.value > 2.5) {
+    return 1;
+  } else if (diffPercent.value < -2.5) {
+    return -1;
+  } else {
+    return 0;
+  }
 });
 
 const toggleHistogram = () => {

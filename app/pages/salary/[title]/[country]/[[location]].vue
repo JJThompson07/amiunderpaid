@@ -25,7 +25,7 @@
       v-show="!pending && (hasGovernmentData || hasJobsData)"
       class="relative grid grid-cols-1 px-4 gap-6">
       <div class="relative mx-auto flex flex-col gap-6">
-        <div class="flex flex-col gap-6 xl:flex-row">
+        <div class="flex flex-col gap-6 md:flex-row">
           <div v-if="hasJobsData" class="flex flex-col flex-1 min-w-0 gap-3 adzuna-section">
             <LazySectionAdzunaComparison
               class="flex-1"
@@ -64,13 +64,9 @@
               :diff-percent="diffPercent"
               :is-underpaid="isUnderpaid"
               :market-low="marketLow"
-              :market-high="marketHigh" />
-            <AmIButton
-              v-if="!userSelected && !showUserSelection"
-              class="absolute! right-2 top-2 text-2xs shadow-md"
-              @click="showUserSelection = true"
-              >{{ $t('buttons.not-best-match') }}</AmIButton
-            >
+              :market-high="marketHigh"
+              :show-button="!userSelected && !showUserSelection"
+              @user-select="showUserSelection = true" />
           </div>
 
           <div
@@ -84,50 +80,53 @@
           </div>
         </div>
 
-        <SectionUKComparison
-          v-show="country === 'UK' && regionalData && location"
-          :country="country"
-          :location="location"
-          :display-title="matchedTitle || displayTitle"
-          :market-average="marketAverage"
-          :user-salary="userSalary"
-          :regional-data="regionalData"
-          :year="marketDataYear" />
+        <div class="flex flex-row gap-6">
+          <SectionUKComparison
+            v-show="country === 'UK' && regionalData && location"
+            class="flex-4"
+            :country="country"
+            :location="location"
+            :display-title="matchedTitle || displayTitle"
+            :market-average="marketAverage"
+            :user-salary="userSalary"
+            :regional-data="regionalData"
+            :year="marketDataYear" />
 
-        <LazyAmICardAction
-          v-if="country === 'UK' && isXl"
-          bg-colour="bg-cv-library-50"
-          border-colour="border-cv-library-100"
-          hover-class="hover:border-cv-library-200"
-          affiliate-bg-colour="bg-cv-library-100"
-          affiliate-text-colour="text-cv-library-700"
-          :icon="FileUser"
-          :header="$t('sections.negotiation.cv-library.title')"
-          :strapline="$t('sections.negotiation.cv-library.strapline')"
-          sponsored
-          class="rounded-lg border shadow-lg h-max w-full">
-          <template #body>
-            <i18n-t
-              keypath="sections.negotiation.cv-library.body-html"
-              tag="span"
-              class="leading-relaxed">
-              <template #name>
-                <strong class="text-cv-library-700">{{
-                  $t('sections.negotiation.cv-library.name')
-                }}</strong>
-              </template>
-            </i18n-t>
-          </template>
-          <template #cta>
-            <a
-              href="https://www.cv-library.co.uk/register?id=107202"
-              target="_blank"
-              rel="sponsored"
-              class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
-              >{{ $t('sections.negotiation.cv-library.cta') }}</a
-            >
-          </template>
-        </LazyAmICardAction>
+          <LazyAmICardAction
+            v-if="country === 'UK' && isXl"
+            bg-colour="bg-cv-library-50"
+            border-colour="border-cv-library-100"
+            hover-class="hover:border-cv-library-200"
+            affiliate-bg-colour="bg-cv-library-100"
+            affiliate-text-colour="text-cv-library-700"
+            :icon="FileUser"
+            :header="$t('sections.negotiation.cv-library.title')"
+            :strapline="$t('sections.negotiation.cv-library.strapline')"
+            sponsored
+            class="rounded-lg border shadow-lg w-full flex-1">
+            <template #body>
+              <i18n-t
+                keypath="sections.negotiation.cv-library.body-html"
+                tag="span"
+                class="leading-relaxed">
+                <template #name>
+                  <strong class="text-cv-library-700">{{
+                    $t('sections.negotiation.cv-library.name')
+                  }}</strong>
+                </template>
+              </i18n-t>
+            </template>
+            <template #cta>
+              <a
+                href="https://www.cv-library.co.uk/register?id=107202"
+                target="_blank"
+                rel="sponsored"
+                class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
+                >{{ $t('sections.negotiation.cv-library.cta') }}</a
+              >
+            </template>
+          </LazyAmICardAction>
+        </div>
 
         <LazySectionNegotiation
           v-show="hasGovernmentData || hasJobsData"
@@ -162,7 +161,7 @@
 // ** imports **
 import { FileUser, Info } from 'lucide-vue-next';
 import { ref, computed, watch } from 'vue';
-import { getDiffPercentage } from '~/helpers/utility';
+import { getRawDiffPercentage } from '~/helpers/utility';
 
 // ** data & refs **
 const route = useRoute();
@@ -245,13 +244,16 @@ const hasGovernmentData = computed(() => {
 });
 
 const isUnderpaid = computed<boolean>(
-  () => userSalary.value > 0 && userSalary.value < (marketAverage?.value ?? 0)
+  () =>
+    userSalary.value > 0 &&
+    userSalary.value < (marketAverage?.value ?? 0) &&
+    diffPercent.value < -2.5
 );
 
 const diffPercent = computed<number>(() => {
   const avg = marketAverage?.value ?? 0;
   if (userSalary.value === 0 || avg === 0) return 0;
-  return getDiffPercentage(userSalary.value, avg);
+  return getRawDiffPercentage(userSalary.value, avg);
 });
 
 // 1. Create a unique key for caching based on all parameters
