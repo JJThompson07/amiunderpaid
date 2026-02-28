@@ -44,13 +44,8 @@
     <template #verdict>
       <LazySectionSalaryVerdict
         v-if="userSalary > 0"
-        :display-title="displayTitle"
-        :location="location"
-        :country="country"
         :market-average="marketAverage"
         :currency-symbol="currencySymbol"
-        :matched-title="matchedTitle"
-        :matched-location="matchedLocation"
         :diff="Math.abs(userSalary - marketAverage)"
         :diff-percent="diffPercent"
         :comparison="comparison"

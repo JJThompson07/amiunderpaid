@@ -22,13 +22,8 @@
     <template #verdict>
       <SectionSalaryVerdict
         v-if="currentSalary > 0"
-        :display-title="displayTitle"
-        :location="location"
-        :country="country"
         :market-average="averageSalary"
         :currency-symbol="currencySymbol"
-        matched-title=""
-        :matched-location="location"
         :diff="Math.abs(currentSalary - averageSalary)"
         :diff-percent="diffPercent"
         :comparison="comparison"
