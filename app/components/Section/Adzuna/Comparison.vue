@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import { computed, type PropType } from 'vue';
 import type { HistogramBucket } from '~/composables/useAdzuna';
-import { getDiffPercentage } from '~/helpers/utility';
+import { getRawDiffPercentage } from '~/helpers/utility';
 import { TrendingUp } from 'lucide-vue-next';
 
 const emit = defineEmits(['fetch-data']);
@@ -130,7 +130,7 @@ const hasData = computed<boolean>(() => props.buckets && props.buckets.length > 
 
 const diffPercent = computed(() => {
   if (props.averageSalary === 0) return 0;
-  return getDiffPercentage(props.currentSalary, props.averageSalary);
+  return getRawDiffPercentage(props.currentSalary, props.averageSalary);
 });
 
 const comparison = computed<number>(() => {

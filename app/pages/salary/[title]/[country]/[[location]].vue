@@ -161,7 +161,7 @@
 // ** imports **
 import { FileUser, Info } from 'lucide-vue-next';
 import { ref, computed, watch } from 'vue';
-import { getDiffPercentage } from '~/helpers/utility';
+import { getRawDiffPercentage } from '~/helpers/utility';
 
 // ** data & refs **
 const route = useRoute();
@@ -250,7 +250,7 @@ const isUnderpaid = computed<boolean>(
 const diffPercent = computed<number>(() => {
   const avg = marketAverage?.value ?? 0;
   if (userSalary.value === 0 || avg === 0) return 0;
-  return getDiffPercentage(userSalary.value, avg);
+  return getRawDiffPercentage(userSalary.value, avg);
 });
 
 // 1. Create a unique key for caching based on all parameters

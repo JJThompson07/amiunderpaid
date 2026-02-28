@@ -11,5 +11,10 @@ export const getDiff = (value: number, target: number, raw: boolean = false): nu
 
 export const getDiffPercentage = (value: number, target: number): number => {
   if (!target) return 0;
+  return getPercentage(getDiff(value, target), target, true);
+};
+
+export const getRawDiffPercentage = (value: number, target: number): number => {
+  if (!target) return 0;
   return getPercentage(getDiff(value, target, true), target, true);
 };
