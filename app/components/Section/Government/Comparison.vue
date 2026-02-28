@@ -2,7 +2,11 @@
   <CardResult
     class="government-comparison"
     :icon="Landmark"
-    title="Government Benchmarks"
+    :title="$t('sections.government.title')"
+    :comparison="comparison"
+    :user-salary="userSalary"
+    :market-average="marketAverage"
+    :currency-symbol="currencySymbol"
     :warning="
       isFallback &&
       Boolean(
@@ -11,26 +15,19 @@
       )
     ">
     <template #info>
+      <h4 class="font-bold text-xl lg:text-2xl md:line-clamp-1" :title="matchedTitle">
+        {{ matchedTitle }}
+      </h4>
       <span v-if="!isFallback">
-        <i18n-t keypath="sections.government.showing" tag="span" class="leading-relaxed">
-          <template #title>
-            <span class="font-bold">{{ matchedTitle }}</span>
-          </template>
-          <template #type>
-            {{
-              matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()
-                ? 'market category '
-                : ''
-            }}
-          </template>
-          <template #location>
-            {{ country === 'USA' ? matchedLocation : $t('common.the-uk') }}
-          </template>
-        </i18n-t>
+        <span>{{
+          matchedTitle && matchedTitle.toLowerCase() !== searchTitle.toLowerCase()
+            ? $t('sections.government.market-category')
+            : $t('sections.government.market-role')
+        }}</span>
       </span>
       <span v-else>
         {{ $t('sections.government.not-found', { marketDataYear }) }}
-        <span class="font-bold">{{ matchedTitle }}</span>
+
         <span
           v-if="
             matchedLocation && location && matchedLocation.toLowerCase() !== location.toLowerCase()
@@ -40,16 +37,13 @@
       </span>
     </template>
 
-    <template #verdict>
-      <div v-if="userSalary === 0" class="space-y-2 text-center">
-        <h2 class="text-2xl font-black text-slate-900">
-          {{ $t('sections.government.rate') }} {{ currencySymbol
-          }}{{ marketAverage.toLocaleString() }}
-        </h2>
-      </div>
+    <AmIButton v-if="showButton" class="w-max text-2xs shadow-md" @click="$emit('user-select')">{{
+      $t('buttons.not-best-match')
+    }}</AmIButton>
 
+    <template #verdict>
       <LazySectionSalaryVerdict
-        v-else
+        v-if="userSalary > 0"
         :display-title="displayTitle"
         :location="location"
         :country="country"
@@ -57,7 +51,9 @@
         :currency-symbol="currencySymbol"
         :matched-title="matchedTitle"
         :matched-location="matchedLocation"
+        :diff="Math.abs(userSalary - marketAverage)"
         :diff-percent="diffPercent"
+        :comparison="comparison"
         :is-underpaid="isUnderpaid" />
     </template>
 
@@ -77,7 +73,7 @@
 <script setup lang="ts">
 import { Landmark } from 'lucide-vue-next';
 
-defineProps<{
+const props = defineProps<{
   isFallback: boolean;
   displayTitle: string;
   location: string;
@@ -93,7 +89,20 @@ defineProps<{
   isUnderpaid: boolean;
   marketLow: number;
   marketHigh: number;
+  showButton: boolean;
 }>();
+
+defineEmits(['user-select']);
+
+const comparison = computed<number>(() => {
+  if (props.diffPercent > 2.5) {
+    return 1;
+  } else if (props.diffPercent < -2.5) {
+    return -1;
+  } else {
+    return 0;
+  }
+});
 </script>
 
 <style scoped></style>

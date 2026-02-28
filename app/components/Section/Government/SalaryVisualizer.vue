@@ -1,29 +1,31 @@
 <template>
-  <div class="w-full relative bg-slate-100 p-4 rounded-lg">
+  <div class="w-full relative p-4">
     <div class="relative pt-8 pb-2">
       <!-- Range Bar -->
-      <div class="relative h-3 rounded-full bg-slate-400/50">
+      <div class="relative h-3 rounded-full bg-slate-300/50">
         <!-- High/Low Markers -->
-        <div class="absolute left-0 -top-6 text-2xs font-bold text-slate-600 uppercase">
-          {{ $t('sections.visualiser.low') }}
+        <div class="absolute left-0 -top-6 text-2xs uppercase font-bold text-slate-500">
+          {{ $t('sections.visualiser.low') }} {{ currencySymbol }}{{ marketLow.toLocaleString() }}
         </div>
-        <div class="absolute right-0 -top-6 text-2xs font-bold text-slate-600 uppercase">
-          {{ $t('sections.visualiser.high') }}
+        <div class="absolute right-0 -top-6 text-2xs uppercase font-bold text-slate-500">
+          {{ $t('sections.visualiser.high') }} {{ currencySymbol }}{{ marketHigh.toLocaleString() }}
         </div>
 
         <!-- Market Average Dot -->
         <div
-          class="absolute z-10 w-5 h-5 -translate-x-1/2 -translate-y-1/2 bg-primary-600 border-2 border-white rounded-full shadow-md top-1/2 left-1/2">
+          class="absolute z-10 w-1 h-full -translate-x-1/2 -translate-y-1/2 bg-primary-600 shadow-md top-1/2 left-1/2"
+          :style="{ left: `${averagePosition}%` }">
           <div
-            class="absolute -translate-x-1/2 -top-6 left-1/2 text-[9px] font-black text-primary-600 whitespace-nowrap">
-            {{ $t('sections.visualiser.average') }}
+            class="absolute -translate-x-1/2 -top-6 left-1/2 text-2xs font-black text-primary-600 whitespace-nowrap">
+            {{ $t('sections.visualiser.average') }} {{ currencySymbol
+            }}{{ marketAverage.toLocaleString() }}
           </div>
         </div>
 
         <!-- User Salary Marker -->
         <div
           v-if="userSalary > 0 && marketHigh > 0"
-          class="absolute z-20 w-1 h-8 transition-all duration-1000 -translate-y-1/2 top-1/2 rounded-full"
+          class="absolute z-20 w-5 h-5 transition-all duration-1000 -translate-1/2 top-1/2 rounded-full border-2 border-white animate-user-marker-enter"
           :class="
             diffPercent === 0
               ? 'bg-slate-600/75'
@@ -41,28 +43,9 @@
                   ? 'text-negative-700'
                   : 'text-positive-700'
             ">
-            {{ $t('sections.visualiser.you') }}
+            {{ currencySymbol }}{{ userSalary.toLocaleString() }}
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Key Stats Row -->
-    <div class="flex justify-between mt-6 text-xs">
-      <div class="text-center">
-        <span class="font-bold text-slate-500"
-          >{{ currencySymbol }}{{ marketLow.toLocaleString() }}</span
-        >
-      </div>
-      <div class="text-center">
-        <span class="font-bold text-primary-600"
-          >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
-        >
-      </div>
-      <div class="text-center">
-        <span class="font-bold text-slate-500"
-          >{{ currencySymbol }}{{ marketHigh.toLocaleString() }}</span
-        >
       </div>
     </div>
   </div>
@@ -80,6 +63,13 @@ const props = defineProps<{
 }>();
 
 // Safe percentage for the progress bar relative to the Low-High range
+const averagePosition = computed(() => {
+  if (props.marketHigh <= props.marketLow) return 50; // Avoid division by zero
+  const range = props.marketHigh - props.marketLow;
+  const offset = props.marketAverage - props.marketLow;
+  return Math.min(Math.max((offset / range) * 100, 0), 100);
+});
+
 const salaryPosition = computed<number>(() => {
   const high = props.marketHigh;
   const low = props.marketLow;
@@ -92,3 +82,15 @@ const salaryPosition = computed<number>(() => {
   return Math.min(Math.max(pct, 0), 100);
 });
 </script>
+
+<style scoped>
+.animate-user-marker-enter {
+  animation: userMarkerEnter 0.7s ease-out forwards;
+}
+
+@keyframes userMarkerEnter {
+  0% {
+    left: 0;
+  }
+}
+</style>

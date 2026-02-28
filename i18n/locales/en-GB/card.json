@@ -7,5 +7,12 @@
   "action": {
     "premier": "Premier",
     "sponsored": "Sponsored"
+  },
+  "result": {
+    "well-paid": "Well Paid",
+    "underpaid": "Underpaid",
+    "fairly-paid": "Fairly Paid",
+    "your-salary": "Your salary",
+    "market-average": "Market Average"
   }
 }
