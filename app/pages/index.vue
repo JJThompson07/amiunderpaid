@@ -64,13 +64,14 @@
               {{ $t('landing.data.heading') }}
             </h3>
             <p class="leading-relaxed">
-              <i18n-t
-                keypath="landing.data.body"
-                tag="p"
-                class="leading-relaxed"
-                :values="{ comparison: $t('landing.data.comparison_bold') }">
+              <i18n-t keypath="landing.data.body" tag="p" class="leading-relaxed">
                 <template #comparison>
                   <strong>{{ $t('landing.data.comparison_bold') }}</strong>
+                </template>
+                <template #bureau>
+                  <strong>{{
+                    isUSA ? $t('landing.data.bureau.usa') : $t('landing.data.bureau.uk')
+                  }}</strong>
                 </template>
               </i18n-t>
             </p>

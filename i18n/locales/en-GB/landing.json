@@ -10,8 +10,12 @@
   },
   "data": {
     "heading": "Data-Driven Insights",
-    "body": "We aggregate data from the Office for National Statistics (ONS) and analyze thousands of live job listings. This ensures your {comparison} reflects real-world economic conditions and regional pay variations.",
-    "comparison_bold": "salary comparison"
+    "body": "We aggregate data from the {bureau} and analyze thousands of live job listings. This ensures your {comparison} reflects real-world economic conditions and regional pay variations.",
+    "comparison_bold": "salary comparison",
+    "bureau": {
+      "usa": "Bureau of Labor Statistics (BLS)",
+      "uk": "Office for National Statistics (ONS)"
+    }
   },
   "sources": {
     "ons": "ONS Data",
