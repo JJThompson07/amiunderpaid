@@ -21,11 +21,7 @@
     <section
       v-if="$slots.info"
       class="section--info text-center text-2xs flex w-full justify-center items-center gap-1">
-      <div
-        class="flex flex-col items-center gap-2 px-3 py-1.5 min-w-0"
-        :class="{
-          'border border-amber-100 rounded-lg bg-amber-50 text-amber-700 font-medium': warning
-        }">
+      <div class="flex flex-col items-center gap-2 px-3 py-1.5 min-w-0">
         <slot name="info" />
       </div>
     </section>

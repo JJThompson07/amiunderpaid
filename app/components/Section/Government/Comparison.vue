@@ -27,13 +27,6 @@
       </span>
       <span v-else>
         {{ $t('sections.government.not-found', { marketDataYear }) }}
-
-        <span
-          v-if="
-            matchedLocation && location && matchedLocation.toLowerCase() !== location.toLowerCase()
-          ">
-          in <span class="font-bold">{{ matchedLocation }}</span></span
-        >.
       </span>
     </template>
 
