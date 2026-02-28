@@ -11,7 +11,8 @@
           </p>
           <p class="text-sm">
             <span class="text-base font-bold"
-              >{{ props.currencySymbol }}{{ diff.toLocaleString() }}</span
+              >{{ diffPercent < 0 ? '-' : '+' }}{{ props.currencySymbol
+              }}{{ diff.toLocaleString() }}</span
             >
             ({{ diffPercent }}%)
           </p>

@@ -244,7 +244,10 @@ const hasGovernmentData = computed(() => {
 });
 
 const isUnderpaid = computed<boolean>(
-  () => userSalary.value > 0 && userSalary.value < (marketAverage?.value ?? 0)
+  () =>
+    userSalary.value > 0 &&
+    userSalary.value < (marketAverage?.value ?? 0) &&
+    diffPercent.value < -2.5
 );
 
 const diffPercent = computed<number>(() => {
