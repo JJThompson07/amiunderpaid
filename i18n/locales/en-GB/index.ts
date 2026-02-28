@@ -10,6 +10,7 @@ import sections from './sections.json';
 import search from './search.json';
 import navbar from './navbar.json';
 import meta from './meta.json';
+import card from './card.json';
 
 export default defineI18nLocale(async () => {
   return {
@@ -24,6 +25,7 @@ export default defineI18nLocale(async () => {
     sections,
     search,
     navbar,
-    meta
+    meta,
+    card
   };
 });

@@ -102,14 +102,21 @@
           affiliate-bg-colour="bg-cv-library-100"
           affiliate-text-colour="text-cv-library-700"
           :icon="FileUser"
-          header="Get Discovered"
-          strapline="Find a job that works for you, fast"
+          :header="$t('sections.negotiation.cv-library.title')"
+          :strapline="$t('sections.negotiation.cv-library.strapline')"
           sponsored
           class="rounded-lg border shadow-lg h-max w-full">
           <template #body>
-            Register your free CV on the UK's leading job site (<strong class="text-cv-library-700"
-              >CV-Library</strong
-            >) and let top employers come to you - it's fast, easy and free.
+            <i18n-t
+              keypath="sections.negotiation.cv-library.body-html"
+              tag="span"
+              class="leading-relaxed">
+              <template #name>
+                <strong class="text-cv-library-700">{{
+                  $t('sections.negotiation.cv-library.name')
+                }}</strong>
+              </template>
+            </i18n-t>
           </template>
           <template #cta>
             <a
@@ -117,7 +124,7 @@
               target="_blank"
               rel="sponsored"
               class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
-              >Register CV</a
+              >{{ $t('sections.negotiation.cv-library.cta') }}</a
             >
           </template>
         </LazyAmICardAction>
@@ -133,7 +140,7 @@
 
         <p class="flex items-center justify-center gap-1 mt-6 text-2xs text-center text-slate-400">
           <Info class="w-3 h-3" />
-          Data based on recent listings from Adzuna and ONS Benchmarks.
+          {{ $t('common.data.disclaimer') }}
         </p>
       </div>
     </div>
@@ -427,7 +434,7 @@ useHead({
             {
               '@type': 'ListItem',
               position: 2,
-              name: `Salary for ${displayTitle.value}`,
+              name: $t('meta.locations.header.title', { displayTitle: displayTitle.value }),
               item: `${url.origin}${route.path}`
             },
             {
