@@ -5,7 +5,10 @@
     "placeholder": "e.g. Software Engineer"
   },
   "location": {
-    "label": "Location",
+    "label": {
+      "usa": "State",
+      "uk": "City"
+    },
     "placeholder": "e.g. London"
   },
   "salary": {

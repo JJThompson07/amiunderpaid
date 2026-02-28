@@ -1,0 +1,42 @@
+{
+  "title": "Frequently Asked Questions",
+  "subtitle": "Everything you need to know about salary expectations and navigating the Am I Underpaid? tool.",
+  "questions": {
+    "section": {
+      "general": {
+        "title": "General Questions",
+        "underpaid": {
+          "question": "Am I being underpaid?",
+          "answer": "The most accurate way to find out if you are being underpaid is to compare your current salary with the average wage for your job title and location. Our salary checker uses live market data to give you an accurate expectation."
+        },
+        "averageWage": {
+          "question": "What is the average wage for my role?",
+          "answer": "The average wage depends heavily on your specific location, industry, and experience level. By entering your details into our search, you can see the median average wage and salary distribution curve for your role."
+        },
+        "expect": {
+          "question": "What salary should I expect?",
+          "answer": "You should expect a salary that aligns with current market rates. Whether you are negotiating a raise or applying for a new job, knowing the expected salary range gives you the power to negotiate fairly."
+        }
+      },
+      "tool": {
+        "title": "Using the Tool",
+        "jobTitle": {
+          "question": "How do I enter my job title?",
+          "answer": "Start typing your job title and our smart autocomplete will suggest government standard industry roles. This helps ensure your salary comparison is based on accurate and relevant data."
+        },
+        "cantFindJobTitle": {
+          "question": "What if I can't find my job title?",
+          "answer": "The job title suggestions are based on government standard classifications. don't worry if you can't find an exact match - just enter your exact job title and we'll do our best to find the closest match for your salary comparison."
+        },
+        "salaryScare": {
+          "question": "What if I don't want to enter my salary?",
+          "answer": "We understand the hesitation around sharing salary information. While entering your current salary helps us provide a direct comparison specific to you, you can choose to leave it blank. Our tool will still give you valuable insights based on the average salary for your role and location."
+        },
+        "gdpr": {
+          "question": "What do you do with my data?",
+          "answer": "We take your privacy seriously. Any data you enter is used solely to provide you with accurate salary comparisons and insights. We do not sell or share your personal information with third parties. For more details, please refer to our Privacy Policy."
+        }
+      }
+    }
+  }
+}

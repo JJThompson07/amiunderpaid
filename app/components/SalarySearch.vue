@@ -44,7 +44,9 @@
           <div class="flex-1">
             <AmIAutocompleteInput
               v-model="location"
-              :label="$t('search.location.label')"
+              :label="
+                country === 'USA' ? $t('search.location.label.usa') : $t('search.location.label.uk')
+              "
               :placeholder="$t('search.location.placeholder')"
               :icon="MapPin"
               :options="locationOptions"

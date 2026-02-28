@@ -46,6 +46,10 @@
       <slot />
     </div>
 
+    <LazyModalGeneric v-model="showFaq" :title="$t('faq.title')" @close="showFaq = false">
+      <SectionFaq />
+    </LazyModalGeneric>
+
     <!-- Simple Footer -->
     <footer class="py-8 text-sm text-center bg-white border-t border-slate-200 text-slate-400">
       <p>&copy; {{ $t('common.footer.copy') }}</p>
@@ -55,6 +59,16 @@
           class="text-xs text-slate-400 hover:text-slate-600 transition-colors">
           {{ $t('navbar.privacy-policy') }}
         </NuxtLink>
+        <span
+          role="button"
+          :title="$t('faq.title')"
+          class="text-xs text-slate-400 hover:text-slate-600 transition-colors select-none cursor-pointer"
+          @click="
+            showFaq = true;
+            console.log('FAQ opened', showFaq);
+          "
+          >{{ $t('faq.title') }}</span
+        >
       </div>
     </footer>
   </div>
@@ -75,6 +89,7 @@ onMounted(() => {
 const isMobile = computed(() => isMounted.value && viewportIsMobile.value);
 
 const openMenu = ref<boolean>(false);
+const showFaq = ref<boolean>(false);
 
 const user = useCurrentUser();
 const auth = useFirebaseAuth();

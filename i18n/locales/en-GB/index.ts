@@ -12,6 +12,7 @@ import navbar from './navbar.json';
 import meta from './meta.json';
 import card from './card.json';
 import email from './email.json';
+import faq from './faq.json';
 
 export default defineI18nLocale(async () => {
   return {
@@ -28,6 +29,7 @@ export default defineI18nLocale(async () => {
     navbar,
     meta,
     card,
-    email
+    email,
+    faq
   };
 });
