@@ -2,7 +2,7 @@
 
 ## Roadmap
 
-- [ ] Optimise SEO
+- [/] Optimise SEO
 - [ ] Redo layout of results page
 - [ ] Create User Accounts & Dashboard (Save preferences/roles)
 - [ ] Email Notifications (Role average updates)
