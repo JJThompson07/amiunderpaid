@@ -106,10 +106,10 @@ const cardClasses = computed(() => {
     return 'bg-slate-100 border-slate-200';
   }
   return props.comparison === 1
-    ? 'bg-linear-to-b from-positive-50 via-white to-white border-positive-100'
+    ? 'bg-linear-to-b from-positive-50/75 via-white to-white border-positive-100'
     : props.comparison === -1
-      ? 'bg-linear-to-b from-negative-50 via-white to-white border-negative-100'
-      : 'bg-linear-to-b from-neutral-100 via-white to-white border-neutral-100';
+      ? 'bg-linear-to-b from-negative-50/75 via-white to-white border-negative-100'
+      : 'bg-linear-to-b from-neutral-100/75 via-white to-white border-neutral-100';
 });
 
 const chipData = computed(() => {
