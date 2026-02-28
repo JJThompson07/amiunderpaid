@@ -69,7 +69,7 @@
               v-if="!userSelected && !showUserSelection"
               class="absolute! right-2 top-2 text-2xs shadow-md"
               @click="showUserSelection = true"
-              >Not the best match?</AmIButton
+              >{{ $t('buttons.not-best-match') }}</AmIButton
             >
           </div>
 
