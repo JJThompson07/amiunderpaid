@@ -153,7 +153,7 @@
       @close="showAmbiguityModal = false" />
 
     <ClientOnly>
-      <AmILoader v-if="pending || adzunaLoading" message="Searching 140,000+ records..." />
+      <AmILoader v-if="pending || adzunaLoading" :message="$t('common.searching')" />
     </ClientOnly>
   </div>
 </template>
