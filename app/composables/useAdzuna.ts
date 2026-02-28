@@ -64,7 +64,7 @@ export const useAdzuna = () => {
     () => histogramBuckets.value.length > 0 && histogramTotalCount.value > 0
   );
   const hasJobsData = computed<boolean>(
-    () => jobsData.value !== null && jobsData.value !== undefined
+    () => jobsData.value !== null && jobsData.value !== undefined && jobsCount.value > 0
   );
 
   const fetchJobs = async (title: string, location: string, country: string) => {

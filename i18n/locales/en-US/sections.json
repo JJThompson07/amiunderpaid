@@ -11,7 +11,7 @@
     "title": "Government Benchmarks",
     "market-category": "Government category",
     "market-role": "Government role: ",
-    "not-found": " Exact match not found. Showing {marketDataYear} government data for"
+    "not-found": " Exact match not found. Showing {marketDataYear} government data only"
   },
   "visualiser": {
     "low": "Low",
