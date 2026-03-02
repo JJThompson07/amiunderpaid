@@ -2,9 +2,17 @@ export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig();
   const router = useRouter();
   const gtagId = config.public.gtagId;
+  const { gtag } = useGtag();
 
   const isLocalhost =
     window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+  if (!isLocalhost) {
+    gtag('set', {
+      site_domain: window.location.hostname,
+      site_market: window.location.hostname.includes('.com') ? 'US' : 'UK'
+    });
+  }
 
   // Check initial route on load
   if (isLocalhost || router.currentRoute.value.path.startsWith('/admin')) {
