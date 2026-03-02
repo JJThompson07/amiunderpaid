@@ -74,7 +74,6 @@ export default defineNuxtConfig({
 
     // 1. Set the default locale to your UK code
     defaultLocale: 'en-GB',
-    fallbackLocale: 'en-GB',
     strategy: 'no_prefix',
 
     differentDomains: true,
@@ -91,13 +90,13 @@ export default defineNuxtConfig({
       {
         code: 'en-GB',
         iso: 'en-GB',
-        domain: 'www.amiunderpaid.co.uk',
+        domain: isDev ? 'localhost:3000' : 'www.amiunderpaid.co.uk',
         file: 'en-GB/index.ts'
       },
       {
         code: 'en-US',
         iso: 'en-US',
-        domain: 'www.amiunderpaid.com',
+        domain: isDev ? 'localhost:3000' : 'www.amiunderpaid.com',
         file: 'en-US/index.ts'
       }
     ],
