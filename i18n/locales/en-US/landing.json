@@ -21,9 +21,5 @@
     "ons": "ONS Data",
     "adzuna": "Adzuna API",
     "bls": "BLS Data"
-  },
-  "seo": {
-    "title": "Am I Underpaid? | Salary Comparison & Market Data Tool",
-    "description": "Find out the average salary for your role in the USA. Compare your wage against live market data and BLS benchmarks to see if you are underpaid."
   }
 }

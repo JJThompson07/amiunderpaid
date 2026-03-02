@@ -110,8 +110,8 @@ const { t } = useI18n();
 const url = useRequestURL();
 const isUSA = useState<boolean>('landing-is-usa', () => url.hostname.includes('.com'));
 
-const title = computed(() => t('landing.seo.title'));
-const description = computed(() => t('landing.seo.description'));
+const title = computed(() => t('meta.index.title'));
+const description = computed(() => t('meta.index.description'));
 
 useSeoMeta({
   title,
