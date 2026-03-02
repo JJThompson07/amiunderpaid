@@ -81,6 +81,12 @@ import { MenuIcon, XIcon } from 'lucide-vue-next';
 
 const { isMobile: viewportIsMobile } = useViewport();
 
+const i18nHead = useLocaleHead({
+  seo: true // This single flag now handles SEO and direction attributes
+});
+
+const { t } = useI18n();
+
 const { logout } = useAdminAuth();
 
 const isMounted = ref(false);
@@ -100,6 +106,52 @@ const handleLogout = async () => {
   await logout();
   await navigateTo('/');
 };
+
+// Define the keys matching our JSON structure
+const faqGeneralKeys = ['underpaid', 'averageWage', 'expect'];
+const faqToolKeys = ['jobTitle', 'cantFindJobTitle', 'salaryScare', 'gdpr'];
+
+// Generate JSON-LD for rich snippets in Google Search Results
+// Wrapped in computed() so the Schema translates dynamically if the user switches languages
+const faqSchema = computed(() => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqGeneralKeys
+    .map((key) => ({
+      '@type': 'Question',
+      name: t(`faq.questions.section.general.${key}.question`),
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: t(`faq.questions.section.general.${key}.answer`)
+      }
+    }))
+    .concat(
+      faqToolKeys.map((key) => ({
+        '@type': 'Question',
+        name: t(`faq.questions.section.tool.${key}.question`),
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: t(`faq.questions.section.tool.${key}.answer`)
+        }
+      }))
+    )
+}));
+
+useHead({
+  htmlAttrs: {
+    lang: computed(() => i18nHead.value.htmlAttrs?.lang),
+    // Use type assertion to match the expected 'ltr' | 'rtl' | 'auto' type
+    dir: computed(() => i18nHead.value.htmlAttrs?.dir as 'ltr' | 'rtl' | 'auto' | undefined)
+  },
+  link: computed(() => [...(i18nHead.value.link || [])]),
+  meta: computed(() => [...(i18nHead.value.meta || [])]),
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: computed(() => JSON.stringify(faqSchema.value))
+    }
+  ]
+});
 </script>
 
 <style>

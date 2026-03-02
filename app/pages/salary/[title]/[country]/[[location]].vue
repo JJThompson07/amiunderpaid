@@ -161,7 +161,7 @@
 // ** imports **
 import { FileUser, Info } from 'lucide-vue-next';
 import { ref, computed, watch } from 'vue';
-import { getRawDiffPercentage } from '~/helpers/utility';
+import { getRawDiffPercentage, slugify } from '~/helpers/utility';
 
 // ** data & refs **
 const route = useRoute();
@@ -317,6 +317,20 @@ const handleAmbiguitySelect = async (match: any) => {
   searchConfirmed.value = true;
 };
 
+onMounted(() => {
+  if (route.query.q && slugify(route.query.q as string) === route.params.title) {
+    // The query is redundant, remove it for a cleaner URL and better SEO
+    const { q, ...remainingQuery } = route.query;
+    navigateTo(
+      {
+        path: route.path,
+        query: remainingQuery
+      },
+      { replace: true }
+    );
+  }
+});
+
 watch(asyncDataKey, () => refresh());
 
 // ** watchers **
@@ -371,6 +385,20 @@ watch(loading, (newLoading) => {
 watch(ambiguousMatches, (matches) => {
   if (matches.length > 1 && !searchConfirmed.value) {
     showAmbiguityModal.value = true;
+  }
+});
+
+watch(userSalary, (newSalary) => {
+  if (newSalary > 0) {
+    navigateTo(
+      {
+        query: { ...route.query, compare: newSalary.toString() }
+      },
+      { replace: true }
+    );
+  } else {
+    const { compare, ...rest } = route.query;
+    navigateTo({ query: rest }, { replace: true });
   }
 });
 
@@ -436,7 +464,7 @@ useHead({
             {
               '@type': 'ListItem',
               position: 2,
-              name: $t('meta.locations.header.title', { displayTitle: displayTitle.value }),
+              name: $t('meta.location.header.title', { displayTitle: displayTitle.value }),
               item: `${url.origin}${route.path}`
             },
             {

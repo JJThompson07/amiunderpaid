@@ -69,38 +69,33 @@ export default defineNuxtConfig({
     }
   },
 
+  // nuxt.config.ts
   i18n: {
     langDir: 'locales',
-
-    // 1. Set the default locale to your UK code
     defaultLocale: 'en-GB',
-    fallbackLocale: 'en-GB',
     strategy: 'no_prefix',
-
     differentDomains: true,
 
-    // 2. Set the baseUrl to your default domain for canonical fallbacks
+    // baseUrl is essential for generating absolute canonical/alternate URLs
     baseUrl: isDev ? 'http://localhost:3000' : 'https://www.amiunderpaid.co.uk',
 
     locales: [
       {
-        code: 'en',
-        iso: 'en',
-        file: 'en-GB/index.ts'
-      },
-      {
         code: 'en-GB',
-        iso: 'en-GB',
-        domain: 'www.amiunderpaid.co.uk',
+        iso: 'en-GB', // Ensure this is language-REGION
+        domain: isDev ? 'localhost:3000' : 'www.amiunderpaid.co.uk',
         file: 'en-GB/index.ts'
       },
       {
         code: 'en-US',
-        iso: 'en-US',
-        domain: 'www.amiunderpaid.com',
+        iso: 'en-US', // Ensure this is language-REGION
+        domain: isDev ? 'localhost:3000' : 'www.amiunderpaid.com',
         file: 'en-US/index.ts'
       }
     ],
+
+    // Pointing to your external file handles the defineI18nConfig issue
+    vueI18n: './i18n.config.ts',
 
     detectBrowserLanguage: {
       useCookie: true,

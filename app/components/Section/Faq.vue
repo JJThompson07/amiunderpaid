@@ -40,48 +40,11 @@
 </template>
 
 <script setup lang="ts">
-import { useHead } from '#imports';
 import { useI18n } from 'vue-i18n';
-import { computed } from 'vue';
 
 const { t } = useI18n();
 
 // Define the keys matching our JSON structure
 const faqGeneralKeys = ['underpaid', 'averageWage', 'expect'];
 const faqToolKeys = ['jobTitle', 'cantFindJobTitle', 'salaryScare', 'gdpr'];
-
-// Generate JSON-LD for rich snippets in Google Search Results
-// Wrapped in computed() so the Schema translates dynamically if the user switches languages
-const faqSchema = computed(() => ({
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: faqGeneralKeys
-    .map((key) => ({
-      '@type': 'Question',
-      name: t(`faq.questions.section.general.${key}.question`),
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: t(`faq.questions.section.general.${key}.answer`)
-      }
-    }))
-    .concat(
-      faqToolKeys.map((key) => ({
-        '@type': 'Question',
-        name: t(`faq.questions.section.tool.${key}.question`),
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: t(`faq.questions.section.tool.${key}.answer`)
-        }
-      }))
-    )
-}));
-
-useHead({
-  script: [
-    {
-      type: 'application/ld+json',
-      innerHTML: computed(() => JSON.stringify(faqSchema.value))
-    }
-  ]
-});
 </script>
