@@ -32,13 +32,30 @@ export const useAdminFirestore = () => {
 };
 
 export const verifyAdmin = async (event: H3Event) => {
+  const auth = getAuth(useAdminApp());
+
+  // 1. Check for the fresh Authorization Bearer token first (Client-side fetches)
+  const authHeader = getHeader(event, 'Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const idToken = authHeader.split('Bearer ')[1] || '';
+    try {
+      await auth.verifyIdToken(idToken);
+      return; // Access granted via fresh client token!
+    } catch {
+      console.warn('ID Token invalid, falling back to cookie check...');
+    }
+  }
+
+  // 2. SSR Fallback: Check the __session cookie (Server-side fetches)
   const sessionCookie = getCookie(event, '__session');
   if (!sessionCookie) {
-    throw createError({ statusCode: 401, statusMessage: 'Unauthorized: No session cookie' });
+    throw createError({
+      statusCode: 401,
+      statusMessage: 'Unauthorized: No session cookie or token'
+    });
   }
 
   try {
-    const auth = getAuth(useAdminApp());
     await auth.verifySessionCookie(sessionCookie, true);
   } catch (error) {
     const message = (error as Error).message;

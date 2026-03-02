@@ -2,6 +2,7 @@ import { ref } from 'vue';
 
 export const useAdminClient = (log: (msg: string) => void) => {
   const loading = ref(false);
+  const adminFetch = useAdminFetch();
 
   /**
    * Deletes all documents matching the query in batches.
@@ -15,7 +16,7 @@ export const useAdminClient = (log: (msg: string) => void) => {
     log(`Preparing to delete ${description}...`);
 
     try {
-      const response = await $fetch<{ success: boolean; count: number }>('/api/admin/delete', {
+      const response = await adminFetch<{ success: boolean; count: number }>('/api/admin/delete', {
         method: 'POST',
         body: { collectionName, filters }
       });
@@ -44,7 +45,7 @@ export const useAdminClient = (log: (msg: string) => void) => {
     log('Starting Firestore Batch Sync (Server-Side)...');
 
     try {
-      const response = await $fetch<{ success: boolean; count: number }>('/api/admin/seed', {
+      const response = await adminFetch<{ success: boolean; count: number }>('/api/admin/seed', {
         method: 'POST',
         body: { collectionName, data }
       });

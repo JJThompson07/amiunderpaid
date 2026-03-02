@@ -122,12 +122,14 @@
 
 <script setup lang="ts">
 import { DatabaseZap, Trash2, RefreshCcw, Users, Check, X, CheckCircle2 } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 // Protect this route with your admin middleware
 definePageMeta({
   middleware: 'admin'
 });
+
+const adminFetch = useAdminFetch();
 
 // --- Cache Cleanup Logic ---
 const isCleaning = ref(false);
@@ -145,7 +147,8 @@ const runCleanup = async () => {
   cleanupStats.value = null;
 
   try {
-    const res: any = await $fetch('/api/admin/clean-cache', { method: 'POST' });
+    // 1. Updated to useAdminFetch
+    const res: any = await adminFetch('/api/admin/clean-cache', { method: 'POST' });
     cleanupStats.value = res.stats;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to clean cache.';
@@ -156,16 +159,23 @@ const runCleanup = async () => {
 };
 
 // --- Suggestions Logic ---
+// 2. Updated to useAsyncData + useAdminFetch to prevent SSR 401 errors
 const {
   data: suggestionsData,
   pending,
   refresh: refreshSuggestions
-} = useFetch('/api/admin/suggestions');
+} = useAsyncData(
+  'admin-suggestions',
+  () => adminFetch<{ success: boolean; suggestions: any[] }>('/api/admin/suggestions'),
+  { server: false }
+);
+
 const suggestions = computed(() => suggestionsData.value?.suggestions || []);
 
 const approveMatch = async (suggestion: any) => {
   try {
-    await $fetch('/api/admin/approve-suggestions', {
+    // 3. Updated to useAdminFetch
+    await adminFetch('/api/admin/approve-suggestions', {
       method: 'POST',
       body: {
         suggestionId: suggestion.id,
@@ -187,8 +197,8 @@ const rejectMatch = async (id: string) => {
   if (!confirm('Are you sure you want to reject and delete this suggestion?')) return;
 
   try {
-    // Hit the new, unique endpoint so TypeScript doesn't get confused
-    await $fetch('/api/admin/reject-suggestion', {
+    // 4. Updated to useAdminFetch
+    await adminFetch('/api/admin/reject-suggestion', {
       method: 'DELETE',
       query: { id }
     });

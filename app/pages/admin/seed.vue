@@ -29,7 +29,7 @@
             <div
               v-for="record in existingData"
               :key="record.country + record.year + record.scope"
-              class="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-sm text-xs font-bold text-slate-600 flex items-center gap-2 flex justify-between">
+              class="px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-sm text-xs font-bold text-slate-600 flex items-center gap-2 justify-between">
               <div class="flex items-center gap-2">
                 <span
                   class="w-10"
@@ -248,6 +248,8 @@ definePageMeta({
   middleware: 'admin'
 });
 
+const adminFetch = useAdminFetch();
+
 // ** data & refs **
 const db = useFirestore();
 const user = useCurrentUser();
@@ -361,7 +363,7 @@ const deleteRecords = async (country: string, year: number, period: string, scop
   // 2. Delete from Algolia
   log(`Clearing Algolia records for ${country} ${year}...`);
   try {
-    await $fetch('/api/admin/clear-algolia', {
+    await adminFetch('/api/admin/clear-algolia', {
       method: 'POST',
       body: {
         indexName: collectionName,
@@ -395,7 +397,7 @@ const handleParse = async () => {
   try {
     // 2. Request parsing from server API
     log(`Sending file to server parser (${endpoint})...`);
-    const response = await $fetch<{
+    const response = await adminFetch<{
       success: boolean;
       data: (SalaryRecord & { period: string })[];
       count: number;
@@ -461,7 +463,7 @@ const seedToFirestore = async () => {
 
     // 2. Sync to Algolia
     log(`Syncing ${recordsToSync.length} records to Algolia index '${collectionName}'...`);
-    await $fetch('/api/admin/sync-algolia', {
+    await adminFetch('/api/admin/sync-algolia', {
       method: 'POST',
       body: {
         data: recordsToSync,
