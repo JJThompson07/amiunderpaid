@@ -46,10 +46,6 @@
       <slot />
     </div>
 
-    <LazyModalGeneric v-model="showFaq" :title="$t('faq.title')" @close="showFaq = false">
-      <SectionFaq />
-    </LazyModalGeneric>
-
     <!-- Simple Footer -->
     <footer class="py-8 text-sm text-center bg-white border-t border-slate-200 text-slate-400">
       <p>&copy; {{ $t('common.footer.copy') }}</p>
@@ -59,16 +55,11 @@
           class="text-xs text-slate-400 hover:text-slate-600 transition-colors">
           {{ $t('navbar.privacy-policy') }}
         </NuxtLink>
-        <span
-          role="button"
-          :title="$t('faq.title')"
-          class="text-xs text-slate-400 hover:text-slate-600 transition-colors select-none cursor-pointer"
-          @click="
-            showFaq = true;
-            console.log('FAQ opened', showFaq);
-          "
-          >{{ $t('faq.title') }}</span
-        >
+        <NuxtLink
+          to="/frequently-asked-questions"
+          class="text-xs text-slate-400 hover:text-slate-600 transition-colors">
+          {{ $t('navbar.faq') }}
+        </NuxtLink>
       </div>
     </footer>
   </div>
@@ -85,8 +76,6 @@ const i18nHead = useLocaleHead({
   seo: true // This single flag now handles SEO and direction attributes
 });
 
-const { t } = useI18n();
-
 const { logout } = useAdminAuth();
 
 const isMounted = ref(false);
@@ -96,7 +85,6 @@ onMounted(() => {
 const isMobile = computed(() => isMounted.value && viewportIsMobile.value);
 
 const openMenu = ref<boolean>(false);
-const showFaq = ref<boolean>(false);
 
 const user = useCurrentUser();
 
@@ -107,36 +95,6 @@ const handleLogout = async () => {
   await navigateTo('/');
 };
 
-// Define the keys matching our JSON structure
-const faqGeneralKeys = ['underpaid', 'averageWage', 'expect'];
-const faqToolKeys = ['jobTitle', 'cantFindJobTitle', 'salaryScare', 'gdpr'];
-
-// Generate JSON-LD for rich snippets in Google Search Results
-// Wrapped in computed() so the Schema translates dynamically if the user switches languages
-const faqSchema = computed(() => ({
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: faqGeneralKeys
-    .map((key) => ({
-      '@type': 'Question',
-      name: t(`faq.questions.section.general.${key}.question`),
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: t(`faq.questions.section.general.${key}.answer`)
-      }
-    }))
-    .concat(
-      faqToolKeys.map((key) => ({
-        '@type': 'Question',
-        name: t(`faq.questions.section.tool.${key}.question`),
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: t(`faq.questions.section.tool.${key}.answer`)
-        }
-      }))
-    )
-}));
-
 useHead({
   htmlAttrs: {
     lang: computed(() => i18nHead.value.htmlAttrs?.lang),
@@ -144,13 +102,7 @@ useHead({
     dir: computed(() => i18nHead.value.htmlAttrs?.dir as 'ltr' | 'rtl' | 'auto' | undefined)
   },
   link: computed(() => [...(i18nHead.value.link || [])]),
-  meta: computed(() => [...(i18nHead.value.meta || [])]),
-  script: [
-    {
-      type: 'application/ld+json',
-      innerHTML: computed(() => JSON.stringify(faqSchema.value))
-    }
-  ]
+  meta: computed(() => [...(i18nHead.value.meta || [])])
 });
 </script>
 

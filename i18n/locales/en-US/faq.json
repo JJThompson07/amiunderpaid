@@ -16,6 +16,18 @@
         "expect": {
           "question": "What salary should I expect?",
           "answer": "You should expect a salary that aligns with current market rates. Whether you are negotiating a raise or applying for a new job, knowing the expected salary range gives you the power to negotiate fairly."
+        },
+        "fairPay": {
+          "question": "Am I fairly paid?",
+          "answer": "Fair pay is determined by your role's market value, your experience, and your specific location. If your salary falls within 2.5% or above the median range for your professional peers in your city / country, you are likely being paid fairly."
+        },
+        "isMySalaryRight": {
+          "question": "Is my salary right for my role?",
+          "answer": "A 'right' salary should reflect the current demand for your skills. Since market conditions change, using a real-time calculator helps you verify if your current pay matches the most recent job listings and government benchmarks."
+        },
+        "whyDoINeedToKnow": {
+          "question": "Why do I need to know my market rate?",
+          "answer": "Knowing your market rate gives you leverage during salary negotiations and performance reviews. It ensures you aren't leaving money on the table and helps you make informed decisions about your career progression."
         }
       },
       "tool": {
@@ -35,6 +47,14 @@
         "gdpr": {
           "question": "What do you do with my data?",
           "answer": "We take your privacy seriously. Any data you enter is used solely to provide you with accurate salary comparisons and insights. We do not sell or share your personal information with third parties. For more details, please refer to our Privacy Policy."
+        },
+        "whatIfIAmFairlyPaid": {
+          "question": "What if the tool says I am fairly paid?",
+          "answer": "That is great news! Being fairly paid means your employer is keeping up with market trends. You can use this data during your next review to confirm your value and discuss future growth or additional benefits."
+        },
+        "whatIfIAmWellPaid": {
+          "question": "What if I am already well paid?",
+          "answer": "If you are above the market average, you are in a strong position. Use our insights to see how much higher the top 10% of earners in your field are making and what skills might be required to stay at that level."
         }
       }
     }
