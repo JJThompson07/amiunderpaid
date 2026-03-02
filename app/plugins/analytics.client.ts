@@ -26,4 +26,13 @@ export default defineNuxtPlugin(() => {
       (window as any)[`ga-disable-${gtagId}`] = false;
     }
   });
+
+  router.afterEach((to) => {
+    if (!isLocalhost && !to.path.startsWith('/admin')) {
+      gtag('event', 'page_nav', {
+        page: to.fullPath,
+        page_title: document.title // Includes the (UK)/(USA) distinction if you added it
+      });
+    }
+  });
 });
