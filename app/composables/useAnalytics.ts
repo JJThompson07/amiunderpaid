@@ -24,16 +24,9 @@ export const useAnalytics = () => {
     });
   };
 
-  const trackPageNav = (page: string) => {
-    gtag('event', 'page_nav', {
-      page: page
-    });
-  };
-
   return {
     trackSearch,
     trackAmbiguousSearch,
-    trackResultAction,
-    trackPageNav
+    trackResultAction
   };
 };
