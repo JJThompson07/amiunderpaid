@@ -145,7 +145,7 @@ const runCleanup = async () => {
   cleanupStats.value = null;
 
   try {
-    const res: any = await $fetch('/api/admin/clean-cache', { method: 'POST' });
+    const res: any = await useAdminFetch('/api/admin/clean-cache', { method: 'POST' });
     cleanupStats.value = res.stats;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to clean cache.';
@@ -165,7 +165,7 @@ const suggestions = computed(() => suggestionsData.value?.suggestions || []);
 
 const approveMatch = async (suggestion: any) => {
   try {
-    await $fetch('/api/admin/approve-suggestions', {
+    await useAdminFetch('/api/admin/approve-suggestions', {
       method: 'POST',
       body: {
         suggestionId: suggestion.id,
@@ -188,7 +188,7 @@ const rejectMatch = async (id: string) => {
 
   try {
     // Hit the new, unique endpoint so TypeScript doesn't get confused
-    await $fetch('/api/admin/reject-suggestion', {
+    await useAdminFetch('/api/admin/reject-suggestion', {
       method: 'DELETE',
       query: { id }
     });

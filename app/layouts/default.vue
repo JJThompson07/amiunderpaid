@@ -75,12 +75,13 @@
 </template>
 
 <script setup lang="ts">
-import { useCurrentUser, useFirebaseAuth } from 'vuefire';
-import { signOut } from 'firebase/auth';
+import { useCurrentUser } from 'vuefire';
 import { ref, onMounted, computed } from 'vue';
 import { MenuIcon, XIcon } from 'lucide-vue-next';
 
 const { isMobile: viewportIsMobile } = useViewport();
+
+const { logout } = useAdminAuth();
 
 const isMounted = ref(false);
 onMounted(() => {
@@ -92,15 +93,12 @@ const openMenu = ref<boolean>(false);
 const showFaq = ref<boolean>(false);
 
 const user = useCurrentUser();
-const auth = useFirebaseAuth();
 
 const isAdmin = computed(() => Boolean(user.value?.email));
 
 const handleLogout = async () => {
-  if (auth) {
-    await signOut(auth);
-    await navigateTo('/');
-  }
+  await logout();
+  await navigateTo('/');
 };
 </script>
 

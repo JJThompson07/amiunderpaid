@@ -240,7 +240,7 @@ const deleteRecords = async (country: string) => {
   // 2. Delete from Algolia
   log(`Clearing Algolia records for ${country}...`);
   try {
-    await $fetch('/api/admin/clear-algolia', {
+    await useAdminFetch('/api/admin/clear-algolia', {
       method: 'POST',
       body: {
         indexName: 'job_titles',
@@ -266,7 +266,7 @@ const handleParse = async () => {
 
   try {
     log(`Sending file to server parser...`);
-    const response = await $fetch<{
+    const response = await useAdminFetch<{
       success: boolean;
       data: JobTitleRecord[];
       count: number;
@@ -369,7 +369,7 @@ const seedToFirestore = async () => {
 
     // 3. Sync to Algolia
     log(`Syncing to Algolia index 'job_titles'...`);
-    await $fetch('/api/admin/sync-algolia', {
+    await useAdminFetch('/api/admin/sync-algolia', {
       method: 'POST',
       body: { data: recordsToSync, indexName: 'job_titles' }
     });

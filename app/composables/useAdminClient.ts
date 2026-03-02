@@ -15,10 +15,13 @@ export const useAdminClient = (log: (msg: string) => void) => {
     log(`Preparing to delete ${description}...`);
 
     try {
-      const response = await $fetch<{ success: boolean; count: number }>('/api/admin/delete', {
-        method: 'POST',
-        body: { collectionName, filters }
-      });
+      const response = await useAdminFetch<{ success: boolean; count: number }>(
+        '/api/admin/delete',
+        {
+          method: 'POST',
+          body: { collectionName, filters }
+        }
+      );
 
       if (response.count > 0) {
         log(`✅ Successfully deleted ${response.count} records.`);
@@ -44,7 +47,7 @@ export const useAdminClient = (log: (msg: string) => void) => {
     log('Starting Firestore Batch Sync (Server-Side)...');
 
     try {
-      const response = await $fetch<{ success: boolean; count: number }>('/api/admin/seed', {
+      const response = await useAdminFetch<{ success: boolean; count: number }>('/api/admin/seed', {
         method: 'POST',
         body: { collectionName, data }
       });

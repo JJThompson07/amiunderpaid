@@ -105,32 +105,25 @@
 </template>
 
 <script setup lang="ts">
-// ** imports **
 import { ref, computed } from 'vue';
 import { Mail, Lock, KeyRound, ArrowLeft } from 'lucide-vue-next';
-import { useFirebaseAuth } from 'vuefire';
-import { signInWithEmailAndPassword } from 'firebase/auth';
 
-// ** data & refs **
 const email = ref<string>('');
 const password = ref<string>('');
-const loading = ref<boolean>(false);
-const error = ref<string>('');
 
-const auth = useFirebaseAuth();
 const route = useRoute();
 const config = useRuntimeConfig();
 
-// Check if the URL has the correct ?access=... parameter
+// Pull in the new composable
+const { login, loading, error } = useAdminAuth();
+
 const isAccessGranted = computed(() => {
   return route.query.access === config.public.adminAccessKey;
 });
 
-// ** methods **
 const handleLogin = async () => {
-  // 1. Pre-flight validation
-  if (!auth || !isAccessGranted.value) {
-    error.value = 'The authentication service is not ready. Please refresh.';
+  if (!isAccessGranted.value) {
+    error.value = 'Access denied.';
     return;
   }
 
@@ -139,35 +132,13 @@ const handleLogin = async () => {
     return;
   }
 
-  // 2. State initialization
-  loading.value = true;
-  error.value = '';
+  // Pass credentials to the composable
+  const success = await login(email.value, password.value);
 
-  try {
-    // 3. Firebase sign-in request
-    await signInWithEmailAndPassword(auth, email.value, password.value);
-
-    // 4. Success redirection logic
+  // Redirect if successful
+  if (success) {
     const redirectPath = route.query.redirect?.toString() || '/admin/coding-index';
     await navigateTo(redirectPath);
-  } catch (e: any) {
-    // 5. Error mapping for common Firebase codes
-
-    switch (e.code) {
-      case 'auth/invalid-credential':
-      case 'auth/user-not-found':
-      case 'auth/wrong-password':
-        error.value = 'The email or password entered is incorrect.';
-        break;
-      case 'auth/too-many-requests':
-        error.value = 'Security lock: Too many failed attempts. Try again later.';
-        break;
-      default:
-        error.value = 'An unexpected error occurred during sign in.';
-    }
-  } finally {
-    // 6. Cleanup loading state
-    loading.value = false;
   }
 };
 </script>
