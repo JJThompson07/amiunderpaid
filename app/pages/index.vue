@@ -132,7 +132,7 @@ useHead({
       innerHTML: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        name: $t('meta.index.name'),
+        name: $t('meta.index.title'),
         url: url.origin,
         description: description.value
       })
