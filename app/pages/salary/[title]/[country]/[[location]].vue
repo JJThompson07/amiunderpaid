@@ -1,7 +1,7 @@
 <template>
   <div
     :key="route.fullPath"
-    class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6">
+    class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6 max-w-7xl mx-auto">
     <div
       class="fixed top-0 left-0 w-full h-125 bg-linear-to-b to-slate-50 z-0 from-secondary-900"></div>
 
