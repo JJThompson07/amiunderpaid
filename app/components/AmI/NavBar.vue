@@ -108,6 +108,11 @@ const navLinks = [
     to: '/about',
     label: $t('navbar.about'),
     mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400'
+  },
+  {
+    to: '/frequently-asked-questions',
+    label: $t('navbar.faq-short'),
+    mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400'
   }
 ];
 

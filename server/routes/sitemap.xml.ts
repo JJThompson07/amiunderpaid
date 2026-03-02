@@ -17,7 +17,14 @@ export default defineEventHandler(async (event) => {
       .replace(/--+/g, '-'); // Replace multiple - with single -
 
   // 1. Define Static Routes
-  const staticRoutes = ['/', '/privacy-policy', '/how-it-works', '/data-sources', '/about'];
+  const staticRoutes = [
+    '/',
+    '/privacy-policy',
+    '/how-it-works',
+    '/data-sources',
+    '/about',
+    '/frequently-asked-questions'
+  ];
 
   // 2. Fetch Dynamic Salary Data
   // We'll fetch titles and countries to build the /salary/[title]/[country] URLs
@@ -50,7 +57,7 @@ export default defineEventHandler(async (event) => {
       return `  <url>
     <loc>${origin}${route}</loc>
     <changefreq>weekly</changefreq>
-    <priority>${route === '/' ? '1.0' : '0.7'}</priority>
+    <priority>${route === '/' ? '1.0' : route === '/frequently-asked-questions' ? '0.8' : '0.7'}</priority>
   </url>`;
     })
     .join('\n')}
