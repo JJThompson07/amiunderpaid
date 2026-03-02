@@ -122,7 +122,7 @@
 
 <script setup lang="ts">
 import { DatabaseZap, Trash2, RefreshCcw, Users, Check, X, CheckCircle2 } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 // Protect this route with your admin middleware
 definePageMeta({
@@ -145,6 +145,7 @@ const runCleanup = async () => {
   cleanupStats.value = null;
 
   try {
+    // 1. Updated to useAdminFetch
     const res: any = await useAdminFetch('/api/admin/clean-cache', { method: 'POST' });
     cleanupStats.value = res.stats;
   } catch (error) {
@@ -156,15 +157,22 @@ const runCleanup = async () => {
 };
 
 // --- Suggestions Logic ---
+// 2. Updated to useAsyncData + useAdminFetch to prevent SSR 401 errors
 const {
   data: suggestionsData,
   pending,
   refresh: refreshSuggestions
-} = useFetch('/api/admin/suggestions');
+} = useAsyncData(
+  'admin-suggestions',
+  () => useAdminFetch<{ success: boolean; suggestions: any[] }>('/api/admin/suggestions'),
+  { server: false }
+);
+
 const suggestions = computed(() => suggestionsData.value?.suggestions || []);
 
 const approveMatch = async (suggestion: any) => {
   try {
+    // 3. Updated to useAdminFetch
     await useAdminFetch('/api/admin/approve-suggestions', {
       method: 'POST',
       body: {
@@ -187,7 +195,7 @@ const rejectMatch = async (id: string) => {
   if (!confirm('Are you sure you want to reject and delete this suggestion?')) return;
 
   try {
-    // Hit the new, unique endpoint so TypeScript doesn't get confused
+    // 4. Updated to useAdminFetch
     await useAdminFetch('/api/admin/reject-suggestion', {
       method: 'DELETE',
       query: { id }
