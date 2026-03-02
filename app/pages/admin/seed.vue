@@ -248,6 +248,8 @@ definePageMeta({
   middleware: 'admin'
 });
 
+const adminFetch = useAdminFetch();
+
 // ** data & refs **
 const db = useFirestore();
 const user = useCurrentUser();
@@ -361,7 +363,7 @@ const deleteRecords = async (country: string, year: number, period: string, scop
   // 2. Delete from Algolia
   log(`Clearing Algolia records for ${country} ${year}...`);
   try {
-    await useAdminFetch('/api/admin/clear-algolia', {
+    await adminFetch('/api/admin/clear-algolia', {
       method: 'POST',
       body: {
         indexName: collectionName,
@@ -395,7 +397,7 @@ const handleParse = async () => {
   try {
     // 2. Request parsing from server API
     log(`Sending file to server parser (${endpoint})...`);
-    const response = await useAdminFetch<{
+    const response = await adminFetch<{
       success: boolean;
       data: (SalaryRecord & { period: string })[];
       count: number;
@@ -461,7 +463,7 @@ const seedToFirestore = async () => {
 
     // 2. Sync to Algolia
     log(`Syncing ${recordsToSync.length} records to Algolia index '${collectionName}'...`);
-    await useAdminFetch('/api/admin/sync-algolia', {
+    await adminFetch('/api/admin/sync-algolia', {
       method: 'POST',
       body: {
         data: recordsToSync,

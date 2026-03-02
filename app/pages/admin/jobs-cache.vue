@@ -129,6 +129,8 @@ definePageMeta({
   middleware: 'admin'
 });
 
+const adminFetch = useAdminFetch();
+
 // --- Cache Cleanup Logic ---
 const isCleaning = ref(false);
 const cleanupStats = ref<{ deletedJobs: number; deletedDistributions: number } | null>(null);
@@ -146,7 +148,7 @@ const runCleanup = async () => {
 
   try {
     // 1. Updated to useAdminFetch
-    const res: any = await useAdminFetch('/api/admin/clean-cache', { method: 'POST' });
+    const res: any = await adminFetch('/api/admin/clean-cache', { method: 'POST' });
     cleanupStats.value = res.stats;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to clean cache.';
@@ -164,7 +166,7 @@ const {
   refresh: refreshSuggestions
 } = useAsyncData(
   'admin-suggestions',
-  () => useAdminFetch<{ success: boolean; suggestions: any[] }>('/api/admin/suggestions'),
+  () => adminFetch<{ success: boolean; suggestions: any[] }>('/api/admin/suggestions'),
   { server: false }
 );
 
@@ -173,7 +175,7 @@ const suggestions = computed(() => suggestionsData.value?.suggestions || []);
 const approveMatch = async (suggestion: any) => {
   try {
     // 3. Updated to useAdminFetch
-    await useAdminFetch('/api/admin/approve-suggestions', {
+    await adminFetch('/api/admin/approve-suggestions', {
       method: 'POST',
       body: {
         suggestionId: suggestion.id,
@@ -196,7 +198,7 @@ const rejectMatch = async (id: string) => {
 
   try {
     // 4. Updated to useAdminFetch
-    await useAdminFetch('/api/admin/reject-suggestion', {
+    await adminFetch('/api/admin/reject-suggestion', {
       method: 'DELETE',
       query: { id }
     });

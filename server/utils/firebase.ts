@@ -34,7 +34,7 @@ export const useAdminFirestore = () => {
 export const verifyAdmin = async (event: H3Event) => {
   const auth = getAuth(useAdminApp());
 
-  // 1. Bulletproof Client Fetch: Check for Authorization Bearer token first
+  // 1. Check for the fresh Authorization Bearer token first (Client-side fetches)
   const authHeader = getHeader(event, 'Authorization');
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const idToken = authHeader.split('Bearer ')[1] || '';
@@ -46,7 +46,7 @@ export const verifyAdmin = async (event: H3Event) => {
     }
   }
 
-  // 2. SSR Fallback: Check the __session cookie
+  // 2. SSR Fallback: Check the __session cookie (Server-side fetches)
   const sessionCookie = getCookie(event, '__session');
   if (!sessionCookie) {
     throw createError({
