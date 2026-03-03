@@ -22,7 +22,11 @@
         ><CalculatorIcon class="w-5 h-5 text-slate-50"
       /></AmIButton>
 
-      <LazyModalSalaryConverter v-if="showCalc" :country="country" @close="showCalc = false" />
+      <LazyModalSalaryConverter
+        v-if="showCalc"
+        :country="country"
+        :currency-symbol="currencySymbol"
+        @close="showCalc = false" />
     </div>
 
     <div class="p-3 bg-white shadow-2xl rounded-3xl ring-1 ring-slate-900/5">

@@ -1,7 +1,7 @@
 <template>
   <div
     :key="route.fullPath"
-    class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6">
+    class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6 max-w-7xl mx-auto">
     <div
       class="fixed top-0 left-0 w-full h-125 bg-linear-to-b to-slate-50 z-0 from-secondary-900"></div>
 
@@ -161,7 +161,7 @@
 // ** imports **
 import { FileUser, Info } from 'lucide-vue-next';
 import { ref, computed, watch } from 'vue';
-import { getRawDiffPercentage, slugify } from '~/helpers/utility';
+import { getRawDiffPercentage } from '~/helpers/utility';
 
 // ** data & refs **
 const route = useRoute();
@@ -318,13 +318,14 @@ const handleAmbiguitySelect = async (match: any) => {
 };
 
 onMounted(() => {
-  if (route.query.q && slugify(route.query.q as string) === route.params.title) {
-    // The query is redundant, remove it for a cleaner URL and better SEO
-    const { q, ...remainingQuery } = route.query;
+  const { compare, ...remainingQuery } = route.query;
+
+  // only trigger if other queries than compare are present
+  if (Object.keys(remainingQuery).length > 0) {
     navigateTo(
       {
         path: route.path,
-        query: remainingQuery
+        query: compare ? { compare: compare } : undefined
       },
       { replace: true }
     );

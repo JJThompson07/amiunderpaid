@@ -43,8 +43,7 @@
           <div v-if="annualSalary > 0" class="p-4 bg-green-50 rounded-xl">
             <p class="text-sm text-green-700">
               {{ $t('modals.converter.result') }}
-              <span class="font-bold"
-                >{{ $t('common.currency-symbol') }}{{ annualSalary.toLocaleString() }}</span
+              <span class="font-bold">{{ currencySymbol }}{{ annualSalary.toLocaleString() }}</span
               >.
             </p>
           </div>
@@ -65,6 +64,10 @@ import { Calendar, DollarSign, PoundSterling, Timer } from 'lucide-vue-next';
 
 defineProps({
   country: {
+    type: String,
+    required: true
+  },
+  currencySymbol: {
     type: String,
     required: true
   }
