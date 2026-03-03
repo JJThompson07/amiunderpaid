@@ -161,7 +161,7 @@
 // ** imports **
 import { FileUser, Info } from 'lucide-vue-next';
 import { ref, computed, watch } from 'vue';
-import { getRawDiffPercentage, slugify } from '~/helpers/utility';
+import { getRawDiffPercentage } from '~/helpers/utility';
 
 // ** data & refs **
 const route = useRoute();
@@ -318,13 +318,14 @@ const handleAmbiguitySelect = async (match: any) => {
 };
 
 onMounted(() => {
-  if (route.query.q && slugify(route.query.q as string) === route.params.title) {
-    // The query is redundant, remove it for a cleaner URL and better SEO
-    const { q, ...remainingQuery } = route.query;
+  const { compare, ...remainingQuery } = route.query;
+
+  // only trigger if other queries than compare are present
+  if (Object.keys(remainingQuery).length > 0) {
     navigateTo(
       {
         path: route.path,
-        query: remainingQuery
+        query: compare ? { compare: compare } : undefined
       },
       { replace: true }
     );
