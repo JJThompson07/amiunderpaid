@@ -82,13 +82,15 @@ export default defineNuxtConfig({
     locales: [
       {
         code: 'en-GB',
-        iso: 'en-GB', // Ensure this is language-REGION
+        iso: 'en-GB',
         domain: isDev ? 'localhost:3000' : 'www.amiunderpaid.co.uk',
+        language: 'en-GB',
         file: 'en-GB/index.ts'
       },
       {
         code: 'en-US',
-        iso: 'en-US', // Ensure this is language-REGION
+        iso: 'en-US',
+        language: 'en-US',
         domain: isDev ? 'localhost:3000' : 'www.amiunderpaid.com',
         file: 'en-US/index.ts'
       }
