@@ -1,6 +1,7 @@
 {
   "title": "Frequently Asked Questions",
-  "subtitle": "Everything you need to know about salary expectations and navigating the Am I Underpaid? tool.",
+  "subtitle": "Everything you need to know about salary expectations and navigating the {name} tool.",
+  "name": "Am I Underpaid?",
   "questions": {
     "section": {
       "general": {
@@ -55,6 +56,63 @@
         "whatIfIAmWellPaid": {
           "question": "What if I am already well paid?",
           "answer": "If you are above the market average, you are in a strong position. Use our insights to see how much higher the top 10% of earners in your field are making and what skills might be required to stay at that level."
+        }
+      }
+    }
+  },
+  "benchmark": {
+    "name": "Benchmark My Role",
+    "questions": {
+      "section": {
+        "general": {
+          "title": "Market Benchmarking FAQ",
+          "marketValue": {
+            "question": "How is market value determined?",
+            "answer": "Market value is a reflection of real-time supply and demand. Our tool determines this by aggregating 140,000+ live job vacancies and official benchmarks to establish a current 'going rate' for specific roles and locations across the UK."
+          },
+          "dataPillars": {
+            "question": "What data defines the salary range?",
+            "answer": "We calculate ranges using three primary pillars: live job listings (active market demand), official occupational benchmarks, and regional cost-of-labour adjustments. This provides a comprehensive view of the median and distribution curve."
+          },
+          "competitiveOffer": {
+            "question": "What is considered a 'competitive' salary offer?",
+            "answer": "A competitive offer typically aligns with the 50th percentile (median) or higher of active listings. For employers, this ensures high applicant volume; for candidates, it ensures fair compensation relative to the current market."
+          },
+          "benchmarkingFrequency": {
+            "question": "How often should a role be benchmarked?",
+            "answer": "The market is dynamic. Because we analyse live listings, our data reflects economic shifts in real-time. We recommend benchmarking roles quarterly to ensure pay ranges remain aligned with the latest hiring trends."
+          },
+          "employerUtility": {
+            "question": "Can I use this tool to set company salary bands?",
+            "answer": "Absolutely. Benchmark My Role is designed to help organisations 'stress-test' their job postings. By checking your intended range against live data, you can ensure your vacancy is positioned to attract top talent before you advertise."
+          },
+          "strategicAdvantage": {
+            "question": "Why is objective benchmarking essential?",
+            "answer": "For employers, it prevents talent attrition. For professionals, it provides objective evidence for data-backed negotiations. Transparency reduces friction on both sides of the hiring table, leading to faster, fairer placements."
+          }
+        },
+        "tool": {
+          "title": "Using the Benchmark Tool",
+          "roleSelection": {
+            "question": "How do I select the correct role?",
+            "answer": "Start typing the job function. Our system uses standardised occupational classifications to ensure the data you see is categorised correctly against industry peers, rather than just matching an internal company title."
+          },
+          "uniqueTitles": {
+            "question": "What if I have a unique or hybrid job title?",
+            "answer": "If an exact match isn't available, select the role that represents the core 70% of the responsibilities. Our algorithm cross-references your input against the closest market equivalents to provide a reliable benchmark."
+          },
+          "privacy": {
+            "question": "Is my research anonymous?",
+            "answer": "Yes. Benchmark My Role is a transparency-first platform. You can research market rates without entering personal salary details. Any data provided is anonymised to improve the accuracy of our real-time models."
+          },
+          "gdpr": {
+            "question": "How do you handle data privacy?",
+            "answer": "We adhere to strict data protection standards, including UK GDPR. We do not sell personal data to third parties. Our purpose is to provide aggregate market insights, and all individual inputs are treated with professional-grade security."
+          },
+          "percentileData": {
+            "question": "How should I interpret the 'Market Leader' (90th percentile) data?",
+            "answer": "For employers, this identifies what is required to headhunt elite talent. For applicants, the 90th percentile represents the rate usually reserved for highly specialised skills or leadership roles in high-competition regions."
+          }
         }
       }
     }

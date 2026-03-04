@@ -67,7 +67,9 @@
       <div class="mt-16 text-center">
         <NuxtLink to="/">
           <AmIButton title="Go to salary search" size="lg">{{
-            $t('buttons.check-salary-now')
+            $siteBrand === 'amiunderpaid'
+              ? $t('buttons.check-salary-now')
+              : $t('buttons.benchmark.check-now')
           }}</AmIButton>
         </NuxtLink>
       </div>
@@ -78,4 +80,6 @@
 <script setup lang="ts">
 // ** imports **
 import { Database, Check } from 'lucide-vue-next';
+
+const { $siteBrand } = useNuxtApp();
 </script>

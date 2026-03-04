@@ -21,5 +21,9 @@
     "ons": "ONS Data",
     "adzuna": "Adzuna API",
     "bls": "BLS Data"
+  },
+  "benchmark": {
+    "heading": "Benchmark My Role",
+    "subheading": "The definitive resource for real-time salary transparency. By analyzing 140,000+ live vacancies alongside official data, this tool allows any role to be aligned with a fair and competitive market rate."
   }
 }
