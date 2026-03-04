@@ -30,7 +30,7 @@
         <!-- Source 2: ONS -->
         <div class="p-6 bg-white border border-slate-200 shadow-sm rounded-2xl">
           <div
-            class="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-50 text-primary-600 mb-4">
+            class="w-10 h-10 flex items-center justify-center rounded-lg bg-secondary-50 text-primary-600 mb-4">
             <Building2 class="w-6 h-6" />
           </div>
           <h3 class="text-lg font-bold text-slate-900">{{ $t('data-sources.ons.heading') }}</h3>
