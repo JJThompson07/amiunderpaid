@@ -1,32 +1,51 @@
 <template>
   <div class="relative w-full max-w-5xl mx-auto mt-8">
-    <div class="flex justify-center mb-6">
+    <div class="flex items-center justify-between gap-4 mb-6 w-full">
       <div
-        class="inline-flex p-1 rounded-full bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-lg">
+        class="inline-flex p-1 rounded-2xl bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-lg">
         <button
-          v-for="c in ['UK', 'USA']"
-          :key="c"
+          v-for="persona in userPersonas"
+          :key="persona"
           type="button"
-          class="px-6 py-2 text-xs font-bold rounded-full transition-all duration-300"
+          class="px-6 py-2 text-xs font-bold rounded-xl transition-all duration-300"
           :class="
-            country === c ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-300 hover:text-white'
+            userPersona === persona
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-300 hover:text-white'
           "
-          @click="changeCountry(c)">
-          {{ c }}
+          @click="userPersona = persona">
+          {{ $t(`buttons.persona.${persona}`) }}
         </button>
       </div>
-    </div>
+      <div class="flex gap-4 items-center">
+        <div
+          class="inline-flex p-1 rounded-2xl bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-lg">
+          <button
+            v-for="c in ['UK', 'USA']"
+            :key="c"
+            type="button"
+            class="px-6 py-2 text-xs font-bold rounded-xl transition-all duration-300"
+            :class="
+              country === c
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-300 hover:text-white'
+            "
+            @click="changeCountry(c)">
+            {{ c }}
+          </button>
+        </div>
+        <div class="flex">
+          <AmIButton v-if="!showCalc" title="Salary converter" @click="showCalc = true"
+            ><CalculatorIcon class="w-5 h-5 text-slate-50"
+          /></AmIButton>
 
-    <div class="flex justify-end absolute top-0 right-0">
-      <AmIButton v-if="!showCalc" title="Salary converter" @click="showCalc = true"
-        ><CalculatorIcon class="w-5 h-5 text-slate-50"
-      /></AmIButton>
-
-      <LazyModalSalaryConverter
-        v-if="showCalc"
-        :country="country"
-        :currency-symbol="currencySymbol"
-        @close="showCalc = false" />
+          <LazyModalSalaryConverter
+            v-if="showCalc"
+            :country="country"
+            :currency-symbol="currencySymbol"
+            @close="showCalc = false" />
+        </div>
+      </div>
     </div>
 
     <div class="p-3 bg-white shadow-2xl rounded-3xl ring-1 ring-slate-900/5">
@@ -105,6 +124,9 @@ const emit = defineEmits(['country-change']);
 
 const url = useRequestURL();
 const country = ref(props.initialCountry || (url.hostname.includes('.com') ? 'USA' : 'UK'));
+
+const userPersonas = ['employee', 'employer'];
+const userPersona = useState('userPersona', () => 'employee');
 
 const title = ref('');
 const location = ref('');
@@ -288,8 +310,8 @@ const handleSearch = async () => {
   const locationSlug = location.value ? slugify(location.value) : '';
 
   const path = locationSlug
-    ? `/salary/${titleSlug}/${countrySlug}/${locationSlug}`
-    : `/salary/${titleSlug}/${countrySlug}`;
+    ? `/benchmark/${titleSlug}/${countrySlug}/${locationSlug}`
+    : `/benchmark/${titleSlug}/${countrySlug}`;
 
   trackSearch(cleanTitle.trim(), country.value, location.value, salary.value);
 
@@ -299,6 +321,7 @@ const handleSearch = async () => {
       q: cleanTitle.trim(),
       gov_id: exactGovId, // Send exact DB ID for 100% accurate Government matching
       compare: salary.value || undefined,
+      persona: userPersona.value,
       period: period.value !== 'year' ? period.value : undefined
     },
     state: {

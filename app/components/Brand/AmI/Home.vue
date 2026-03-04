@@ -8,7 +8,7 @@
       <SectionAmIHero />
 
       <!-- The Calculator Component -->
-      <SalarySearch
+      <SectionAmISalarySearch
         :initial-country="isUSA ? 'USA' : 'UK'"
         @country-change="($event) => (isUSA = $event === 'USA')" />
 
