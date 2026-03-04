@@ -7,9 +7,8 @@
         <!-- Logo -->
         <NuxtLink href="/" class="flex items-center gap-2 absolute" @click="openMenu = false">
           <div
-            class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none">
-            <div class="logo h-7 w-7" aria-label="Am I" />
-            <span class="text-slate-900">{{ $t('common.underpaid') }}</span>
+            class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none rounded-xl bg-slate-100">
+            <div class="logo h-12 w-12" aria-label="home" :class="`logo-${$siteBrand}`" />
           </div>
         </NuxtLink>
 
@@ -70,6 +69,8 @@ import { useCurrentUser } from 'vuefire';
 import { ref, onMounted, computed } from 'vue';
 import { MenuIcon, XIcon } from 'lucide-vue-next';
 
+const { $siteBrand } = useNuxtApp();
+
 const { isMobile: viewportIsMobile } = useViewport();
 
 const i18nHead = useLocaleHead({
@@ -101,14 +102,21 @@ useHead({
     // Use type assertion to match the expected 'ltr' | 'rtl' | 'auto' type
     dir: computed(() => i18nHead.value.htmlAttrs?.dir as 'ltr' | 'rtl' | 'auto' | undefined)
   },
-  link: computed(() => [...(i18nHead.value.link || [])]),
+  link: computed(() => [
+    ...(i18nHead.value.link || []),
+    { rel: 'icon', type: 'image/x-icon', href: `/${$siteBrand}-favicon.ico` }
+  ]),
   meta: computed(() => [...(i18nHead.value.meta || [])])
 });
 </script>
 
-<style>
-.logo {
-  background: url('../assets/img/logo.png') no-repeat center center;
+<style scoped>
+.logo-amiunderpaid {
+  background: url('../assets/img/amiunderpaid-logo.png') no-repeat center center;
+  background-size: cover;
+}
+.logo-benchmarkmyrole {
+  background: url('../assets/img/benchmarkmyrole-logo.png') no-repeat center center;
   background-size: cover;
 }
 </style>

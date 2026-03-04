@@ -27,6 +27,7 @@ export default defineNuxtConfig({
   routeRules: {
     // Cache salary pages for 24 hours (86400 seconds)
     '/salary/**': { swr: 86400 },
+    '/benchmark/**': { swr: 86400 },
 
     // Keep static pages at 24 hours
     '/about': { swr: 86400 },
