@@ -9,9 +9,6 @@
         :initial-country="isUSA ? 'USA' : 'UK'"
         @country-change="($event) => (isUSA = $event === 'USA')" />
 
-      <!-- Why section -->
-      <SectionSharedWhy :is-u-s-a="isUSA" />
-
       <SectionSharedTrustBadges />
     </main>
   </div>

@@ -3,14 +3,16 @@
     <div class="flex justify-between items-center gap-4 mb-6">
       <div class="flex-1"></div>
       <div
-        class="inline-flex p-1 rounded-2xl bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-lg">
+        class="inline-flex p-1 rounded-2xl bg-secondary-900/50 backdrop-blur-md border border-white/10 shadow-lg">
         <button
           v-for="c in ['UK', 'USA']"
           :key="c"
           type="button"
           class="px-6 py-2 text-xs font-bold rounded-xl transition-all duration-300"
           :class="
-            country === c ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-300 hover:text-white'
+            country === c
+              ? 'bg-white text-secondary-900 shadow-sm'
+              : 'text-secondary-300 hover:text-white'
           "
           @click="changeCountry(c)">
           {{ c }}

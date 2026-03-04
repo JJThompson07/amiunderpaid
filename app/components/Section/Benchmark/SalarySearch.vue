@@ -2,7 +2,7 @@
   <div class="relative w-full max-w-5xl mx-auto mt-8">
     <div class="flex items-center justify-between gap-4 mb-6 w-full">
       <div
-        class="inline-flex p-1 rounded-2xl bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-lg">
+        class="inline-flex p-1 rounded-2xl bg-secondary-900/50 backdrop-blur-md border border-white/10 shadow-lg">
         <button
           v-for="persona in userPersonas"
           :key="persona"
@@ -10,8 +10,8 @@
           class="px-6 py-2 text-xs font-bold rounded-xl transition-all duration-300"
           :class="
             userPersona === persona
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-300 hover:text-white'
+              ? 'bg-white text-secondary-900 shadow-sm'
+              : 'text-secondary-300 hover:text-white'
           "
           @click="userPersona = persona">
           {{ $t(`buttons.persona.${persona}`) }}
@@ -70,7 +70,11 @@
               :label="
                 country === 'USA' ? $t('search.location.label.usa') : $t('search.location.label.uk')
               "
-              :placeholder="$t('search.location.placeholder')"
+              :placeholder="
+                country === 'USA'
+                  ? $t('search.location.placeholder.usa')
+                  : $t('search.location.placeholder.uk')
+              "
               :icon="MapPin"
               :options="locationOptions"
               optional

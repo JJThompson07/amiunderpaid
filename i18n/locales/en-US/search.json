@@ -9,7 +9,10 @@
       "usa": "State",
       "uk": "City"
     },
-    "placeholder": "e.g. New York"
+    "placeholder": {
+      "usa": "e.g. New York",
+      "uk": "e.g. London"
+    }
   },
   "salary": {
     "label": "Current Salary"
