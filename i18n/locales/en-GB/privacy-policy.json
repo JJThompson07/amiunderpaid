@@ -1,10 +1,14 @@
 {
   "heading": "Privacy Policy",
   "updated": "Last updated: {date}",
+  "name": "Am I Underpaid?",
+  "benchmark": {
+    "name": "Benchmark My Role"
+  },
   "collection": {
     "heading": "1. Data Collection & Usage",
     "body": {
-      "1": "We prioritize your privacy. \"Am I Underpaid?\" does not require you to create an account or provide personal identification to use our salary benchmarking tools.",
+      "1": "We prioritize your privacy. \"{name}\" does not require you to create an account or provide personal identification to use our salary benchmarking tools.",
       "2": "The salary information and job titles you enter into our calculator are processed to provide you with a comparison against our database. We do not store your specific entry linked to your personal identity.",
       "3": "We use Google Analytics to anonymously track website usage and improve our services. This data is aggregated and cannot be used to identify you personally."
     }
