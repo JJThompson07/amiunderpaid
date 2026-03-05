@@ -28,9 +28,20 @@ export const useAnalytics = () => {
     });
   };
 
+  const trackDistribution = (title: string, country: string, location: string, fetch: boolean) => {
+    gtag('event', 'fetch_distribution', {
+      job_title: title,
+      country: country,
+      location: location,
+      fetch: fetch,
+      brand: $siteBrand
+    });
+  };
+
   return {
     trackSearch,
     trackAmbiguousSearch,
-    trackResultAction
+    trackResultAction,
+    trackDistribution
   };
 };

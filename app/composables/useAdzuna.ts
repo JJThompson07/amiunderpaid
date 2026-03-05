@@ -67,7 +67,13 @@ export const useAdzuna = () => {
     () => jobsData.value !== null && jobsData.value !== undefined && jobsCount.value > 0
   );
 
-  const fetchJobs = async (title: string, location: string, country: string) => {
+  const fetchJobs = async (
+    title: string,
+    location: string,
+    country: string,
+    jobType: string = 'full-time',
+    contractType: string = 'permanent'
+  ) => {
     if (country === 'UK' || country === 'gb') {
       location = '';
     }
@@ -85,7 +91,9 @@ export const useAdzuna = () => {
         params: {
           title: cleanTitle,
           location,
-          country
+          country,
+          jobType,
+          contractType
         }
       });
 
@@ -106,7 +114,13 @@ export const useAdzuna = () => {
     }
   };
 
-  const fetchHistogram = async (title: string, location: string, country: string) => {
+  const fetchHistogram = async (
+    title: string,
+    location: string,
+    country: string,
+    jobType: string = 'full-time',
+    contractType: string = 'permanent'
+  ) => {
     if (country === 'UK' || country === 'gb') {
       location = '';
     }
@@ -118,7 +132,9 @@ export const useAdzuna = () => {
         params: {
           title,
           location,
-          country
+          country,
+          jobType,
+          contractType
         }
       });
 

@@ -3,13 +3,16 @@ import { FieldValue } from 'firebase-admin/firestore';
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const query = getQuery(event);
-  const { title, location, country } = query;
+  const { title, location, country, jobType, contractType } = query;
 
   if (!title) {
     throw createError({ statusCode: 400, statusMessage: 'Job title is required' });
   }
 
-  const titleStr = String(title);
+  const titleStr = String(title).toLowerCase().trim();
+  const typeStr = String(jobType || 'full-time').toLowerCase();
+  const contractStr = String(contractType || 'permanent').toLowerCase();
+
   const countryParam = String(country || 'gb').toLowerCase();
   const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
 
@@ -27,7 +30,7 @@ export default defineEventHandler(async (event) => {
 
   // 1. Check Cache (Server-Side)
   const db = useAdminFirestore();
-  const cacheKey = generateCacheKey(titleStr, locationStr, countryCode);
+  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${typeStr}-${contractStr}`;
   const cacheRef = db.collection('adzuna_distribution_cache').doc(cacheKey);
 
   try {
@@ -89,6 +92,20 @@ export default defineEventHandler(async (event) => {
     what: titleStr,
     'content-type': 'application/json'
   };
+
+  // Dynamically set full_time or part_time
+  if (typeStr === 'part-time') {
+    params.part_time = 1;
+  } else {
+    params.full_time = 1;
+  }
+
+  // Dynamically set contract or permanent
+  if (contractStr === 'contract') {
+    params.contract = 1;
+  } else {
+    params.permanent = 1;
+  }
 
   if (locationStr.trim() !== '') {
     params.location1 = locationStr;

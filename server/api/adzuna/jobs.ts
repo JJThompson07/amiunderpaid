@@ -3,7 +3,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const query = getQuery(event);
-  const { title, location, country, resultsPerPage } = query;
+  const { title, location, country, resultsPerPage, jobType, contractType } = query;
 
   if (!title) {
     throw createError({ statusCode: 400, statusMessage: 'Job title is required' });
@@ -11,6 +11,8 @@ export default defineEventHandler(async (event) => {
 
   // Force to lowercase to prevent Cache Key Mismatches after URL unslugifying!
   const titleStr = String(title).toLowerCase().trim();
+  const typeStr = String(jobType || 'full-time').toLowerCase();
+  const contractStr = String(contractType || 'permanent').toLowerCase();
 
   const countryParam = String(country || 'gb').toLowerCase();
   const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
@@ -29,7 +31,7 @@ export default defineEventHandler(async (event) => {
 
   // 1. Check Cache
   const db = useAdminFirestore();
-  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${limit}`;
+  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${typeStr}--${contractStr}-limit}`;
   const cacheRef = db.collection('adzuna_jobs_cache').doc(cacheKey);
 
   // Track existing DB state so we don't wipe it on cache refresh!
@@ -98,6 +100,20 @@ export default defineEventHandler(async (event) => {
     what: titleStr,
     'content-type': 'application/json'
   };
+
+  // Dynamically set full_time or part_time
+  if (typeStr === 'part-time') {
+    params.part_time = 1;
+  } else {
+    params.full_time = 1;
+  }
+
+  // Dynamically set contract or permanent
+  if (contractStr === 'contract') {
+    params.contract = 1;
+  } else {
+    params.permanent = 1;
+  }
 
   if (locationStr.trim() !== '') {
     params.where = locationStr;

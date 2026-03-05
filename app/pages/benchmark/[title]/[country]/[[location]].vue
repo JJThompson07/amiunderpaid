@@ -94,6 +94,8 @@
             :year="marketDataYear" />
         </div>
 
+        {{ jobListings }}
+
         <p class="flex items-center justify-center gap-1 mt-6 text-2xs text-center text-slate-400">
           <Info class="w-3 h-3" />
           {{ $t('common.data.disclaimer') }}
@@ -209,6 +211,10 @@ const diffPercent = computed<number>(() => {
   const avg = marketAverage?.value ?? 0;
   if (userSalary.value === 0 || avg === 0) return 0;
   return getRawDiffPercentage(userSalary.value, avg);
+});
+
+const jobListings = computed(() => {
+  return jobsData.value?.results;
 });
 
 // 1. Create a unique key for caching based on all parameters
