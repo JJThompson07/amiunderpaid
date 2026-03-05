@@ -89,10 +89,6 @@ export const useAdzuna = () => {
         }
       });
 
-      console.log('--- FRONTEND ADZUNA RESPONSE ---');
-      console.log('ID received:', rawData.gov_id_code);
-      console.log('Verified received:', rawData.is_admin_verified);
-
       // ONLY use the cached ID if an admin has explicitly verified it!
       if (rawData.gov_id_code && rawData.is_admin_verified) {
         cachedGovIdCode.value = String(rawData.gov_id_code).trim();
