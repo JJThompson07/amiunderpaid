@@ -24,7 +24,7 @@
     <div
       v-show="!pending && (hasGovernmentData || hasJobsData)"
       class="relative grid grid-cols-1 px-4 gap-6">
-      <div class="relative mx-auto flex flex-col gap-6">
+      <div class="relative mx-auto flex flex-col gap-6 w-full">
         <div class="flex flex-col gap-6 md:flex-row">
           <div v-if="hasJobsData" class="flex flex-col flex-1 min-w-0 gap-3 adzuna-section">
             <LazySectionAdzunaComparison

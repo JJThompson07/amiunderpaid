@@ -10,6 +10,7 @@ if (!process.env.FIREBASE_API_KEY) {
 }
 
 const isDev = process.env.NODE_ENV === 'development';
+const DAY_IN_S = 86400;
 
 export default defineNuxtConfig({
   // Enable Nuxt 4 features and directory structure
@@ -24,17 +25,16 @@ export default defineNuxtConfig({
   ssr: true,
 
   // ** 2. CONFIGURE CACHING (Route Rules) **
-  routeRules: {
-    // Cache salary pages for 24 hours (86400 seconds)
-    '/salary/**': { swr: 86400 },
-    '/benchmark/**': { swr: 86400 },
-
-    // Keep static pages at 24 hours
-    '/about': { swr: 86400 },
-    '/how-it-works': { swr: 86400 },
-    '/data-sources': { swr: 86400 },
-    '/privacy-policy': { swr: 86400 }
-  },
+  routeRules: isDev
+    ? {}
+    : {
+        '/salary/**': { swr: DAY_IN_S },
+        '/benchmark/**': { swr: DAY_IN_S },
+        '/about': { swr: DAY_IN_S },
+        '/how-it-works': { swr: DAY_IN_S },
+        '/data-sources': { swr: DAY_IN_S },
+        '/privacy-policy': { swr: DAY_IN_S }
+      },
 
   css: ['~/assets/css/main.css'],
 
@@ -76,6 +76,7 @@ export default defineNuxtConfig({
     defaultLocale: 'en-GB',
     strategy: 'no_prefix',
     differentDomains: true,
+    multiDomainLocales: true,
 
     // baseUrl is essential for generating absolute canonical/alternate URLs
     baseUrl: isDev ? 'http://localhost:3000' : 'https://www.amiunderpaid.co.uk',
@@ -84,16 +85,20 @@ export default defineNuxtConfig({
       {
         code: 'en-GB',
         iso: 'en-GB',
-        domain: isDev ? 'localhost:3000' : 'www.amiunderpaid.co.uk',
         language: 'en-GB',
-        file: 'en-GB/index.ts'
+        file: 'en-GB/index.ts',
+        // Update the dev domain here
+        domains: isDev ? ['ami.localhost:3000'] : ['www.amiunderpaid.co.uk']
       },
       {
         code: 'en-US',
         iso: 'en-US',
         language: 'en-US',
-        domain: isDev ? 'localhost:3000' : 'www.amiunderpaid.com',
-        file: 'en-US/index.ts'
+        file: 'en-US/index.ts',
+        // Update both dev domains here
+        domains: isDev
+          ? ['ami.localhost:3000', 'bmr.localhost:3000']
+          : ['www.amiunderpaid.com', 'www.benchmarkmyrole.com']
       }
     ],
 

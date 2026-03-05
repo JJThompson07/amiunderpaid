@@ -126,43 +126,43 @@
   --primary-900: #16464b;
   --primary-950: #06282d;
 
-  --color-secondary-50: #f3f7fc;
-  --color-secondary-100: #e6eff8;
-  --color-secondary-200: #c8ddef;
-  --color-secondary-300: #98c0e1;
-  --color-secondary-400: #5297cb;
-  --color-secondary-500: #3c83bb;
-  --color-secondary-600: #2c699d;
-  --color-secondary-700: #245480;
-  --color-secondary-800: #22486a;
-  --color-secondary-900: #213e59;
-  --color-secondary-950: #16273b;
+  --secondary-50: #f3f7fc;
+  --secondary-100: #e6eff8;
+  --secondary-200: #c8ddef;
+  --secondary-300: #98c0e1;
+  --secondary-400: #5297cb;
+  --secondary-500: #3c83bb;
+  --secondary-600: #2c699d;
+  --secondary-700: #245480;
+  --secondary-800: #22486a;
+  --secondary-900: #213e59;
+  --secondary-950: #16273b;
 }
 
 .theme-benchmarkmyrole {
-  --color-primary-50: #fdf8ef;
-  --color-primary-100: #f9eedb;
-  --color-primary-200: #f3dbb5;
-  --color-primary-300: #ebc286;
-  --color-primary-400: #e29f55;
-  --color-primary-500: #dd8c40;
-  --color-primary-600: #cd6d29;
-  --color-primary-700: #aa5524;
-  --color-primary-800: #884424;
-  --color-primary-900: #6e3a20;
-  --color-primary-950: #3b1c0f;
+  --primary-50: #fdf8ef;
+  --primary-100: #f9eedb;
+  --primary-200: #f3dbb5;
+  --primary-300: #ebc286;
+  --primary-400: #e29f55;
+  --primary-500: #dd8c40;
+  --primary-600: #cd6d29;
+  --primary-700: #aa5524;
+  --primary-800: #884424;
+  --primary-900: #6e3a20;
+  --primary-950: #3b1c0f;
 
-  --color-secondary-50: #f4f6f9;
-  --color-secondary-100: #ebeef4;
-  --color-secondary-200: #dbe0ea;
-  --color-secondary-300: #c5cddc;
-  --color-secondary-400: #adb5cc;
-  --color-secondary-500: #979ebd;
-  --color-secondary-600: #8185aa;
-  --color-secondary-700: #6c6f93;
-  --color-secondary-800: #5a5d79;
-  --color-secondary-900: #4d5062;
-  --color-secondary-950: #2d2f39;
+  --secondary-50: #f4f6f9;
+  --secondary-100: #ebeef4;
+  --secondary-200: #dbe0ea;
+  --secondary-300: #c5cddc;
+  --secondary-400: #adb5cc;
+  --secondary-500: #979ebd;
+  --secondary-600: #8185aa;
+  --secondary-700: #6c6f93;
+  --secondary-800: #5a5d79;
+  --secondary-900: #4d5062;
+  --secondary-950: #2d2f39;
 }
 
 /* Hide the scrollbar track */

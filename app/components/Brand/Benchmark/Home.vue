@@ -5,9 +5,9 @@
     <main class="relative z-10 px-4 pt-20 pb-20">
       <SectionBenchmarkHero />
 
-      <SectionBenchmarkSalarySearch
+      <SectionBenchmarkRoleSearch
         :initial-country="isUSA ? 'USA' : 'UK'"
-        @country-change="($event) => (isUSA = $event === 'USA')" />
+        @country-change="($event: string) => (isUSA = $event === 'USA')" />
 
       <SectionSharedTrustBadges />
     </main>

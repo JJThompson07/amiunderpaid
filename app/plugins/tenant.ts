@@ -5,17 +5,18 @@ export default defineNuxtPlugin(() => {
     const url = useRequestURL();
     const brandParam = url.searchParams.get('brand');
 
-    // 1. Local dev override
+    // 1. Query parameter override (Useful for quick testing)
     if (import.meta.dev && brandParam) {
       return brandParam;
     }
 
-    // 2. Production hostname detection
-    if (url.hostname.includes('benchmarkmyrole')) {
+    // 2. Hostname detection (Works for BOTH Production and Local Hosts)
+    // Check for production domain OR local dev domain
+    if (url.hostname.includes('benchmarkmyrole') || url.hostname.includes('bmr.localhost')) {
       return 'benchmarkmyrole';
     }
 
-    // 3. Default fallback
+    // 3. Default fallback (amiunderpaid.com, amiunderpaid.co.uk, ami.localhost, etc.)
     return 'amiunderpaid';
   });
 

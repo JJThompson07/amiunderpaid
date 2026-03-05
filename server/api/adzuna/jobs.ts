@@ -9,7 +9,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Job title is required' });
   }
 
-  const titleStr = String(title);
+  // Force to lowercase to prevent Cache Key Mismatches after URL unslugifying!
+  const titleStr = String(title).toLowerCase().trim();
+
   const countryParam = String(country || 'gb').toLowerCase();
   const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
   const limit = Number(resultsPerPage) || 5;
@@ -30,10 +32,16 @@ export default defineEventHandler(async (event) => {
   const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${limit}`;
   const cacheRef = db.collection('adzuna_jobs_cache').doc(cacheKey);
 
+  // Track existing DB state so we don't wipe it on cache refresh!
+  let existingGovIdCode: string | undefined = undefined;
+  let isAdminVerified: boolean = false;
+
   try {
     const docSnap = await cacheRef.get();
     if (docSnap.exists) {
       const data = docSnap.data();
+      existingGovIdCode = data?.gov_id_code;
+      isAdminVerified = data?.is_admin_verified || false;
       const now = new Date().getTime();
 
       // --- OPTIMIZED CACHE CHECK ---
@@ -42,7 +50,8 @@ export default defineEventHandler(async (event) => {
         if (now < data.expiresAt.toMillis()) {
           return {
             ...data?.data,
-            gov_id_code: data?.gov_id_code || undefined
+            gov_id_code: existingGovIdCode,
+            is_admin_verified: isAdminVerified
           };
         }
       } else {
@@ -64,7 +73,8 @@ export default defineEventHandler(async (event) => {
         if (now - cachedTime < categoryCacheMilli) {
           return {
             ...data?.data,
-            gov_id_code: data?.gov_id_code || undefined
+            gov_id_code: existingGovIdCode,
+            is_admin_verified: isAdminVerified
           };
         }
       }
@@ -129,7 +139,8 @@ export default defineEventHandler(async (event) => {
 
     return {
       ...cleanData,
-      gov_id_code: undefined // Explicitly show no ID is cached yet
+      gov_id_code: existingGovIdCode,
+      is_admin_verified: isAdminVerified
     };
   } catch (e: any) {
     throw createError({

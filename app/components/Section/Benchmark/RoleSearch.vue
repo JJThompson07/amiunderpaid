@@ -1,30 +1,15 @@
 <template>
   <div class="relative w-full max-w-5xl mx-auto mt-8">
     <div class="flex items-center justify-between gap-4 mb-6 w-full">
-      <div
-        class="inline-flex p-1 rounded-2xl bg-secondary-900/50 backdrop-blur-md border border-white/10 shadow-lg">
-        <button
-          v-for="persona in userPersonas"
-          :key="persona"
-          type="button"
-          class="px-6 py-2 text-xs font-bold rounded-xl transition-all duration-300"
-          :class="
-            userPersona === persona
-              ? 'bg-white text-secondary-900 shadow-sm'
-              : 'text-secondary-300 hover:text-white'
-          "
-          @click="userPersona = persona">
-          {{ $t(`buttons.persona.${persona}`) }}
-        </button>
-      </div>
-      <div class="flex gap-4 items-center">
+      <div class="flex gap-4 items-center w-full">
+        <div class="flex-1"></div>
         <div
           class="inline-flex p-1 rounded-2xl bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-lg">
           <button
             v-for="c in ['UK', 'USA']"
             :key="c"
             type="button"
-            class="px-6 py-2 text-xs font-bold rounded-xl transition-all duration-300"
+            class="px-6 py-2 text-xs font-bold rounded-xl transition-all duration-300 cursor-pointer"
             :class="
               country === c
                 ? 'bg-white text-slate-900 shadow-sm'
@@ -34,7 +19,7 @@
             {{ c }}
           </button>
         </div>
-        <div class="flex">
+        <div class="flex flex-1 justify-end">
           <AmIButton v-if="!showCalc" title="Salary converter" @click="showCalc = true"
             ><CalculatorIcon class="w-5 h-5 text-slate-50"
           /></AmIButton>
@@ -129,8 +114,8 @@ const emit = defineEmits(['country-change']);
 const url = useRequestURL();
 const country = ref(props.initialCountry || (url.hostname.includes('.com') ? 'USA' : 'UK'));
 
-const userPersonas = ['employee', 'employer'];
-const userPersona = useState('userPersona', () => 'employee');
+// const userPersonas = ['employer', 'employee'];
+// const userPersona = useState('userPersona', () => 'employer');
 
 const title = ref('');
 const location = ref('');
@@ -325,7 +310,7 @@ const handleSearch = async () => {
       q: cleanTitle.trim(),
       gov_id: exactGovId, // Send exact DB ID for 100% accurate Government matching
       compare: salary.value || undefined,
-      persona: userPersona.value,
+      // persona: userPersona.value,
       period: period.value !== 'year' ? period.value : undefined
     },
     state: {

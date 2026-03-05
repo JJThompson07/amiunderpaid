@@ -8,7 +8,7 @@
         <NuxtLink href="/" class="flex items-center gap-2 absolute" @click="openMenu = false">
           <div
             class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none rounded-xl bg-slate-100">
-            <div class="logo h-12 w-12" aria-label="home" :class="`logo-${$siteBrand}`" />
+            <img :src="`/${$siteBrand}-logo.png`" class="h-12 w-12" :alt="$siteBrand" />
           </div>
         </NuxtLink>
 
@@ -110,13 +110,4 @@ useHead({
 });
 </script>
 
-<style scoped>
-.logo-amiunderpaid {
-  background: url('../assets/img/amiunderpaid-logo.png') no-repeat center center;
-  background-size: cover;
-}
-.logo-benchmarkmyrole {
-  background: url('../assets/img/benchmarkmyrole-logo.png') no-repeat center center;
-  background-size: cover;
-}
-</style>
+<style scoped></style>

@@ -4,9 +4,8 @@
     class="relative overflow-hidden rounded-lg px-4 py-2 select-none transition-all duration-700 ease-in-out font-bold text-center shadow-md"
     :class="[
       backgroundColour,
-      loading ? 'cursor-wait' : 'cursor-pointer',
+      !disabled ? (loading ? 'cursor-wait' : 'cursor-pointer') : 'cursor-not-allowed',
       textColour,
-      { 'pointer-events-none': disabled },
       { 'whitespace-nowrap': !wrap }
     ]"
     role="button"
@@ -59,10 +58,10 @@ const isHovered = useElementHover(button);
 
 const backgroundColour = computed<string>(() => {
   if (props.disabled) {
-    return 'bg-slate-400 cursor-not-allowed';
+    return 'bg-slate-400';
   }
   if (props.loading) {
-    return 'bg-slate-400 cursor-wait';
+    return 'bg-slate-400';
   }
   return isHovered.value ? props.animationColour : props.bgColour;
 });

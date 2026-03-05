@@ -11,6 +11,10 @@ export interface SalaryBenchmark {
 }
 
 export const useMarketData = () => {
+  // Grab the Algolia client synchronously at the top!
+  const { $algolia } = useNuxtApp();
+  const searchClient = $algolia as SearchClient;
+
   // Global loading state for market data fetches
   const loading = useState<boolean>('market_loading', () => false);
 
@@ -113,21 +117,20 @@ export const useMarketData = () => {
     const country = 'UK';
 
     try {
-      const nuxtApp = useNuxtApp();
-      const $algolia = nuxtApp.$algolia as SearchClient;
-
       // Initialize the three UK indices
-      const nationalIndex = $algolia.initIndex('salary_benchmarks');
-      const regionalIndex = $algolia.initIndex('regional_salary_benchmarks');
-      const jobTitlesIndex = $algolia.initIndex('job_titles');
+      const nationalIndex = searchClient.initIndex('salary_benchmarks');
+      const regionalIndex = searchClient.initIndex('regional_salary_benchmarks');
+      const jobTitlesIndex = searchClient.initIndex('job_titles');
 
       let record: SalaryBenchmark | undefined;
 
       // STEP 1: EXACT ID LOOKUP
       // If we have a cached ID or a manual override, bypass fuzzy search entirely.
       if (idCode) {
+        // NO QUOTES: Algolia strictly types this as a Number!
+        const cleanId = String(idCode).trim();
         const { hits: benchmarkHits } = await nationalIndex.search<SalaryBenchmark>('', {
-          filters: `id_code:${idCode} AND country:UK AND period:${period}`,
+          filters: `id_code:${cleanId} AND country:UK AND period:${period}`,
           hitsPerPage: 1
         });
 
@@ -137,11 +140,11 @@ export const useMarketData = () => {
           // If a location is provided, try to find the regional variation of this exact ID
           if (location && location.length > 2) {
             const { hits: regionalHits } = await regionalIndex.search<SalaryBenchmark>('', {
-              filters: `country:UK AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
+              // CRITICAL FIX: Added id_code filter here so we don't fetch random jobs!
+              filters: `id_code:${cleanId} AND country:UK AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
               hitsPerPage: 10
             });
 
-            // Ensure the region actually matches the user's location string
             const locLower = location.toLowerCase();
             const bestRegional = regionalHits.find(
               (h) =>
@@ -156,7 +159,7 @@ export const useMarketData = () => {
 
       // STEP 2: SOC CODE TEXT LOOKUP (Fuzzy Search)
       // If no exact ID was provided, search the `job_titles` index to find the correct SOC code.
-      if (!record) {
+      if (!record && !idCode) {
         const sanitizedQuery = searchTitle
           .toLowerCase()
           .replace(/[^a-z0-9\s]/g, ' ')
@@ -170,27 +173,22 @@ export const useMarketData = () => {
 
         let bestTitleMatch;
 
-        // If the user search string included a specific group, force that match
         if (targetGroup) {
           bestTitleMatch = titleHits.find(
             (h: any) => h.group && h.group.toLowerCase() === targetGroup.toLowerCase()
           );
         }
 
-        // If no group was forced, check if the search is ambiguous
         if (!bestTitleMatch) {
           if (titleHits.length > 1) {
             const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
-            // If the search yields multiple DIFFERENT job categories, flag it for the user to resolve
             if (groups.size > 1) {
-              ambiguousMatches.value = titleHits;
+              ambiguousMatches.value = titleHits; // <-- This is what was triggering your modal!
             }
           }
-          // Default to the top match Algolia suggests
           bestTitleMatch = titleHits[0];
         }
 
-        // Once we have a job title match, look up its actual salary benchmark using its SOC code
         if (bestTitleMatch && bestTitleMatch.soc) {
           const { hits: benchmarkHits } = await nationalIndex.search<SalaryBenchmark>('', {
             filters: `id_code:${bestTitleMatch.soc} AND country:UK AND period:${period}`,
@@ -200,7 +198,6 @@ export const useMarketData = () => {
           if (benchmarkHits.length > 0) {
             record = benchmarkHits[0];
 
-            // Grab the regional equivalent if a location was requested
             if (location && location.length > 2) {
               const { hits: regionalHits } = await regionalIndex.search<SalaryBenchmark>('', {
                 filters: `country:UK AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
@@ -268,19 +265,24 @@ export const useMarketData = () => {
     const country = 'USA';
 
     try {
-      const { $algolia } = useNuxtApp();
-      const nationalIndex = ($algolia as SearchClient).initIndex('salary_benchmarks');
-      const regionalIndex = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
+      const nationalIndex = searchClient.initIndex('salary_benchmarks');
+      const regionalIndex = searchClient.initIndex('regional_salary_benchmarks');
 
       let record: SalaryBenchmark | undefined;
 
       // STEP 1: EXACT ID LOOKUP
       // If we have a cached ID or a manual override, bypass fuzzy search entirely.
       if (idCode) {
+        const cleanId = String(idCode).trim();
+
+        // Bulletproof filter: US SOC codes contain hyphens (e.g., 15-1252.00).
+        // Quotes are mandatory so Algolia doesn't treat the hyphen as a minus sign!
+        const exactFilters = `(id_code:${cleanId} OR id_code:"${cleanId}") AND country:USA AND period:${period}`;
+
         // First try to find a regional benchmark for this exact ID
         if (location && location.length > 2) {
           const { hits } = await regionalIndex.search<SalaryBenchmark>('', {
-            filters: `id_code:${idCode} AND country:USA AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
+            filters: `${exactFilters} AND searchLocation:"${location.toLowerCase()}"`,
             hitsPerPage: 1
           });
           if (hits.length > 0) record = hits[0];
@@ -289,7 +291,7 @@ export const useMarketData = () => {
         // If no regional match (or no location provided), fall back to the National benchmark for this ID
         if (!record) {
           const { hits } = await nationalIndex.search<SalaryBenchmark>('', {
-            filters: `id_code:${idCode} AND country:USA AND period:${period}`,
+            filters: exactFilters,
             hitsPerPage: 1
           });
           if (hits.length > 0) record = hits[0];
@@ -297,16 +299,14 @@ export const useMarketData = () => {
       }
 
       // STEP 2: REGIONAL TEXT SEARCH (Fuzzy Search)
-      // If no exact ID was provided, and the user provided a location, search the regional index
-      if (!record && location && location.length > 2) {
+      if (!record && !idCode && location && location.length > 2) {
         const { hits } = await regionalIndex.search<SalaryBenchmark>(searchTitle, {
           filters: `country:USA AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
           queryLanguages: ['en'],
-          removeWordsIfNoResults: 'allOptional', // Drops words from the query one by one if it's too specific
+          removeWordsIfNoResults: 'allOptional',
           hitsPerPage: 10
         });
 
-        // Ensure the region actually matches the user's location string
         const locLower = location.toLowerCase();
         const bestRegional = hits.find(
           (h) =>
@@ -320,8 +320,7 @@ export const useMarketData = () => {
       }
 
       // STEP 3: NATIONAL TEXT SEARCH FALLBACK
-      // If the regional search failed (or wasn't requested), search the broad national index
-      if (!record) {
+      if (!record && !idCode) {
         const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
           filters: `country:USA AND period:${period}`,
           queryLanguages: ['en'],
