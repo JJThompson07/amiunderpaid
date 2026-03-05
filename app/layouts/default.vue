@@ -7,7 +7,7 @@
         <!-- Logo -->
         <NuxtLink href="/" class="flex items-center gap-2 absolute" @click="openMenu = false">
           <div
-            class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none rounded-xl bg-slate-100">
+            class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none rounded-xl bg-slate-100/50">
             <img :src="`/${$siteBrand}-logo.png`" class="h-12 w-12" :alt="$siteBrand" />
           </div>
         </NuxtLink>

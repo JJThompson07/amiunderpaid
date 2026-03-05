@@ -3,22 +3,11 @@
     <div class="flex items-center justify-between gap-4 mb-6 w-full">
       <div class="flex gap-4 items-center w-full">
         <div class="flex-1"></div>
-        <div
-          class="inline-flex p-1 rounded-2xl bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-lg">
-          <button
-            v-for="c in ['UK', 'USA']"
-            :key="c"
-            type="button"
-            class="px-6 py-2 text-xs font-bold rounded-xl transition-all duration-300 cursor-pointer"
-            :class="
-              country === c
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-300 hover:text-white'
-            "
-            @click="changeCountry(c)">
-            {{ c }}
-          </button>
-        </div>
+        <AmITabs
+          v-model="country"
+          :options="countryOptions"
+          round
+          @update:model-value="emit('country-change', country)" />
         <div class="flex flex-1 justify-end">
           <AmIButton v-if="!showCalc" title="Salary converter" @click="showCalc = true"
             ><CalculatorIcon class="w-5 h-5 text-slate-50"
@@ -46,6 +35,29 @@
             :loading="fetching"
             pre-filtered-options
             @update:model-value="fetchTitles" />
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-3">
+          <AmITabs
+            v-model="time"
+            class="flex-1"
+            :label="$t('search.time.label')"
+            :options="timeOptions"
+            bg-colour="bg-slate-200"
+            text-colour="text-slate-500"
+            hover-colour="hover:text-primary-400"
+            button-colour="bg-primary-500"
+            button-text-colour="text-white" />
+          <AmITabs
+            v-model="contract"
+            class="flex-1"
+            :label="$t('search.contract.label')"
+            :options="contractOptions"
+            bg-colour="bg-slate-200"
+            text-colour="text-slate-500"
+            hover-colour="hover:text-primary-400"
+            button-colour="bg-primary-500"
+            button-text-colour="text-white" />
         </div>
 
         <div class="flex flex-col md:flex-row gap-3">
@@ -111,8 +123,29 @@ const props = defineProps<{
 
 const emit = defineEmits(['country-change']);
 
+const { t } = useI18n();
+
+const countryOptions = [
+  { label: 'UK', value: 'UK' },
+  { label: 'USA', value: 'USA' }
+];
+
+const timeOptions = [
+  { label: t('search.time.full-time'), value: 'full-time' },
+  { label: t('search.time.part-time'), value: 'part-time' },
+  { label: t('common.all'), value: 'all' }
+];
+
+const contractOptions = [
+  { label: t('search.contract.permanent'), value: 'permanent' },
+  { label: t('search.contract.contract'), value: 'contract' },
+  { label: t('common.all'), value: 'all' }
+];
+
 const url = useRequestURL();
 const country = ref(props.initialCountry || (url.hostname.includes('.com') ? 'USA' : 'UK'));
+const time = ref('full-time');
+const contract = ref('permanent');
 
 // const userPersonas = ['employer', 'employee'];
 // const userPersona = useState('userPersona', () => 'employer');
@@ -148,11 +181,6 @@ watch(country, (newVal) => {
   }
   titleOptions.value = [];
 });
-
-const changeCountry = (newCountry: string) => {
-  country.value = newCountry;
-  emit('country-change', newCountry);
-};
 
 const fetchUKTitles = async (searchTerm: string) => {
   const { $algolia } = useNuxtApp();

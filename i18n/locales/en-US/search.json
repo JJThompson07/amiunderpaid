@@ -16,5 +16,13 @@
   },
   "salary": {
     "label": "Current Salary"
+  },
+  "time": {
+    "full-time": "Full Time",
+    "part-time": "Part Time"
+  },
+  "contract": {
+    "contract": "Contract",
+    "permanent": "Permanent"
   }
 }
