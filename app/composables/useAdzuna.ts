@@ -81,6 +81,9 @@ export const useAdzuna = () => {
     loading.value = true;
     cachedGovIdCode.value = undefined;
 
+    // Wipe the underlying distribution state so computed properties reset!
+    distributionData.value = null;
+
     const cleanTitle = title
       .replace(/\s*\(.*?\)\s*/g, '')
       .replace(/[^a-zA-Z0-9\s]/g, '')

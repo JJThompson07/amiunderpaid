@@ -104,14 +104,14 @@ export default defineEventHandler(async (event) => {
   // Dynamically set full_time or part_time
   if (typeStr === 'part-time') {
     params.part_time = 1;
-  } else {
+  } else if (typeStr === 'full-time') {
     params.full_time = 1;
   }
 
   // Dynamically set contract or permanent
   if (contractStr === 'contract') {
     params.contract = 1;
-  } else {
+  } else if (contractStr === 'permanent') {
     params.permanent = 1;
   }
 
