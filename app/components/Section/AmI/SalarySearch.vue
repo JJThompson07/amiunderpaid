@@ -37,10 +37,10 @@
 
         <div class="flex flex-col md:flex-row gap-3">
           <AmITabs
-            v-model="time"
+            v-model="schedule"
             class="flex-1"
             :label="$t('search.time.label')"
-            :options="timeOptions"
+            :options="scheduleOptions"
             bg-colour="bg-slate-200"
             text-colour="text-slate-500"
             hover-colour="hover:text-primary-400"
@@ -128,7 +128,7 @@ const countryOptions = [
   { label: 'USA', value: 'USA' }
 ];
 
-const timeOptions = [
+const scheduleOptions = [
   { label: t('search.time.full-time'), value: 'full-time' },
   { label: t('search.time.part-time'), value: 'part-time' },
   { label: t('common.all'), value: 'all' }
@@ -142,7 +142,7 @@ const contractOptions = [
 
 const url = useRequestURL();
 const country = ref(props.initialCountry || (url.hostname.includes('.com') ? 'USA' : 'UK'));
-const time = ref('full-time');
+const schedule = ref('full-time');
 const contract = ref('permanent');
 
 const title = ref('');
@@ -332,6 +332,8 @@ const handleSearch = async () => {
     query: {
       q: cleanTitle.trim(),
       gov_id: exactGovId, // Send exact DB ID for 100% accurate Government matching
+      schedule: schedule.value,
+      contract: contract.value,
       compare: salary.value || undefined,
       period: period.value !== 'year' ? period.value : undefined
     },

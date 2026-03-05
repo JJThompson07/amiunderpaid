@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
 
   // 1. Check Cache
   const db = useAdminFirestore();
-  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${typeStr}--${contractStr}-limit}`;
+  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${typeStr}-${contractStr}-${limit}`;
   const cacheRef = db.collection('adzuna_jobs_cache').doc(cacheKey);
 
   // Track existing DB state so we don't wipe it on cache refresh!

@@ -125,6 +125,8 @@ import { getRawDiffPercentage } from '~/helpers/utility';
 // ** data & refs **
 const route = useRoute();
 const govId = ref((route.query.gov_id as string) || undefined);
+const jobType = ref((route.query.schedule as string) || 'full-time');
+const contractType = ref((route.query.contract as string) || 'permanent');
 const showAmbiguityModal = ref(false);
 const searchConfirmed = ref(
   (import.meta.client ? history.state?.confirmed : false) || !!govId.value || false
@@ -220,14 +222,20 @@ const jobListings = computed(() => {
 // 1. Create a unique key for caching based on all parameters
 const asyncDataKey = computed(
   () =>
-    `salary-${country.value}-${location.value}-${searchTitle.value}-${userPeriod.value}-${govId.value}`
+    `salary-${country.value}-${location.value}-${searchTitle.value}-${userPeriod.value}-${govId.value}-${jobType.value}-${contractType.value}`
 );
 
 // 2. Use useAsyncData to fetch sequentially
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { data, refresh, pending } = await useAsyncData(asyncDataKey.value, async () => {
   // Wait for Adzuna first to check for cached IDs
-  await fetchAdzunaJobs(searchTitle.value, location.value, country.value);
+  await fetchAdzunaJobs(
+    searchTitle.value,
+    location.value,
+    country.value,
+    jobType.value,
+    contractType.value
+  );
 
   // Determine the ID to pass to Algolia (User URL param > Cached DB Param > undefined)
   const targetGovId = govId.value || cachedGovIdCode.value;
