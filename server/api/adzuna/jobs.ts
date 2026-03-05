@@ -129,13 +129,18 @@ export default defineEventHandler(async (event) => {
     expiresAt.setDate(expiresAt.getDate() + cacheDays);
 
     // 4. Save to Cache
-    await cacheRef.set({
-      categoryTag,
-      data: cleanData,
-      timestamp: FieldValue.serverTimestamp(),
-      expiresAt: expiresAt, // <-- Save the exact expiration date!
-      searchParams: { title: titleStr, location: locationStr, country: countryCode }
-    });
+    await cacheRef.set(
+      {
+        categoryTag,
+        data: cleanData,
+        timestamp: FieldValue.serverTimestamp(),
+        expiresAt: expiresAt, // <-- Save the exact expiration date!
+        searchParams: { title: titleStr, location: locationStr, country: countryCode },
+        gov_id_code: existingGovIdCode || null, // Preserve admin match
+        is_admin_verified: isAdminVerified // Preserve admin status
+      },
+      { merge: true }
+    );
 
     return {
       ...cleanData,
