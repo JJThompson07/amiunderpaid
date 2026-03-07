@@ -24,7 +24,14 @@
             {{ $t('privacy-policy.collection.heading') }}
           </h2>
           <p>
-            {{ $t('privacy-policy.collection.body.1') }}
+            {{
+              $t('privacy-policy.collection.body.1', {
+                name:
+                  $siteBrand === 'benchmarkmyrole'
+                    ? $t('privacy-policy.benchmark.name')
+                    : $t('privacy-policy.name')
+              })
+            }}
           </p>
           <p class="mt-2">
             {{ $t('privacy-policy.collection.body.2') }}
@@ -88,6 +95,7 @@
 </template>
 
 <script setup lang="ts">
+const { $siteBrand } = useNuxtApp();
 const { locale } = useI18n();
 useSeoMeta({
   title: 'Privacy Policy | Am I Underpaid?',

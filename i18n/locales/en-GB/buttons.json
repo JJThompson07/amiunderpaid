@@ -3,5 +3,13 @@
   "check-salary-now": "Check My Salary Now",
   "sign-out": "Sign Out",
   "salaries": "Salaries",
-  "not-best-match": "Not the best match?"
+  "not-best-match": "Not the best match?",
+  "persona": {
+    "employee": "Looking for a role",
+    "employer": "Posting a role"
+  },
+  "benchmark": {
+    "check-now": "Check A Role Now"
+  },
+  "broaden-search": "Search all of {country}"
 }

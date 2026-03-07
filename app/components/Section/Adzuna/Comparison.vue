@@ -64,6 +64,8 @@ import { TrendingUp } from 'lucide-vue-next';
 
 const emit = defineEmits(['fetch-data']);
 
+const { trackDistribution } = useAnalytics();
+
 const props = defineProps({
   buckets: {
     type: Array as PropType<HistogramBucket[]>,
@@ -139,6 +141,8 @@ const comparison = computed<number>(() => {
 });
 
 const toggleHistogram = () => {
+  trackDistribution(props.displayTitle, props.country, props.location, !hasData.value);
+
   showHistogram.value = !showHistogram.value;
   if (!hasData.value) {
     emit('fetch-data');

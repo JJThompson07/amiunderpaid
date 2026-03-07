@@ -1,12 +1,12 @@
 <template>
-  <section class="w-full max-w-4xl mx-auto px-4 sm:px-6 mt-6 pt-24 pb-8">
+  <section class="w-full max-w-4xl mx-auto px-4 sm:px-6 mt-6 pt-24 pb-8 relative">
     <div class="text-center mb-12">
       <!-- Added a title hook for better context -->
       <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
         {{ t('faq.title') }}
       </h1>
       <p class="mt-4 text-lg text-slate-700 max-w-2xl mx-auto">
-        {{ t('faq.subtitle') }}
+        {{ t('faq.subtitle', { name: $t('faq.name') }) }}
       </p>
     </div>
 
@@ -64,7 +64,7 @@
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ChevronDown } from 'lucide-vue-next';
-import faqJson from '../../../i18n/locales/en-GB/faq.json';
+import faqJson from '../../../../i18n/locales/en-GB/faq.json';
 
 const { t } = useI18n();
 

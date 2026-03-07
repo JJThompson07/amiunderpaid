@@ -1,0 +1,510 @@
+<template>
+  <div
+    :key="route.fullPath"
+    class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6 max-w-7xl mx-auto">
+    <SectionSharedBackdrop />
+
+    <AmILocationBreadcrumbs
+      class="relative"
+      :route="route"
+      :display-title="displayTitle"
+      :country="country"
+      :location="location" />
+
+    <div class="flex flex-wrap gap-2 justify-between items-end">
+      <h1 class="relative text-3xl md:text-6xl text-white font-bold px-4 sm:whitespace-nowrap">
+        {{ displayTitle }}
+      </h1>
+      <h2
+        class="relative sm:text-lg md:text-xl text-white font-bold px-4 capitalize sm:whitespace-nowrap">
+        {{ jobType }} - {{ contractType }}
+      </h2>
+    </div>
+
+    <LazySectionNoData
+      v-if="!pending && !adzunaLoading && !hasGovernmentData && !hasJobsData"
+      :title="displayTitle"
+      :location="location"
+      :country="country"
+      @select="handleAmbiguitySelect" />
+
+    <div
+      v-show="!pending && (hasGovernmentData || hasJobsData)"
+      class="relative grid grid-cols-1 px-4 gap-6">
+      <div class="relative mx-auto flex flex-col gap-6 w-full">
+        <div class="flex flex-col gap-6 md:flex-row">
+          <div v-if="hasJobsData" class="flex flex-col flex-1 min-w-0 gap-3 adzuna-section">
+            <LazySectionAdzunaComparison
+              class="flex-1"
+              :buckets="histogramBuckets"
+              :histogram-range="histogramRange"
+              :histogram-max-count="histogramMaxCount"
+              :histogram-total-count="histogramTotalCount"
+              :is-underpaid="isUnderpaidAdzuna(userSalary)"
+              :currency-symbol="currencySymbol"
+              :average-salary="meanSalary"
+              :current-salary="userSalary"
+              :loading="adzunaLoading"
+              :country="country"
+              :location="location"
+              :display-title="displayTitle"
+              :jobs-count="jobsCount"
+              @fetch-data="fetchAdzunaHistogram(searchTitle, location, country)" />
+          </div>
+
+          <div
+            v-if="hasGovernmentData && !showUserSelection"
+            class="flex flex-col flex-1 min-w-0 gap-3 government-section relative">
+            <LazySectionGovernmentComparison
+              class="overflow-hidden flex-1"
+              :is-fallback="!hasJobsData"
+              :display-title="displayTitle"
+              :location="location"
+              :country="country"
+              :user-salary="userSalary"
+              :market-average="marketAverage"
+              :currency-symbol="currencySymbol"
+              :matched-title="matchedTitle"
+              :matched-location="matchedLocation"
+              :search-title="searchTitle"
+              :market-data-year="marketDataYear"
+              :diff-percent="diffPercent"
+              :is-underpaid="isUnderpaid"
+              :market-low="marketLow"
+              :market-high="marketHigh"
+              :show-button="!userSelected && !showUserSelection"
+              @user-select="showUserSelection = true" />
+          </div>
+
+          <div
+            v-if="(hasJobsData && !hasGovernmentData && !loading && !pending) || showUserSelection"
+            class="flex flex-col flex-1 min-w-0 gap-3 relative">
+            <LazySectionGovernmentUserSelection
+              class="flex-1 w-full"
+              :adzuna-category="adzunaCategory"
+              :country="country"
+              @select="handleAmbiguitySelect" />
+          </div>
+        </div>
+
+        <div class="flex flex-row gap-6">
+          <SectionUKComparison
+            v-show="country === 'UK' && regionalData && location"
+            class="flex-4"
+            :country="country"
+            :location="location"
+            :display-title="matchedTitle || displayTitle"
+            :market-average="marketAverage"
+            :user-salary="userSalary"
+            :regional-data="regionalData"
+            :year="marketDataYear" />
+        </div>
+
+        <div>
+          <h3
+            class="relative text-xl md:text-2xl text-slate-900 font-bold sm:whitespace-nowrap mb-2">
+            <a
+              :href="$t(`sections.jobs.href.${country.toLowerCase()}`)"
+              class="text-primary-500 hover:text-primary-700 transition-colors duration-500 ease-in-out"
+              >{{ $t('sections.jobs.jobs') }}</a
+            >
+            {{ $t('sections.jobs.by-adzuna') }}
+          </h3>
+
+          <AmICarousel>
+            <div
+              v-for="listing in jobListings"
+              :key="listing.id"
+              class="w-full px-2"
+              :class="{ 'md:w-1/2': jobListings.length > 1, 'lg:w-1/3': jobListings.length > 2 }">
+              <AmICardRole
+                :title="listing.title"
+                :company="listing.company.display_name"
+                :contract="listing.contract_type"
+                :schedule="listing.contract_time"
+                :location="listing.location.display_name"
+                :salary-min="listing.salary_min"
+                :salary-max="listing.salary_max"
+                :user-salary="userSalary"
+                :market-average="marketAverage"
+                :currency-symbol="currencySymbol"
+                :url="listing.redirect_url" />
+            </div>
+          </AmICarousel>
+        </div>
+
+        <p class="flex items-center justify-center gap-1 mt-6 text-2xs text-center text-slate-400">
+          <Info class="w-3 h-3" />
+          {{ $t('common.data.disclaimer') }}
+        </p>
+      </div>
+    </div>
+
+    <LazyModalAmbiguity
+      v-if="showAmbiguityModal"
+      :title="displayTitle"
+      :matches="ambiguousMatches"
+      @select="handleAmbiguitySelect"
+      @close="showAmbiguityModal = false" />
+
+    <ClientOnly>
+      <AmILoader v-if="pending || adzunaLoading" :message="$t('common.searching')" />
+    </ClientOnly>
+  </div>
+</template>
+
+<script setup lang="ts">
+// ** imports **
+import { Info } from 'lucide-vue-next';
+import { ref, computed, watch } from 'vue';
+import { getRawDiffPercentage } from '~/helpers/utility';
+
+// ** data & refs **
+const { $siteBrand } = useNuxtApp();
+const route = useRoute();
+const govId = ref((route.query.gov_id as string) || undefined);
+const jobType = ref((route.query.schedule as string) || 'full-time');
+const contractType = ref((route.query.contract as string) || 'permanent');
+const showAmbiguityModal = ref(false);
+const searchConfirmed = ref(
+  (import.meta.client ? history.state?.confirmed : false) || !!govId.value || false
+);
+const showUserSelection = ref(false);
+const userSelected = ref(false);
+
+// Destructure Adzuna from auto-imported composable
+const {
+  histogramBuckets,
+  fetchJobs: fetchAdzunaJobs,
+  fetchHistogram: fetchAdzunaHistogram,
+  loading: adzunaLoading,
+  histogramRange,
+  histogramMaxCount,
+  histogramTotalCount,
+  isUnderpaid: isUnderpaidAdzuna,
+  jobsCount,
+  meanSalary,
+  jobsData,
+  hasJobsData,
+  cachedGovIdCode // Now used to bypass Algolia sequentially
+} = useAdzuna();
+
+const { trackAmbiguousSearch } = useAnalytics();
+
+// Destructure market data from auto-imported composable
+const {
+  loading,
+  marketAverage,
+  marketHigh,
+  marketLow,
+  marketDataYear,
+  matchedTitle,
+  matchedLocation,
+  matchedIdCode,
+  isGenericFallback,
+  ambiguousMatches,
+  regionalData,
+  fetchUkMarketData,
+  fetchUSAMarketData
+} = useMarketData();
+
+// ** helpers **
+const unslugify = (slug: string) => {
+  if (!slug) return '';
+  return slug
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+// ** computed properties **
+const displayTitle = computed(() => unslugify((route.params.title as string) || 'Professional'));
+const country = computed(() => (route.params.country as string)?.toUpperCase() || 'UK');
+const location = computed(() =>
+  route.params.location ? unslugify(route.params.location as string) : ''
+);
+
+const userSalary = ref(Number(route.query.compare) || 0);
+const userPeriod = ref(route.query.period?.toString() || 'year');
+
+// Clean title for Adzuna and display purposes
+const searchTitle = ref((route.query.q as string) || displayTitle.value);
+
+const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
+const adzunaCategory = computed(() => jobsData.value?.results?.[0]?.category?.label);
+
+// Strict Data Check:
+const hasGovernmentData = computed(() => {
+  if ((marketAverage?.value ?? 0) === 0) return false;
+  if (isGenericFallback.value && displayTitle.value.toLowerCase() !== 'professional') return false;
+  return true;
+});
+
+const isUnderpaid = computed<boolean>(
+  () =>
+    userSalary.value > 0 &&
+    userSalary.value < (marketAverage?.value ?? 0) &&
+    diffPercent.value < -2.5
+);
+
+const diffPercent = computed<number>(() => {
+  const avg = marketAverage?.value ?? 0;
+  if (userSalary.value === 0 || avg === 0) return 0;
+  return getRawDiffPercentage(userSalary.value, avg);
+});
+
+const jobListings = computed(() => {
+  return (jobsData.value?.results || []).sort((a: AdzunaJob, b: AdzunaJob) => {
+    return b.salary_max - a.salary_max;
+  });
+});
+
+// 1. Create a unique key for caching based on all parameters
+const asyncDataKey = computed(
+  () =>
+    `salary-${country.value}-${location.value}-${searchTitle.value}-${userPeriod.value}-${govId.value}-${jobType.value}-${contractType.value}`
+);
+
+// 2. Use useAsyncData to fetch sequentially
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { data, refresh, pending } = await useAsyncData(asyncDataKey.value, async () => {
+  // Wait for Adzuna first to check for cached IDs
+  await fetchAdzunaJobs(
+    searchTitle.value,
+    location.value,
+    country.value,
+    jobType.value,
+    contractType.value
+  );
+
+  // Determine the ID to pass to Algolia (User URL param > Cached DB Param > undefined)
+  const targetGovId = govId.value || cachedGovIdCode.value;
+
+  // Fetch Government Match
+  if (country.value === 'UK') {
+    await fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
+  } else {
+    await fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
+  }
+
+  return true;
+});
+
+// ** methods **
+const handleAmbiguitySelect = async (match: any) => {
+  const exactId = match.id_code || match.soc || match.objectID;
+  govId.value = exactId;
+
+  trackAmbiguousSearch(match.title, match.group);
+
+  // Log user's manual correction securely
+  try {
+    await $fetch('/api/adzuna/update-match', {
+      method: 'POST',
+      body: {
+        title: searchTitle.value,
+        location: location.value,
+        country: country.value === 'USA' ? 'us' : 'gb',
+        gov_id_code: exactId,
+        gov_title: match.title,
+        is_automatic: false
+      }
+    });
+  } catch {
+    // Silently ignore so it doesn't disrupt the user's flow
+  }
+
+  if (country.value === 'UK') {
+    fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, exactId);
+  } else {
+    fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value, exactId);
+  }
+
+  showAmbiguityModal.value = false;
+  showUserSelection.value = false;
+  userSelected.value = true;
+  searchConfirmed.value = true;
+};
+
+onMounted(() => {
+  const { compare, ...remainingQuery } = route.query;
+
+  // only trigger if other queries than compare are present
+  if (Object.keys(remainingQuery).length > 0) {
+    navigateTo(
+      {
+        path: route.path,
+        query: compare ? { compare: compare } : undefined
+      },
+      { replace: true }
+    );
+  }
+});
+
+watch(asyncDataKey, () => refresh());
+
+// ** watchers **
+watch(loading, (newLoading) => {
+  if (newLoading === false) {
+    const userLocation = location.value;
+    const dbLocation = matchedLocation.value;
+
+    // Securely log automatic matches for admin review/approval
+    if (
+      import.meta.client &&
+      hasGovernmentData.value &&
+      !isGenericFallback.value &&
+      matchedIdCode.value &&
+      !govId.value
+    ) {
+      $fetch('/api/adzuna/update-match', {
+        method: 'POST',
+        body: {
+          title: searchTitle.value,
+          location: location.value,
+          country: country.value === 'USA' ? 'us' : 'gb',
+          gov_id_code: matchedIdCode.value,
+          gov_title: matchedTitle.value,
+          is_automatic: true
+        }
+      }).catch(() => {
+        // Let it fail silently in the background
+      });
+    }
+
+    if (
+      userLocation &&
+      hasGovernmentData.value &&
+      dbLocation.toLowerCase() !== userLocation.toLowerCase()
+    ) {
+      if (dbLocation.toLowerCase() === country.value.toLowerCase()) {
+        const newPath = `/salary/${route.params.title}/${route.params.country}`;
+        navigateTo(
+          {
+            path: newPath,
+            query: route.query,
+            state: { ...history.state }
+          },
+          { replace: true }
+        );
+      }
+    }
+  }
+});
+
+watch(ambiguousMatches, (matches) => {
+  if (matches.length > 1 && !searchConfirmed.value) {
+    showAmbiguityModal.value = true;
+  }
+});
+
+watch(userSalary, (newSalary) => {
+  if (newSalary > 0) {
+    navigateTo(
+      {
+        query: { ...route.query, compare: newSalary.toString() }
+      },
+      { replace: true }
+    );
+  } else {
+    const { compare, ...rest } = route.query;
+    navigateTo({ query: rest }, { replace: true });
+  }
+});
+
+// ** SEO **
+const url = useRequestURL();
+
+useSeoMeta({
+  title: () => {
+    const locStr = location.value ? `${location.value}, ` : '';
+    return $t('meta.benchmark.location.title', {
+      displayTitle: displayTitle.value,
+      locStr,
+      country: country.value
+    });
+  },
+  description: () => {
+    const locStr = location.value || country.value;
+    return $t('meta.benchmark.location.description', {
+      displayTitle: displayTitle.value,
+      locStr
+    });
+  },
+  ogTitle: () => {
+    const locStr = location.value ? `${location.value}, ` : '';
+    return $t('meta.benchmark.location.ogTitle', {
+      displayTitle: displayTitle.value,
+      locStr,
+      country: country.value
+    });
+  },
+  ogDescription: () => {
+    const locStr = location.value || country.value;
+    return $t('meta.benchmark.location.ogDescription', {
+      displayTitle: displayTitle.value,
+      locStr
+    });
+  },
+  ogImage: `${url.origin}/${$siteBrand}-og.png`,
+  twitterCard: 'summary',
+  robots: () => {
+    if (!loading.value && !adzunaLoading.value && !hasGovernmentData.value && !hasJobsData.value) {
+      return 'noindex';
+    }
+    return 'index, follow';
+  }
+});
+
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: computed(() =>
+        JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: $t('navbar.home'),
+              item: url.origin
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: $t('meta.benchmark.location.header.title', {
+                displayTitle: displayTitle.value
+              }),
+              item: `${url.origin}${route.path}`
+            },
+            {
+              '@type': 'ListItem',
+              position: 3,
+              name: displayTitle.value,
+              item: `${url.origin}/benchmark/${route.params.title}/${route.params.country}`
+            },
+            {
+              '@type': 'ListItem',
+              position: 4,
+              name: country.value,
+              item: `${url.origin}/benchmark/${route.params.title}/${route.params.country}`
+            },
+            ...(location.value
+              ? [
+                  {
+                    '@type': 'ListItem',
+                    position: 5,
+                    name: location.value,
+                    item: `${url.origin}/salary/${route.params.title}/${route.params.country}/${route.params.location}`
+                  }
+                ]
+              : [])
+          ]
+        })
+      )
+    }
+  ]
+});
+</script>

@@ -14,5 +14,9 @@
     "fairly-paid": "Fairly Paid",
     "your-salary": "Your salary",
     "market-average": "Market Average"
+  },
+  "role": {
+    "salary": "Estimated Salary",
+    "view-job": "View Role"
   }
 }

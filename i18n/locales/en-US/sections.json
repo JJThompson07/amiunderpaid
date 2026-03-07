@@ -85,5 +85,13 @@
     "lower": "Lower",
     "than": "than the average salary for all jobs in",
     "your-salary": "Your salary of {salary} is "
+  },
+  "jobs": {
+    "jobs": "Jobs",
+    "by-adzuna": "By Adzuna",
+    "href": {
+      "uk": "https://www.adzuna.co.uk",
+      "usa": "https://www.adzuna.com"
+    }
   }
 }

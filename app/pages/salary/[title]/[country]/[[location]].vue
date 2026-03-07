@@ -2,8 +2,7 @@
   <div
     :key="route.fullPath"
     class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6 max-w-7xl mx-auto">
-    <div
-      class="fixed top-0 left-0 w-full h-125 bg-linear-to-b to-slate-50 z-0 from-secondary-900"></div>
+    <SectionSharedBackdrop />
 
     <AmILocationBreadcrumbs
       class="relative"
@@ -12,7 +11,15 @@
       :country="country"
       :location="location" />
 
-    <h1 class="relative text-3xl md:text-6xl text-white font-bold px-4">{{ displayTitle }}</h1>
+    <div class="flex flex-wrap gap-2 justify-between items-end">
+      <h1 class="relative text-3xl md:text-6xl text-white font-bold px-4 sm:whitespace-nowrap">
+        {{ displayTitle }}
+      </h1>
+      <h2
+        class="relative sm:text-lg md:text-xl text-white font-bold px-4 capitalize sm:whitespace-nowrap">
+        {{ jobType }} - {{ contractType }}
+      </h2>
+    </div>
 
     <LazySectionNoData
       v-if="!pending && !adzunaLoading && !hasGovernmentData && !hasJobsData"
@@ -24,7 +31,7 @@
     <div
       v-show="!pending && (hasGovernmentData || hasJobsData)"
       class="relative grid grid-cols-1 px-4 gap-6">
-      <div class="relative mx-auto flex flex-col gap-6">
+      <div class="relative mx-auto flex flex-col gap-6 w-full">
         <div class="flex flex-col gap-6 md:flex-row">
           <div v-if="hasJobsData" class="flex flex-col flex-1 min-w-0 gap-3 adzuna-section">
             <LazySectionAdzunaComparison
@@ -78,6 +85,39 @@
               :country="country"
               @select="handleAmbiguitySelect" />
           </div>
+        </div>
+
+        <div>
+          <h3
+            class="relative text-xl md:text-2xl text-slate-900 font-bold sm:whitespace-nowrap mb-2">
+            <a
+              :href="$t(`sections.jobs.href.${country.toLowerCase()}`)"
+              class="text-primary-500 hover:text-primary-700 transition-colors duration-500 ease-in-out"
+              >{{ $t('sections.jobs.jobs') }}</a
+            >
+            {{ $t('sections.jobs.by-adzuna') }}
+          </h3>
+
+          <AmICarousel>
+            <div
+              v-for="listing in jobListings"
+              :key="listing.id"
+              class="w-full px-2"
+              :class="{ 'md:w-1/2': jobListings.length > 1, 'lg:w-1/3': jobListings.length > 2 }">
+              <AmICardRole
+                :title="listing.title"
+                :company="listing.company.display_name"
+                :contract="listing.contract_type"
+                :schedule="listing.contract_time"
+                :location="listing.location.display_name"
+                :salary-min="listing.salary_min"
+                :salary-max="listing.salary_max"
+                :user-salary="userSalary"
+                :market-average="marketAverage"
+                :currency-symbol="currencySymbol"
+                :url="listing.redirect_url" />
+            </div>
+          </AmICarousel>
         </div>
 
         <div class="flex flex-row gap-6">
@@ -164,8 +204,11 @@ import { ref, computed, watch } from 'vue';
 import { getRawDiffPercentage } from '~/helpers/utility';
 
 // ** data & refs **
+const { $siteBrand } = useNuxtApp();
 const route = useRoute();
 const govId = ref((route.query.gov_id as string) || undefined);
+const jobType = ref((route.query.schedule as string) || 'full-time');
+const contractType = ref((route.query.contract as string) || 'permanent');
 const showAmbiguityModal = ref(false);
 const searchConfirmed = ref(
   (import.meta.client ? history.state?.confirmed : false) || !!govId.value || false
@@ -256,17 +299,29 @@ const diffPercent = computed<number>(() => {
   return getRawDiffPercentage(userSalary.value, avg);
 });
 
+const jobListings = computed(() => {
+  return (jobsData.value?.results || []).sort((a: AdzunaJob, b: AdzunaJob) => {
+    return b.salary_max - a.salary_max;
+  });
+});
+
 // 1. Create a unique key for caching based on all parameters
 const asyncDataKey = computed(
   () =>
-    `salary-${country.value}-${location.value}-${searchTitle.value}-${userPeriod.value}-${govId.value}`
+    `salary-${country.value}-${location.value}-${searchTitle.value}-${userPeriod.value}-${govId.value}-${jobType.value}-${contractType.value}`
 );
 
 // 2. Use useAsyncData to fetch sequentially
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { data, refresh, pending } = await useAsyncData(asyncDataKey.value, async () => {
   // Wait for Adzuna first to check for cached IDs
-  await fetchAdzunaJobs(searchTitle.value, location.value, country.value);
+  await fetchAdzunaJobs(
+    searchTitle.value,
+    location.value,
+    country.value,
+    jobType.value,
+    contractType.value
+  );
 
   // Determine the ID to pass to Algolia (User URL param > Cached DB Param > undefined)
   const targetGovId = govId.value || cachedGovIdCode.value;
@@ -437,7 +492,7 @@ useSeoMeta({
       locStr
     });
   },
-  ogImage: `${url.origin}/og.png`,
+  ogImage: `${url.origin}/${$siteBrand}-og.png`,
   twitterCard: 'summary',
   robots: () => {
     if (!loading.value && !adzunaLoading.value && !hasGovernmentData.value && !hasJobsData.value) {
@@ -494,7 +549,6 @@ useHead({
         })
       )
     }
-  ],
-  link: [{ rel: 'canonical', href: `${url.origin}${route.path}` }]
+  ]
 });
 </script>

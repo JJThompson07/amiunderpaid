@@ -9,9 +9,20 @@
       "usa": "State",
       "uk": "City"
     },
-    "placeholder": "e.g. New York"
+    "placeholder": {
+      "usa": "e.g. New York",
+      "uk": "e.g. London"
+    }
   },
   "salary": {
     "label": "Current Salary"
+  },
+  "time": {
+    "full-time": "Full Time",
+    "part-time": "Part Time"
+  },
+  "contract": {
+    "contract": "Contract",
+    "permanent": "Permanent"
   }
 }

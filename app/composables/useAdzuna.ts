@@ -9,6 +9,28 @@ export type HistogramData = {
   [salary: number]: number;
 };
 
+export type AdzunaJob = {
+  id: number;
+  title: string;
+  description: string;
+  location: {
+    display_name: string;
+    area: string[];
+  };
+  salary_max: number;
+  salary_min: number;
+  category: {
+    label: string;
+    tag: string;
+  };
+  company: {
+    display_name: string;
+  };
+  contract_type: string;
+  contract_time: string;
+  redirect_url: string;
+};
+
 const sanitizeAdzunaData = (data: any): any => {
   if (Array.isArray(data)) {
     return data.map(sanitizeAdzunaData);
@@ -67,13 +89,18 @@ export const useAdzuna = () => {
     () => jobsData.value !== null && jobsData.value !== undefined && jobsCount.value > 0
   );
 
-  const fetchJobs = async (title: string, location: string, country: string) => {
-    if (country === 'UK' || country === 'gb') {
-      location = '';
-    }
-
+  const fetchJobs = async (
+    title: string,
+    location: string,
+    country: string,
+    jobType: string = 'full-time',
+    contractType: string = 'permanent'
+  ) => {
     loading.value = true;
     cachedGovIdCode.value = undefined;
+
+    // Wipe the underlying distribution state so computed properties reset!
+    distributionData.value = null;
 
     const cleanTitle = title
       .replace(/\s*\(.*?\)\s*/g, '')
@@ -85,12 +112,15 @@ export const useAdzuna = () => {
         params: {
           title: cleanTitle,
           location,
-          country
+          country,
+          jobType,
+          contractType
         }
       });
 
-      if (rawData.gov_id_code) {
-        cachedGovIdCode.value = rawData.gov_id_code;
+      // ONLY use the cached ID if an admin has explicitly verified it!
+      if (rawData.gov_id_code && rawData.is_admin_verified) {
+        cachedGovIdCode.value = String(rawData.gov_id_code).trim();
       }
 
       jobsData.value = sanitizeAdzunaData({
@@ -105,11 +135,13 @@ export const useAdzuna = () => {
     }
   };
 
-  const fetchHistogram = async (title: string, location: string, country: string) => {
-    if (country === 'UK' || country === 'gb') {
-      location = '';
-    }
-
+  const fetchHistogram = async (
+    title: string,
+    location: string,
+    country: string,
+    jobType: string = 'full-time',
+    contractType: string = 'permanent'
+  ) => {
     loading.value = true;
 
     try {
@@ -117,7 +149,9 @@ export const useAdzuna = () => {
         params: {
           title,
           location,
-          country
+          country,
+          jobType,
+          contractType
         }
       });
 

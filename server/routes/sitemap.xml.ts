@@ -5,6 +5,8 @@ import { useAdminFirestore } from '../utils/firebase';
 export default defineEventHandler(async (event) => {
   const url = getRequestURL(event);
   const origin = url.origin;
+  const isBenchmark = origin.includes('benchmarkmyrole');
+  const routePrefix = isBenchmark ? '/benchmark' : '/salary';
   const db = useAdminFirestore();
 
   const slugify = (text: string) =>
@@ -42,9 +44,9 @@ export default defineEventHandler(async (event) => {
 
     // Check if a specific location exists to build deeper URLs
     if (data.location) {
-      return `/salary/${titleSlug}/${country}/${slugify(data.location)}`;
+      return `${routePrefix}/${titleSlug}/${country}/${slugify(data.location)}`;
     }
-    return `/salary/${titleSlug}/${country}`;
+    return `${routePrefix}/${titleSlug}/${country}`;
   });
 
   const allRoutes = [...staticRoutes, ...dynamicRoutes];

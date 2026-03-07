@@ -7,9 +7,8 @@
         <!-- Logo -->
         <NuxtLink href="/" class="flex items-center gap-2 absolute" @click="openMenu = false">
           <div
-            class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none">
-            <div class="logo h-7 w-7" aria-label="Am I" />
-            <span class="text-slate-900">{{ $t('common.underpaid') }}</span>
+            class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none rounded-xl bg-slate-100/50">
+            <img :src="`/${$siteBrand}-logo.png`" class="h-12 w-12" :alt="$siteBrand" />
           </div>
         </NuxtLink>
 
@@ -48,7 +47,14 @@
 
     <!-- Simple Footer -->
     <footer class="py-8 text-sm text-center bg-white border-t border-slate-200 text-slate-400">
-      <p>&copy; {{ $t('common.footer.copy') }}</p>
+      <p>
+        &copy;
+        {{
+          $siteBrand === 'benchmarkmyrole'
+            ? $t('common.footer.benchmark.copy')
+            : $t('common.footer.copy')
+        }}
+      </p>
       <div class="mt-4 flex justify-center gap-6 items-center">
         <NuxtLink
           to="/privacy-policy"
@@ -69,6 +75,10 @@
 import { useCurrentUser } from 'vuefire';
 import { ref, onMounted, computed } from 'vue';
 import { MenuIcon, XIcon } from 'lucide-vue-next';
+
+const { $siteBrand } = useNuxtApp();
+const url = useRequestURL();
+const route = useRoute();
 
 const { isMobile: viewportIsMobile } = useViewport();
 
@@ -98,17 +108,22 @@ const handleLogout = async () => {
 useHead({
   htmlAttrs: {
     lang: computed(() => i18nHead.value.htmlAttrs?.lang),
-    // Use type assertion to match the expected 'ltr' | 'rtl' | 'auto' type
     dir: computed(() => i18nHead.value.htmlAttrs?.dir as 'ltr' | 'rtl' | 'auto' | undefined)
   },
-  link: computed(() => [...(i18nHead.value.link || [])]),
+  link: computed(() => {
+    // 1. Extract the links Nuxt i18n generates (like hreflang alternates)
+    // 2. Filter out any rogue canonicals it tries to inject
+    const i18nLinks = (i18nHead.value.link || []).filter((l) => l.rel !== 'canonical');
+
+    return [
+      ...i18nLinks,
+      // 3. Force the absolute, correct Canonical URL globally!
+      { rel: 'canonical', href: `${url.origin}${route.path}` },
+      { rel: 'icon', type: 'image/x-icon', href: `/${$siteBrand}-favicon.ico` }
+    ];
+  }),
   meta: computed(() => [...(i18nHead.value.meta || [])])
 });
 </script>
 
-<style>
-.logo {
-  background: url('../assets/img/logo.png') no-repeat center center;
-  background-size: cover;
-}
-</style>
+<style scoped></style>

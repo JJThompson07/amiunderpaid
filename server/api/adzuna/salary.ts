@@ -9,7 +9,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Job title is required' });
   }
 
-  const titleStr = String(title);
+  const titleStr = String(title).toLowerCase().trim();
+
   const countryParam = String(country || 'gb').toLowerCase();
   const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
 
@@ -91,7 +92,8 @@ export default defineEventHandler(async (event) => {
   };
 
   if (locationStr.trim() !== '') {
-    params.location1 = locationStr;
+    const cleanLocation = locationStr.split(',')[0]!.trim();
+    params.where = cleanLocation;
   }
 
   // 3. Fetch from Adzuna API

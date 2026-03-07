@@ -1,32 +1,23 @@
 <template>
   <div class="relative w-full max-w-5xl mx-auto mt-8">
-    <div class="flex justify-center mb-6">
-      <div
-        class="inline-flex p-1 rounded-full bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-lg">
-        <button
-          v-for="c in ['UK', 'USA']"
-          :key="c"
-          type="button"
-          class="px-6 py-2 text-xs font-bold rounded-full transition-all duration-300"
-          :class="
-            country === c ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-300 hover:text-white'
-          "
-          @click="changeCountry(c)">
-          {{ c }}
-        </button>
+    <div class="flex justify-between items-center gap-4 mb-6">
+      <div class="flex-1"></div>
+      <AmITabs
+        v-model="country"
+        :options="countryOptions"
+        round
+        @update:model-value="emit('country-change', country)" />
+      <div class="flex flex-1 justify-end">
+        <AmIButton v-if="!showCalc" title="Salary converter" @click="showCalc = true"
+          ><CalculatorIcon class="w-5 h-5 text-slate-50"
+        /></AmIButton>
+
+        <LazyModalSalaryConverter
+          v-if="showCalc"
+          :country="country"
+          :currency-symbol="currencySymbol"
+          @close="showCalc = false" />
       </div>
-    </div>
-
-    <div class="flex justify-end absolute top-0 right-0">
-      <AmIButton v-if="!showCalc" title="Salary converter" @click="showCalc = true"
-        ><CalculatorIcon class="w-5 h-5 text-slate-50"
-      /></AmIButton>
-
-      <LazyModalSalaryConverter
-        v-if="showCalc"
-        :country="country"
-        :currency-symbol="currencySymbol"
-        @close="showCalc = false" />
     </div>
 
     <div class="p-3 bg-white shadow-2xl rounded-3xl ring-1 ring-slate-900/5">
@@ -45,13 +36,40 @@
         </div>
 
         <div class="flex flex-col md:flex-row gap-3">
+          <AmITabs
+            v-model="schedule"
+            class="flex-1"
+            :label="$t('search.time.label')"
+            :options="scheduleOptions"
+            bg-colour="bg-slate-200"
+            text-colour="text-slate-500"
+            hover-colour="hover:text-primary-400"
+            button-colour="bg-primary-500"
+            button-text-colour="text-white" />
+          <AmITabs
+            v-model="contract"
+            class="flex-1"
+            :label="$t('search.contract.label')"
+            :options="contractOptions"
+            bg-colour="bg-slate-200"
+            text-colour="text-slate-500"
+            hover-colour="hover:text-primary-400"
+            button-colour="bg-primary-500"
+            button-text-colour="text-white" />
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-3">
           <div class="flex-1">
             <AmIAutocompleteInput
               v-model="location"
               :label="
                 country === 'USA' ? $t('search.location.label.usa') : $t('search.location.label.uk')
               "
-              :placeholder="$t('search.location.placeholder')"
+              :placeholder="
+                country === 'USA'
+                  ? $t('search.location.placeholder.usa')
+                  : $t('search.location.placeholder.uk')
+              "
               :icon="MapPin"
               :options="locationOptions"
               optional
@@ -103,8 +121,29 @@ const props = defineProps<{
 
 const emit = defineEmits(['country-change']);
 
+const { t } = useI18n();
+
+const countryOptions = [
+  { label: 'UK', value: 'UK' },
+  { label: 'USA', value: 'USA' }
+];
+
+const scheduleOptions = [
+  { label: t('search.time.full-time'), value: 'full-time' },
+  { label: t('search.time.part-time'), value: 'part-time' },
+  { label: t('common.all'), value: 'all' }
+];
+
+const contractOptions = [
+  { label: t('search.contract.permanent'), value: 'permanent' },
+  { label: t('search.contract.contract'), value: 'contract' },
+  { label: t('common.all'), value: 'all' }
+];
+
 const url = useRequestURL();
 const country = ref(props.initialCountry || (url.hostname.includes('.com') ? 'USA' : 'UK'));
+const schedule = ref('full-time');
+const contract = ref('permanent');
 
 const title = ref('');
 const location = ref('');
@@ -137,11 +176,6 @@ watch(country, (newVal) => {
   }
   titleOptions.value = [];
 });
-
-const changeCountry = (newCountry: string) => {
-  country.value = newCountry;
-  emit('country-change', newCountry);
-};
 
 const fetchUKTitles = async (searchTerm: string) => {
   const { $algolia } = useNuxtApp();
@@ -298,6 +332,8 @@ const handleSearch = async () => {
     query: {
       q: cleanTitle.trim(),
       gov_id: exactGovId, // Send exact DB ID for 100% accurate Government matching
+      schedule: schedule.value,
+      contract: contract.value,
       compare: salary.value || undefined,
       period: period.value !== 'year' ? period.value : undefined
     },

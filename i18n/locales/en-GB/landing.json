@@ -21,5 +21,10 @@
     "ons": "ONS Data",
     "adzuna": "Adzuna API",
     "bls": "BLS Data"
+  },
+  "benchmark": {
+    "heading": "Benchmark My Role",
+    "subheading": "Looking to hire for a new position? Ensure your role stands out from the competition by offering a market-leading package.",
+    "subheading-context": "BenchmarkMyRole compares your job description and salary against live market vacancies and official government benchmarks. Gain instant insights into your role's competitiveness and improve your applicant quality."
   }
 }

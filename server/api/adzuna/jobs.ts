@@ -3,16 +3,20 @@ import { FieldValue } from 'firebase-admin/firestore';
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const query = getQuery(event);
-  const { title, location, country, resultsPerPage } = query;
+  const { title, location, country, resultsPerPage, jobType, contractType } = query;
 
   if (!title) {
     throw createError({ statusCode: 400, statusMessage: 'Job title is required' });
   }
 
-  const titleStr = String(title);
+  // Force to lowercase to prevent Cache Key Mismatches after URL unslugifying!
+  const titleStr = String(title).toLowerCase().trim();
+  const typeStr = String(jobType || 'full-time').toLowerCase();
+  const contractStr = String(contractType || 'permanent').toLowerCase();
+
   const countryParam = String(country || 'gb').toLowerCase();
   const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
-  const limit = Number(resultsPerPage) || 5;
+  const limit = Number(resultsPerPage) || 10;
 
   let locationStr = location ? String(location) : '';
 
@@ -27,13 +31,19 @@ export default defineEventHandler(async (event) => {
 
   // 1. Check Cache
   const db = useAdminFirestore();
-  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${limit}`;
+  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${typeStr}-${contractStr}-${limit}`;
   const cacheRef = db.collection('adzuna_jobs_cache').doc(cacheKey);
+
+  // Track existing DB state so we don't wipe it on cache refresh!
+  let existingGovIdCode: string | undefined = undefined;
+  let isAdminVerified: boolean = false;
 
   try {
     const docSnap = await cacheRef.get();
     if (docSnap.exists) {
       const data = docSnap.data();
+      existingGovIdCode = data?.gov_id_code;
+      isAdminVerified = data?.is_admin_verified || false;
       const now = new Date().getTime();
 
       // --- OPTIMIZED CACHE CHECK ---
@@ -42,7 +52,8 @@ export default defineEventHandler(async (event) => {
         if (now < data.expiresAt.toMillis()) {
           return {
             ...data?.data,
-            gov_id_code: data?.gov_id_code || undefined
+            gov_id_code: existingGovIdCode,
+            is_admin_verified: isAdminVerified
           };
         }
       } else {
@@ -64,7 +75,8 @@ export default defineEventHandler(async (event) => {
         if (now - cachedTime < categoryCacheMilli) {
           return {
             ...data?.data,
-            gov_id_code: data?.gov_id_code || undefined
+            gov_id_code: existingGovIdCode,
+            is_admin_verified: isAdminVerified
           };
         }
       }
@@ -89,8 +101,27 @@ export default defineEventHandler(async (event) => {
     'content-type': 'application/json'
   };
 
+  // Dynamically set full_time or part_time
+  if (typeStr === 'part-time') {
+    params.part_time = 1;
+  } else if (typeStr === 'full-time') {
+    params.full_time = 1;
+  }
+
+  // Dynamically set contract or permanent
+  if (contractStr === 'contract') {
+    params.contract = 1;
+  } else if (contractStr === 'permanent') {
+    params.permanent = 1;
+  }
+
   if (locationStr.trim() !== '') {
-    params.where = locationStr;
+    // 1. Strip out anything after a comma (e.g., "Manchester, Greater Manchester" -> "Manchester")
+    const cleanLocation = locationStr.split(',')[0]!.trim();
+    params.where = cleanLocation;
+
+    // 2. Add a default search radius (e.g., 20 miles) to prevent Adzuna from returning 0 jobs
+    params.distance = 20;
   }
 
   // 3. Fetch from Adzuna API
@@ -119,17 +150,23 @@ export default defineEventHandler(async (event) => {
     expiresAt.setDate(expiresAt.getDate() + cacheDays);
 
     // 4. Save to Cache
-    await cacheRef.set({
-      categoryTag,
-      data: cleanData,
-      timestamp: FieldValue.serverTimestamp(),
-      expiresAt: expiresAt, // <-- Save the exact expiration date!
-      searchParams: { title: titleStr, location: locationStr, country: countryCode }
-    });
+    await cacheRef.set(
+      {
+        categoryTag,
+        data: cleanData,
+        timestamp: FieldValue.serverTimestamp(),
+        expiresAt: expiresAt, // <-- Save the exact expiration date!
+        searchParams: { title: titleStr, location: locationStr, country: countryCode },
+        gov_id_code: existingGovIdCode || null, // Preserve admin match
+        is_admin_verified: isAdminVerified // Preserve admin status
+      },
+      { merge: true }
+    );
 
     return {
       ...cleanData,
-      gov_id_code: undefined // Explicitly show no ID is cached yet
+      gov_id_code: existingGovIdCode,
+      is_admin_verified: isAdminVerified
     };
   } catch (e: any) {
     throw createError({
