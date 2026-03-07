@@ -70,6 +70,8 @@ import { ref, onMounted, computed } from 'vue';
 import { MenuIcon, XIcon } from 'lucide-vue-next';
 
 const { $siteBrand } = useNuxtApp();
+const url = useRequestURL();
+const route = useRoute();
 
 const { isMobile: viewportIsMobile } = useViewport();
 
@@ -99,13 +101,20 @@ const handleLogout = async () => {
 useHead({
   htmlAttrs: {
     lang: computed(() => i18nHead.value.htmlAttrs?.lang),
-    // Use type assertion to match the expected 'ltr' | 'rtl' | 'auto' type
     dir: computed(() => i18nHead.value.htmlAttrs?.dir as 'ltr' | 'rtl' | 'auto' | undefined)
   },
-  link: computed(() => [
-    ...(i18nHead.value.link || []),
-    { rel: 'icon', type: 'image/x-icon', href: `/${$siteBrand}-favicon.ico` }
-  ]),
+  link: computed(() => {
+    // 1. Extract the links Nuxt i18n generates (like hreflang alternates)
+    // 2. Filter out any rogue canonicals it tries to inject
+    const i18nLinks = (i18nHead.value.link || []).filter((l) => l.rel !== 'canonical');
+
+    return [
+      ...i18nLinks,
+      // 3. Force the absolute, correct Canonical URL globally!
+      { rel: 'canonical', href: `${url.origin}${route.path}` },
+      { rel: 'icon', type: 'image/x-icon', href: `/${$siteBrand}-favicon.ico` }
+    ];
+  }),
   meta: computed(() => [...(i18nHead.value.meta || [])])
 });
 </script>

@@ -75,7 +75,6 @@
 import { SearchX, Search } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import type { SearchClient } from 'algoliasearch';
-import { useRoute } from 'vue-router';
 
 const props = defineProps<{
   title: string;

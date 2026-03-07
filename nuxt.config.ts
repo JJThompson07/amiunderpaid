@@ -78,9 +78,6 @@ export default defineNuxtConfig({
     differentDomains: true,
     multiDomainLocales: true,
 
-    // baseUrl is essential for generating absolute canonical/alternate URLs
-    baseUrl: isDev ? 'http://localhost:3000' : 'https://www.amiunderpaid.co.uk',
-
     locales: [
       {
         code: 'en-GB',
