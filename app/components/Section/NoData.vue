@@ -25,7 +25,6 @@
         </h3>
         <p class="text-xs mb-4 text-slate-500">{{ $t('sections.no-data.option-1.description') }}</p>
         <div v-if="location" class="w-full">
-          {{ route.params }}
           <AmIButton
             class="w-full shadow-lg"
             bg-colour="bg-primary-500"
