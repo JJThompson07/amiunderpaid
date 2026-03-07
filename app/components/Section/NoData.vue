@@ -10,8 +10,8 @@
         <p class="mt-1 text-sm text-slate-500">
           {{ $t('sections.no-data.could-not-find') }}
           <strong class="text-slate-900">{{ title }}</strong>
-          <span v-if="location"
-            >in <strong class="text-slate-900">{{ location }}</strong></span
+          <span v-if="location">
+            in <strong class="text-slate-900">{{ location }}</strong></span
           >.
         </p>
       </div>

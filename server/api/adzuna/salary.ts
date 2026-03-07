@@ -92,7 +92,8 @@ export default defineEventHandler(async (event) => {
   };
 
   if (locationStr.trim() !== '') {
-    params.location1 = locationStr;
+    const cleanLocation = locationStr.split(',')[0]!.trim();
+    params.where = cleanLocation;
   }
 
   // 3. Fetch from Adzuna API

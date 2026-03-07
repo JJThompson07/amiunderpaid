@@ -96,10 +96,6 @@ export const useAdzuna = () => {
     jobType: string = 'full-time',
     contractType: string = 'permanent'
   ) => {
-    if (country === 'UK' || country === 'gb') {
-      location = '';
-    }
-
     loading.value = true;
     cachedGovIdCode.value = undefined;
 
@@ -146,10 +142,6 @@ export const useAdzuna = () => {
     jobType: string = 'full-time',
     contractType: string = 'permanent'
   ) => {
-    if (country === 'UK' || country === 'gb') {
-      location = '';
-    }
-
     loading.value = true;
 
     try {

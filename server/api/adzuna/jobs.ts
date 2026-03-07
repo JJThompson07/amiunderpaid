@@ -116,7 +116,12 @@ export default defineEventHandler(async (event) => {
   }
 
   if (locationStr.trim() !== '') {
-    params.where = locationStr;
+    // 1. Strip out anything after a comma (e.g., "Manchester, Greater Manchester" -> "Manchester")
+    const cleanLocation = locationStr.split(',')[0]!.trim();
+    params.where = cleanLocation;
+
+    // 2. Add a default search radius (e.g., 20 miles) to prevent Adzuna from returning 0 jobs
+    params.distance = 20;
   }
 
   // 3. Fetch from Adzuna API
