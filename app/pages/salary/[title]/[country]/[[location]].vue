@@ -338,7 +338,9 @@ const { data, refresh, pending } = await useAsyncData(
     return true;
   },
   {
-    watch: [asyncDataKey]
+    watch: [asyncDataKey],
+    dedupe: 'defer', // CRITICAL for live updates
+    server: true
   }
 );
 
