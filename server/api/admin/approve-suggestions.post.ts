@@ -3,7 +3,7 @@ export default defineEventHandler(async (event) => {
   await verifyAdmin(event);
 
   const body = await readBody(event);
-  const { suggestionId, title, location, country, gov_id_code, limit = 5 } = body;
+  const { suggestionId, title, location, country, gov_id_code, limit = 10 } = body;
 
   if (!suggestionId || !title || !gov_id_code) {
     throw createError({
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     const locationStr = location ? String(location) : '';
 
     const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${limit}`;
-    const cacheRef = db.collection('adzuna_jobs_cache').doc(cacheKey);
+    const cacheRef = db.collection('adzuna_jobs_cache').doc(`${cacheKey}-${limit}`);
 
     // 2. Write the approved ID to the live cache
     await cacheRef.set(
