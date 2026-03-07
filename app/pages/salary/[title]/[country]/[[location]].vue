@@ -102,7 +102,8 @@
             <div
               v-for="listing in jobListings"
               :key="listing.id"
-              class="w-full md:w-1/2 lg:w-1/3 px-2">
+              class="w-full px-2"
+              :class="{ 'md:w-1/2': jobListings.length > 1, 'lg:w-1/3': jobListings.length > 2 }">
               <AmICardRole
                 :title="listing.title"
                 :company="listing.company.display_name"
