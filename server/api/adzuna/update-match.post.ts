@@ -2,7 +2,8 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  const { title, location, country, gov_id_code, is_automatic, gov_title } = body;
+  const { title, location, country, gov_id_code, is_automatic, gov_title, jobType, contractType } =
+    body;
 
   if (!title || !gov_id_code) {
     throw createError({
@@ -61,7 +62,9 @@ export default defineEventHandler(async (event) => {
       timestamp: new Date(),
       last_suggested_at: new Date(),
       votes: 1, // Start the counter
-      ip_address: ipAddress
+      ip_address: ipAddress,
+      jobType,
+      contractType
     });
 
     return { success: true, message: 'New match suggestion logged safely!' };

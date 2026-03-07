@@ -307,7 +307,9 @@ const handleAmbiguitySelect = async (match: any) => {
         country: country.value === 'USA' ? 'us' : 'gb',
         gov_id_code: exactId,
         gov_title: match.title,
-        is_automatic: false
+        is_automatic: false,
+        jobType: jobType.value,
+        contractType: contractType.value
       }
     });
   } catch {
@@ -365,7 +367,9 @@ watch(loading, (newLoading) => {
           country: country.value === 'USA' ? 'us' : 'gb',
           gov_id_code: matchedIdCode.value,
           gov_title: matchedTitle.value,
-          is_automatic: true
+          is_automatic: true,
+          jobType: jobType.value,
+          contractType: contractType.value
         }
       }).catch(() => {
         // Let it fail silently in the background
@@ -378,7 +382,7 @@ watch(loading, (newLoading) => {
       dbLocation.toLowerCase() !== userLocation.toLowerCase()
     ) {
       if (dbLocation.toLowerCase() === country.value.toLowerCase()) {
-        const newPath = `/salary/${route.params.title}/${route.params.country}`;
+        const newPath = `/benchmark/${route.params.title}/${route.params.country}`;
         navigateTo(
           {
             path: newPath,
