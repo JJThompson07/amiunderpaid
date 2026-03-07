@@ -143,14 +143,18 @@ const handleSearch = (val: string) => {
   performSearch(val);
 };
 
-const broadenSearch = () => {
+const broadenSearch = async () => {
   const urlStart = $siteBrand === 'benchmarkmyrole' ? '/benchmark' : '/salary';
-  // Directly use the route params to build the "National" path
   const newPath = `${urlStart}/${route.params.title}/${route.params.country}`;
 
-  navigateTo({
+  // 1. Navigate to the broader path
+  await navigateTo({
     path: newPath,
-    query: route.query // Keeps jobType, contractType, and compare salary intact
+    query: route.query
   });
+
+  // 2. Globally tell Nuxt to refresh data on the page we just navigated to
+  // This will trigger the useAsyncData on the parent page
+  refreshNuxtData();
 };
 </script>
