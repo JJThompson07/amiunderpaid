@@ -39,7 +39,7 @@ export const useAnalytics = () => {
   };
 
   const trackViewRole = (title: string, company: string, location: string, url: string) => {
-    gtag('event', 'fetch_distribution', {
+    gtag('event', 'view_role', {
       job_title: title,
       company: company,
       location: location,
