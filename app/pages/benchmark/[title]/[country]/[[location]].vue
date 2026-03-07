@@ -128,7 +128,7 @@
                 :user-salary="userSalary"
                 :market-average="marketAverage"
                 :currency-symbol="currencySymbol"
-                :url="listing.url" />
+                :url="listing.redirect_url" />
             </div>
           </AmICarousel>
         </div>
