@@ -39,7 +39,7 @@ useSeoMeta({
   description,
   ogTitle: title,
   ogDescription: description,
-  ogImage: `${url.origin}/og.png`,
+  ogImage: `${url.origin}/amiunderpaid-og.png`,
   twitterCard: 'summary_large_image'
 });
 

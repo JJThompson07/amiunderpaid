@@ -204,6 +204,7 @@ import { ref, computed, watch } from 'vue';
 import { getRawDiffPercentage } from '~/helpers/utility';
 
 // ** data & refs **
+const { $siteBrand } = useNuxtApp();
 const route = useRoute();
 const govId = ref((route.query.gov_id as string) || undefined);
 const jobType = ref((route.query.schedule as string) || 'full-time');
@@ -491,7 +492,7 @@ useSeoMeta({
       locStr
     });
   },
-  ogImage: `${url.origin}/og.png`,
+  ogImage: `${url.origin}/${$siteBrand}-og.png`,
   twitterCard: 'summary',
   robots: () => {
     if (!loading.value && !adzunaLoading.value && !hasGovernmentData.value && !hasJobsData.value) {
