@@ -158,7 +158,9 @@ export default defineEventHandler(async (event) => {
         expiresAt: expiresAt, // <-- Save the exact expiration date!
         searchParams: { title: titleStr, location: locationStr, country: countryCode },
         gov_id_code: existingGovIdCode || null, // Preserve admin match
-        is_admin_verified: isAdminVerified // Preserve admin status
+        is_admin_verified: isAdminVerified, // Preserve admin status
+        job_type: typeStr,
+        contract_type: contractStr
       },
       { merge: true }
     );
