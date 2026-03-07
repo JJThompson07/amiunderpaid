@@ -38,10 +38,21 @@ export const useAnalytics = () => {
     });
   };
 
+  const trackViewRole = (title: string, company: string, location: string, url: string) => {
+    gtag('event', 'fetch_distribution', {
+      job_title: title,
+      company: company,
+      location: location,
+      url: url,
+      brand: $siteBrand
+    });
+  };
+
   return {
     trackSearch,
     trackAmbiguousSearch,
     trackResultAction,
-    trackDistribution
+    trackDistribution,
+    trackViewRole
   };
 };

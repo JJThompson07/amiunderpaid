@@ -2,8 +2,7 @@
   <div
     :key="route.fullPath"
     class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6 max-w-7xl mx-auto">
-    <div
-      class="fixed top-0 left-0 w-full h-125 bg-linear-to-b to-slate-50 z-0 from-secondary-900"></div>
+    <SectionSharedBackdrop />
 
     <AmILocationBreadcrumbs
       class="relative"
@@ -12,7 +11,15 @@
       :country="country"
       :location="location" />
 
-    <h1 class="relative text-3xl md:text-6xl text-white font-bold px-4">{{ displayTitle }}</h1>
+    <div class="flex flex-wrap gap-2 justify-between items-end">
+      <h1 class="relative text-3xl md:text-6xl text-white font-bold px-4 sm:whitespace-nowrap">
+        {{ displayTitle }}
+      </h1>
+      <h2
+        class="relative sm:text-lg md:text-xl text-white font-bold px-4 capitalize sm:whitespace-nowrap">
+        {{ jobType }} - {{ contractType }}
+      </h2>
+    </div>
 
     <LazySectionNoData
       v-if="!pending && !adzunaLoading && !hasGovernmentData && !hasJobsData"
@@ -78,6 +85,38 @@
               :country="country"
               @select="handleAmbiguitySelect" />
           </div>
+        </div>
+
+        <div>
+          <h3
+            class="relative text-xl md:text-2xl text-slate-900 font-bold sm:whitespace-nowrap mb-2">
+            <a
+              :href="$t(`sections.jobs.href.${country.toLowerCase()}`)"
+              class="text-primary-500 hover:text-primary-700 transition-colors duration-500 ease-in-out"
+              >{{ $t('sections.jobs.jobs') }}</a
+            >
+            {{ $t('sections.jobs.by-adzuna') }}
+          </h3>
+
+          <AmICarousel>
+            <div
+              v-for="listing in jobListings"
+              :key="listing.id"
+              class="w-full md:w-1/2 lg:w-1/3 px-2">
+              <AmICardRole
+                :title="listing.title"
+                :company="listing.company.display_name"
+                :contract="listing.contract_type"
+                :schedule="listing.contract_time"
+                :location="listing.location.display_name"
+                :salary-min="listing.salary_min"
+                :salary-max="listing.salary_max"
+                :user-salary="userSalary"
+                :market-average="marketAverage"
+                :currency-symbol="currencySymbol"
+                :url="listing.url" />
+            </div>
+          </AmICarousel>
         </div>
 
         <div class="flex flex-row gap-6">
@@ -256,6 +295,12 @@ const diffPercent = computed<number>(() => {
   const avg = marketAverage?.value ?? 0;
   if (userSalary.value === 0 || avg === 0) return 0;
   return getRawDiffPercentage(userSalary.value, avg);
+});
+
+const jobListings = computed(() => {
+  return (jobsData.value?.results || []).sort((a: AdzunaJob, b: AdzunaJob) => {
+    return b.salary_max - a.salary_max;
+  });
 });
 
 // 1. Create a unique key for caching based on all parameters

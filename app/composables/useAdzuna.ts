@@ -9,6 +9,28 @@ export type HistogramData = {
   [salary: number]: number;
 };
 
+export type AdzunaJob = {
+  id: number;
+  title: string;
+  description: string;
+  location: {
+    display_name: string;
+    area: string[];
+  };
+  salary_max: number;
+  salary_min: number;
+  category: {
+    label: string;
+    tag: string;
+  };
+  company: {
+    display_name: string;
+  };
+  contract_type: string;
+  contract_time: string;
+  redirect_url: string;
+};
+
 const sanitizeAdzunaData = (data: any): any => {
   if (Array.isArray(data)) {
     return data.map(sanitizeAdzunaData);

@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
   const countryParam = String(country || 'gb').toLowerCase();
   const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
-  const limit = Number(resultsPerPage) || 5;
+  const limit = Number(resultsPerPage) || 10;
 
   let locationStr = location ? String(location) : '';
 

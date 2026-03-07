@@ -24,6 +24,7 @@
   },
   "benchmark": {
     "heading": "Benchmark My Role",
-    "subheading": "The definitive resource for real-time salary transparency. By analyzing 140,000+ live vacancies alongside official data, this tool allows any role to be aligned with a fair and competitive market rate."
+    "subheading": "Looking to hire for a new position? Ensure your role stands out from the competition by offering a market-leading package.",
+    "subheading-context": "BenchmarkMyRole compares your job description and salary against live market vacancies and official government benchmarks. Gain instant insights into your role's competitiveness and improve your applicant quality."
   }
 }

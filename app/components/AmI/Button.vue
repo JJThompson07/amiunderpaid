@@ -1,12 +1,13 @@
 <template>
   <div
     ref="button"
-    class="relative overflow-hidden rounded-lg px-4 py-2 select-none transition-all duration-700 ease-in-out font-bold text-center shadow-md"
+    class="relative overflow-hidden rounded-lg select-none transition-all duration-700 ease-in-out font-bold text-center shadow-md"
     :class="[
       backgroundColour,
       !disabled ? (loading ? 'cursor-wait' : 'cursor-pointer') : 'cursor-not-allowed',
       textColour,
-      { 'whitespace-nowrap': !wrap }
+      { 'whitespace-nowrap': !wrap },
+      equalPadding ? 'p-2' : 'px-4 py-2'
     ]"
     role="button"
     :disabled="disabled"
@@ -49,6 +50,10 @@ const props = defineProps({
   title: {
     type: String,
     default: ''
+  },
+  equalPadding: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -58,7 +63,7 @@ const isHovered = useElementHover(button);
 
 const backgroundColour = computed<string>(() => {
   if (props.disabled) {
-    return 'bg-slate-400';
+    return 'bg-slate-400 opacity-50';
   }
   if (props.loading) {
     return 'bg-slate-400';

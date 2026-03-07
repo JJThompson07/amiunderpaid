@@ -16,6 +16,11 @@
     <h2 class="max-w-2xl mx-auto font-light text-lg md:text-xl text-white/80">
       {{ $t('landing.benchmark.subheading') }}
     </h2>
+
+    <!-- Subtitle -->
+    <p class="max-w-2xl mx-auto font-light text-sm md:text-base text-white/80">
+      {{ $t('landing.benchmark.subheading-context') }}
+    </p>
   </div>
 </template>
 

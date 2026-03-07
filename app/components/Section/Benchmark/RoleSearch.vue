@@ -27,9 +27,9 @@
         <div class="flex-1">
           <AmIAutocompleteInput
             v-model="title"
-            :label="$t('search.title.label')"
-            :helper="$t('search.title.helper')"
-            :placeholder="$t('search.title.placeholder')"
+            :label="$t('search.benchmark.title.label')"
+            :helper="$t('search.benchmark.title.helper')"
+            :placeholder="$t('search.benchmark.title.placeholder')"
             :icon="Search"
             :options="titleOptions"
             :loading="fetching"
@@ -85,7 +85,7 @@
               v-model:param-value="period"
               type="number"
               :step="10"
-              :label="$t('search.salary.label')"
+              :label="$t('search.benchmark.salary.label')"
               :placeholder="currencySymbol + '55,000'"
               :icon="Wallet"
               optional

@@ -8,6 +8,17 @@
       "title": "Salary for {displayTitle}"
     }
   },
+  "benchmark": {
+    "location": {
+      "title": "Benchmark Salary for {displayTitle} in {locStr}{country} | Benchmark My Role",
+      "description": "Find out the benchmark salary for {displayTitle} in {locStr}. Compare your role against live market data and government benchmarks.",
+      "ogTitle": "Benchmark salary for {displayTitle} in {locStr}{country}",
+      "ogDescription": "Is your role attractive to candidates? Check the benchmark salary for {displayTitle} in {locStr} now.",
+      "header": {
+        "title": "Salary Benchmark for {displayTitle}"
+      }
+    }
+  },
   "index": {
     "name": "Am I Underpaid?",
     "title": "Am I Underpaid? | Salary Checker & Market Pay Calculator UK",
