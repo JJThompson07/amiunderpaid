@@ -267,28 +267,34 @@ const asyncDataKey = computed(
 
 // 2. Use useAsyncData to fetch sequentially
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const { data, refresh, pending } = await useAsyncData(asyncDataKey.value, async () => {
-  // Wait for Adzuna first to check for cached IDs
-  await fetchAdzunaJobs(
-    searchTitle.value,
-    location.value,
-    country.value,
-    jobType.value,
-    contractType.value
-  );
+const { data, refresh, pending } = await useAsyncData(
+  asyncDataKey.value,
+  async () => {
+    // Wait for Adzuna first to check for cached IDs
+    await fetchAdzunaJobs(
+      searchTitle.value,
+      location.value,
+      country.value,
+      jobType.value,
+      contractType.value
+    );
 
-  // Determine the ID to pass to Algolia (User URL param > Cached DB Param > undefined)
-  const targetGovId = govId.value || cachedGovIdCode.value;
+    // Determine the ID to pass to Algolia (User URL param > Cached DB Param > undefined)
+    const targetGovId = govId.value || cachedGovIdCode.value;
 
-  // Fetch Government Match
-  if (country.value === 'UK') {
-    await fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
-  } else {
-    await fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
+    // Fetch Government Match
+    if (country.value === 'UK') {
+      await fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
+    } else {
+      await fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
+    }
+
+    return true;
+  },
+  {
+    watch: [asyncDataKey]
   }
-
-  return true;
-});
+);
 
 // ** methods **
 const handleAmbiguitySelect = async (match: any) => {

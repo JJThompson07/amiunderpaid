@@ -76,6 +76,8 @@ import { SearchX, Search } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import type { SearchClient } from 'algoliasearch';
 
+const { $siteBrand } = useNuxtApp();
+
 const props = defineProps<{
   title: string;
   location: string;
@@ -142,19 +144,13 @@ const handleSearch = (val: string) => {
 };
 
 const broadenSearch = () => {
-  const pathSegments = route.path.split('/').filter(Boolean);
+  const urlStart = $siteBrand === 'benchmarkmyrole' ? '/benchmark' : '/salary';
+  // Directly use the route params to build the "National" path
+  const newPath = `${urlStart}/${route.params.title}/${route.params.country}`;
 
-  // If the path has 4 segments (e.g. ['benchmark', 'developer', 'uk', 'london'])
-  if (pathSegments.length === 4) {
-    pathSegments.pop(); // Remove the location
-  }
-
-  const newPath = '/' + pathSegments.join('/');
-
-  // Navigate, keeping their query parameters (like jobType and contractType) intact!
   navigateTo({
     path: newPath,
-    query: route.query
+    query: route.query // Keeps jobType, contractType, and compare salary intact
   });
 };
 </script>
