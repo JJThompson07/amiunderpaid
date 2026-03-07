@@ -9,7 +9,10 @@
   "optional": "optional",
   "underpaid": "Underpaid",
   "footer": {
-    "copy": "2026 Am I Underpaid. All rights reserved."
+    "copy": "2026 Am I Underpaid. All rights reserved.",
+    "benchmark": {
+      "copy": "2026 Benchmark My Role. All rights reserved."
+    }
   },
   "data": {
     "disclaimer": "Data based on recent listings from Adzuna. Government benchmarks are based on full-time roles."

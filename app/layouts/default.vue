@@ -47,7 +47,14 @@
 
     <!-- Simple Footer -->
     <footer class="py-8 text-sm text-center bg-white border-t border-slate-200 text-slate-400">
-      <p>&copy; {{ $t('common.footer.copy') }}</p>
+      <p>
+        &copy;
+        {{
+          $siteBrand === 'benchmarkmyrole'
+            ? $t('common.footer.benchmark.copy')
+            : $t('common.footer.copy')
+        }}
+      </p>
       <div class="mt-4 flex justify-center gap-6 items-center">
         <NuxtLink
           to="/privacy-policy"
