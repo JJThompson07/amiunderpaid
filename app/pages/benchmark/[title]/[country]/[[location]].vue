@@ -308,8 +308,8 @@ const handleAmbiguitySelect = async (match: any) => {
         gov_id_code: exactId,
         gov_title: match.title,
         is_automatic: false,
-        jobType: jobType.value,
-        contractType: contractType.value
+        job_type: jobType.value,
+        contract_type: contractType.value
       }
     });
   } catch {
@@ -368,8 +368,8 @@ watch(loading, (newLoading) => {
           gov_id_code: matchedIdCode.value,
           gov_title: matchedTitle.value,
           is_automatic: true,
-          jobType: jobType.value,
-          contractType: contractType.value
+          job_type: jobType.value,
+          contract_type: contractType.value
         }
       }).catch(() => {
         // Let it fail silently in the background

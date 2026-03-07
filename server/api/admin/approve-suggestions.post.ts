@@ -30,14 +30,16 @@ export default defineEventHandler(async (event) => {
     const locationStr = location ? String(location) : '';
 
     const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${jobType}-${contractType}-${limit}`;
-    const cacheRef = db.collection('adzuna_jobs_cache').doc(`${cacheKey}-${limit}`);
+    const cacheRef = db.collection('adzuna_jobs_cache').doc(cacheKey);
 
     // 2. Write the approved ID to the live cache
     await cacheRef.set(
       {
         gov_id_code: String(gov_id_code),
         is_admin_verified: true, // Flag it as officially verified by you
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        job_type: jobType,
+        contract_type: contractType
       },
       { merge: true } // Merge ensures we don't accidentally overwrite the job listing data
     );

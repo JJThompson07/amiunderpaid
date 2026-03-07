@@ -23,6 +23,8 @@ export default defineEventHandler(async (event) => {
         suggested_gov_id: String(data.suggested_gov_id || ''),
         suggested_gov_title: String(data.suggested_gov_title || 'Unknown Role'),
         is_automatic_system_save: Boolean(data.is_automatic_system_save),
+        job_type: String(data.job_type || ''),
+        contract_type: String(data.contract_type || ''),
 
         // FORCE this to be a string so Nitro's SerializeObject doesn't strip it!
         timestamp: String(

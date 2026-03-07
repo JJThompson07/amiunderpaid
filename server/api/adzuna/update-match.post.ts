@@ -63,8 +63,8 @@ export default defineEventHandler(async (event) => {
       last_suggested_at: new Date(),
       votes: 1, // Start the counter
       ip_address: ipAddress,
-      jobType,
-      contractType
+      job_type: jobType,
+      contract_type: contractType
     });
 
     return { success: true, message: 'New match suggestion logged safely!' };
