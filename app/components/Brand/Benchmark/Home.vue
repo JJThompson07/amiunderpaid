@@ -15,6 +15,7 @@
 </template>
 
 <script setup lang="ts">
+const { $siteBrand } = useNuxtApp();
 const { t } = useI18n();
 const url = useRequestURL();
 
@@ -31,7 +32,7 @@ useSeoMeta({
   description,
   ogTitle: title,
   ogDescription: description,
-  ogImage: `${url.origin}/benchmark-og.png`, // You'll want a new social image for this brand!
+  ogImage: `${url.origin}/${$siteBrand}-og.png`, // You'll want a new social image for this brand!
   twitterCard: 'summary_large_image'
 });
 </script>

@@ -27,6 +27,7 @@
 <script setup lang="ts">
 // Nuxt automatically imports the SalarySearch component from /components
 
+const { $siteBrand } = useNuxtApp();
 const { t } = useI18n();
 const url = useRequestURL();
 const isUSA = useState<boolean>('landing-is-usa', () => url.hostname.includes('.com'));
@@ -39,7 +40,7 @@ useSeoMeta({
   description,
   ogTitle: title,
   ogDescription: description,
-  ogImage: `${url.origin}/amiunderpaid-og.png`,
+  ogImage: `${url.origin}/${$siteBrand}-og.png`,
   twitterCard: 'summary_large_image'
 });
 
