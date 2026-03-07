@@ -10,5 +10,6 @@
   },
   "benchmark": {
     "check-now": "Check A Role Now"
-  }
+  },
+  "broaden-search": "Search all of {country}"
 }

@@ -24,6 +24,16 @@
           {{ $t('sections.no-data.option-1.title') }}
         </h3>
         <p class="text-xs mb-4 text-slate-500">{{ $t('sections.no-data.option-1.description') }}</p>
+        <div v-if="location" class="w-full">
+          <AmIButton
+            class="w-full shadow-lg"
+            bg-colour="bg-primary-500"
+            hover-colour="hover:bg-primary-600"
+            text-colour="text-white"
+            @click="broadenSearch">
+            {{ $t('buttons.broaden-search', { country }) }}
+          </AmIButton>
+        </div>
         <NuxtLink to="/" class="w-full mt-auto">
           <AmIButton
             block
@@ -65,6 +75,7 @@
 import { SearchX, Search } from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import type { SearchClient } from 'algoliasearch';
+import { useRoute } from 'vue-router';
 
 const props = defineProps<{
   title: string;
@@ -76,6 +87,7 @@ const emit = defineEmits<{
   (e: 'select', match: any): void;
 }>();
 
+const route = useRoute();
 const searchQuery = ref('');
 const hits = ref<any[]>([]);
 const loading = ref(false);
@@ -128,5 +140,22 @@ const handleSearch = (val: string) => {
   }
 
   performSearch(val);
+};
+
+const broadenSearch = () => {
+  const pathSegments = route.path.split('/').filter(Boolean);
+
+  // If the path has 4 segments (e.g. ['benchmark', 'developer', 'uk', 'london'])
+  if (pathSegments.length === 4) {
+    pathSegments.pop(); // Remove the location
+  }
+
+  const newPath = '/' + pathSegments.join('/');
+
+  // Navigate, keeping their query parameters (like jobType and contractType) intact!
+  navigateTo({
+    path: newPath,
+    query: route.query
+  });
 };
 </script>
