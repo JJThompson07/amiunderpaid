@@ -183,8 +183,8 @@ const approveMatch = async (suggestion: any) => {
         location: suggestion.location,
         country: suggestion.country,
         gov_id_code: suggestion.suggested_gov_id,
-        jobType: suggestion.job_type || 'full-time',
-        contractType: suggestion.contract_type || 'permanent'
+        job_type: suggestion.job_type || 'full-time',
+        contract_Type: suggestion.contract_type || 'permanent'
       }
     });
     // Remove it from the UI immediately to feel fast

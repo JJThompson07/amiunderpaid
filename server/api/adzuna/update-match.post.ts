@@ -2,8 +2,16 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  const { title, location, country, gov_id_code, is_automatic, gov_title, jobType, contractType } =
-    body;
+  const {
+    title,
+    location,
+    country,
+    gov_id_code,
+    is_automatic,
+    gov_title,
+    job_type,
+    contract_type
+  } = body;
 
   if (!title || !gov_id_code) {
     throw createError({
@@ -18,6 +26,8 @@ export default defineEventHandler(async (event) => {
   const countryCode = String(country || 'gb').toLowerCase();
   const sanitizedGovId = String(gov_id_code).trim();
   const sanitizedGovTitle = gov_title ? String(gov_title).trim() : 'Unknown Role';
+  const jobType = job_type ? String(job_type).toLowerCase() : 'full-time';
+  const contractType = contract_type ? String(contract_type).toLowerCase() : 'permanent';
 
   const ipAddress = getRequestHeader(event, 'x-forwarded-for') || 'unknown';
 

@@ -10,8 +10,8 @@ export default defineEventHandler(async (event) => {
     country,
     gov_id_code,
     limit = 10,
-    jobType = 'full-time',
-    contractType = 'permanent'
+    job_type = 'full-time',
+    contract_type = 'permanent'
   } = body;
 
   if (!suggestionId || !title || !gov_id_code) {
@@ -28,6 +28,8 @@ export default defineEventHandler(async (event) => {
     const titleStr = String(title);
     const countryCode = String(country || 'gb').toLowerCase();
     const locationStr = location ? String(location) : '';
+    const jobType = String(job_type).toLowerCase();
+    const contractType = String(contract_type).toLowerCase();
 
     const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${jobType}-${contractType}-${limit}`;
     const cacheRef = db.collection('adzuna_jobs_cache').doc(cacheKey);
