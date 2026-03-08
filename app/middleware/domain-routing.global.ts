@@ -31,4 +31,26 @@ export default defineNuxtRouteMiddleware((to) => {
     const newPath = to.path.replace('/benchmark', '/salary');
     return navigateTo({ path: newPath, query: to.query }, { redirectCode: 301 });
   }
+
+  // ✨ 4. Strict Cross-Domain Redirects for Country specific data
+  // We only do this for AmIUnderpaid since Benchmark is only on .com
+  if ($siteBrand === 'amiunderpaid' && to.params.country) {
+    const country = (to.params.country as string).toUpperCase();
+
+    // If looking for USA on .co.uk -> Kick to .com
+    if (country === 'USA' && hostname.endsWith('.co.uk')) {
+      return navigateTo(`https://www.amiunderpaid.com${to.fullPath}`, {
+        external: true,
+        redirectCode: 301
+      });
+    }
+
+    // If looking for UK on .com -> Kick to .co.uk
+    if (country === 'UK' && hostname.endsWith('.com')) {
+      return navigateTo(`https://www.amiunderpaid.co.uk${to.fullPath}`, {
+        external: true,
+        redirectCode: 301
+      });
+    }
+  }
 });
