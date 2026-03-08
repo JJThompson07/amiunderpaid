@@ -20,7 +20,8 @@ const { t } = useI18n();
 const url = useRequestURL();
 
 // 1. Geography Logic
-const isUSA = useState<boolean>('landing-is-usa', () => url.hostname.includes('.com'));
+// Defaulting to USA (true) since Benchmark My Role operates on the .com domain.
+const isUSA = useState<boolean>('landing-is-usa', () => true);
 
 // 3. Brand-Specific SEO
 // Make sure to add meta.benchmark_index.title to your i18n JSON files!
@@ -34,5 +35,21 @@ useSeoMeta({
   ogDescription: description,
   ogImage: `${url.origin}/${$siteBrand}-og.png`, // You'll want a new social image for this brand!
   twitterCard: 'summary_large_image'
+});
+
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        // Using your exact meta.benchmark_index.name from your meta.json file ("Benchmark My Role")
+        name: t('meta.benchmark_index.name'),
+        url: url.origin,
+        description: description.value
+      })
+    }
+  ]
 });
 </script>
