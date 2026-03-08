@@ -44,7 +44,6 @@ useHead({
       innerHTML: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        // Using your exact meta.benchmark_index.name from your meta.json file ("Benchmark My Role")
         name: t('meta.benchmark_index.name'),
         url: url.origin,
         description: description.value
