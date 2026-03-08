@@ -2,18 +2,18 @@
   "heading": "About Us",
   "body": {
     "bold": "Salary transparency is broken.",
-    "intro": "Most people rely on awkward conversations with colleagues or outdated reports to know what they are worth.",
+    "intro": "Most professionals rely on uncomfortable conversations with coworkers or outdated surveys to figure out their true market value.",
     "middle": "We built {app-name} to change that.",
     "app-name": "Am I Underpaid?",
-    "outro": "Our mission is simple: to give every employee the data they need to negotiate with confidence. We believe that when salary data is open and accessible, the pay gap closes and everyone wins."
+    "outro": "Our mission is straightforward: to equip every worker with the hard data needed to negotiate compensation confidently. When pay data is transparent, the wage gap shrinks and everyone benefits."
   },
   "benchmark": {
     "body": {
       "bold": "Data-driven alignment is the key to a fair and efficient job market.",
-      "intro": "For too long, the true value of a role has been a moving target, obscured by outdated data and inconsistent reporting. This imbalance makes it difficult for employers to stay competitive and for candidates to know their worth.",
+      "intro": "Historically, a position's true market value has been a moving target, clouded by stale data and unreliable reporting. This disconnect makes it tough for companies to remain competitive and for job seekers to understand their true worth.",
       "middle": "{app-name} was developed to bridge this informational gap through real-time data integration.",
       "app-name": "Benchmark My Role",
-      "outro": "The platform's mission is to provide an objective, data-backed standard for salary transparency. By cross-referencing 140,000+ active vacancies with official benchmarks, we ensure that every hiring decision and career move is rooted in current market reality, fostering a more equitable landscape for everyone"
+      "outro": "The platform's mission is to provide an objective, data-backed standard for salary transparency. By cross-referencing over 140,000 active job openings with federal benchmarks, we ensure every hiring decision and career move is grounded in today's market reality, fostering a more equitable landscape for everyone."
     }
   }
 }

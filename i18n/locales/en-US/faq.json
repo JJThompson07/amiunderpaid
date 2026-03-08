@@ -8,19 +8,19 @@
         "title": "General Questions",
         "underpaid": {
           "question": "Am I being underpaid?",
-          "answer": "The most accurate way to find out if you are being underpaid is to compare your current salary with the average wage for your job title and location. Our salary checker uses live market data to give you an accurate expectation."
+          "answer": "The most accurate way to find out if you are underpaid is to compare your current base pay with the average compensation for your specific title and location. Our tool uses live market data to give you realistic expectations."
         },
         "averageWage": {
-          "question": "What is the average wage for my role?",
-          "answer": "The average wage depends heavily on your specific location, industry, and experience level. By entering your details into our search, you can see the median average wage and salary distribution curve for your role."
+          "question": "What is the typical compensation for my role?",
+          "answer": "Average compensation depends heavily on your location, industry, and experience level. By running a search, you can view the median salary and distribution curve for your exact position."
         },
         "expect": {
           "question": "What salary should I expect?",
           "answer": "You should expect a salary that aligns with current market rates. Whether you are negotiating a raise or applying for a new job, knowing the expected salary range gives you the power to negotiate fairly."
         },
         "fairPay": {
-          "question": "Am I fairly paid?",
-          "answer": "Fair pay is determined by your role's market value, your experience, and your specific location. If your salary falls within 2.5% or above the median range for your professional peers in your city / country, you are likely being paid fairly."
+          "question": "Am I compensated fairly?",
+          "answer": "Fair pay is dictated by your role's market value, your experience, and your geography. If your salary falls within 2.5% of the median range for professionals in your city or state, you are generally considered fairly compensated."
         },
         "isMySalaryRight": {
           "question": "Is my salary right for my role?",
@@ -38,8 +38,8 @@
           "answer": "Start typing your job title and our smart autocomplete will suggest government standard industry roles. This helps ensure your salary comparison is based on accurate and relevant data."
         },
         "cantFindJobTitle": {
-          "question": "What if I can't find my job title?",
-          "answer": "The job title suggestions are based on government standard classifications. don't worry if you can't find an exact match - just enter your exact job title and we'll do our best to find the closest match for your salary comparison."
+          "question": "What if I can't find my exact job title?",
+          "answer": "Our suggestions are based on federal Standard Occupational Classifications (SOC). Don't worry if your internal company title isn't there—just enter it anyway, and our algorithm will map you to the closest federal equivalent."
         },
         "salaryScare": {
           "question": "What if I don't want to enter my salary?",
@@ -68,7 +68,7 @@
           "title": "Market Benchmarking FAQ",
           "marketValue": {
             "question": "How is market value determined?",
-            "answer": "Market value is a reflection of real-time supply and demand. Our tool determines this by aggregating 140,000+ live job postings and official benchmarks to establish a current 'going rate' for specific roles and locations nationwide."
+            "answer": "Market value is a reflection of real-time supply and demand. Our platform determines this by aggregating over 140,000 active job postings alongside federal BLS benchmarks to establish the current 'going rate'."
           },
           "dataPillars": {
             "question": "What data defines the salary range?",
@@ -83,8 +83,8 @@
             "answer": "The market is dynamic. Because we analyze live listings, our data reflects economic shifts in real-time. We recommend benchmarking roles quarterly to ensure pay ranges remain aligned with the latest hiring trends."
           },
           "employerUtility": {
-            "question": "Can I use this tool to set company salary bands?",
-            "answer": "Absolutely. Benchmark My Role is designed to help organizations 'stress-test' their job postings. By checking your intended range against live data, you can ensure your vacancy is positioned to attract top talent before you post the position."
+            "question": "Can I use this tool to set company compensation bands?",
+            "answer": "Absolutely. Benchmark My Role is designed to help HR teams and hiring managers validate their pay ranges. By checking your intended budget against live data, you ensure your open position is competitive enough to attract top US talent."
           },
           "strategicAdvantage": {
             "question": "Why is objective benchmarking essential?",

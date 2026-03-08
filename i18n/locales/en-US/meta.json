@@ -1,19 +1,19 @@
 {
   "location": {
     "title": "Average {displayTitle} Salary in {locStr}{country} | Am I Underpaid?",
-    "description": "Find out the average {displayTitle} salary in {locStr}. Compare your pay against live market data and government benchmarks.",
-    "ogTitle": "Average {displayTitle} Salary in {locStr}{country}",
-    "ogDescription": "Are you being paid enough? Check the average {displayTitle} salary in {locStr} now.",
+    "description": "Discover the average compensation for a {displayTitle} in {locStr}. Compare your base pay against real-time market data and federal benchmarks.",
+    "ogTitle": "Typical {displayTitle} Salary in {locStr}{country}",
+    "ogDescription": "Are you earning what you deserve? Review the median {displayTitle} compensation in {locStr} today.",
     "header": {
-      "title": "Salary for {displayTitle}"
+      "title": "Compensation for {displayTitle}"
     }
   },
   "benchmark": {
     "location": {
-      "title": "Benchmark salary for {displayTitle} in {locStr}{country} | Benchmark My Role",
-      "description": "Find out the benchmark salary for {displayTitle} in {locStr}. Compare your role against live market data and government benchmarks.",
-      "ogTitle": "Benchmark salary for {displayTitle} in {locStr}{country}",
-      "ogDescription": "Is your role attractive to candidates? Check the benchmark salary for {displayTitle} in {locStr} now.",
+      "title": "Benchmark compensation for a {displayTitle} in {locStr}{country} | Benchmark My Role",
+      "description": "Establish the benchmark salary for a {displayTitle} in {locStr}. Evaluate your open position against live job market data and federal BLS statistics.",
+      "ogTitle": "Salary Benchmark for a {displayTitle} in {locStr}{country}",
+      "ogDescription": "Is your job offer competitive? Review the benchmarked salary for a {displayTitle} in {locStr}.",
       "header": {
         "title": "Salary Benchmark for {displayTitle}"
       }
@@ -21,12 +21,12 @@
   },
   "index": {
     "name": "Am I Underpaid?",
-    "title": "Am I Underpaid? | Salary Comparison & Market Data Tool",
-    "description": "Find out the average salary for your role in the USA. Compare your wage against live market data and BLS benchmarks to see if you are underpaid."
+    "title": "Am I Underpaid? | US Salary Comparison & Market Data",
+    "description": "Find out the average compensation for your position in the USA. Compare your pay against live market data and federal BLS benchmarks to see your true market value."
   },
   "benchmark_index": {
     "name": "Benchmark My Role",
-    "title": "Benchmark My Role | Open Vacancy Salary Comparison Tool",
-    "description": "Benchmark an open vacancy against real-time market data. Whether hiring or applying, use our salary comparison tool to ensure your offer is competitive."
+    "title": "Benchmark My Role | Job Requisition Salary Comparison",
+    "description": "Benchmark an open job requisition against real-time US market data. Whether you are hiring or applying, use our compensation tool to ensure your offer is competitive."
   }
 }
