@@ -8,6 +8,7 @@ export default defineEventHandler(async (event) => {
   const isBenchmark = origin.includes('benchmarkmyrole');
   const routePrefix = isBenchmark ? '/benchmark' : '/salary';
   const db = useAdminFirestore();
+  const isUSDomain = origin.endsWith('.com');
 
   const slugify = (text: string) =>
     text
@@ -36,18 +37,22 @@ export default defineEventHandler(async (event) => {
     .limit(5000) // Adjust limit based on your dataset size
     .get();
 
-  const dynamicRoutes = jobsSnapshot.docs.map((doc) => {
-    const data = doc.data();
+  const dynamicRoutes = jobsSnapshot.docs
+    .map((doc) => {
+      const data = doc.data();
+      const country = data.country || 'UK';
 
-    const titleSlug = slugify(data.title);
-    const country = data.country || 'UK'; // Default if missing
+      // ✨ NEW: Filter out jobs that don't belong to this domain
+      if (isUSDomain && country !== 'USA') return null;
+      if (!isUSDomain && country !== 'UK') return null;
 
-    // Check if a specific location exists to build deeper URLs
-    if (data.location) {
-      return `${routePrefix}/${titleSlug}/${country}/${slugify(data.location)}`;
-    }
-    return `${routePrefix}/${titleSlug}/${country}`;
-  });
+      const titleSlug = slugify(data.title);
+      if (data.location) {
+        return `${routePrefix}/${titleSlug}/${country}/${slugify(data.location)}`;
+      }
+      return `${routePrefix}/${titleSlug}/${country}`;
+    })
+    .filter(Boolean);
 
   const allRoutes = [...staticRoutes, ...dynamicRoutes];
 
