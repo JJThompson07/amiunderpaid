@@ -1,17 +1,26 @@
-import { readMultipartFormData, createError } from 'h3';
+import { defineEventHandler, readMultipartFormData, createError } from 'h3';
 import * as XLSX from 'xlsx';
 
 /**
- * Enhanced Server-side parser for ONS (UK) and BLS (USA) employment data.
- * Designed to handle the multi-row headers of ONS ASHE and the flat CSV of BLS OEWS.
- * This version focuses strictly on annual (yearly) salary data.
+ * Server-side parser for Regional/State employment data.
+ * * UK Source: ONS ASHE Work Geography Table 7.7a
+ * - 'Description' column = Location Name
+ * - Job Title defaults to 'All' (as these tables are aggregates)
+ * * USA Source: BLS OEWS State/Area data
+ * - 'AREA_TITLE' column = Location Name
+ * - 'OCC_TITLE' column = Job Title
  */
 
 interface SalaryRecord {
   title: string;
   location: string;
   year: number;
-  salary: number;
+  salary: number; // This represents the median
+  avg_salary?: number; // Added for mean/average salary
+  salary_10_pt?: number; // 10th percentile
+  salary_25_pt?: number; // 25th percentile
+  salary_75_pt?: number; // 75th percentile
+  salary_90_pt?: number; // 90th percentile
   country: string;
   id_code?: string;
   period: string; // Fixed to 'year'
@@ -37,7 +46,6 @@ export default defineEventHandler(async (event) => {
 
     if (country === 'UK') {
       // ONS ASHE usually has multiple sheets (All, Male, Female, Full-Time, etc.)
-      // We prioritize the "Full-Time" sheet if it exists for annual pay.
       const sheetName =
         workbook.SheetNames.find((s) => s.includes('Full-Time')) || workbook.SheetNames[0];
       if (!sheetName) {
@@ -54,15 +62,8 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      // Fix for ONS files: Force range recalculation by removing the explicit range metadata.
-      // Government files often have malformed ranges (e.g. claiming data is only A1:A1).
-      // if (sheet['!ref']) {
-      //   delete sheet['!ref'];
-      // }
-
       const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
 
-      // ONS files have metadata rows at the top. We look for the row containing "Description" and "Code"
       let headerRowIndex = -1;
       for (let i = 0; i < Math.min(rawData.length, 10); i++) {
         if (rawData[i]?.includes('Description') && rawData[i]?.includes('Code')) {
@@ -79,37 +80,75 @@ export default defineEventHandler(async (event) => {
       }
 
       const headers = rawData[headerRowIndex];
+
       if (!headers) {
         throw createError({ statusCode: 422, message: 'Could not detect UK (ONS) headers.' });
       }
 
-      const titleIdx = headers.indexOf('Description');
+      const locIdx = headers.indexOf('Description'); // UK Region data uses Description for Location
       const codeIdx = headers.indexOf('Code');
       const medianIdx = headers.indexOf('Median');
+      const meanIdx = headers.indexOf('Mean');
+
+      if (locIdx === -1 || medianIdx === -1) {
+        throw createError({
+          statusCode: 422,
+          message: 'Could not detect required UK (ONS) columns (Description/Median).'
+        });
+      }
+
+      // Percentile Columns
+      const pct10Idx = headers.findIndex((h) => h?.toString().trim() === '10');
+      const pct25Idx = headers.findIndex((h) => h?.toString().trim() === '25');
+      const pct75Idx = headers.findIndex((h) => h?.toString().trim() === '75');
+      const pct90Idx = headers.findIndex((h) => h?.toString().trim() === '90');
+
+      // Helper to strictly validate UK numeric values (handles null, undefined, strings, and missing data chars)
+      const parseUKVal = (val: any) => {
+        if (val == null || val === 'x' || val === '..' || val === ':') return undefined;
+        const parsed =
+          typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) : parseFloat(val);
+        if (!isNaN(parsed) && parsed >= 1000) return Math.round(parsed);
+        return undefined;
+      };
 
       for (let i = headerRowIndex + 1; i < rawData.length; i++) {
         const row = rawData[i];
-        if (!row || !row[titleIdx]) continue;
 
-        const title = row[titleIdx].toString().trim();
-        const id_code = row[codeIdx]?.toString().trim();
-        const salaryVal = row[medianIdx];
+        // Safely check if row exists and the location column actually has data
+        if (!row || row[locIdx] == null || String(row[locIdx]).trim() === '') continue;
 
-        // ONS uses 'x', '..', or ':' for suppressed/missing data
-        if (typeof salaryVal !== 'number' || isNaN(salaryVal)) continue;
+        const location = String(row[locIdx]).trim();
+        const id_code =
+          codeIdx > -1 && row[codeIdx] != null ? String(row[codeIdx]).trim() : undefined;
 
-        // Filter out non-annual data (e.g. hourly/weekly) if mixed in or wrong file uploaded
-        if (salaryVal < 1000) continue;
+        const salaryVal = parseUKVal(row[medianIdx]);
+        if (salaryVal === undefined) continue;
 
-        normalizedData.push({
-          title,
-          location: 'United Kingdom',
+        const record: SalaryRecord = {
+          title: 'All', // Region aggregates default to 'All'
+          location,
           year: targetYear,
-          salary: Math.round(salaryVal),
+          salary: salaryVal,
           country: 'UK',
           id_code,
           period: 'year'
-        });
+        };
+
+        const meanVal = parseUKVal(meanIdx > -1 ? row[meanIdx] : undefined);
+        if (meanVal) record.avg_salary = meanVal;
+
+        const p10 = parseUKVal(pct10Idx > -1 ? row[pct10Idx] : undefined);
+        const p25 = parseUKVal(pct25Idx > -1 ? row[pct25Idx] : undefined);
+        const p75 = parseUKVal(pct75Idx > -1 ? row[pct75Idx] : undefined);
+        const p90 = parseUKVal(pct90Idx > -1 ? row[pct90Idx] : undefined);
+
+        if (p10) record.salary_10_pt = p10;
+        if (p25) record.salary_25_pt = p25;
+        if (p75) record.salary_75_pt = p75;
+        if (p90) record.salary_90_pt = p90;
+
+        normalizedData.push(record);
       }
     } else {
       // USA (BLS OEWS) Logic
@@ -120,6 +159,7 @@ export default defineEventHandler(async (event) => {
         });
       }
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
       if (!sheet) {
         throw createError({
           statusCode: 422,
@@ -128,48 +168,75 @@ export default defineEventHandler(async (event) => {
       }
 
       const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
-
       const headers = rawData[0] || [];
+
       const titleIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'OCC_TITLE');
       const salaryIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'A_MEDIAN');
+      const meanIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'A_MEAN');
       const codeIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'OCC_CODE');
       const locIdx = headers.findIndex((h) => h?.toString().toUpperCase() === 'AREA_TITLE');
 
-      if (titleIdx === -1 || salaryIdx === -1) {
+      // Percentile Columns
+      const pct10Idx = headers.findIndex((h) => h?.toString().toUpperCase() === 'A_PCT10');
+      const pct25Idx = headers.findIndex((h) => h?.toString().toUpperCase() === 'A_PCT25');
+      const pct75Idx = headers.findIndex((h) => h?.toString().toUpperCase() === 'A_PCT75');
+      const pct90Idx = headers.findIndex((h) => h?.toString().toUpperCase() === 'A_PCT90');
+
+      if (titleIdx === -1 || salaryIdx === -1 || locIdx === -1) {
         throw createError({
           statusCode: 422,
-          message: 'Could not detect USA (BLS) header structure (OCC_TITLE/A_MEDIAN).'
+          message: 'Could not detect USA (BLS) header structure (OCC_TITLE/A_MEDIAN/AREA_TITLE).'
         });
       }
 
+      // Helper to clean BLS numeric strings and handle suppression (*, #, null, undefined)
+      const parseUSVal = (val: any) => {
+        if (val == null || val === '*' || val === '#') return undefined;
+        const parsed =
+          typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) : parseFloat(val);
+        if (!isNaN(parsed)) return Math.round(parsed);
+        return undefined;
+      };
+
       for (let i = 1; i < rawData.length; i++) {
         const row = rawData[i];
-        if (!row || !row[titleIdx]) continue;
 
-        const title = row[titleIdx].toString().trim();
-        const id_code = row[codeIdx]?.toString().trim();
-        const location = locIdx > -1 ? row[locIdx]?.toString().trim() : 'USA';
-        const salaryRaw = row[salaryIdx];
+        // Ensure the row exists and both Title and Location cells have non-null string data
+        if (!row || row[titleIdx] == null || String(row[titleIdx]).trim() === '') continue;
+        if (row[locIdx] == null || String(row[locIdx]).trim() === '') continue;
 
-        // BLS uses '*' for missing and '#' for >$239k. We skip '*' and treat '#' as the cap or skip.
-        if (salaryRaw === '*' || salaryRaw === '#') continue;
+        const title = String(row[titleIdx]).trim();
+        const location = String(row[locIdx]).trim(); // Explicitly use AREA_TITLE for location
+        const id_code =
+          codeIdx > -1 && row[codeIdx] != null ? String(row[codeIdx]).trim() : undefined;
 
-        const salary =
-          typeof salaryRaw === 'string'
-            ? parseFloat(salaryRaw.replace(/,/g, ''))
-            : parseFloat(salaryRaw);
+        const salaryVal = parseUSVal(row[salaryIdx]);
+        if (salaryVal === undefined) continue;
 
-        if (!isNaN(salary)) {
-          normalizedData.push({
-            title,
-            location,
-            year: targetYear,
-            salary: Math.round(salary),
-            country: 'USA',
-            id_code,
-            period: 'year'
-          });
-        }
+        const record: SalaryRecord = {
+          title,
+          location,
+          year: targetYear,
+          salary: salaryVal,
+          country: 'USA',
+          id_code,
+          period: 'year'
+        };
+
+        const meanVal = parseUSVal(meanIdx > -1 ? row[meanIdx] : undefined);
+        if (meanVal) record.avg_salary = meanVal;
+
+        const p10 = parseUSVal(pct10Idx > -1 ? row[pct10Idx] : undefined);
+        const p25 = parseUSVal(pct25Idx > -1 ? row[pct25Idx] : undefined);
+        const p75 = parseUSVal(pct75Idx > -1 ? row[pct75Idx] : undefined);
+        const p90 = parseUSVal(pct90Idx > -1 ? row[pct90Idx] : undefined);
+
+        if (p10) record.salary_10_pt = p10;
+        if (p25) record.salary_25_pt = p25;
+        if (p75) record.salary_75_pt = p75;
+        if (p90) record.salary_90_pt = p90;
+
+        normalizedData.push(record);
       }
     }
 
