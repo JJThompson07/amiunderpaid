@@ -30,25 +30,25 @@
     "copied": "Copied!",
     "copy": "Copy to Clipboard",
     "salary-negotiator": {
-      "title": "Master Negotiations",
-      "strapline": "Knowing your value is only the first step",
-      "body-html": "We've partnered with {name} to help you bridge the gap. Master the exact scripts and strategies used by top executives to secure the pay you actually deserve.",
+      "title": "Master Salary Negotiations",
+      "strapline": "Knowing your worth is just the beginning",
+      "body-html": "We've partnered with {name} to help you secure the compensation you deserve. Learn the exact scripts used by top US executives to maximize their offers.",
       "name": "The Salary Negotiator",
-      "cta": "Explore Courses"
+      "cta": "View Courses"
     },
     "purple-cv": {
-      "title": "Career Progression",
-      "strapline": "Templates alone don't win interviews",
-      "body-html": "Position yourself for your next big move with a professionally written CV from {name}. Their experts design documents specifically to beat the algorithms and stand out to recruiters.",
+      "title": "Resume Writing Services",
+      "strapline": "A standard template won't land the interview",
+      "body-html": "Position yourself for your next big career move with a professionally written resume. Experts design documents specifically to beat ATS algorithms and stand out to US recruiters.",
       "name": "PurpleCV",
-      "cta": "PurpleCV"
+      "cta": "Get a Free Resume Review"
     },
     "cv-library": {
-      "title": "Get Discovered",
-      "strapline": "Find a job that works for you, fast",
-      "body-html": "Register your free CV on the UK's leading job site ({name}) and let top employers come to you - it's fast, easy and free.",
+      "title": "Get Discovered by Recruiters",
+      "strapline": "Find a job that pays what you're worth",
+      "body-html": "Upload your resume to leading US job boards and let top employers come to you—it's fast, easy, and free.",
       "name": "CV-Library",
-      "cta": "Register CV"
+      "cta": "Upload Resume"
     },
     "custom": {
       "title": "Email Template",
