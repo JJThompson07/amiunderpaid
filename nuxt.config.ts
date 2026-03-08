@@ -85,7 +85,7 @@ export default defineNuxtConfig({
         language: 'en-GB',
         file: 'en-GB/index.ts',
         // Update the dev domain here
-        domains: isDev ? ['ami.localhost:3000'] : ['www.amiunderpaid.co.uk']
+        domains: isDev ? ['ami-uk.localhost:3000'] : ['www.amiunderpaid.co.uk']
       },
       {
         code: 'en-US',
@@ -94,7 +94,7 @@ export default defineNuxtConfig({
         file: 'en-US/index.ts',
         // Update both dev domains here
         domains: isDev
-          ? ['ami.localhost:3000', 'bmr.localhost:3000']
+          ? ['ami-us.localhost:3000', 'bmr.localhost:3000']
           : ['www.amiunderpaid.com', 'www.benchmarkmyrole.com']
       }
     ],

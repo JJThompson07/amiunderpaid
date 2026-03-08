@@ -8,6 +8,8 @@ export default defineEventHandler(async (event) => {
   const isBenchmark = origin.includes('benchmarkmyrole');
   const routePrefix = isBenchmark ? '/benchmark' : '/salary';
   const db = useAdminFirestore();
+  const isAmIUnderpaidUS = origin.includes('amiunderpaid.com');
+  const isAmIUnderpaidUK = origin.includes('amiunderpaid.co.uk');
 
   const slugify = (text: string) =>
     text
@@ -39,8 +41,13 @@ export default defineEventHandler(async (event) => {
   const dynamicRoutes = jobsSnapshot.docs.map((doc) => {
     const data = doc.data();
 
-    const titleSlug = slugify(data.title);
     const country = data.country || 'UK'; // Default if missing
+
+    // Filter out jobs that don't belong to this domain
+    if (isAmIUnderpaidUS && country !== 'USA') return null;
+    if (isAmIUnderpaidUK && country !== 'UK') return null;
+
+    const titleSlug = slugify(data.title);
 
     // Check if a specific location exists to build deeper URLs
     if (data.location) {

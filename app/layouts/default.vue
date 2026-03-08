@@ -129,9 +129,17 @@ useHead({
 
       if (isProd) {
         i18nLinks.push(
-          { rel: 'alternate', hreflang: 'en-GB', href: `https://amiunderpaid.co.uk${cleanPath}` },
-          { rel: 'alternate', hreflang: 'en-US', href: `https://amiunderpaid.com${cleanPath}` },
-          { rel: 'alternate', hreflang: 'x-default', href: `https://amiunderpaid.com${cleanPath}` }
+          {
+            rel: 'alternate',
+            hreflang: 'en-GB',
+            href: `https://www.amiunderpaid.co.uk${cleanPath}`
+          },
+          { rel: 'alternate', hreflang: 'en-US', href: `https://www.amiunderpaid.com${cleanPath}` },
+          {
+            rel: 'alternate',
+            hreflang: 'x-default',
+            href: `https://www.amiunderpaid.com${cleanPath}`
+          }
         );
       }
     }

@@ -7,10 +7,14 @@
       >
     </label>
     <div class="relative flex">
-      <div v-if="icon" class="absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+      <div
+        v-if="icon"
+        class="absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none flex gap-1 items-center">
         <component
           :is="icon"
+          v-if="!prefix || !value"
           class="w-5 h-5 text-slate-400 group-hover:text-primary-500 group-focus-within:text-primary-500 transition-colors" />
+        <span v-if="prefix && !!value" class="font-medium text-primary-500 p-2">{{ prefix }}</span>
       </div>
       <input
         v-model="value"
@@ -50,6 +54,10 @@ const props = defineProps({
     default: ''
   },
   label: {
+    type: String,
+    default: ''
+  },
+  prefix: {
     type: String,
     default: ''
   },

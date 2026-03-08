@@ -5,14 +5,8 @@
     "placeholder": "e.g. Software Engineer"
   },
   "location": {
-    "label": {
-      "usa": "State",
-      "uk": "City"
-    },
-    "placeholder": {
-      "usa": "e.g. New York",
-      "uk": "e.g. London"
-    }
+    "label": "State",
+    "placeholder": "e.g. New York"
   },
   "salary": {
     "label": "Current Base Salary"
@@ -21,6 +15,9 @@
     "full-time": "Full Time",
     "part-time": "Part Time",
     "label": "Schedule"
+  },
+  "ami": {
+    "switch-site": "Looking for UK salaries? Switch to our UK site"
   },
   "contract": {
     "contract": "Contractor",
@@ -35,6 +32,16 @@
       "label": "Role Title",
       "helper": "Type your exact role title, we will try to find the best comparison",
       "placeholder": "e.g. Software Engineer"
+    },
+    "location": {
+      "label": {
+        "usa": "State",
+        "uk": "City"
+      },
+      "placeholder": {
+        "usa": "e.g. New York",
+        "uk": "e.g. London"
+      }
     }
   }
 }
