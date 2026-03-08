@@ -35,6 +35,7 @@ const isUSA = useState<boolean>('landing-is-usa', () => url.hostname.includes('.
 const title = computed(() => t('meta.index.title'));
 const description = computed(() => t('meta.index.description'));
 
+// Cleaned up SEO Meta block
 useSeoMeta({
   title,
   description,
@@ -45,16 +46,13 @@ useSeoMeta({
 });
 
 useHead({
-  // The @nuxtjs/i18n module automatically handles 'rel: alternate' and canonical links
-  // if 'seo: true' or 'addSeoAttributes: true' is configured,
-  // but you can still add your JSON-LD manually:
   script: [
     {
       type: 'application/ld+json',
       innerHTML: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        name: $t('meta.index.title'),
+        name: t('meta.index.name'),
         url: url.origin,
         description: description.value
       })

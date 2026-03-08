@@ -111,13 +111,31 @@ useHead({
     dir: computed(() => i18nHead.value.htmlAttrs?.dir as 'ltr' | 'rtl' | 'auto' | undefined)
   },
   link: computed(() => {
-    // 1. Extract the links Nuxt i18n generates (like hreflang alternates)
-    // 2. Filter out any rogue canonicals it tries to inject
-    const i18nLinks = (i18nHead.value.link || []).filter((l) => l.rel !== 'canonical');
+    // 1. Extract the links Nuxt i18n generates, but filter out rogue canonicals
+    let i18nLinks = (i18nHead.value.link || []).filter((l) => l.rel !== 'canonical');
+
+    const cleanPath = route.path === '/' ? '' : route.path;
+
+    // 2. Inject explicit multi-domain logic exclusively for Am I Underpaid
+    if ($siteBrand === 'amiunderpaid') {
+      // Remove i18n's generated alternates to prevent conflicting rules on this brand
+      i18nLinks = i18nLinks.filter((l) => l.rel !== 'alternate');
+
+      const isProd = url.hostname === 'amiunderpaid.com' || url.hostname === 'amiunderpaid.co.uk';
+
+      if (isProd) {
+        i18nLinks.push(
+          { rel: 'alternate', hreflang: 'en-GB', href: `https://amiunderpaid.co.uk${cleanPath}` },
+          { rel: 'alternate', hreflang: 'en-US', href: `https://amiunderpaid.com${cleanPath}` },
+          { rel: 'alternate', hreflang: 'x-default', href: `https://amiunderpaid.com${cleanPath}` }
+        );
+      }
+    }
 
     return [
       ...i18nLinks,
-      // 3. Force the absolute, correct Canonical URL globally!
+      // 3. Force the absolute, correct Canonical URL globally
+      // (url.origin ensures the canonical matches the domain the user is actually visiting)
       { rel: 'canonical', href: `${url.origin}${route.path}` },
       { rel: 'icon', type: 'image/x-icon', href: `/${$siteBrand}-favicon.ico` }
     ];
