@@ -5,7 +5,11 @@
       class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b bg-white/80 backdrop-blur-md border-slate-200/50">
       <div class="flex flex-wrap items-center justify-between min-h-16 px-4 md:px-8 py-2">
         <!-- Logo -->
-        <NuxtLink href="/" class="flex items-center gap-2 absolute" @click="openMenu = false">
+        <NuxtLink
+          href="/"
+          class="flex items-center gap-2 absolute"
+          :title="$t('navbar.home')"
+          @click="openMenu = false">
           <div
             class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none rounded-xl bg-slate-100/50">
             <img :src="`/${$siteBrand}-logo.png`" class="h-12 w-12" :alt="$siteBrand" />
