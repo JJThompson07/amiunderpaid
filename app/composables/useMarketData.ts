@@ -41,7 +41,7 @@ export const useMarketData = () => {
   // Flag indicating if we failed to find a specific role and fell back to the generic "Professional" benchmark
   const isGenericFallback = useState<boolean>('market_generic_fallback', () => false);
 
-  // Flag indicating if we failed to find a specific role and fell back to the generic "Professional" benchmark
+  // Flag for median salary being used instead of average
   const isMedian = useState<boolean>('market_avg_is_median', () => false);
 
   // Stores a list of potential matches if the search term is too broad (e.g., returns multiple different SOC groups)
