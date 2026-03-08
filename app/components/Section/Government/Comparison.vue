@@ -30,10 +30,6 @@
       </span>
     </template>
 
-    <AmIButton v-if="showButton" class="w-max text-2xs shadow-md" @click="$emit('user-select')">{{
-      $t('buttons.not-best-match')
-    }}</AmIButton>
-
     <template #verdict>
       <LazySectionSalaryVerdict
         v-if="userSalary > 0"
@@ -46,14 +42,26 @@
     </template>
 
     <template #footer>
-      <LazySectionGovernmentSalaryVisualizer
-        :user-salary="userSalary"
-        :market-average="marketAverage"
-        :market-low="marketLow"
-        :market-high="marketHigh"
-        :currency-symbol="currencySymbol"
-        :diff-percent="diffPercent"
-        :is-underpaid="isUnderpaid" />
+      <div class="flex flex-col gap-2">
+        <LazySectionGovernmentSalaryVisualizer
+          :user-salary="userSalary"
+          :market-average="marketAverage"
+          :market-low="marketLow"
+          :market-high="marketHigh"
+          :currency-symbol="currencySymbol"
+          :diff-percent="diffPercent"
+          :is-underpaid="isUnderpaid" />
+        <AmIButton
+          v-if="!isVerified"
+          class="w-max text-2xs shadow-md ml-auto"
+          :title="$t('buttons.not-best-match')"
+          bg-colour="bg-amber-600"
+          text-colour="text-white"
+          animation-colour="bg-amber-700"
+          @click="$emit('user-select')"
+          >{{ $t('buttons.not-best-match') }}</AmIButton
+        >
+      </div>
     </template>
   </CardResult>
 </template>
@@ -77,7 +85,7 @@ const props = defineProps<{
   isUnderpaid: boolean;
   marketLow: number;
   marketHigh: number;
-  showButton: boolean;
+  isVerified: boolean;
 }>();
 
 defineEmits(['user-select']);

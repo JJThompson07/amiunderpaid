@@ -72,7 +72,7 @@
               :is-underpaid="isUnderpaid"
               :market-low="marketLow"
               :market-high="marketHigh"
-              :show-button="!userSelected && !showUserSelection"
+              :is-verified="isAdminVerified"
               @user-select="showUserSelection = true" />
           </div>
 
@@ -302,6 +302,17 @@ const jobListings = computed(() => {
   return (jobsData.value?.results || []).sort((a: AdzunaJob, b: AdzunaJob) => {
     return b.salary_max - a.salary_max;
   });
+});
+
+const isAdminVerified = computed(() => {
+  // If user selected it this session
+  if (userSelected.value) return true;
+
+  if (govId.value) return true;
+
+  // If useAdzuna found a match in the DB that isn't flagged as "automatic"
+  // (You may need to update useAdzuna to return the is_automatic status from the DB)
+  return !!cachedGovIdCode.value;
 });
 
 // 1. Create a unique key for caching based on all parameters

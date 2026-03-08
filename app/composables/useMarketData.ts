@@ -5,6 +5,11 @@ export interface SalaryBenchmark {
   location: string;
   country: string;
   salary: number;
+  avg_salary?: number;
+  salary_10_pt?: number;
+  salary_25_pt?: number;
+  salary_75_pt?: number;
+  salary_90_pt?: number;
   year: number;
   period?: string;
   id_code?: string;
@@ -21,6 +26,7 @@ export const useMarketData = () => {
   // --- Reactive State for Results ---
   // We use Nuxt's useState to ensure the data is preserved across SSR and client hydration
   const marketAverage = useState<number>('market_average', () => 0);
+  const marketMedian = useState<number>('market_median', () => 0);
   const marketHigh = useState<number>('market_high', () => 0);
   const marketLow = useState<number>('market_low', () => 0);
   const marketDataYear = useState<number>('market_year', () => 0);
@@ -34,6 +40,9 @@ export const useMarketData = () => {
 
   // Flag indicating if we failed to find a specific role and fell back to the generic "Professional" benchmark
   const isGenericFallback = useState<boolean>('market_generic_fallback', () => false);
+
+  // Flag for median salary being used instead of average
+  const isMedian = useState<boolean>('market_avg_is_median', () => false);
 
   // Stores a list of potential matches if the search term is too broad (e.g., returns multiple different SOC groups)
   const ambiguousMatches = useState<any[]>('market_ambiguous_matches', () => []);
@@ -57,6 +66,7 @@ export const useMarketData = () => {
     matchedLocation.value = '';
     matchedIdCode.value = undefined;
     isGenericFallback.value = false;
+    isMedian.value = false;
     ambiguousMatches.value = [];
     regionalData.value = null;
   };
@@ -65,10 +75,16 @@ export const useMarketData = () => {
    * Hydrates the reactive state with the data from a successful Algolia benchmark match.
    */
   const processRecord = async (record: SalaryBenchmark) => {
-    marketAverage.value = record.salary;
+    const average = record.avg_salary || record.salary;
+    const calcHigh = record.salary_90_pt || record.salary_75_pt || Math.round(average * 1.3);
+    const calcLow = record.salary_10_pt || record.salary_25_pt || Math.round(average * 0.75);
+
+    marketAverage.value = average;
+    marketMedian.value = record.salary;
+    isMedian.value = !record.avg_salary;
     // Calculate high/low bounds (currently 30% above and 25% below the mean)
-    marketHigh.value = Math.round(record.salary * 1.3);
-    marketLow.value = Math.round(record.salary * 0.75);
+    marketHigh.value = calcHigh;
+    marketLow.value = calcLow;
     marketDataYear.value = record.year;
     matchedTitle.value = record.title;
     marketPeriod.value = record.period || 'year';
@@ -356,6 +372,7 @@ export const useMarketData = () => {
   return {
     loading,
     marketAverage,
+    marketMedian,
     marketHigh,
     marketLow,
     marketDataYear,
@@ -364,6 +381,7 @@ export const useMarketData = () => {
     matchedLocation,
     matchedIdCode, // Exposed so UI can trigger background cache updates
     isGenericFallback,
+    isMedian,
     ambiguousMatches,
     regionalData,
     fetchUkMarketData,
