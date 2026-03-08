@@ -110,6 +110,10 @@
             {{ $t('sections.jobs.by-adzuna') }}
           </h3>
 
+          <span class="text-slate-500 text-2xs uppercase">
+            {{ $t('sections.jobs.caption') }}
+          </span>
+
           <AmICarousel>
             <div
               v-for="listing in jobListings"

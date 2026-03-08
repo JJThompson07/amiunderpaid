@@ -17,6 +17,20 @@
   },
   "role": {
     "salary": "Estimated Salary",
-    "view-job": "View Role"
+    "view-job": "View Role",
+    "amiunderpaid": {
+      "compare": {
+        "no-change": "No Change",
+        "pay-cut": "Pay Cut",
+        "pay-rise": "Pay Rise"
+      }
+    },
+    "benchmarkmyrole": {
+      "compare": {
+        "no-change": "Competitive",
+        "pay-cut": "Lower",
+        "pay-rise": "Higher"
+      }
+    }
   }
 }
