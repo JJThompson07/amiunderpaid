@@ -55,12 +55,14 @@
             <AmIAutocompleteInput
               v-model="location"
               :label="
-                country === 'USA' ? $t('search.location.label.usa') : $t('search.location.label.uk')
+                country === 'USA'
+                  ? $t('search.benchmark.location.label.usa')
+                  : $t('search.benchmark.location.label.uk')
               "
               :placeholder="
                 country === 'USA'
-                  ? $t('search.location.placeholder.usa')
-                  : $t('search.location.placeholder.uk')
+                  ? $t('search.benchmark.location.placeholder.usa')
+                  : $t('search.benchmark.location.placeholder.uk')
               "
               :icon="MapPin"
               :options="locationOptions"

@@ -8,9 +8,7 @@
       <SectionAmIHero />
 
       <!-- The Calculator Component -->
-      <SectionAmISalarySearch
-        :initial-country="isUSA ? 'USA' : 'UK'"
-        @country-change="($event) => (isUSA = $event === 'USA')" />
+      <SectionAmISalarySearch />
 
       <!-- Privacy Note section -->
       <SectionSharedPrivacyNote />

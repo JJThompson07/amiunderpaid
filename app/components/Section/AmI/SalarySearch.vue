@@ -2,11 +2,13 @@
   <div class="relative w-full max-w-5xl mx-auto mt-8">
     <div class="flex justify-between items-center gap-4 mb-6">
       <div class="flex-1"></div>
-      <AmITabs
-        v-model="country"
-        :options="countryOptions"
-        round
-        @update:model-value="emit('country-change', country)" />
+
+      <AmIButton class="text-xs" @click="handleChangeSite(alternateSiteUrl)">
+        <div class="flex flex-row gap-1 items-center">
+          {{ $t('search.ami.switch-site') }}
+          <ArrowRightIcon class="w-4 h-4" />
+        </div>
+      </AmIButton>
       <div class="flex flex-1 justify-end">
         <AmIButton v-if="!showCalc" title="Salary converter" @click="showCalc = true"
           ><CalculatorIcon class="w-5 h-5 text-slate-50"
@@ -14,7 +16,7 @@
 
         <LazyModalSalaryConverter
           v-if="showCalc"
-          :country="country"
+          :country="currentCountry"
           :currency-symbol="currencySymbol"
           @close="showCalc = false" />
       </div>
@@ -62,14 +64,8 @@
           <div class="flex-1">
             <AmIAutocompleteInput
               v-model="location"
-              :label="
-                country === 'USA' ? $t('search.location.label.usa') : $t('search.location.label.uk')
-              "
-              :placeholder="
-                country === 'USA'
-                  ? $t('search.location.placeholder.usa')
-                  : $t('search.location.placeholder.uk')
-              "
+              :label="$t('search.location.label')"
+              :placeholder="$t('search.location.placeholder')"
               :icon="MapPin"
               :options="locationOptions"
               optional
@@ -111,22 +107,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { Search, MapPin, CalculatorIcon, Wallet } from 'lucide-vue-next';
+import { ref, computed } from 'vue';
+import { Search, MapPin, CalculatorIcon, Wallet, ArrowRightIcon } from 'lucide-vue-next';
 import type { SearchClient } from 'algoliasearch';
 
-const props = defineProps<{
-  initialCountry?: string;
-}>();
-
-const emit = defineEmits(['country-change']);
-
 const { t } = useI18n();
-
-const countryOptions = [
-  { label: 'UK', value: 'UK' },
-  { label: 'USA', value: 'USA' }
-];
 
 const scheduleOptions = [
   { label: t('search.time.full-time'), value: 'full-time' },
@@ -141,7 +126,7 @@ const contractOptions = [
 ];
 
 const url = useRequestURL();
-const country = ref(props.initialCountry || (url.hostname.includes('.com') ? 'USA' : 'UK'));
+
 const schedule = ref('full-time');
 const contract = ref('permanent');
 
@@ -160,21 +145,20 @@ const labelToIdMap = ref<Record<string, string>>({});
 
 const { trackSearch } = useAnalytics();
 
-const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
+const isUKSite = computed(() => url.hostname.endsWith('.co.uk'));
+const currentCountry = computed(() => (isUKSite.value ? 'UK' : 'USA'));
+
+const currencySymbol = computed(() => (currentCountry.value === 'USA' ? '$' : '£'));
+
+const alternateSiteUrl = computed(() =>
+  isUKSite.value ? 'https://www.amiunderpaid.com' : 'https://www.amiunderpaid.co.uk'
+);
 
 // ** Period Options Logic **
 // Restricts options based on selected country
 const periodOptions = computed(() => {
   const opts = [{ label: '/ yr', value: 'year' }];
   return opts;
-});
-
-// Reset period to 'year' if switching to USA
-watch(country, (newVal) => {
-  if (newVal === 'USA') {
-    period.value = 'year';
-  }
-  titleOptions.value = [];
 });
 
 const fetchUKTitles = async (searchTerm: string) => {
@@ -270,7 +254,7 @@ const fetchTitles = useDebounceFn(async (val: string) => {
   const searchTerm = val.trim();
 
   try {
-    if (country.value === 'UK') {
+    if (currentCountry.value === 'UK') {
       titleOptions.value = await fetchUKTitles(searchTerm);
     } else {
       titleOptions.value = await fetchUSATitles(searchTerm);
@@ -291,7 +275,7 @@ const fetchLocations = useDebounceFn(async (val: string) => {
   fetching.value = true;
 
   try {
-    if (country.value === 'UK') {
+    if (currentCountry.value === 'UK') {
       locationOptions.value = await fetchUKLocations(val);
     } else {
       locationOptions.value = await fetchUSALocations(val);
@@ -302,6 +286,10 @@ const fetchLocations = useDebounceFn(async (val: string) => {
     fetching.value = false;
   }
 }, 300);
+
+const handleChangeSite = (url: string) => {
+  window.location.href = url;
+};
 
 const handleSearch = async () => {
   loading.value = true;
@@ -318,14 +306,14 @@ const handleSearch = async () => {
   };
 
   const titleSlug = slugify(cleanTitle);
-  const countrySlug = country.value.toLowerCase();
+  const countrySlug = currentCountry.value.toLowerCase();
   const locationSlug = location.value ? slugify(location.value) : '';
 
   const path = locationSlug
     ? `/salary/${titleSlug}/${countrySlug}/${locationSlug}`
     : `/salary/${titleSlug}/${countrySlug}`;
 
-  trackSearch(cleanTitle.trim(), country.value, location.value, salary.value);
+  trackSearch(cleanTitle.trim(), currentCountry.value, location.value, salary.value);
 
   await navigateTo({
     path,
