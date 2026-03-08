@@ -5,8 +5,8 @@
       <div class="ami-role-describe w-full">
         <h3 class="font-semibold line-clamp-1">{{ title }}</h3>
         <div class="flex flex-row gap-1 justify-between items-center w-full text-slate-500">
-          <span class="text-2xs flex-1">{{ company }}</span>
-          <span class="text-2xs flex gap-1 items-center"
+          <span class="text-2xs flex-1 line-clamp-1">{{ company }}</span>
+          <span class="text-2xs flex gap-1 items-center line-clamp-1"
             ><MapPinIcon class="w-3 h-3" />{{ location }}</span
           >
         </div>
@@ -33,10 +33,10 @@
                 "
                 >{{
                   salaryMaxComparison === 0
-                    ? $t('card.role.compare.no-change')
+                    ? $t(`card.role.${$siteBrand}.compare.no-change`)
                     : salaryMaxComparison < 0
-                      ? $t('card.role.compare.pay-cut')
-                      : $t('card.role.compare.pay-rise')
+                      ? $t(`card.role.${$siteBrand}.compare.pay-cut`)
+                      : $t(`card.role.${$siteBrand}.compare.pay-rise`)
                 }}
               </span>
             </div>
@@ -127,6 +127,7 @@ const props = defineProps({
 });
 
 const { trackViewRole } = useAnalytics();
+const { $siteBrand } = useNuxtApp();
 
 const hasRange = computed<boolean>(() => {
   return (
@@ -135,8 +136,12 @@ const hasRange = computed<boolean>(() => {
   );
 });
 
-const salaryMaxComparison = computed(() => {
+const salaryMaxComparison = computed<number>(() => {
   if (!props.userSalary) return 0;
+
+  if ($siteBrand === 'benchmarkmyrole') {
+    return getRawUncappedDiffPercentage(props.userSalary, props.salaryMax);
+  }
 
   return getRawUncappedDiffPercentage(props.salaryMax, props.userSalary);
 });
