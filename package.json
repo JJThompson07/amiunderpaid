@@ -11,6 +11,7 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix && prettier --write .",
+    "lint:i18n": "tsx scripts/check-i18n.ts",
     "format": "prettier --write ."
   },
   "dependencies": {
@@ -40,6 +41,7 @@
     "eslint": "^9.39.3",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.1",
-    "tailwindcss": "^4.2.0"
+    "tailwindcss": "^4.2.0",
+    "tsx": "^4.21.0"
   }
 }

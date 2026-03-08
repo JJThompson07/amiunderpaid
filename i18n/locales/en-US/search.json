@@ -19,11 +19,13 @@
   },
   "time": {
     "full-time": "Full Time",
-    "part-time": "Part Time"
+    "part-time": "Part Time",
+    "label": "Contract Time"
   },
   "contract": {
     "contract": "Contract",
-    "permanent": "Permanent"
+    "permanent": "Permanent",
+    "label": "Contract Type"
   },
   "benchmark": {
     "salary": {
