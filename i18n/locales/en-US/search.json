@@ -24,5 +24,15 @@
   "contract": {
     "contract": "Contract",
     "permanent": "Permanent"
+  },
+  "benchmark": {
+    "salary": {
+      "label": "Target Salary"
+    },
+    "title": {
+      "label": "Role Title",
+      "helper": "Type your exact role title, we will try to find the best comparison",
+      "placeholder": "e.g. Software Engineer"
+    }
   }
 }
