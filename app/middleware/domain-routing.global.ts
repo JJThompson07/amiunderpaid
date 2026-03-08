@@ -1,7 +1,23 @@
-export default defineNuxtRouteMiddleware((to) => {
-  const { $siteBrand } = useNuxtApp();
+import { defineNuxtRouteMiddleware, useRequestURL, useNuxtApp } from '#imports';
 
-  // 1. Prevent Benchmark My Role from crawling/loading /salary/...
+export default defineNuxtRouteMiddleware((to) => {
+  const { $siteBrand, $i18n } = useNuxtApp();
+  const url = useRequestURL();
+  const hostname = url.hostname;
+
+  // 1. Force Locale based on TLD (Top Level Domain)
+  // This ensures .com defaults to en-US and .co.uk defaults to en-GB
+  if (hostname.endsWith('.co.uk')) {
+    if ($i18n.locale.value !== 'en-GB') {
+      $i18n.setLocale('en-GB');
+    }
+  } else if (hostname.endsWith('.com')) {
+    if ($i18n.locale.value !== 'en-US') {
+      $i18n.setLocale('en-US');
+    }
+  }
+
+  // 2. Prevent Benchmark My Role from crawling/loading /salary/...
   if ($siteBrand === 'benchmarkmyrole' && to.path.startsWith('/salary')) {
     const newPath = to.path.replace('/salary', '/benchmark');
     return navigateTo(
@@ -10,7 +26,7 @@ export default defineNuxtRouteMiddleware((to) => {
     );
   }
 
-  // 2. Prevent Am I Underpaid from crawling/loading /benchmark/...
+  // 3. Prevent Am I Underpaid from crawling/loading /benchmark/...
   if ($siteBrand === 'amiunderpaid' && to.path.startsWith('/benchmark')) {
     const newPath = to.path.replace('/benchmark', '/salary');
     return navigateTo({ path: newPath, query: to.query }, { redirectCode: 301 });
