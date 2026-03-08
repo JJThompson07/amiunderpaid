@@ -91,7 +91,8 @@ const navLinks = [
   {
     to: '/',
     label: $t('navbar.home'),
-    mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400'
+    mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400',
+    mobileOnly: false
   },
   {
     to: '/how-it-works',
