@@ -87,9 +87,8 @@
           </div>
         </div>
 
-        <div>
-          <h3
-            class="relative text-xl md:text-2xl text-slate-900 font-bold sm:whitespace-nowrap mb-2">
+        <div v-if="jobListings.length" class="flex flex-col gap-2">
+          <h3 class="relative text-xl md:text-2xl text-slate-900 font-bold sm:whitespace-nowrap">
             <a
               :href="$t(`sections.jobs.href.${country.toLowerCase()}`)"
               class="text-primary-500 hover:text-primary-700 transition-colors duration-500 ease-in-out"
