@@ -1,18 +1,18 @@
 {
   "heading": "How It Works",
-  "description": "We calculate your salary potential in three simple steps.",
+  "description": "Discover your true earning potential in three simple steps.",
   "step": {
     "1": {
-      "heading": "Enter Your Role",
-      "body": "Tell us your job title, location, and current salary. Our smart autocomplete helps you match standard industry roles for better accuracy."
+      "heading": "Enter Your Position",
+      "body": "Provide your job title, state or city, and current base pay. Our smart autocomplete will match you to federal occupational classifications for maximum accuracy."
     },
     "2": {
-      "heading": "We Check the Data",
-      "body": "We query our live database of over 140,000+ recent salary benchmarks, sourced from government data (BLS) as well as live job listings (Adzuna)."
+      "heading": "We Analyze the Market",
+      "body": "We instantly query our database of over 140,000 real-time compensation benchmarks, blending federal statistics (BLS) with active job board listings."
     },
     "3": {
-      "heading": "Get Your Salary Comparison",
-      "body": "Find out instantly if you are underpaid, fairly paid, or leading the market. We'll even give you a custom script to negotiate a raise."
+      "heading": "Review Your Compensation",
+      "body": "Immediately see if you are underpaid, compensated fairly, or leading the pack. We will even provide you with a custom email template to help negotiate a raise."
     }
   }
 }
