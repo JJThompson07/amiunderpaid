@@ -372,6 +372,7 @@ export const useMarketData = () => {
   return {
     loading,
     marketAverage,
+    marketMedian,
     marketHigh,
     marketLow,
     marketDataYear,
@@ -380,6 +381,7 @@ export const useMarketData = () => {
     matchedLocation,
     matchedIdCode, // Exposed so UI can trigger background cache updates
     isGenericFallback,
+    isMedian,
     ambiguousMatches,
     regionalData,
     fetchUkMarketData,
