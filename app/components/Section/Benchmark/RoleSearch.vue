@@ -8,17 +8,7 @@
           :options="countryOptions"
           round
           @update:model-value="emit('country-change', country)" />
-        <div class="flex flex-1 justify-end">
-          <AmIButton v-if="!showCalc" title="Salary converter" @click="showCalc = true"
-            ><CalculatorIcon class="w-5 h-5 text-slate-50"
-          /></AmIButton>
-
-          <LazyModalSalaryConverter
-            v-if="showCalc"
-            :country="country"
-            :currency-symbol="currencySymbol"
-            @close="showCalc = false" />
-        </div>
+        <div class="flex flex-1"></div>
       </div>
     </div>
 
@@ -114,7 +104,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { Search, MapPin, CalculatorIcon, Wallet } from 'lucide-vue-next';
+import { Search, MapPin, Wallet } from 'lucide-vue-next';
 import type { SearchClient } from 'algoliasearch';
 
 const props = defineProps<{
@@ -158,7 +148,6 @@ const loading = ref(false);
 const fetching = ref(false);
 const titleOptions = ref<string[]>([]);
 const locationOptions = ref<string[]>([]);
-const showCalc = ref<boolean>(false);
 
 // Map to temporarily hold the IDs for the selected labels
 const labelToIdMap = ref<Record<string, string>>({});
