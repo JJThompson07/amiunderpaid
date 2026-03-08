@@ -14,7 +14,7 @@
       <SectionSharedPrivacyNote />
 
       <!-- Why section -->
-      <SectionSharedWhy :is-u-s-a="isUSA" />
+      <SectionSharedWhy :is-u-s-a="isUSSite" />
 
       <!-- Trust Badges (Visual only) -->
       <SectionSharedTrustBadges />
@@ -28,7 +28,8 @@
 const { $siteBrand } = useNuxtApp();
 const { t } = useI18n();
 const url = useRequestURL();
-const isUSA = useState<boolean>('landing-is-usa', () => url.hostname.includes('.com'));
+
+const { isUSSite } = useRegion();
 
 const title = computed(() => t('meta.index.title'));
 const description = computed(() => t('meta.index.description'));

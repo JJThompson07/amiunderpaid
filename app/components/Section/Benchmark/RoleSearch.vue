@@ -79,6 +79,7 @@
               :step="10"
               :label="$t('search.benchmark.salary.label')"
               :placeholder="currencySymbol + '55,000'"
+              :prefix="currencySymbol"
               :icon="Wallet"
               optional
               :params="periodOptions" />

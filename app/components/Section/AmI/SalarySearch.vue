@@ -81,6 +81,7 @@
               :step="10"
               :label="$t('search.salary.label')"
               :placeholder="currencySymbol + '55,000'"
+              :prefix="currencySymbol"
               :icon="Wallet"
               optional
               :params="periodOptions" />
@@ -125,7 +126,7 @@ const contractOptions = [
   { label: t('common.all'), value: 'all' }
 ];
 
-const url = useRequestURL();
+const { currentCountry, alternateSiteUrl } = useRegion();
 
 const schedule = ref('full-time');
 const contract = ref('permanent');
@@ -145,14 +146,7 @@ const labelToIdMap = ref<Record<string, string>>({});
 
 const { trackSearch } = useAnalytics();
 
-const isUKSite = computed(() => url.hostname.endsWith('.co.uk'));
-const currentCountry = computed(() => (isUKSite.value ? 'UK' : 'USA'));
-
 const currencySymbol = computed(() => (currentCountry.value === 'USA' ? '$' : '£'));
-
-const alternateSiteUrl = computed(() =>
-  isUKSite.value ? 'https://www.amiunderpaid.com' : 'https://www.amiunderpaid.co.uk'
-);
 
 // ** Period Options Logic **
 // Restricts options based on selected country
