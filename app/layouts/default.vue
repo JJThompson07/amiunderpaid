@@ -136,21 +136,11 @@ useHead({
       }
     }
 
-    // Force strict domain ownership for dynamic salary routes
-    let canonicalBase = url.origin;
-    if ($siteBrand === 'amiunderpaid') {
-      if (route.path.includes('/USA/') || route.path.endsWith('/USA')) {
-        canonicalBase = 'https://www.amiunderpaid.com';
-      } else if (route.path.includes('/UK/') || route.path.endsWith('/UK')) {
-        canonicalBase = 'https://www.amiunderpaid.co.uk';
-      }
-    }
-
     return [
       ...i18nLinks,
       // 3. Force the absolute, correct Canonical URL globally
       // (url.origin ensures the canonical matches the domain the user is actually visiting)
-      { rel: 'canonical', href: `${canonicalBase}${route.path}` },
+      { rel: 'canonical', href: `${url.origin}${route.path}` },
       { rel: 'icon', type: 'image/x-icon', href: `/${$siteBrand}-favicon.ico` }
     ];
   }),
