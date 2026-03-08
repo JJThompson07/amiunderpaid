@@ -78,7 +78,7 @@
           </ul>
         </section>
 
-        <section>
+        <section v-if="$siteBrand !== 'benchmarkmyrole'">
           <h2 class="text-xl font-bold text-slate-900 mb-4">
             {{ $t('privacy-policy.affiliate.heading') }}
           </h2>

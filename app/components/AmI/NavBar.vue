@@ -71,19 +71,23 @@ const adminLinks = [
   },
   {
     to: '/admin/seed',
-    label: $t('navbar.seeder')
+    label: $t('navbar.seeder'),
+    mobileOnly: false
   },
   {
     to: '/admin/coding-index',
-    label: $t('navbar.coding-index')
+    label: $t('navbar.coding-index'),
+    mobileOnly: false
   },
   {
     to: '/admin/adzuna',
-    label: $t('navbar.adzuna-api')
+    label: $t('navbar.adzuna-api'),
+    mobileOnly: false
   },
   {
     to: '/admin/jobs-cache',
-    label: $t('navbar.jobs-cache')
+    label: $t('navbar.jobs-cache'),
+    mobileOnly: false
   }
 ];
 
@@ -92,27 +96,31 @@ const navLinks = [
     to: '/',
     label: $t('navbar.home'),
     mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400',
-    mobileOnly: true
+    mobileOnly: false
   },
   {
     to: '/how-it-works',
     label: $t('navbar.how-it-works'),
-    mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400'
+    mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400',
+    mobileOnly: false
   },
   {
     to: '/data-sources',
     label: $t('navbar.data-sources'),
-    mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400'
+    mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400',
+    mobileOnly: false
   },
   {
     to: '/about',
     label: $t('navbar.about'),
-    mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400'
+    mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400',
+    mobileOnly: false
   },
   {
     to: '/frequently-asked-questions',
     label: $t('navbar.faq-short'),
-    mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400'
+    mobileColorClass: 'text-white bg-primary-500 focus:bg-primary-400',
+    mobileOnly: false
   }
 ];
 
