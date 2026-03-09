@@ -85,7 +85,9 @@ export default defineNuxtConfig({
         language: 'en-GB',
         file: 'en-GB/index.ts',
         // Update the dev domain here
-        domains: isDev ? ['ami-uk.localhost:3000'] : ['www.amiunderpaid.co.uk']
+        domains: isDev
+          ? ['ami-uk.localhost:3000', 'bmr.localhost:3000']
+          : ['www.amiunderpaid.co.uk', 'www.benchmarkmyrole.com']
       },
       {
         code: 'en-US',
@@ -106,7 +108,8 @@ export default defineNuxtConfig({
       useCookie: true,
       cookieKey: 'i18n_redirected',
       redirectOn: 'root',
-      fallbackLocale: 'en-GB'
+      alwaysRedirect: false,
+      fallbackLocale: 'en-US'
     }
   },
 

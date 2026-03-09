@@ -7,7 +7,7 @@
           v-model="country"
           :options="countryOptions"
           round
-          @update:model-value="emit('country-change', country)" />
+          @update:model-value="switchLocale" />
         <div class="flex flex-1"></div>
       </div>
     </div>
@@ -109,6 +109,7 @@
 import { ref, computed, watch } from 'vue';
 import { Search, MapPin, Wallet } from 'lucide-vue-next';
 import type { SearchClient } from 'algoliasearch';
+const { setLocale, locale, t } = useI18n();
 
 const props = defineProps<{
   initialCountry?: string;
@@ -116,15 +117,13 @@ const props = defineProps<{
 
 const emit = defineEmits(['country-change']);
 
-const { t } = useI18n();
-
 const countryOptions = [
   { label: 'UK', value: 'UK' },
   { label: 'USA', value: 'USA' }
 ];
 
-const url = useRequestURL();
-const country = ref(props.initialCountry || (url.hostname.includes('.com') ? 'USA' : 'UK'));
+const country = ref(props.initialCountry || 'USA');
+
 const schedule = ref('full-time');
 const contract = ref('permanent');
 
@@ -179,6 +178,24 @@ watch(country, (newVal) => {
   }
   titleOptions.value = [];
 });
+
+watch(
+  locale,
+  (newLocale) => {
+    const expectedCountry = newLocale === 'en-GB' ? 'UK' : 'USA';
+
+    // Only update if they are out of sync, preventing unnecessary re-renders
+    if (country.value !== expectedCountry) {
+      country.value = expectedCountry;
+    }
+  },
+  { immediate: true }
+);
+
+const switchLocale = () => {
+  setLocale(country.value === 'USA' ? 'en-US' : 'en-GB');
+  emit('country-change', country.value);
+};
 
 const fetchUKTitles = async (searchTerm: string) => {
   const { $algolia } = useNuxtApp();
