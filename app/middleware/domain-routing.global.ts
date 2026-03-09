@@ -10,11 +10,13 @@ export default defineNuxtRouteMiddleware((to) => {
   const isUKSite = hostname.endsWith('.co.uk') || hostname.includes('ami-uk.localhost');
   const isUSSite = hostname.endsWith('.com') || hostname.includes('ami-us.localhost');
 
-  // 1. Force Locale
-  if (isUKSite) {
-    if ($i18n.locale.value !== 'en-GB') $i18n.setLocale('en-GB');
-  } else if (isUSSite) {
-    if ($i18n.locale.value !== 'en-US') $i18n.setLocale('en-US');
+  // 1. Force Locale strictly for amiunderpaid
+  if ($siteBrand === 'amiunderpaid') {
+    if (isUKSite) {
+      if ($i18n.locale.value !== 'en-GB') $i18n.setLocale('en-GB');
+    } else if (isUSSite) {
+      if ($i18n.locale.value !== 'en-US') $i18n.setLocale('en-US');
+    }
   }
 
   // 2. Prevent Benchmark My Role from crawling/loading /salary/...
