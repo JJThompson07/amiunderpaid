@@ -1,6 +1,6 @@
 import { defineNuxtRouteMiddleware, useRequestURL, useNuxtApp } from '#imports';
 
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware(async (to) => {
   const { $siteBrand, $i18n } = useNuxtApp();
   const url = useRequestURL();
   const hostname = url.hostname;
@@ -16,6 +16,17 @@ export default defineNuxtRouteMiddleware((to) => {
       if ($i18n.locale.value !== 'en-GB') $i18n.setLocale('en-GB');
     } else if (isUSSite) {
       if ($i18n.locale.value !== 'en-US') $i18n.setLocale('en-US');
+    }
+  }
+
+  if ($siteBrand === 'benchmarkmyrole') {
+    const i18nCookie = useCookie('i18n_redirected');
+
+    // Add 'await' to pause the render until the locale finishes switching!
+    if (i18nCookie.value === 'en-GB' && $i18n.locale.value !== 'en-GB') {
+      await $i18n.setLocale('en-GB');
+    } else if (i18nCookie.value === 'en-US' && $i18n.locale.value !== 'en-US') {
+      await $i18n.setLocale('en-US');
     }
   }
 
