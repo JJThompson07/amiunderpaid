@@ -123,22 +123,16 @@ const countryOptions = [
   { label: 'USA', value: 'USA' }
 ];
 
+const url = useRequestURL();
+const country = ref(props.initialCountry || (url.hostname.includes('.com') ? 'USA' : 'UK'));
+const schedule = ref('full-time');
+const contract = ref('permanent');
+
 const scheduleOptions = [
   { label: t('search.time.full-time'), value: 'full-time' },
   { label: t('search.time.part-time'), value: 'part-time' },
   { label: t('common.all'), value: 'all' }
 ];
-
-const contractOptions = [
-  { label: t('search.contract.permanent'), value: 'permanent' },
-  { label: t('search.contract.contract'), value: 'contract' },
-  { label: t('common.all'), value: 'all' }
-];
-
-const url = useRequestURL();
-const country = ref(props.initialCountry || (url.hostname.includes('.com') ? 'USA' : 'UK'));
-const schedule = ref('full-time');
-const contract = ref('permanent');
 
 // const userPersonas = ['employer', 'employee'];
 // const userPersona = useState('userPersona', () => 'employer');
@@ -156,6 +150,18 @@ const locationOptions = ref<string[]>([]);
 const labelToIdMap = ref<Record<string, string>>({});
 
 const { trackSearch } = useAnalytics();
+
+const contractOptions = computed(() => [
+  {
+    label: t(`search.benchmark.contract.${country.value.toLowerCase()}.permanent`),
+    value: 'permanent'
+  },
+  {
+    label: t(`search.benchmark.contract.${country.value.toLowerCase()}.contract`),
+    value: 'contract'
+  },
+  { label: t('common.all'), value: 'all' }
+]);
 
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 

@@ -42,6 +42,18 @@
         "usa": "e.g. New York",
         "uk": "e.g. London"
       }
+    },
+    "contract": {
+      "usa": {
+        "contract": "Contractor",
+        "permanent": "Full Employee",
+        "label": "Employment Type"
+      },
+      "uk": {
+        "contract": "Contract",
+        "permanent": "Permanent",
+        "label": "Contract Type"
+      }
     }
   }
 }
