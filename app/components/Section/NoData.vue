@@ -99,7 +99,12 @@ const options = computed(() => {
     const cleanGroup = hit.group ? hit.group.replace(/\s*\(.*\)$/, '') : '';
     unique.add(cleanGroup ? `${hit.title} (${cleanGroup})` : hit.title);
   });
-  return Array.from(unique);
+  return Array.from(unique).map((title) => {
+    return {
+      value: title,
+      label: title
+    };
+  });
 });
 
 const performSearch = useDebounceFn(async (val: string) => {

@@ -51,7 +51,7 @@
         class="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 py-1">
         <button
           v-for="(option, index) in filteredOptions"
-          :key="option"
+          :key="option.value"
           class="w-full text-left px-4 py-2.5 text-sm transition-colors"
           :class="
             activeIndex === index
@@ -60,7 +60,7 @@
           "
           @click="selectOption(option)"
           @mouseenter="activeIndex = index">
-          {{ option }}
+          {{ option.label }}
         </button>
       </div>
     </div>
@@ -74,6 +74,11 @@ import { onClickOutside } from '@vueuse/core';
 import type { Component, PropType } from 'vue';
 import { X } from 'lucide-vue-next';
 
+export type AutocompleteOption = {
+  value: string;
+  label: string;
+};
+
 // ** props **
 const props = defineProps({
   modelValue: {
@@ -81,7 +86,7 @@ const props = defineProps({
     required: true
   },
   options: {
-    type: Array as PropType<string[]>,
+    type: Array as PropType<AutocompleteOption[]>,
     default: () => []
   },
   placeholder: {
@@ -122,10 +127,16 @@ const props = defineProps({
 // ** emits **
 const emit = defineEmits(['update:modelValue']);
 
+const getLabelForValue = (val: string) => {
+  if (!val) return '';
+  const found = props.options.find((opt) => opt.value === val);
+  return found ? found.label : val;
+};
+
 // ** data & refs **
 const containerRef = ref<HTMLElement | null>(null);
 const isOpen = ref(false);
-const inputValue = ref(props.modelValue);
+const inputValue = ref(getLabelForValue(props.modelValue));
 const activeIndex = ref(-1);
 
 // ** computed properties **
@@ -134,13 +145,16 @@ const filteredOptions = computed(() => {
   if (props.preFilteredOptions) return props.options;
 
   const search = inputValue.value.toLowerCase();
-  return props.options.filter((opt) => opt.toLowerCase().includes(search)).slice(0, 50);
+  // Change opt.value to opt.label here!
+  return props.options.filter((opt) => opt.label.toLowerCase().includes(search));
 });
 
 // ** methods **
-const selectOption = (option: string) => {
-  inputValue.value = option;
-  emit('update:modelValue', option);
+const selectOption = (option: AutocompleteOption) => {
+  inputValue.value = option.label;
+
+  emit('update:modelValue', option.value);
+
   isOpen.value = false;
   activeIndex.value = -1;
 };
@@ -169,6 +183,7 @@ const navigateOptions = (direction: number) => {
 
 const selectActiveOption = () => {
   if (isOpen.value && activeIndex.value >= 0 && filteredOptions.value[activeIndex.value]) {
+    // Pass the whole object here too
     selectOption(filteredOptions.value[activeIndex.value]!);
   } else {
     isOpen.value = false;
@@ -185,7 +200,8 @@ onClickOutside(containerRef, () => {
 watch(
   () => props.modelValue,
   (newVal) => {
-    inputValue.value = newVal;
+    // If the parent updates the v-model programmatically, update the visual input
+    inputValue.value = getLabelForValue(newVal);
   }
 );
 </script>
