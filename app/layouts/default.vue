@@ -125,7 +125,8 @@ useHead({
       // Remove i18n's generated alternates to prevent conflicting rules on this brand
       i18nLinks = i18nLinks.filter((l) => l.rel !== 'alternate');
 
-      const isProd = url.hostname === 'amiunderpaid.com' || url.hostname === 'amiunderpaid.co.uk';
+      const isProd =
+        url.hostname.includes('amiunderpaid.com') || url.hostname.includes('amiunderpaid.co.uk');
 
       if (isProd) {
         i18nLinks.push(
