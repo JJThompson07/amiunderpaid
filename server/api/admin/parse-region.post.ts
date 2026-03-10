@@ -1,5 +1,6 @@
 import { defineEventHandler, readMultipartFormData, createError } from 'h3';
 import * as XLSX from 'xlsx';
+import { ONS_LOCATIONS } from '../../../utils/locations/uk';
 
 /**
  * Server-side parser for Regional/State employment data.
@@ -45,6 +46,7 @@ export default defineEventHandler(async (event) => {
     const normalizedData: SalaryRecord[] = [];
 
     if (country === 'UK') {
+      const cleanNameMap = new Map(ONS_LOCATIONS.map((loc) => [loc.gov_name, loc.name]));
       // ONS ASHE usually has multiple sheets (All, Male, Female, Full-Time, etc.)
       const sheetName =
         workbook.SheetNames.find((s) => s.includes('Full-Time')) || workbook.SheetNames[0];
@@ -119,6 +121,7 @@ export default defineEventHandler(async (event) => {
         if (!row || row[locIdx] == null || String(row[locIdx]).trim() === '') continue;
 
         const location = String(row[locIdx]).trim();
+        const cleanLocation = cleanNameMap.get(location) || location;
         const id_code =
           codeIdx > -1 && row[codeIdx] != null ? String(row[codeIdx]).trim() : undefined;
 
@@ -127,7 +130,7 @@ export default defineEventHandler(async (event) => {
 
         const record: SalaryRecord = {
           title: 'All', // Region aggregates default to 'All'
-          location,
+          location: cleanLocation,
           year: targetYear,
           salary: salaryVal,
           country: 'UK',

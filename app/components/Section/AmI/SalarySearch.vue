@@ -111,6 +111,7 @@
 import { ref, computed } from 'vue';
 import { Search, MapPin, CalculatorIcon, Wallet, ArrowRightIcon } from 'lucide-vue-next';
 import type { SearchClient } from 'algoliasearch';
+import type { AutocompleteOption } from '~/components/AmI/AutocompleteInput.vue';
 
 const { t } = useI18n();
 
@@ -137,8 +138,8 @@ const salary = ref('');
 const period = ref('year');
 const loading = ref(false);
 const fetching = ref(false);
-const titleOptions = ref<string[]>([]);
-const locationOptions = ref<string[]>([]);
+const titleOptions = ref<AutocompleteOption[]>([]);
+const locationOptions = ref<AutocompleteOption[]>([]);
 const showCalc = ref<boolean>(false);
 
 // Map to temporarily hold the IDs for the selected labels
@@ -177,7 +178,12 @@ const fetchUKTitles = async (searchTerm: string) => {
     results.add(label);
   });
 
-  return Array.from(results);
+  return Array.from(results).map((title) => {
+    return {
+      value: title,
+      label: title
+    };
+  });
 };
 
 const fetchUSATitles = async (searchTerm: string) => {
@@ -205,7 +211,13 @@ const fetchUSATitles = async (searchTerm: string) => {
     }
     results.add(hit.title);
   });
-  return Array.from(results);
+
+  return Array.from(results).map((title) => {
+    return {
+      value: title,
+      label: title
+    };
+  });
 };
 
 const fetchUKLocations = async (searchTerm: string) => {
@@ -217,7 +229,12 @@ const fetchUKLocations = async (searchTerm: string) => {
     maxFacetHits: 20
   });
 
-  return facetHits.map((h: any) => h.value);
+  return facetHits.map((h: any) => {
+    return {
+      value: h.value,
+      label: h.value
+    };
+  });
 };
 
 const fetchUSALocations = async (searchTerm: string) => {
@@ -235,7 +252,12 @@ const fetchUSALocations = async (searchTerm: string) => {
     maxFacetHits: 20
   });
 
-  return facetHits.map((h: any) => h.value);
+  return facetHits.map((h: any) => {
+    return {
+      value: h.value,
+      label: h.value
+    };
+  });
 };
 
 const fetchTitles = useDebounceFn(async (val: string) => {
