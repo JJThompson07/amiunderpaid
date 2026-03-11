@@ -1,0 +1,15 @@
+{
+  "onboarding": {
+    "title": "Welcome aboard!",
+    "subtitle": "Let's get your profile set up so you can start claiming exclusive territories.",
+    "agency-label": "Agency Name",
+    "agency-placeholder": "e.g. Acme Recruiting Partners",
+    "btn-loading": "Saving Profile...",
+    "btn-default": "Continue to Dashboard",
+    "errors": {
+      "empty-agency": "Please enter your agency name.",
+      "no-session": "User session not found. Please refresh the page.",
+      "save-failed": "Could not save your profile. Please try again."
+    }
+  }
+}
