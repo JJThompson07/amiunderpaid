@@ -55,6 +55,11 @@ import { Building2 } from 'lucide-vue-next';
 import { updateDoc, doc } from 'firebase/firestore';
 import { useCurrentUser, useFirestore } from 'vuefire';
 
+// Protect this route with your recruiters middleware
+definePageMeta({
+  middleware: 'recruiters'
+});
+
 // Import useI18n to translate strings inside the script!
 const { t } = useI18n();
 

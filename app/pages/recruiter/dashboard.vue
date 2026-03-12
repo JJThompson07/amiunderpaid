@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-slate-50 p-4 pt-24 md:p-8">
+  <div class="bg-slate-50 p-4 pt-24">
     <SectionSharedBackdrop />
 
     <div class="max-w-6xl mx-auto relative">
@@ -90,6 +90,10 @@ import { computed } from 'vue';
 import { MapPin, BriefcaseBusiness, Map } from 'lucide-vue-next';
 import { useCurrentUser, useDocument, useFirestore } from 'vuefire';
 import { doc } from 'firebase/firestore';
+
+definePageMeta({
+  middleware: 'recruiters'
+});
 
 // 1. Grab our logout function from the composable
 const { logout } = useRecruiterAuth();
