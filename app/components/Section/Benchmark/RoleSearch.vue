@@ -351,7 +351,16 @@ const handleSearch = async () => {
   const exactGovId = labelToIdMap.value[title.value];
 
   // 2. Remove parent group in parentheses to give Adzuna a clean job title
-  const cleanTitle = title.value.replace(/\s*\(.*\)$/, '');
+  let cleanTitle = title.value.replace(/\s*\(.*\)$/, '');
+
+  // if the government title is being used we want to change this order as the government uses a bad order for searching
+  if (exactGovId) {
+    cleanTitle = cleanTitle
+      .split(',')
+      .map((word) => word.trim())
+      .reverse()
+      .join(' ');
+  }
 
   const slugify = (str: string) => {
     const cleanStr = str.replace(/,/g, '');
