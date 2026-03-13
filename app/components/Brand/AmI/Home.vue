@@ -27,34 +27,38 @@
 
 const { $siteBrand } = useNuxtApp();
 const { t } = useI18n();
-const url = useRequestURL();
-
 const { isUSSite } = useRegion();
 
-const title = computed(() => t('meta.index.title'));
-const description = computed(() => t('meta.index.description'));
+// ✨ 1. Build the rock-solid SSR base URL (Kills the localhost leaks!)
+const baseUrl = import.meta.dev
+  ? 'http://localhost:3000'
+  : isUSSite.value
+    ? 'https://www.amiunderpaid.com'
+    : 'https://www.amiunderpaid.co.uk';
 
-// Cleaned up SEO Meta block
+// ✨ 2. Use getter functions () => t(...) to guarantee SSR reactivity for the Title
 useSeoMeta({
-  title,
-  description,
-  ogTitle: title,
-  ogDescription: description,
-  ogImage: `${url.origin}/${$siteBrand}-og.png`,
+  title: () => t('meta.index.title'),
+  description: () => t('meta.index.description'),
+  ogTitle: () => t('meta.index.title'),
+  ogDescription: () => t('meta.index.description'),
+  ogImage: `${baseUrl}/${$siteBrand}-og.png`,
   twitterCard: 'summary_large_image'
 });
 
+// ✨ 3. Feed the baseUrl into your Schema
 useHead({
   script: [
     {
       type: 'application/ld+json',
-      innerHTML: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        name: t('meta.index.name'),
-        url: url.origin,
-        description: description.value
-      })
+      innerHTML: () =>
+        JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: t('meta.index.name'),
+          url: baseUrl,
+          description: t('meta.index.description')
+        })
     }
   ]
 });
