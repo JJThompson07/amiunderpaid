@@ -79,9 +79,9 @@
 import { useCurrentUser } from 'vuefire';
 import { ref, onMounted, computed } from 'vue';
 import { MenuIcon, XIcon } from 'lucide-vue-next';
+const { locale } = useI18n();
 
 const { $siteBrand } = useNuxtApp();
-const url = useRequestURL();
 const route = useRoute();
 
 const { isMobile: viewportIsMobile } = useViewport();
@@ -120,15 +120,25 @@ useHead({
 
     const cleanPath = route.path === '/' ? '' : route.path;
 
-    // 2. Inject explicit multi-domain logic exclusively for Am I Underpaid
+    // ✨ 2. Build a rock-solid SSR base URL (No more localhost leaks!)
+    const getBaseUrl = () => {
+      if (import.meta.dev) return 'http://localhost:3000';
+      if ($siteBrand === 'amiunderpaid') {
+        return locale.value === 'en-GB'
+          ? 'https://www.amiunderpaid.co.uk'
+          : 'https://www.amiunderpaid.com';
+      }
+      return 'https://www.benchmarkmyrole.com';
+    };
+
+    const baseUrl = getBaseUrl();
+
+    // 3. Inject explicit multi-domain logic exclusively for Am I Underpaid
     if ($siteBrand === 'amiunderpaid') {
-      // Remove i18n's generated alternates to prevent conflicting rules on this brand
+      // Remove i18n's generated alternates to prevent conflicting rules
       i18nLinks = i18nLinks.filter((l) => l.rel !== 'alternate');
 
-      const isProd =
-        url.hostname.includes('amiunderpaid.com') || url.hostname.includes('amiunderpaid.co.uk');
-
-      if (isProd) {
+      if (!import.meta.dev) {
         i18nLinks.push(
           {
             rel: 'alternate',
@@ -147,9 +157,8 @@ useHead({
 
     return [
       ...i18nLinks,
-      // 3. Force the absolute, correct Canonical URL globally
-      // (url.origin ensures the canonical matches the domain the user is actually visiting)
-      { rel: 'canonical', href: `${url.origin}${route.path}` },
+      // ✨ 4. Force the absolute, correct Canonical URL using our bulletproof baseUrl
+      { rel: 'canonical', href: `${baseUrl}${cleanPath || '/'}` },
       { rel: 'icon', type: 'image/x-icon', href: `/${$siteBrand}-favicon.ico` }
     ];
   }),

@@ -96,9 +96,15 @@
 
 <script setup lang="ts">
 const { $siteBrand } = useNuxtApp();
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 useSeoMeta({
-  title: 'Privacy Policy | Am I Underpaid?',
-  description: 'Privacy policy, data sources, and affiliate disclosure for Am I Underpaid?'
+  title:
+    $siteBrand === 'benchmarkmyrole'
+      ? t('meta.privacy-policy.benchmark.title')
+      : t('meta.privacy-policy.title'),
+  description:
+    $siteBrand === 'benchmarkmyrole'
+      ? t('meta.privacy-policy.benchmark.description')
+      : t('meta.privacy-policy.description')
 });
 </script>

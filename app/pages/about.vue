@@ -50,4 +50,12 @@
 
 <script setup lang="ts">
 const { $siteBrand } = useNuxtApp();
+const { t } = useI18n();
+useSeoMeta({
+  title: $siteBrand === 'benchmarkmyrole' ? t('meta.about.benchmark.title') : t('meta.about.title'),
+  description:
+    $siteBrand === 'benchmarkmyrole'
+      ? t('meta.about.benchmark.description')
+      : t('meta.about.description')
+});
 </script>

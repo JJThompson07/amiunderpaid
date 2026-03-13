@@ -20,13 +20,45 @@
     }
   },
   "index": {
-    "name": "Am I Underpaid?",
-    "title": "Am I Underpaid? | Salary Checker & Market Pay Calculator UK",
+    "name": "Am I Underpaid? UK",
+    "title": "Am I Underpaid? — Salary Checker & Market Pay Calculator UK",
     "description": "Find out the average salary for your role. Compare your wage against live market data and official government benchmarks (ONS) to see if you are underpaid."
   },
   "benchmark_index": {
     "name": "Benchmark My Role",
-    "title": "Benchmark My Role | Open Vacancy Salary Comparison Tool",
+    "title": "Benchmark My Role — Open Vacancy Salary Comparison Tool",
     "description": "Benchmark an open vacancy against real-time market data. Whether hiring or applying, use our salary comparison tool to ensure your offer is competitive."
+  },
+  "privacy-policy": {
+    "title": "Privacy Policy — Am I Underpaid? — UK",
+    "description": "Privacy policy, data sources, and affiliate disclosure for Am I Underpaid?",
+    "benchmark": {
+      "title": "Privacy Policy — Benchmark My Role",
+      "description": "Privacy policy, data sources, and affiliate disclosure for Benchmark My Role"
+    }
+  },
+  "data-sources": {
+    "title": "Data Sources — Am I Underpaid? — UK",
+    "description": "Data Sources, What we use for Am I Underpaid?",
+    "benchmark": {
+      "title": "Data Sources — Benchmark My Role",
+      "description": "Data Sources, What we use for Benchmark My Role"
+    }
+  },
+  "how-it-works": {
+    "title": "How it works — Am I Underpaid? — UK",
+    "description": "How it works, a quick guide to Am I Underpaid?",
+    "benchmark": {
+      "title": "How it works — Benchmark My Role",
+      "description": "How it works, a quick guide to Benchmark My Role"
+    }
+  },
+  "about": {
+    "title": "About — Am I Underpaid? — UK",
+    "description": "Discover the reason for Am I Underpaid?",
+    "benchmark": {
+      "title": "About — Benchmark My Role",
+      "description": "Discover the reason for Benchmark My Role"
+    }
   }
 }
