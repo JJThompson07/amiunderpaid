@@ -36,5 +36,13 @@
       "title": "Privacy Policy — Benchmark My Role",
       "description": "Privacy policy, data sources, and affiliate disclosure for Benchmark My Role"
     }
+  },
+  "data-sources": {
+    "title": "Data Sources — Am I Underpaid? — US",
+    "description": "Data Sources, What we use for Am I Underpaid?",
+    "benchmark": {
+      "title": "Data Sources — Benchmark My Role",
+      "description": "Data Sources, What we use for Benchmark My Role"
+    }
   }
 }

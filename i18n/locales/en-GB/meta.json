@@ -30,11 +30,19 @@
     "description": "Benchmark an open vacancy against real-time market data. Whether hiring or applying, use our salary comparison tool to ensure your offer is competitive."
   },
   "privacy-policy": {
-    "title": "Privacy Policy — Am I Underpaid? — US",
+    "title": "Privacy Policy — Am I Underpaid? — UK",
     "description": "Privacy policy, data sources, and affiliate disclosure for Am I Underpaid?",
     "benchmark": {
       "title": "Privacy Policy — Benchmark My Role",
       "description": "Privacy policy, data sources, and affiliate disclosure for Benchmark My Role"
+    }
+  },
+  "data-sources": {
+    "title": "Data Sources — Am I Underpaid? — UK",
+    "description": "Data Sources, What we use for Am I Underpaid?",
+    "benchmark": {
+      "title": "Data Sources — Benchmark My Role",
+      "description": "Data Sources, What we use for Benchmark My Role"
     }
   }
 }
