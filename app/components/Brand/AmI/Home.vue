@@ -56,6 +56,7 @@ useHead({
           '@context': 'https://schema.org',
           '@type': 'WebSite',
           name: t('meta.index.name'),
+          title: t('meta.index.title'),
           url: baseUrl,
           description: t('meta.index.description')
         })

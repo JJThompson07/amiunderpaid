@@ -45,6 +45,7 @@ useHead({
           '@context': 'https://schema.org',
           '@type': 'WebSite',
           name: t('meta.benchmark_index.name'),
+          title: t('meta.benchmark_index.title'),
           url: baseUrl,
           description: t('meta.benchmark_index.description')
         })
