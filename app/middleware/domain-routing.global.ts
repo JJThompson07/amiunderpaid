@@ -13,9 +13,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // 1. Force Locale strictly for amiunderpaid
   if ($siteBrand === 'amiunderpaid') {
     if (isUKSite) {
-      if ($i18n.locale.value !== 'en-GB') $i18n.setLocale('en-GB');
+      if ($i18n.locale.value !== 'en-GB') await $i18n.setLocale('en-GB');
     } else if (isUSSite) {
-      if ($i18n.locale.value !== 'en-US') $i18n.setLocale('en-US');
+      if ($i18n.locale.value !== 'en-US') await $i18n.setLocale('en-US');
     }
   }
 
