@@ -44,5 +44,13 @@
       "title": "Data Sources — Benchmark My Role",
       "description": "Data Sources, What we use for Benchmark My Role"
     }
+  },
+  "how-it-works": {
+    "title": "How it works — Am I Underpaid? — UK",
+    "description": "How it works, a quick guide to Am I Underpaid?",
+    "benchmark": {
+      "title": "How it works — Benchmark My Role",
+      "description": "How it works, a quick guide to Benchmark My Role"
+    }
   }
 }

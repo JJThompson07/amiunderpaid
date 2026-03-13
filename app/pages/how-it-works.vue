@@ -82,4 +82,15 @@
 import { Database, Check } from 'lucide-vue-next';
 
 const { $siteBrand } = useNuxtApp();
+const { t } = useI18n();
+useSeoMeta({
+  title:
+    $siteBrand === 'benchmarkmyrole'
+      ? t('meta.how-it-works.benchmark.title')
+      : t('meta.how-it-works.title'),
+  description:
+    $siteBrand === 'benchmarkmyrole'
+      ? t('meta.how-it-works.benchmark.description')
+      : t('meta.how-it-works.description')
+});
 </script>
