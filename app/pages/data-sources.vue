@@ -87,5 +87,16 @@
 <script setup lang="ts">
 // ** imports **
 import { Building2, Search, Users, Flag } from 'lucide-vue-next';
-const { locale } = useI18n();
+const { $siteBrand } = useNuxtApp();
+const { locale, t } = useI18n();
+useSeoMeta({
+  title:
+    $siteBrand === 'benchmarkmyrole'
+      ? t('meta.data-sources.benchmark.title')
+      : t('meta.data-sources.title'),
+  description:
+    $siteBrand === 'benchmarkmyrole'
+      ? t('meta.data-sources.benchmark.description')
+      : t('meta.data-sources.description')
+});
 </script>
