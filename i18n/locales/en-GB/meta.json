@@ -52,5 +52,13 @@
       "title": "How it works — Benchmark My Role",
       "description": "How it works, a quick guide to Benchmark My Role"
     }
+  },
+  "about": {
+    "title": "About — Am I Underpaid? — UK",
+    "description": "Discover the reason for Am I Underpaid?",
+    "benchmark": {
+      "title": "About — Benchmark My Role",
+      "description": "Discover the reason for Benchmark My Role"
+    }
   }
 }
