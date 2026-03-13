@@ -72,6 +72,7 @@ export default defineNuxtConfig({
 
   // nuxt.config.ts
   i18n: {
+    baseUrl: 'https://www.amiunderpaid.com',
     langDir: 'locales',
     defaultLocale: 'en-GB',
     strategy: 'no_prefix',

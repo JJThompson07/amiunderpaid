@@ -20,13 +20,21 @@
     }
   },
   "index": {
-    "name": "Am I Underpaid?",
-    "title": "Am I Underpaid? | US Salary Comparison & Market Data",
+    "name": "Am I Underpaid? US",
+    "title": "Am I Underpaid? — US Salary Comparison & Market Data",
     "description": "Find out the average compensation for your position in the USA. Compare your pay against live market data and federal BLS benchmarks to see your true market value."
   },
   "benchmark_index": {
     "name": "Benchmark My Role",
-    "title": "Benchmark My Role | Job Requisition Salary Comparison",
+    "title": "Benchmark My Role — Job Requisition Salary Comparison",
     "description": "Benchmark an open job requisition against real-time US market data. Whether you are hiring or applying, use our compensation tool to ensure your offer is competitive."
+  },
+  "privacy-policy": {
+    "title": "Privacy Policy — Am I Underpaid? — US",
+    "description": "Privacy policy, data sources, and affiliate disclosure for Am I Underpaid?",
+    "benchmark": {
+      "title": "Privacy Policy — Benchmark My Role",
+      "description": "Privacy policy, data sources, and affiliate disclosure for Benchmark My Role"
+    }
   }
 }

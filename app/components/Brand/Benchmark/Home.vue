@@ -17,37 +17,38 @@
 <script setup lang="ts">
 const { $siteBrand } = useNuxtApp();
 const { t } = useI18n();
-const url = useRequestURL();
 
 // 1. Geography Logic
 // Defaulting to USA (true) since Benchmark My Role operates on the .com domain.
 const isUSA = useState<boolean>('landing-is-usa', () => true);
 
-// 3. Brand-Specific SEO
-// Make sure to add meta.benchmark_index.title to your i18n JSON files!
-const title = computed(() => t('meta.benchmark_index.title'));
-const description = computed(() => t('meta.benchmark_index.description'));
+// ✨ 2. Build the rock-solid SSR base URL (No localhost leaks!)
+const baseUrl = import.meta.dev ? 'http://localhost:3000' : 'https://www.benchmarkmyrole.com';
 
+// ✨ 3. Brand-Specific SEO using getter functions () => t(...) for perfect SSR
 useSeoMeta({
-  title,
-  description,
-  ogTitle: title,
-  ogDescription: description,
-  ogImage: `${url.origin}/${$siteBrand}-og.png`, // You'll want a new social image for this brand!
+  title: () => t('meta.benchmark_index.title'),
+  description: () => t('meta.benchmark_index.description'),
+  ogTitle: () => t('meta.benchmark_index.title'),
+  ogDescription: () => t('meta.benchmark_index.description'),
+  ogImage: `${baseUrl}/${$siteBrand}-og.png`, // Just make sure benchmarkmyrole-og.png exists in your public folder!
   twitterCard: 'summary_large_image'
 });
 
+// ✨ 4. Feed the baseUrl into your Schema
 useHead({
   script: [
     {
       type: 'application/ld+json',
-      innerHTML: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        name: t('meta.benchmark_index.name'),
-        url: url.origin,
-        description: description.value
-      })
+      innerHTML: () =>
+        JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: t('meta.benchmark_index.name'),
+          title: t('meta.benchmark_index.title'),
+          url: baseUrl,
+          description: t('meta.benchmark_index.description')
+        })
     }
   ]
 });

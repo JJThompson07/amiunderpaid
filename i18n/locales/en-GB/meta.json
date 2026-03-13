@@ -20,13 +20,21 @@
     }
   },
   "index": {
-    "name": "Am I Underpaid?",
-    "title": "Am I Underpaid? | Salary Checker & Market Pay Calculator UK",
+    "name": "Am I Underpaid? UK",
+    "title": "Am I Underpaid? — Salary Checker & Market Pay Calculator UK",
     "description": "Find out the average salary for your role. Compare your wage against live market data and official government benchmarks (ONS) to see if you are underpaid."
   },
   "benchmark_index": {
     "name": "Benchmark My Role",
-    "title": "Benchmark My Role | Open Vacancy Salary Comparison Tool",
+    "title": "Benchmark My Role — Open Vacancy Salary Comparison Tool",
     "description": "Benchmark an open vacancy against real-time market data. Whether hiring or applying, use our salary comparison tool to ensure your offer is competitive."
+  },
+  "privacy-policy": {
+    "title": "Privacy Policy — Am I Underpaid? — US",
+    "description": "Privacy policy, data sources, and affiliate disclosure for Am I Underpaid?",
+    "benchmark": {
+      "title": "Privacy Policy — Benchmark My Role",
+      "description": "Privacy policy, data sources, and affiliate disclosure for Benchmark My Role"
+    }
   }
 }
