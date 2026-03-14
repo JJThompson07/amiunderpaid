@@ -18,7 +18,7 @@
       <li>
         <NuxtLink
           :to="{
-            path: `/salary/${route.params.title}/${route.params.country}`,
+            path: `${urlStart}/${route.params.title}/${route.params.country}`,
             query: route.query
           }"
           class="hover:text-white transition-colors">
@@ -29,7 +29,7 @@
       <li>
         <NuxtLink
           :to="{
-            path: `/salary/${route.params.title}/${route.params.country}`,
+            path: `${urlStart}/${route.params.title}/${route.params.country}`,
             query: route.query
           }"
           external
@@ -46,6 +46,12 @@
 <script setup lang="ts">
 import { HomeIcon } from 'lucide-vue-next';
 import type { RouteLocationNormalizedGeneric } from 'vue-router';
+
+const { $siteBrand } = useNuxtApp();
+
+const urlStart = computed<string>(() => {
+  return $siteBrand === 'benchmarkmyrole' ? '/benchmark' : '/salary';
+});
 
 defineProps<{
   route: RouteLocationNormalizedGeneric;
