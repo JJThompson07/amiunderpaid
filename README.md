@@ -31,7 +31,7 @@ This project has been updated to **Nuxt 4**, leveraging the new directory struct
 ### 🌍 Core Functionality
 
 - **Domain-Level i18n & SEO**: Fully internationalized architecture mapping `en-GB` to `.co.uk` and `en-US` to `.com` for precise regional formatting and Google indexing.
-- **Salary Search**: Check your salary against 140,000+ job listings and benchmarks in real-time.
+- **Salary Search**: Check your salary against 700,000+ job listings and benchmarks in real-time.
 - **Location Analysis**: Compare your salary against regional and national averages.
 - **Salary Converter**: Convert hourly, daily, or weekly wages to an annual equivalent.
 - **Negotiation Support**: Get custom email scripts and actionable tips to negotiate a raise.

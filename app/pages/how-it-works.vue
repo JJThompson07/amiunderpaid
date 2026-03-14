@@ -7,7 +7,11 @@
           {{ $t('how-it-works.heading') }}
         </h1>
         <p class="mt-4 text-lg text-slate-500">
-          {{ $t('how-it-works.description') }}
+          {{
+            $siteBrand === 'benchmarkmyrole'
+              ? $t('how-it-works.benchmark.description')
+              : $t('how-it-works.description')
+          }}
         </p>
       </div>
 
@@ -23,9 +27,19 @@
           </div>
           <div
             class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-900 mb-2">{{ $t('how-it-works.step.1.heading') }}</h3>
+            <h3 class="font-bold text-slate-900 mb-2">
+              {{
+                $siteBrand === 'benchmarkmyrole'
+                  ? $t('how-it-works.benchmark.step.1.heading')
+                  : $t('how-it-works.step.1.heading')
+              }}
+            </h3>
             <p class="text-sm text-slate-500 leading-relaxed">
-              {{ $t('how-it-works.step.1.body') }}
+              {{
+                $siteBrand === 'benchmarkmyrole'
+                  ? $t('how-it-works.benchmark.step.1.body')
+                  : $t('how-it-works.step.1.body')
+              }}
             </p>
           </div>
         </div>
@@ -39,9 +53,19 @@
           </div>
           <div
             class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-900 mb-2">{{ $t('how-it-works.step.2.heading') }}</h3>
+            <h3 class="font-bold text-slate-900 mb-2">
+              {{
+                $siteBrand === 'benchmarkmyrole'
+                  ? $t('how-it-works.benchmark.step.2.heading')
+                  : $t('how-it-works.step.2.heading')
+              }}
+            </h3>
             <p class="text-sm text-slate-500 leading-relaxed">
-              {{ $t('how-it-works.step.2.body') }}
+              {{
+                $siteBrand === 'benchmarkmyrole'
+                  ? $t('how-it-works.benchmark.step.2.body')
+                  : $t('how-it-works.step.2.body')
+              }}
             </p>
           </div>
         </div>
@@ -55,9 +79,19 @@
           </div>
           <div
             class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-900 mb-2">{{ $t('how-it-works.step.3.heading') }}</h3>
+            <h3 class="font-bold text-slate-900 mb-2">
+              {{
+                $siteBrand === 'benchmarkmyrole'
+                  ? $t('how-it-works.benchmark.step.3.heading')
+                  : $t('how-it-works.step.3.heading')
+              }}
+            </h3>
             <p class="text-sm text-slate-500 leading-relaxed">
-              {{ $t('how-it-works.step.3.body') }}
+              {{
+                $siteBrand === 'benchmarkmyrole'
+                  ? $t('how-it-works.benchmark.step.3.body')
+                  : $t('how-it-works.step.3.body')
+              }}
             </p>
           </div>
         </div>
