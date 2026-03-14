@@ -68,7 +68,7 @@
           "title": "Market Benchmarking FAQ",
           "marketValue": {
             "question": "How is market value determined?",
-            "answer": "Market value is a reflection of real-time supply and demand. Our platform determines this by aggregating over 7.000,000 active job postings alongside federal BLS benchmarks to establish the current 'going rate'."
+            "answer": "Market value is a reflection of real-time supply and demand. Our platform determines this by aggregating over 7,000,000 active job postings alongside federal BLS benchmarks to establish the current 'going rate'."
           },
           "dataPillars": {
             "question": "What data defines the salary range?",
