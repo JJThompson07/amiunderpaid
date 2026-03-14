@@ -68,7 +68,7 @@
           "title": "Market Benchmarking FAQ",
           "marketValue": {
             "question": "How is market value determined?",
-            "answer": "Market value is a reflection of real-time supply and demand. Our tool determines this by aggregating 140,000+ live job vacancies and official benchmarks to establish a current 'going rate' for specific roles and locations across the UK."
+            "answer": "Market value is a reflection of real-time supply and demand. Our tool determines this by aggregating 700,000+ live job vacancies and official benchmarks to establish a current 'going rate' for specific roles and locations across the UK."
           },
           "dataPillars": {
             "question": "What data defines the salary range?",

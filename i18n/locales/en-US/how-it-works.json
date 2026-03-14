@@ -4,15 +4,32 @@
   "step": {
     "1": {
       "heading": "Enter Your Position",
-      "body": "Provide your job title, state or city, and current base pay. Our smart autocomplete will match you to federal occupational classifications for maximum accuracy."
+      "body": "Provide your job title, state, and current base pay. Our smart autocomplete will try to match you to federal occupational classifications for maximum accuracy."
     },
     "2": {
       "heading": "We Analyze the Market",
-      "body": "We instantly query our database of over 140,000 real-time compensation benchmarks, blending federal statistics (BLS) with active job board listings."
+      "body": "We instantly query our database of over 7,000,000 real-time compensation benchmarks, blending federal statistics (BLS) with active job board listings."
     },
     "3": {
       "heading": "Review Your Compensation",
       "body": "Immediately see if you are underpaid, compensated fairly, or leading the pack. We will even provide you with a custom email template to help negotiate a raise."
+    }
+  },
+  "benchmark": {
+    "description": "Discover your true role value in three simple steps.",
+    "step": {
+      "1": {
+        "heading": "Enter The Role",
+        "body": "Provide us the job title, state, and target base pay. Our smart autocomplete will try to match you to federal occupational classifications for maximum accuracy."
+      },
+      "2": {
+        "heading": "We Check the Data",
+        "body": "We instantly query our database of over 7,000,000 real-time compensation benchmarks, blending federal statistics (BLS) with active job board listings."
+      },
+      "3": {
+        "heading": "Get Your Salary Comparison",
+        "body": "Find out instantly if you role offer compensation is under valued, fair value or leading the market."
+      }
     }
   }
 }
