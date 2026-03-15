@@ -29,11 +29,7 @@ export default defineNuxtConfig({
     ? {}
     : {
         '/salary/**': { swr: DAY_IN_S },
-        '/benchmark/**': { swr: DAY_IN_S },
-        '/about': { swr: DAY_IN_S },
-        '/how-it-works': { swr: DAY_IN_S },
-        '/data-sources': { swr: DAY_IN_S },
-        '/privacy-policy': { swr: DAY_IN_S }
+        '/benchmark/**': { swr: DAY_IN_S }
       },
 
   css: ['~/assets/css/main.css'],
