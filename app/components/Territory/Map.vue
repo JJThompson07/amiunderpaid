@@ -23,24 +23,21 @@ const props = defineProps<{
   country: 'uk' | 'usa';
   claimedIds: number[];
   territories: any[];
+  selectedIds: number[];
 }>();
-
-// ECharts can read CSS Custom Properties natively!
-// We just pass the string to the canvas exactly as we would in CSS.
-const MAP_COLORS = {
-  white: 'white', // ECharts understands basic color strings
-  slate400: '#94a3b8',
-  // Map these directly to the Tailwind v4 @theme variables you just showed me
-  primary100: 'var(--color-primary-100)',
-  primary500: 'var(--color-primary-500)',
-  primary600: 'var(--color-primary-600)'
-};
 
 const emit = defineEmits(['territory-clicked']);
 
 const mapContainer = ref<HTMLElement | null>(null);
 const loading = ref(true);
 const chart = shallowRef<echarts.ECharts | null>(null);
+
+// Helper to grab your live Tailwind @theme CSS variables
+const getThemeColor = (cssVar: string, fallback: string) => {
+  if (!import.meta.client) return fallback;
+  const val = getComputedStyle(document.body).getPropertyValue(cssVar).trim();
+  return val || fallback;
+};
 
 const normalizeName = (name: string) => {
   if (!name) return '';
@@ -58,19 +55,27 @@ const loadAndDrawMap = async () => {
   loading.value = true;
 
   try {
+    // 1. Fetch the JSON file based on the selected country
     const fileName = props.country === 'uk' ? '/uk-regions.json' : '/us-regions.json';
     const response = await fetch(fileName);
+
+    if (!response.ok) {
+      console.error(`ERROR: Could not find ${fileName} in your public folder!`);
+      loading.value = false;
+      return;
+    }
+
     const geoJson = await response.json();
 
-    // Register map. If UK ONS data uses 'ctyua18nm' for names, tell ECharts to look there!
+    // 2. Register the new map with ECharts
     echarts.registerMap(props.country, geoJson);
 
+    // 3. Initialize the chart if it doesn't exist
     if (!chart.value) {
       chart.value = echarts.init(mapContainer.value);
 
       chart.value.on('click', (params: any) => {
         const clickedName = normalizeName(params.name);
-
         const matchedTerritory = props.territories.find(
           (t) =>
             normalizeName(t.name) === clickedName ||
@@ -84,10 +89,9 @@ const loadAndDrawMap = async () => {
           console.warn(`No match found in constants for map shape: ${params.name}`);
         }
       });
-    } else {
-      chart.value.clear();
     }
 
+    // 4. Update the visual data
     updateMapData();
     loading.value = false;
   } catch (error) {
@@ -100,52 +104,63 @@ const updateMapData = () => {
   if (!chart.value) return;
   const mapData: any[] = [];
 
+  const white = '#ffffff';
+  const slate400 = '#94a3b8';
+  const primary100 = getThemeColor('--color-primary-100', '#cef9f6');
+  const primary500 = getThemeColor('--color-primary-500', '#1cabb0');
+  const primary600 = getThemeColor('--color-primary-600', '#14868d');
+
   props.territories.forEach((t) => {
-    const isClaimed = props.claimedIds.includes(t.id);
+    const isSelected = props.selectedIds.includes(t.id);
+
     const itemStyle = {
-      areaColor: isClaimed ? MAP_COLORS.primary500 : MAP_COLORS.white,
-      borderColor: isClaimed ? MAP_COLORS.primary600 : MAP_COLORS.slate400,
-      borderWidth: isClaimed ? 1.5 : 1
+      areaColor: isSelected ? primary500 : white,
+      borderColor: isSelected ? primary600 : slate400,
+      borderWidth: isSelected ? 2 : 1
     };
 
-    mapData.push({ name: t.name, value: isClaimed ? 1 : 0, itemStyle });
+    mapData.push({ name: t.name, value: isSelected ? 1 : 0, itemStyle });
 
     if (t.ons_matches) {
       t.ons_matches.forEach((ons: any) => {
-        mapData.push({ name: ons.name, value: isClaimed ? 1 : 0, itemStyle });
+        mapData.push({ name: ons.name, value: isSelected ? 1 : 0, itemStyle });
       });
     }
   });
 
-  chart.value.setOption({
-    tooltip: { trigger: 'item', formatter: '{b}' },
-    series: [
-      {
-        type: 'map',
-        map: props.country,
-        roam: true,
-        scaleLimit: { min: 1, max: 8 },
-        itemStyle: {
-          areaColor: MAP_COLORS.white,
-          borderColor: MAP_COLORS.slate400,
-          borderWidth: 1
-        },
-        emphasis: {
+  // THE CRITICAL FIX: The `true` argument at the very end tells ECharts to
+  // totally wipe the previous map and NOT merge the UK/USA data together!
+  chart.value.setOption(
+    {
+      tooltip: { trigger: 'item', formatter: '{b}' },
+      series: [
+        {
+          type: 'map',
+          map: props.country,
+          roam: true,
+          nameProperty: props.country === 'uk' ? 'ctyua18nm' : 'name',
+          scaleLimit: { min: 1, max: 8 },
           itemStyle: {
-            areaColor: MAP_COLORS.primary100,
-            borderColor: MAP_COLORS.primary600,
-            borderWidth: 1.5
+            areaColor: white,
+            borderColor: slate400,
+            borderWidth: 1
           },
-          label: { show: false }
-        },
-        data: mapData
-      }
-    ]
-  });
+          emphasis: {
+            itemStyle: { areaColor: primary100, borderColor: primary600, borderWidth: 1.5 },
+            label: { show: false }
+          },
+          data: mapData
+        }
+      ]
+    },
+    true
+  );
 };
 
+// Listen for Country changes, selection changes, and data changes!
 watch(() => props.country, loadAndDrawMap);
-watch(() => props.claimedIds, updateMapData, { deep: true });
+watch(() => props.selectedIds, updateMapData, { deep: true });
+watch(() => props.territories, updateMapData, { deep: true });
 
 onMounted(() => {
   if (import.meta.client) {
