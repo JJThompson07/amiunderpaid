@@ -15,6 +15,21 @@
   "dashboard": "Recruiter Dashboard",
   "territories": {
     "get": "Get Territories",
-    "my": "My Territories"
+    "my": "My Territories",
+    "amiunderpaid": {
+      "claim": {
+        "header": "Claim Candidate Territories"
+      }
+    },
+    "benchmark": {
+      "claim": {
+        "header": "Claim Client Territories"
+      }
+    },
+    "claim": {
+      "map": {
+        "description": "Use the map to select which region's you cover"
+      }
+    }
   }
 }

@@ -1,7 +1,8 @@
 <template>
   <div class="min-h-screen bg-slate-50 p-4 pt-24 pb-32">
     <div class="max-w-6xl mx-auto">
-      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+      <header
+        class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <div>
           <h1 class="text-3xl font-black text-slate-900">Claim Territories</h1>
           <p class="text-slate-500 mt-1">
@@ -31,7 +32,7 @@
             United States
           </button>
         </div>
-      </div>
+      </header>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
         <div class="lg:col-span-2">

@@ -32,7 +32,6 @@ const mapContainer = ref<HTMLElement | null>(null);
 const loading = ref(true);
 const chart = shallowRef<echarts.ECharts | null>(null);
 
-// Helper to grab your live Tailwind @theme CSS variables
 const getThemeColor = (cssVar: string, fallback: string) => {
   if (!import.meta.client) return fallback;
   const val = getComputedStyle(document.body).getPropertyValue(cssVar).trim();
@@ -52,10 +51,9 @@ const normalizeName = (name: string) => {
 
 const loadAndDrawMap = async () => {
   if (!mapContainer.value) return;
-  loading.value = true;
+  loading.value = true; // Lock the shield!
 
   try {
-    // 1. Fetch the JSON file based on the selected country
     const fileName = props.country === 'uk' ? '/uk-regions.json' : '/us-regions.json';
     const response = await fetch(fileName);
 
@@ -66,34 +64,36 @@ const loadAndDrawMap = async () => {
     }
 
     const geoJson = await response.json();
-
-    // 2. Register the new map with ECharts
     echarts.registerMap(props.country, geoJson);
 
-    // 3. Initialize the chart if it doesn't exist
-    if (!chart.value) {
-      chart.value = echarts.init(mapContainer.value);
-
-      chart.value.on('click', (params: any) => {
-        const clickedName = normalizeName(params.name);
-        const matchedTerritory = props.territories.find(
-          (t) =>
-            normalizeName(t.name) === clickedName ||
-            (t.ons_matches &&
-              t.ons_matches.some((ons: any) => normalizeName(ons.name) === clickedName))
-        );
-
-        if (matchedTerritory) {
-          emit('territory-clicked', matchedTerritory);
-        } else {
-          console.warn(`No match found in constants for map shape: ${params.name}`);
-        }
-      });
+    // RACE CONDITION FIX: Destroy the old map memory to prevent phantom clicks
+    if (chart.value) {
+      chart.value.dispose();
+      chart.value = null;
     }
 
-    // 4. Update the visual data
-    updateMapData();
+    // Initialize fresh
+    chart.value = echarts.init(mapContainer.value);
+
+    chart.value.on('click', (params: any) => {
+      const clickedName = normalizeName(params.name);
+      const matchedTerritory = props.territories.find(
+        (t) =>
+          normalizeName(t.name) === clickedName ||
+          (t.ons_matches &&
+            t.ons_matches.some((ons: any) => normalizeName(ons.name) === clickedName))
+      );
+
+      if (matchedTerritory) {
+        emit('territory-clicked', matchedTerritory);
+      } else {
+        console.warn(`No match found in constants for map shape: ${params.name}`);
+      }
+    });
+
+    // IMPORTANT: Unlock the shield BEFORE updating the data!
     loading.value = false;
+    updateMapData();
   } catch (error) {
     console.error(`Failed to load ${props.country} map data:`, error);
     loading.value = false;
@@ -101,7 +101,9 @@ const loadAndDrawMap = async () => {
 };
 
 const updateMapData = () => {
-  if (!chart.value) return;
+  // RACE CONDITION SHIELD: Block updates if map is downloading or missing
+  if (!chart.value || loading.value) return;
+
   const mapData: any[] = [];
 
   const white = '#ffffff';
@@ -128,8 +130,6 @@ const updateMapData = () => {
     }
   });
 
-  // THE CRITICAL FIX: The `true` argument at the very end tells ECharts to
-  // totally wipe the previous map and NOT merge the UK/USA data together!
   chart.value.setOption(
     {
       tooltip: { trigger: 'item', formatter: '{b}' },
@@ -153,14 +153,14 @@ const updateMapData = () => {
         }
       ]
     },
-    true
+    true // notMerge
   );
 };
 
-// Listen for Country changes, selection changes, and data changes!
+// We ONLY watch the country and the selection now.
+// We removed the `territories` watch to kill the double-trigger bug.
 watch(() => props.country, loadAndDrawMap);
 watch(() => props.selectedIds, updateMapData, { deep: true });
-watch(() => props.territories, updateMapData, { deep: true });
 
 onMounted(() => {
   if (import.meta.client) {
