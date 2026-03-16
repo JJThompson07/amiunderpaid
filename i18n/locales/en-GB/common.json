@@ -25,7 +25,9 @@
   },
   "logout": "Logout",
   "saved": {
-    "success": "{items} Saved!"
+    "success": "{items} Saved!",
+    "save": "Save",
+    "saving": "Saving..."
   },
   "categories": "Categories",
   "clear": "Clear",

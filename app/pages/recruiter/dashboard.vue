@@ -193,7 +193,7 @@
                   <span
                     v-if="isSaving"
                     class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                  {{ isSaving ? 'Saving...' : 'Save Updates' }}
+                  {{ isSaving ? $t('common.saved.saving') : $t('common.saved.save') }}
                 </button>
               </div>
             </div>
