@@ -11,5 +11,10 @@
       "no-session": "User session not found. Please refresh the page.",
       "save-failed": "Could not save your profile. Please try again."
     }
+  },
+  "dashboard": "Recruiter Dashboard",
+  "territories": {
+    "get": "Get Territories",
+    "my": "My Territories"
   }
 }

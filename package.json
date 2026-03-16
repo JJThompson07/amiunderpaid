@@ -18,6 +18,7 @@
   "dependencies": {
     "@nuxtjs/algolia": "^1.11.2",
     "algoliasearch": "^4.26.0",
+    "echarts": "^6.0.0",
     "firebase": "^12.9.0",
     "firebase-admin": "^13.6.1",
     "lucide-vue-next": "^0.563.0",

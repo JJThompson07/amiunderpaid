@@ -6,7 +6,7 @@
       <header
         class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl shadow-md border border-slate-200">
         <div>
-          <h1 class="text-2xl font-black text-slate-900">Recruiter Dashboard</h1>
+          <h1 class="text-2xl font-black text-slate-900">{{ $t('recruiter.dashboard') }}</h1>
           <p v-if="userProfile" class="text-slate-500 text-sm mt-1">
             Welcome back, <strong class="text-primary-700">{{ userProfile.agency_name }}</strong>
           </p>
@@ -32,12 +32,12 @@
                 class="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600">
                 <MapPin class="w-5 h-5" />
               </div>
-              <h2 class="text-xl font-bold text-slate-900">Your Territories</h2>
+              <h2 class="text-xl font-bold text-slate-900">{{ $t('recruiter.territories.my') }}</h2>
             </div>
             <NuxtLink
               to="/recruiter/territories"
               class="transition-all duration-700 ease-in-out bg-primary-500 text-white hover:bg-primary-400 py-2 px-4 rounded-xl"
-              >{{ $t('recruiter.get-territories') }}</NuxtLink
+              >{{ $t('recruiter.territories.get') }}</NuxtLink
             >
           </div>
 
