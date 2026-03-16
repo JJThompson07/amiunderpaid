@@ -27,13 +27,13 @@
         </div>
 
         <form class="space-y-5" @submit.prevent="handleSubmit">
-          <AmIInput
+          <AmIInputGeneric
             v-model="email"
             :label="emailLabel"
             :placeholder="emailPlaceholder"
             :icon="Mail" />
 
-          <AmIInput
+          <AmIInputGeneric
             v-model="password"
             type="password"
             :label="$t('login.common.password-label')"

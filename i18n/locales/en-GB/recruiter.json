@@ -12,10 +12,20 @@
       "save-failed": "Could not save your profile. Please try again."
     }
   },
-  "dashboard": "Recruiter Dashboard",
+  "dashboard": {
+    "title": "Recruiter Dashboard",
+    "welcome": "Welcome back, {name}",
+    "loading": "Loading profile..."
+  },
+  "industries": {
+    "none": "No industries selected",
+    "search": "Search Industries...",
+    "helper": "Select the industries your agency covers"
+  },
   "territories": {
     "get": "Get Territories",
     "my": "My Territories",
+    "none": "No territories claimed",
     "amiunderpaid": {
       "claim": {
         "header": "Claim Candidate Territories"

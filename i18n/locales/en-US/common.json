@@ -18,5 +18,19 @@
     "disclaimer": "Data based on recent listings from Adzuna. Government benchmarks are based on full-time roles."
   },
   "searching": "Searching 7,000,000+ records...",
-  "all": "All"
+  "all": "All",
+  "items": {
+    "selected": "{count} item selected | {count} items selected",
+    "none-found": "No results found matching '{search}'"
+  },
+  "logout": "Logout",
+  "saved": {
+    "success": "{items} Saved!"
+  },
+  "categories": "Categories",
+  "clear": "Clear",
+  "search": "Search",
+  "selected": "Selected",
+  "industries": "Industries",
+  "territories": "Territories"
 }

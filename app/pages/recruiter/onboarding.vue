@@ -18,7 +18,7 @@
       </div>
 
       <form class="space-y-6" @submit.prevent="saveProfile">
-        <AmIInput
+        <AmIInputGeneric
           v-model="agencyName"
           :label="$t('recruiter.onboarding.agency-label')"
           :placeholder="$t('recruiter.onboarding.agency-placeholder')"
