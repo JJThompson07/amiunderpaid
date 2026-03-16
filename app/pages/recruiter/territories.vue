@@ -14,21 +14,21 @@
           <button
             :class="[
               'px-6 py-2 rounded-full font-bold transition-all text-sm',
-              selectedCountry === 'uk'
+              selectedCountry === 'UK'
                 ? 'bg-white text-primary-600 shadow-sm'
                 : 'text-slate-500 hover:text-slate-700'
             ]"
-            @click="handleCountryChange('uk')">
+            @click="handleCountryChange('UK')">
             United Kingdom
           </button>
           <button
             :class="[
               'px-6 py-2 rounded-full font-bold transition-all text-sm',
-              selectedCountry === 'usa'
+              selectedCountry === 'USA'
                 ? 'bg-white text-primary-600 shadow-sm'
                 : 'text-slate-500 hover:text-slate-700'
             ]"
-            @click="handleCountryChange('usa')">
+            @click="handleCountryChange('USA')">
             United States
           </button>
         </div>
@@ -45,7 +45,7 @@
               @territory-clicked="handleTerritoryClick" />
           </div>
 
-          <div v-if="selectedCountry === 'usa'" class="mb-8">
+          <div v-if="selectedCountry === 'USA'" class="mb-8">
             <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">
               Non-Contiguous Regions
             </h3>
@@ -96,27 +96,20 @@
         <div class="lg:col-span-1">
           <div class="bg-white p-6 rounded-3xl shadow-xs border border-slate-200 sticky top-8">
             <div class="flex justify-between items-center mb-6">
-              <h2 class="text-xl font-black text-slate-900">Cart</h2>
-              <span
-                v-if="selectedTerritories.length > 0"
-                class="bg-primary-100 text-primary-700 text-xs font-bold px-2 py-1 rounded-lg">
-                {{ selectedTerritories.length }} Selected
-              </span>
+              <h2 class="text-xl font-black text-slate-900">Step 1: Select Targets</h2>
             </div>
 
             <div
               v-if="selectedTerritories.length === 0"
               class="text-center py-12 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
-              <p class="text-slate-500 font-medium">
-                Click regions on the map to begin building your claim.
-              </p>
+              <p class="text-slate-500 font-medium">Click regions on the map to begin.</p>
             </div>
 
             <div v-else class="space-y-6">
               <div>
                 <div class="flex justify-between items-end mb-2">
                   <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block"
-                    >Selected Regions</label
+                    >Target Regions</label
                   >
                   <button
                     class="text-xs font-bold text-slate-400 hover:text-negative-500 transition-colors"
@@ -125,91 +118,51 @@
                   </button>
                 </div>
 
-                <div class="space-y-2 max-h-50 overflow-y-auto pr-1 custom-scrollbar">
+                <div class="space-y-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
                   <div
                     v-for="terr in selectedTerritories"
                     :key="terr.id"
                     class="p-3 bg-primary-50 text-primary-700 font-bold rounded-xl border border-primary-100 flex justify-between items-center">
-                    <span class="truncate pr-2">{{ terr.name }}</span>
+                    <span class="truncate pr-2 text-sm">{{ terr.name }}</span>
                     <button
                       class="text-primary-400 hover:text-negative-500 p-1 rounded-md transition-colors"
-                      title="Remove"
                       @click="removeTerritory(terr.id)">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="3">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <X class="w-4 h-4" />
                     </button>
                   </div>
                 </div>
               </div>
 
               <div>
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block"
-                  >Select Category</label
-                >
-                <select
-                  v-model="selectedCategory"
-                  class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                  <option value="" disabled>Choose an industry...</option>
-                  <option v-for="cat in availableCategories" :key="cat" :value="cat">
-                    {{ cat }}
-                  </option>
-                </select>
-              </div>
+                <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">
+                  Target Industries {{ selectedCountry }}
+                </label>
 
-              <div>
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block"
-                  >Subscription Length</label
-                >
-                <div class="grid grid-cols-2 gap-3">
-                  <button
-                    :class="[
-                      'p-3 rounded-xl border font-bold transition-all',
-                      selectedMonths === 1
-                        ? 'bg-slate-900 text-white border-slate-900'
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                    ]"
-                    @click="selectedMonths = 1">
-                    1 Month
-                  </button>
-                  <button
-                    :class="[
-                      'p-3 rounded-xl border font-bold transition-all relative',
-                      selectedMonths === 12
-                        ? 'bg-slate-900 text-white border-slate-900'
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                    ]"
-                    @click="selectedMonths = 12">
-                    12 Months
-                    <span
-                      class="absolute -top-2 -right-2 bg-positive-500 text-white text-2xs uppercase tracking-wider font-black px-2 py-1 rounded-full"
-                      >Save 20%</span
-                    >
-                  </button>
-                </div>
+                <AmIInputSelect
+                  v-model="selectedCategories"
+                  :options="intelligentCategories"
+                  placeholder="Search industries..."
+                  :loading="loadingCategories" />
+
+                <p
+                  v-if="userProfile?.coveredCategories?.length"
+                  class="text-2xs text-slate-400 mt-2 font-medium">
+                  Showing industries from your Agency Profile.
+                </p>
               </div>
 
               <hr class="border-slate-100" />
 
               <button
-                :disabled="!isReadyToCheckout"
+                :disabled="!isReadyForSchedule"
                 :class="[
                   'w-full py-4 rounded-xl font-black text-lg transition-all',
-                  isReadyToCheckout
+                  isReadyForSchedule
                     ? 'bg-primary-600 text-white shadow-md hover:bg-primary-700 hover:shadow-lg'
                     : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                 ]"
-                @click="proceedToCheckout">
-                Proceed to Payment
+                @click="continueToSchedule">
+                Configure Schedule &rarr;
               </button>
             </div>
           </div>
@@ -221,79 +174,98 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { X } from 'lucide-vue-next';
 
 // IMPORT YOUR CONSTANTS
 import { RECRUITER_TERRITORIES_UK } from '~~/utils/locations/uk';
 import { RECRUITER_TERRITORIES_USA } from '~~/utils/locations/usa';
 
-// State Management
-const selectedCountry = ref<'uk' | 'usa'>('uk');
-const selectedTerritories = ref<any[]>([]); // ARRAY OF SELECTED REGIONS
-const selectedCategory = ref<string>('');
-const selectedMonths = ref<number>(1);
+export type CountryCode = 'UK' | 'USA';
 
-const availableCategories = [
-  'Technology',
-  'Healthcare',
-  'Finance',
-  'Construction',
-  'Education',
-  'Retail'
-];
+// 1. Bring in our clean data layers!
+const { userProfile } = useUserProfile();
+const { categories: categoriesData, loadingCategories } = useCategories();
 
+// 2. State Management
+const selectedCountry = ref<CountryCode>('UK');
+const selectedTerritories = ref<any[]>([]); // Array of selected map regions
+const selectedCategories = ref<string[]>([]); // Array of selected industries
+
+// 3. Map Data
 const activeTerritories = computed(() => {
-  return selectedCountry.value === 'uk' ? RECRUITER_TERRITORIES_UK : RECRUITER_TERRITORIES_USA;
+  return selectedCountry.value === 'UK' ? RECRUITER_TERRITORIES_UK : RECRUITER_TERRITORIES_USA;
 });
 
-const isReadyToCheckout = computed(() => {
-  return selectedTerritories.value.length > 0 && selectedCategory.value !== '';
+// 4. Intelligent Category Dropdown Logic
+const intelligentCategories = computed(() => {
+  if (!categoriesData.value) return [];
+
+  // STEP 1: Filter the raw database categories by the active country toggle ('uk' or 'usa')
+  const countrySpecificCategories = categoriesData.value.filter(
+    (cat: any) => cat.country === selectedCountry.value.toUpperCase()
+  );
+
+  // STEP 2: Format the filtered data into what the MultiSelectAutocomplete expects
+  const allFormatted = countrySpecificCategories.map((cat: any) => ({
+    label: cat.label || cat.id,
+    value: cat.label || cat.id
+  }));
+
+  // STEP 3: If the user has explicitly defined categories in their profile, ONLY return those!
+  if (userProfile.value?.coveredCategories && userProfile.value.coveredCategories.length > 0) {
+    return allFormatted.filter((cat: any) =>
+      userProfile.value!.coveredCategories.includes(cat.value)
+    );
+  }
+
+  // STEP 4: Otherwise, return all the country-specific categories so brand new users aren't blocked
+  return allFormatted;
 });
 
-// SMART MAP CLICK HANDLER (Toggle logic)
+// 5. Validation Check
+const isReadyForSchedule = computed(() => {
+  return selectedTerritories.value.length > 0 && selectedCategories.value.length > 0;
+});
+
+// 6. Map Click & Toggle Handlers
 const handleTerritoryClick = (territory: any) => {
-  // Check if we already clicked it
   const index = selectedTerritories.value.findIndex((t) => t.id === territory.id);
-
   if (index > -1) {
-    // If it exists, remove it!
-    selectedTerritories.value.splice(index, 1);
+    selectedTerritories.value.splice(index, 1); // Remove if exists
   } else {
-    // If it doesn't exist, add it!
-    selectedTerritories.value.push(territory);
+    selectedTerritories.value.push(territory); // Add if new
   }
 };
 
-// Remove a specific territory via the "X" button
 const removeTerritory = (id: number) => {
   selectedTerritories.value = selectedTerritories.value.filter((t) => t.id !== id);
 };
 
-// COUNTRY CHANGE HANDLER
-const handleCountryChange = (country: 'uk' | 'usa') => {
+const handleCountryChange = (country: CountryCode) => {
   if (selectedCountry.value !== country) {
     selectedCountry.value = country;
-    selectedTerritories.value = []; // WIPE THE CART!
+    selectedTerritories.value = []; // Wipe cart when switching countries
   }
 };
 
-// CHECKOUT HANDLER
-const proceedToCheckout = async () => {
-  if (!isReadyToCheckout.value) return;
+// 7. Proceed to Step 2 (The Matrix)
+const continueToSchedule = () => {
+  if (!isReadyForSchedule.value) return;
 
-  const checkoutData = {
-    // Map the array into a clean format for Stripe/Firebase
+  // We have the raw ingredients! Assemble the payload.
+  const payload = {
     locations: selectedTerritories.value.map((t) => ({ id: t.id, name: t.name })),
-    country: selectedCountry.value,
-    category: selectedCategory.value,
-    durationMonths: selectedMonths.value
+    categories: selectedCategories.value,
+    country: selectedCountry.value
   };
 
-  console.log('SENDING TO STRIPE:', checkoutData);
+  console.log('READY FOR MATRIX:', payload);
+
+  // Todo: Trigger the Schedule View here!
 };
 </script>
 
 <style scoped>
-/* Optional: Custom scrollbar for the cart if they select 10+ regions */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
 }

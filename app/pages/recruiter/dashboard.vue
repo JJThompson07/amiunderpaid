@@ -206,26 +206,16 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { MapPin, BriefcaseBusiness, Map, CheckSquareIcon } from 'lucide-vue-next';
-import { useCurrentUser, useDocument, useCollection, useFirestore } from 'vuefire';
-import { doc, collection, updateDoc } from 'firebase/firestore';
+import { MapPin, BriefcaseBusiness, Map } from 'lucide-vue-next';
 
 definePageMeta({
   middleware: 'recruiters'
 });
 
-// 1. Auth & DB setup
+// 1. Use our incredibly clean Composables!
 const { logout } = useRecruiterAuth();
-const user = useCurrentUser();
-const db = useFirestore();
-
-// 2. Fetch User Profile
-const userDocRef = computed(() => (user.value ? doc(db, 'users', user.value.uid) : null));
-const { data: userProfile } = useDocument(userDocRef);
-
-// 3. Fetch Adzuna Categories
-const categoriesRef = collection(db, 'adzuna_categories');
-const { data: categoriesData, pending: loadingCategories } = useCollection(categoriesRef);
+const { userProfile, updateProfile } = useUserProfile();
+const { categories: categoriesData, loadingCategories } = useCategories();
 
 // State for Categories UI
 const selectedCategories = ref<string[]>([]);
@@ -235,7 +225,7 @@ const showSuccess = ref(false);
 // Format categories for the autocomplete component
 const formattedCategories = computed(() => {
   if (!categoriesData.value) return [];
-  return categoriesData.value.map((cat) => ({
+  return categoriesData.value.map((cat: any) => ({
     label: cat.label || cat.id,
     value: cat.label || cat.id
   }));
@@ -263,25 +253,20 @@ watch(
   { immediate: true }
 );
 
-// Save logic
+// Clean Save Logic
 const saveProfileCategories = async () => {
-  if (!user.value) return;
-
   isSaving.value = true;
   showSuccess.value = false;
 
   try {
-    await updateDoc(doc(db, 'users', user.value.uid), {
-      coveredCategories: selectedCategories.value,
-      updatedAt: new Date()
-    });
+    // Calling the abstracted Firestore method!
+    await updateProfile({ coveredCategories: selectedCategories.value });
 
     showSuccess.value = true;
     setTimeout(() => {
       showSuccess.value = false;
     }, 3000);
-  } catch (error) {
-    console.error('Error saving categories:', error);
+  } catch {
     alert('Failed to save categories. Please try again.');
   } finally {
     isSaving.value = false;

@@ -18,9 +18,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, shallowRef } from 'vue';
 import * as echarts from 'echarts';
+import type { CountryCode } from '../../pages/recruiter/territories.vue';
 
 const props = defineProps<{
-  country: 'uk' | 'usa';
+  country: CountryCode;
   claimedIds: number[];
   territories: any[];
   selectedIds: number[];
@@ -54,7 +55,7 @@ const loadAndDrawMap = async () => {
   loading.value = true; // Lock the shield!
 
   try {
-    const fileName = props.country === 'uk' ? '/uk-regions.json' : '/us-regions.json';
+    const fileName = props.country === 'UK' ? '/uk-regions.json' : '/us-regions.json';
     const response = await fetch(fileName);
 
     if (!response.ok) {
@@ -138,7 +139,7 @@ const updateMapData = () => {
           type: 'map',
           map: props.country,
           roam: true,
-          nameProperty: props.country === 'uk' ? 'ctyua18nm' : 'name',
+          nameProperty: props.country === 'UK' ? 'ctyua18nm' : 'name',
           scaleLimit: { min: 1, max: 8 },
           itemStyle: {
             areaColor: white,
