@@ -56,10 +56,10 @@
               {{ $t('recruiter.territories.none') }}
             </h3>
             <p class="text-slate-500 text-sm mb-6 max-w-sm mx-auto">
-              Claim an exclusive region to start receiving candidate leads from that area.
+              {{ $t('recruiter.territories.claim.leads') }}
             </p>
             <AmIButton title="Claim Territory" @click="navigateTo('/recruiter/territories')">
-              Claim Your First Territory
+              {{ $t('recruiter.territories.claim.first') }}
             </AmIButton>
           </div>
 
@@ -75,28 +75,30 @@
               class="w-10 h-10 bg-secondary-50 rounded-xl flex items-center justify-center text-secondary-600">
               <BriefcaseBusiness class="w-5 h-5" />
             </div>
-            <h2 class="text-xl font-bold text-slate-900">Agency Profile</h2>
+            <h2 class="text-xl font-bold text-slate-900">{{ $t('recruiter.account.heading') }}</h2>
           </div>
 
           <div v-if="userProfile" class="space-y-4">
             <div>
               <p class="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Agency Name
+                {{ $t('recruiter.account.name') }}
               </p>
               <p class="font-medium text-slate-900">{{ userProfile.agency_name }}</p>
             </div>
             <div>
-              <p class="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">Email</p>
+              <p class="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                {{ $t('common.email') }}
+              </p>
               <p class="font-medium text-slate-900">{{ userProfile.email }}</p>
             </div>
             <div>
               <p class="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Account Status
+                {{ $t('recruiter.account.status.label') }}
               </p>
               <div
                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-50 text-green-700 text-xs font-bold border border-green-200">
                 <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                Active
+                {{ $t('recruiter.account.status.active') }}
               </div>
             </div>
 

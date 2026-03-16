@@ -17,6 +17,15 @@
     "welcome": "Welcome back, {name}",
     "loading": "Loading profile..."
   },
+  "account": {
+    "heading": "Agency Profile",
+    "name": "Agency Name",
+    "status": {
+      "label": "Account Status",
+      "active": "Active",
+      "inactive": "Inactive"
+    }
+  },
   "industries": {
     "none": "No industries selected",
     "search": "Search Industries...",
@@ -37,6 +46,8 @@
       }
     },
     "claim": {
+      "first": "Claim Your First Territory",
+      "leads": "Claim an exclusive region to start receiving leads from that area",
       "map": {
         "description": "Use the map to select which region's you cover"
       }

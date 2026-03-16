@@ -12,7 +12,45 @@
       "save-failed": "Could not save your profile. Please try again."
     }
   },
+  "dashboard": {
+    "title": "Recruiter Dashboard",
+    "welcome": "Welcome back, {name}",
+    "loading": "Loading profile..."
+  },
+  "account": {
+    "heading": "Agency Profile",
+    "name": "Agency Name",
+    "status": {
+      "label": "Account Status",
+      "active": "Active",
+      "inactive": "Inactive"
+    }
+  },
+  "industries": {
+    "none": "No industries selected",
+    "search": "Search Industries...",
+    "helper": "Select the industries your agency covers"
+  },
   "territories": {
-    "get": "Get Territories"
+    "get": "Get Territories",
+    "my": "My Territories",
+    "none": "No territories claimed",
+    "amiunderpaid": {
+      "claim": {
+        "header": "Claim Candidate Territories"
+      }
+    },
+    "benchmark": {
+      "claim": {
+        "header": "Claim Client Territories"
+      }
+    },
+    "claim": {
+      "first": "Claim Your First Territory",
+      "leads": "Claim an exclusive region to start receiving leads from that area",
+      "map": {
+        "description": "Use the map to select which region's you cover"
+      }
+    }
   }
 }
