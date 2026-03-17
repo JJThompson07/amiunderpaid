@@ -45,6 +45,7 @@ const normalizeName = (name: string) => {
     .replace(/, City of/gi, '')
     .replace(/City of /gi, '')
     .replace(/, County of/gi, '')
+    .replace(/County of /gi, '')
     .replace(/&/g, 'and')
     .trim()
     .toLowerCase();
@@ -102,54 +103,97 @@ const loadAndDrawMap = async () => {
 };
 
 const updateMapData = () => {
-  // RACE CONDITION SHIELD: Block updates if map is downloading or missing
+  // RACE CONDITION SHIELD
   if (!chart.value || loading.value) return;
 
   const mapData: any[] = [];
 
   const white = '#ffffff';
+  const slate100 = '#f1f5f9';
+  const slate200 = '#e2e8f0';
   const slate400 = '#94a3b8';
   const primary100 = getThemeColor('--color-primary-100', '#cef9f6');
   const primary500 = getThemeColor('--color-primary-500', '#1cabb0');
   const primary600 = getThemeColor('--color-primary-600', '#14868d');
 
-  props.territories.forEach((t) => {
-    const isSelected = props.selectedIds.includes(t.id);
+  // 1. Grab the raw GeoJSON memory that ECharts is using
+  const mapObj = echarts.getMap(props.country);
+  if (!mapObj || !mapObj.geoJSON) return;
 
-    const itemStyle = {
-      areaColor: isSelected ? primary500 : white,
-      borderColor: isSelected ? primary600 : slate400,
-      borderWidth: isSelected ? 2 : 1
-    };
+  const nameProp = props.country === 'UK' ? 'ctyua18nm' : 'name';
 
-    mapData.push({ name: t.name, value: isSelected ? 1 : 0, itemStyle });
+  // 2. Loop through every single polygon on the actual map
+  mapObj.geoJSON.features.forEach((feature: any) => {
+    const rawGeoName = feature.properties[nameProp];
+    if (!rawGeoName) return;
 
-    if (t.ons_matches) {
-      t.ons_matches.forEach((ons: any) => {
-        mapData.push({ name: ons.name, value: isSelected ? 1 : 0, itemStyle });
+    // Normalize the map's name using your updated function
+    const normalizedGeoName = normalizeName(rawGeoName);
+
+    // 3. Check if this polygon exists in our active territories
+    const matchedTerritory = props.territories.find(
+      (t) =>
+        normalizeName(t.name) === normalizedGeoName ||
+        (t.ons_matches &&
+          t.ons_matches.some((ons: any) => normalizeName(ons.name) === normalizedGeoName))
+    );
+
+    // 4. If it's a match, tell ECharts to color it using the RAW GeoJSON name!
+    if (matchedTerritory) {
+      const isSelected = props.selectedIds.includes(matchedTerritory.id);
+
+      mapData.push({
+        name: rawGeoName, // <--- THE CRITICAL FIX: ECharts needs exact matches
+        value: isSelected ? 1 : 0,
+        itemStyle: {
+          areaColor: isSelected ? primary500 : white,
+          borderColor: isSelected ? primary600 : slate400,
+          borderWidth: isSelected ? 2 : 1
+        },
+        emphasis: {
+          disabled: false,
+          itemStyle: {
+            areaColor: isSelected ? primary500 : primary100,
+            borderColor: primary600,
+            borderWidth: 1.5
+          }
+        },
+        cursor: 'pointer'
       });
     }
   });
 
   chart.value.setOption(
     {
-      tooltip: { trigger: 'item', formatter: '{b}' },
+      tooltip: {
+        trigger: 'item',
+        formatter: (params: any) => {
+          // Hide tooltip for greyed out areas
+          if (!params.data) return undefined;
+          return params.name;
+        }
+      },
       series: [
         {
           type: 'map',
           map: props.country,
           roam: true,
-          nameProperty: props.country === 'UK' ? 'ctyua18nm' : 'name',
+          nameProperty: nameProp,
           scaleLimit: { min: 1, max: 8 },
+
+          // BASE MAP SETTINGS (Disabled styling)
+          cursor: 'default',
           itemStyle: {
-            areaColor: white,
-            borderColor: slate400,
+            areaColor: slate100,
+            borderColor: slate200,
             borderWidth: 1
           },
           emphasis: {
-            itemStyle: { areaColor: primary100, borderColor: primary600, borderWidth: 1.5 },
+            disabled: true,
             label: { show: false }
           },
+
+          // Inject our active locations over the top
           data: mapData
         }
       ]

@@ -34,5 +34,7 @@
   "search": "Search",
   "selected": "Selected",
   "industries": "Industries",
-  "territories": "Territories"
+  "territories": "Territories",
+  "uk": "United Kingdom",
+  "usa": "United States"
 }

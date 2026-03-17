@@ -1,37 +1,17 @@
 <template>
   <div class="min-h-screen bg-slate-50 p-4 pt-24 pb-32">
-    <div class="max-w-6xl mx-auto">
+    <SectionSharedBackdrop />
+
+    <div class="max-w-6xl mx-auto relative">
       <header
-        class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+        class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 bg-white p-6 rounded-3xl shadow-md border border-slate-200">
         <div>
-          <h1 class="text-3xl font-black text-slate-900">Claim Territories</h1>
+          <h1 class="text-3xl font-black text-slate-900">{{ $t('recruiter.territories.get') }}</h1>
           <p class="text-slate-500 mt-1">
-            Select exclusive regions and an industry to start receiving candidate leads.
+            {{ $t('recruiter.territories.claim.leads') }}
           </p>
         </div>
-
-        <div class="flex gap-2 bg-slate-200/50 p-1 rounded-full border border-slate-200">
-          <button
-            :class="[
-              'px-6 py-2 rounded-full font-bold transition-all text-sm',
-              selectedCountry === 'UK'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            ]"
-            @click="handleCountryChange('UK')">
-            United Kingdom
-          </button>
-          <button
-            :class="[
-              'px-6 py-2 rounded-full font-bold transition-all text-sm',
-              selectedCountry === 'USA'
-                ? 'bg-white text-primary-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            ]"
-            @click="handleCountryChange('USA')">
-            United States
-          </button>
-        </div>
+        <AmITabs v-model="selectedCountry" :options="countries" round />
       </header>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
@@ -118,37 +98,34 @@
                   </button>
                 </div>
 
-                <div class="space-y-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
-                  <div
-                    v-for="terr in selectedTerritories"
-                    :key="terr.id"
-                    class="p-3 bg-primary-50 text-primary-700 font-bold rounded-xl border border-primary-100 flex justify-between items-center">
-                    <span class="truncate pr-2 text-sm">{{ terr.name }}</span>
-                    <button
-                      class="text-primary-400 hover:text-negative-500 p-1 rounded-md transition-colors"
-                      @click="removeTerritory(terr.id)">
-                      <X class="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+                <AmIButtonList
+                  :options="territoryOptions"
+                  :selected-options="selectedTerritories"
+                  max-height="max-h-40"
+                  @remove="removeTerritory($event)" />
               </div>
 
-              <div>
+              <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">
                   Target Industries {{ selectedCountry }}
                 </label>
-
-                <AmIInputSelect
-                  v-model="selectedCategories"
-                  :options="intelligentCategories"
-                  placeholder="Search industries..."
-                  :loading="loadingCategories" />
-
                 <p
                   v-if="userProfile?.coveredCategories?.length"
                   class="text-2xs text-slate-400 mt-2 font-medium">
                   Showing industries from your Agency Profile.
                 </p>
+
+                <AmIInputSelect
+                  v-model="selectedCategories"
+                  :options="intelligentCategories"
+                  placeholder="Search industries..."
+                  :loading="loadingCategories"
+                  external-list />
+
+                <AmIButtonList
+                  :options="intelligentCategories"
+                  :selected-options="selectedCategories"
+                  @remove="removeCategoryFromList($event)" />
               </div>
 
               <hr class="border-slate-100" />
@@ -174,13 +151,19 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { X } from 'lucide-vue-next';
 
 // IMPORT YOUR CONSTANTS
 import { RECRUITER_TERRITORIES_UK } from '~~/utils/locations/uk';
 import { RECRUITER_TERRITORIES_USA } from '~~/utils/locations/usa';
 
 export type CountryCode = 'UK' | 'USA';
+
+const { t } = useI18n();
+
+const countries = [
+  { value: 'UK', label: t('common.uk') },
+  { value: 'USA', label: t('common.usa') }
+];
 
 // 1. Bring in our clean data layers!
 const { userProfile } = useUserProfile();
@@ -194,6 +177,13 @@ const selectedCategories = ref<string[]>([]); // Array of selected industries
 // 3. Map Data
 const activeTerritories = computed(() => {
   return selectedCountry.value === 'UK' ? RECRUITER_TERRITORIES_UK : RECRUITER_TERRITORIES_USA;
+});
+
+const territoryOptions = computed(() => {
+  return selectedTerritories.value.map((t) => ({
+    label: t.name,
+    value: t.id
+  }));
 });
 
 // 4. Intelligent Category Dropdown Logic
@@ -241,11 +231,9 @@ const removeTerritory = (id: number) => {
   selectedTerritories.value = selectedTerritories.value.filter((t) => t.id !== id);
 };
 
-const handleCountryChange = (country: CountryCode) => {
-  if (selectedCountry.value !== country) {
-    selectedCountry.value = country;
-    selectedTerritories.value = []; // Wipe cart when switching countries
-  }
+// Remove individual category
+const removeCategoryFromList = (val: string) => {
+  selectedCategories.value = selectedCategories.value.filter((c) => c !== val);
 };
 
 // 7. Proceed to Step 2 (The Matrix)
@@ -263,17 +251,8 @@ const continueToSchedule = () => {
 
   // Todo: Trigger the Schedule View here!
 };
-</script>
 
-<style scoped>
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border-radius: 10px;
-}
-</style>
+watch(selectedCountry, () => {
+  selectedTerritories.value = []; // Wipe cart when switching countries
+});
+</script>
