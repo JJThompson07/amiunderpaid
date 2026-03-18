@@ -2,9 +2,9 @@
   <div class="min-h-screen bg-slate-50 p-4 pt-24 pb-32">
     <SectionSharedBackdrop />
 
-    <div class="max-w-6xl mx-auto relative">
+    <div class="max-w-6xl mx-auto relative flex flex-col gap-6">
       <header
-        class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 bg-white p-6 rounded-3xl shadow-md border border-slate-200">
+        class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-3xl shadow-md border border-slate-200">
         <div>
           <h1 class="text-3xl font-black text-slate-900">{{ $t('recruiter.territories.get') }}</h1>
           <p class="text-slate-500 mt-1">
@@ -14,7 +14,7 @@
         <AmITabs v-model="selectedCountry" :options="countries" round />
       </header>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2">
           <div class="bg-white p-6 rounded-3xl shadow-xs border border-slate-200 mb-6">
             <TerritoryMap
@@ -155,6 +155,10 @@ import { ref, computed } from 'vue';
 // IMPORT YOUR CONSTANTS
 import { RECRUITER_TERRITORIES_UK } from '~~/utils/locations/uk';
 import { RECRUITER_TERRITORIES_USA } from '~~/utils/locations/usa';
+
+definePageMeta({
+  middleware: 'recruiters'
+});
 
 export type CountryCode = 'UK' | 'USA';
 
