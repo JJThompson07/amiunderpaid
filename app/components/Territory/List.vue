@@ -9,7 +9,7 @@
         class="flex flex-col gap-2 rounded-lg shadow-xs overflow-hidden"
         :class="[groupBgColour]">
         <button
-          class="flex items-center justify-between w-full text-left font-semibold text-slate-800 hover:text-primary-600 transition-colors p-2"
+          class="flex items-center justify-between w-full text-left font-semibold text-slate-800 hover:text-primary-600 transition-colors p-2 cursor-pointer"
           :class="{ 'border-b-2 border-primary-600': openGroups.has(group.group) }"
           @click="toggleGroup(group.group)">
           <div class="flex justify-between gap-2 items-center w-full">
@@ -143,7 +143,7 @@ const groupedOptions = computed(() => {
     map.get(regionName)!.options.push(option);
   }
 
-  return Array.from(map.values());
+  return Array.from(map.values()).sort((a, b) => a.group.localeCompare(b.group));
 });
 
 const selectedIdsSet = computed(() => {
