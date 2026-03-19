@@ -14,62 +14,32 @@
         <AmITabs v-model="selectedCountry" :options="countries" round />
       </header>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2">
-          <div class="bg-white p-6 rounded-3xl shadow-xs border border-slate-200 mb-6">
-            <TerritoryMap
-              :country="selectedCountry"
-              :territories="activeTerritories"
-              :claimed-ids="[]"
-              :selected-ids="selectedTerritories.map((t) => t.id)"
-              @territory-clicked="handleTerritoryClick" />
-          </div>
+      <AmITabs v-model="selectedView" :options="views" round class="w-max" />
 
-          <div v-if="selectedCountry === 'USA'" class="mb-8">
-            <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">
-              Non-Contiguous Regions
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button
-                v-for="state in ['Alaska', 'Hawaii', 'Puerto Rico']"
-                :key="state"
-                :class="[
-                  'p-4 rounded-2xl border transition-all flex items-center gap-4 text-left group',
-                  selectedTerritories.some((t) => t.name === state)
-                    ? 'bg-primary-50 border-primary-200 text-primary-700 shadow-inner'
-                    : 'bg-white border-slate-200 text-slate-700 hover:border-primary-300 hover:shadow-md'
-                ]"
-                @click="handleTerritoryClick(activeTerritories.find((t) => t.name === state))">
-                <div
-                  :class="[
-                    'w-20 h-20 shrink-0 transition-colors',
-                    selectedTerritories.some((t) => t.name === state)
-                      ? 'text-primary-500'
-                      : 'text-slate-400 group-hover:text-primary-500'
-                  ]">
-                  <div
-                    class="w-full h-full bg-current"
-                    :style="{
-                      WebkitMaskImage: `url('/${state.toLowerCase().replace(' ', '-')}.svg')`,
-                      maskImage: `url('/${state.toLowerCase().replace(' ', '-')}.svg')`,
-                      WebkitMaskSize: 'contain',
-                      maskSize: 'contain',
-                      WebkitMaskRepeat: 'no-repeat',
-                      maskRepeat: 'no-repeat',
-                      WebkitMaskPosition: 'center',
-                      maskPosition: 'center'
-                    }"></div>
-                </div>
-                <div class="flex-1">
-                  <span class="font-bold block text-lg">{{ state }}</span>
-                  <span
-                    v-if="selectedTerritories.some((t) => t.name === state)"
-                    class="text-xs font-bold text-primary-600 uppercase tracking-wide">
-                    Selected
-                  </span>
-                </div>
-              </button>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 flex flex-col gap-2">
+          <template v-if="selectedView === 'list'">
+            <TerritoryList
+              :options="listOptions"
+              :selected-options="selectedTerritories"
+              @territory-click="handleTerritoryClick" />
+          </template>
+          <div v-else class="map-view flex flex-col gap-6">
+            <div class="bg-white p-6 rounded-3xl shadow-xs border border-slate-200 mb-6">
+              <TerritoryMap
+                :country="selectedCountry"
+                :territories="activeTerritories"
+                :claimed-ids="[]"
+                :selected-ids="selectedTerritories.map((t) => t.id)"
+                @territory-clicked="handleTerritoryClick" />
             </div>
+
+            <TerritoryNonContiguousRegions
+              v-if="selectedCountry === 'USA'"
+              :selected-territories="selectedTerritories"
+              @territory-clicked="
+                handleTerritoryClick(activeTerritories.find((t) => t.name === $event))
+              " />
           </div>
         </div>
 
@@ -155,12 +125,15 @@ import { ref, computed } from 'vue';
 // IMPORT YOUR CONSTANTS
 import { RECRUITER_TERRITORIES_UK } from '~~/utils/locations/uk';
 import { RECRUITER_TERRITORIES_USA } from '~~/utils/locations/usa';
+import type { TerritoryListOption } from '../../components/Territory/List.vue';
 
 definePageMeta({
   middleware: 'recruiters'
 });
 
 export type CountryCode = 'UK' | 'USA';
+export type ViewType = 'list' | 'map';
+export type TerritoryOption = { label: string; value: number };
 
 const { t } = useI18n();
 
@@ -169,12 +142,18 @@ const countries = [
   { value: 'USA', label: t('common.usa') }
 ];
 
+const views = [
+  { value: 'map', label: t('common.map') },
+  { value: 'list', label: t('common.list') }
+];
+
 // 1. Bring in our clean data layers!
 const { userProfile } = useUserProfile();
 const { categories: categoriesData, loadingCategories } = useCategories();
 
 // 2. State Management
 const selectedCountry = ref<CountryCode>('UK');
+const selectedView = ref<ViewType>('map');
 const selectedTerritories = ref<any[]>([]); // Array of selected map regions
 const selectedCategories = ref<string[]>([]); // Array of selected industries
 
@@ -183,11 +162,24 @@ const activeTerritories = computed(() => {
   return selectedCountry.value === 'UK' ? RECRUITER_TERRITORIES_UK : RECRUITER_TERRITORIES_USA;
 });
 
-const territoryOptions = computed(() => {
+const territoryOptions = computed<TerritoryOption[]>(() => {
   return selectedTerritories.value.map((t) => ({
     label: t.name,
     value: t.id
   }));
+});
+
+const listOptions = computed<TerritoryListOption[]>(() => {
+  const list =
+    selectedCountry.value === 'UK' ? RECRUITER_TERRITORIES_UK : RECRUITER_TERRITORIES_USA;
+
+  return list.map((t) => {
+    return {
+      name: t.name,
+      id: t.id,
+      region: t.region.name
+    };
+  });
 });
 
 // 4. Intelligent Category Dropdown Logic

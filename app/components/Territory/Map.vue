@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative w-full h-125 md:h-150 bg-slate-50 rounded-3xl border border-slate-200 overflow-hidden">
+    class="relative w-full h-125 md:h-150 bg-linear-to-t from-secondary-50 to-slate-50 rounded-3xl border border-slate-200 overflow-hidden">
     <div ref="mapContainer" class="w-full h-full"></div>
 
     <div
@@ -9,7 +9,7 @@
       <div class="flex flex-col items-center gap-3">
         <div
           class="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-        <p class="text-slate-500 font-bold">Loading {{ country.toUpperCase() }} map...</p>
+        <AmILoader :message="$t('common.loading-item', { item: country })" />
       </div>
     </div>
   </div>
@@ -93,8 +93,8 @@ const loadAndDrawMap = async () => {
       }
     });
 
-    // IMPORTANT: Unlock the shield BEFORE updating the data!
     loading.value = false;
+
     updateMapData();
   } catch (error) {
     console.error(`Failed to load ${props.country} map data:`, error);
@@ -143,7 +143,7 @@ const updateMapData = () => {
       const isSelected = props.selectedIds.includes(matchedTerritory.id);
 
       mapData.push({
-        name: rawGeoName, // <--- THE CRITICAL FIX: ECharts needs exact matches
+        name: rawGeoName,
         value: isSelected ? 1 : 0,
         itemStyle: {
           areaColor: isSelected ? primary500 : white,

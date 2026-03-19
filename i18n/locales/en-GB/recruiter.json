@@ -35,6 +35,10 @@
     "get": "Get Territories",
     "my": "My Territories",
     "none": "No territories claimed",
+    "non-contiguous": "Non-Contiguous Regions",
+    "selected": "{count} selected | {count} selected",
+    "count": "{count} territory | {count} territories",
+    "list": "Territories List",
     "amiunderpaid": {
       "claim": {
         "header": "Claim Candidate Territories"
