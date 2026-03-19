@@ -33,6 +33,24 @@ const mapContainer = ref<HTMLElement | null>(null);
 const loading = ref(true);
 const chart = shallowRef<echarts.ECharts | null>(null);
 
+const territoryLookup = computed(() => {
+  const lookup = new Map<string, any>();
+
+  props.territories.forEach((t) => {
+    // Index the main territory name
+    lookup.set(normalizeName(t.name), t);
+
+    // Index all associated ONS names (Crucial for UK maps)
+    if (t.ons_matches) {
+      t.ons_matches.forEach((ons: any) => {
+        lookup.set(normalizeName(ons.name), t);
+      });
+    }
+  });
+
+  return lookup;
+});
+
 const getThemeColor = (cssVar: string, fallback: string) => {
   if (!import.meta.client) return fallback;
   const val = getComputedStyle(document.body).getPropertyValue(cssVar).trim();
@@ -79,12 +97,8 @@ const loadAndDrawMap = async () => {
 
     chart.value.on('click', (params: any) => {
       const clickedName = normalizeName(params.name);
-      const matchedTerritory = props.territories.find(
-        (t) =>
-          normalizeName(t.name) === clickedName ||
-          (t.ons_matches &&
-            t.ons_matches.some((ons: any) => normalizeName(ons.name) === clickedName))
-      );
+
+      const matchedTerritory = territoryLookup.value.get(clickedName);
 
       if (matchedTerritory) {
         emit('territory-clicked', matchedTerritory);
@@ -131,12 +145,7 @@ const updateMapData = () => {
     const normalizedGeoName = normalizeName(rawGeoName);
 
     // 3. Check if this polygon exists in our active territories
-    const matchedTerritory = props.territories.find(
-      (t) =>
-        normalizeName(t.name) === normalizedGeoName ||
-        (t.ons_matches &&
-          t.ons_matches.some((ons: any) => normalizeName(ons.name) === normalizedGeoName))
-    );
+    const matchedTerritory = territoryLookup.value.get(normalizedGeoName);
 
     // 4. If it's a match, tell ECharts to color it using the RAW GeoJSON name!
     if (matchedTerritory) {
