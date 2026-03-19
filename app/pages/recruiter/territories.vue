@@ -37,9 +37,7 @@
             <TerritoryNonContiguousRegions
               v-if="selectedCountry === 'USA'"
               :selected-territories="selectedTerritories"
-              @territory-clicked="
-                handleTerritoryClick(activeTerritories.find((t) => t.name === $event))
-              " />
+              @territory-clicked="handleTerritoryClick" />
           </div>
         </div>
 
