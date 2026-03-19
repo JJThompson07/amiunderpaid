@@ -146,6 +146,10 @@ const groupedOptions = computed(() => {
   return Array.from(map.values());
 });
 
+const selectedIdsSet = computed(() => {
+  return new Set(props.selectedOptions.map((s) => (typeof s === 'string' ? s : s.id)));
+});
+
 const toggleGroup = (groupName: string) => {
   if (openGroups.value.has(groupName)) {
     openGroups.value.delete(groupName);
@@ -155,15 +159,7 @@ const toggleGroup = (groupName: string) => {
 };
 
 const isSelected = (id: number | string) => {
-  return Boolean(
-    props.selectedOptions.find((s) => {
-      if (typeof s === 'string') {
-        return s === id;
-      } else {
-        return s.id === id;
-      }
-    })
-  );
+  return selectedIdsSet.value.has(id);
 };
 
 const groupItemsSelected = (options: TerritoryListOption[]) => {
