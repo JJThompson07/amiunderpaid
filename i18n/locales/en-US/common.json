@@ -6,6 +6,7 @@
   "close": "Close",
   "the-uk": "the UK",
   "loading": "Loading...",
+  "loading-item": "Loading {item}...",
   "optional": "optional",
   "underpaid": "Underpaid",
   "footer": {
@@ -34,5 +35,9 @@
   "search": "Search",
   "selected": "Selected",
   "industries": "Industries",
-  "territories": "Territories"
+  "territories": "Territories",
+  "uk": "United Kingdom",
+  "usa": "United States",
+  "map": "Map",
+  "list": "List"
 }

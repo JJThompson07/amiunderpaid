@@ -1,5 +1,6 @@
 <template>
   <div>
+    <SectionSharedBackdrop />
     <BrandBenchmarkHome v-if="$siteBrand === 'benchmarkmyrole'" />
     <BrandAmIHome v-else />
   </div>

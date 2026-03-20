@@ -1,6 +1,6 @@
 <template>
   <div>
-    <SectionSharedBackdrop bg-from="from-slate-900/25" bg-to="to-slate-50" />
+    <SectionSharedBackdrop bg-from="from-slate-900/15" />
     <BrandBenchmarkFaq v-if="$siteBrand === 'benchmarkmyrole'" />
     <BrandAmIFaq v-else />
   </div>

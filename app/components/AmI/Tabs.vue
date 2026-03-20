@@ -16,7 +16,8 @@
           value === option.value
             ? [buttonColour, buttonTextColour, 'shadow-md']
             : [textColour, hoverColour],
-          round ? 'rounded-xl' : 'rounded-lg'
+          round ? 'rounded-xl' : 'rounded-lg',
+          wrap ? 'flex-wrap' : 'whitespace-nowrap'
         ]"
         @click="value = option.value">
         {{ option.label }}
@@ -69,6 +70,10 @@ const props = defineProps({
     default: 'text-secondary-900'
   },
   round: {
+    type: Boolean,
+    default: false
+  },
+  wrap: {
     type: Boolean,
     default: false
   }

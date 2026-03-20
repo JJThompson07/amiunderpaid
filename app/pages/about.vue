@@ -1,6 +1,7 @@
 <template>
   <div class="min-h-screen pt-24 pb-12 bg-slate-50">
-    <div class="max-w-2xl px-4 mx-auto">
+    <SectionSharedBackdrop bg-from="from-slate-900/15" />
+    <div class="max-w-2xl px-4 mx-auto relative">
       <div class="mb-10 text-center">
         <h1 class="text-3xl font-black text-slate-900 md:text-4xl">{{ $t('about.heading') }}</h1>
       </div>
