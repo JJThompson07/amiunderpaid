@@ -122,10 +122,10 @@ const updateMapData = () => {
 
   const mapData: any[] = [];
 
-  const white = '#ffffff';
-  const slate100 = '#f1f5f9';
-  const slate200 = '#e2e8f0';
-  const slate400 = '#94a3b8';
+  const white = getThemeColor('--color-white', '#ffffff');
+  const slate100 = getThemeColor('--color-slate-100', '#f1f5f9');
+  const slate200 = getThemeColor('--color-slate-200', '#e2e8f0');
+  const slate400 = getThemeColor('--color-slate-400', '#94a3b8');
   const primary100 = getThemeColor('--color-primary-100', '#cef9f6');
   const primary500 = getThemeColor('--color-primary-500', '#1cabb0');
   const primary600 = getThemeColor('--color-primary-600', '#14868d');
