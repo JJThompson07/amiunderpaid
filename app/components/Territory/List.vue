@@ -69,7 +69,7 @@ import { computed, ref, type PropType } from 'vue';
 
 export type TerritoryListOption = {
   name: string;
-  id: string | number;
+  id: number;
   region: string;
 };
 
@@ -147,7 +147,7 @@ const groupedOptions = computed(() => {
 });
 
 const selectedIdsSet = computed(() => {
-  return new Set(props.selectedOptions.map((s) => (typeof s === 'string' ? s : s.id)));
+  return new Set(props.selectedOptions.map((s) => s.id));
 });
 
 const toggleGroup = (groupName: string) => {
@@ -158,7 +158,7 @@ const toggleGroup = (groupName: string) => {
   }
 };
 
-const isSelected = (id: number | string) => {
+const isSelected = (id: number) => {
   return selectedIdsSet.value.has(id);
 };
 
