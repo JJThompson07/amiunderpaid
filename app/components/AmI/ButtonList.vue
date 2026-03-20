@@ -68,9 +68,9 @@ const filteredOptions = computed(() => {
   return props.options.filter((option) =>
     props.selectedOptions.find((s) => {
       if (typeof s === 'string') {
-        return s === option.value;
+        return s == option.value;
       } else {
-        return s.id === option.value;
+        return s.id == option.value;
       }
     })
   );
