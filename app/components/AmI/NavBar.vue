@@ -16,7 +16,7 @@
         >{{ link.label }}</NuxtLink
       >
     </template>
-    <template v-if="isRecruiter && !isRoleLoading">
+    <template v-else-if="isRecruiter && !isRoleLoading">
       <NuxtLink
         v-for="link in visibleRecruiterLinks"
         :key="link.to"
@@ -95,6 +95,11 @@ const adminLinks = [
   {
     to: '/admin/jobs-cache',
     label: $t('navbar.jobs-cache'),
+    mobileOnly: false
+  },
+  {
+    to: '/admin/banding',
+    label: $t('navbar.banding'),
     mobileOnly: false
   }
 ];

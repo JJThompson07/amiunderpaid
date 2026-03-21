@@ -1,3 +1,4 @@
+import { TERRITORY_BAND_MAP, JobBand } from '../bands/uk';
 export interface ONSLocation {
   id: number;
   name: string;
@@ -15,6 +16,7 @@ export interface Territory {
   country: string;
   region: ONSMatch;
   ons_matches: ONSMatch[];
+  band: JobBand;
 }
 
 export const ONS_LOCATIONS: ONSLocation[] = [
@@ -425,6 +427,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 1,
     name: 'Bedfordshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[1] || JobBand.BAND_4_MODERATE,
     region: { id: 151, name: 'East' },
     ons_matches: [
       { id: 152, name: 'Bedford' },
@@ -436,6 +439,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 2,
     name: 'Berkshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[2] || JobBand.BAND_4_MODERATE,
     region: { id: 238, name: 'South East' },
     ons_matches: [
       { id: 239, name: 'Bracknell Forest' },
@@ -450,6 +454,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 3,
     name: 'Bristol',
     country: 'England',
+    band: TERRITORY_BAND_MAP[3] || JobBand.BAND_4_MODERATE,
     region: { id: 309, name: 'South West' },
     ons_matches: [{ id: 312, name: 'Bristol' }]
   },
@@ -457,6 +462,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 4,
     name: 'Buckinghamshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[4] || JobBand.BAND_4_MODERATE,
     region: { id: 238, name: 'South East' },
     ons_matches: [
       { id: 241, name: 'Buckinghamshire' },
@@ -467,6 +473,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 5,
     name: 'Cambridgeshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[5] || JobBand.BAND_4_MODERATE,
     region: { id: 151, name: 'East' },
     ons_matches: [
       { id: 158, name: 'Cambridgeshire' },
@@ -482,6 +489,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 6,
     name: 'Cheshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[6] || JobBand.BAND_4_MODERATE,
     region: { id: 19, name: 'North West' },
     ons_matches: [
       { id: 24, name: 'Cheshire East' },
@@ -494,6 +502,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 7,
     name: 'City of London',
     country: 'England',
+    band: TERRITORY_BAND_MAP[7] || JobBand.BAND_4_MODERATE,
     region: { id: 202, name: 'London' },
     ons_matches: [{ id: 205, name: 'City of London' }]
   },
@@ -501,6 +510,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 8,
     name: 'Cornwall',
     country: 'England',
+    band: TERRITORY_BAND_MAP[8] || JobBand.BAND_4_MODERATE,
     region: { id: 309, name: 'South West' },
     ons_matches: [
       { id: 319, name: 'Cornwall' },
@@ -511,6 +521,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 9,
     name: 'Cumbria',
     country: 'England',
+    band: TERRITORY_BAND_MAP[9] || JobBand.BAND_4_MODERATE,
     region: { id: 19, name: 'North West' },
     ons_matches: [
       { id: 26, name: 'Cumberland' },
@@ -521,6 +532,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 10,
     name: 'Derbyshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[10] || JobBand.BAND_4_MODERATE,
     region: { id: 76, name: 'East Midlands' },
     ons_matches: [
       { id: 83, name: 'Derbyshire' },
@@ -539,6 +551,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 11,
     name: 'Devon',
     country: 'England',
+    band: TERRITORY_BAND_MAP[11] || JobBand.BAND_4_MODERATE,
     region: { id: 309, name: 'South West' },
     ons_matches: [
       { id: 322, name: 'Devon' },
@@ -558,6 +571,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 12,
     name: 'Dorset',
     country: 'England',
+    band: TERRITORY_BAND_MAP[12] || JobBand.BAND_4_MODERATE,
     region: { id: 309, name: 'South West' },
     ons_matches: [
       { id: 313, name: 'Dorset' },
@@ -568,6 +582,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 13,
     name: 'Durham',
     country: 'England',
+    band: TERRITORY_BAND_MAP[13] || JobBand.BAND_4_MODERATE,
     region: { id: 5, name: 'North East' },
     ons_matches: [
       { id: 11, name: 'County Durham' },
@@ -580,6 +595,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 14,
     name: 'East Riding of Yorkshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[14] || JobBand.BAND_4_MODERATE,
     region: { id: 58, name: 'Yorkshire and The Humber' },
     ons_matches: [
       { id: 59, name: 'East Riding of Yorkshire' },
@@ -590,6 +606,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 15,
     name: 'East Sussex',
     country: 'England',
+    band: TERRITORY_BAND_MAP[15] || JobBand.BAND_4_MODERATE,
     region: { id: 238, name: 'South East' },
     ons_matches: [
       { id: 252, name: 'East Sussex' },
@@ -605,6 +622,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 16,
     name: 'Essex',
     country: 'England',
+    band: TERRITORY_BAND_MAP[16] || JobBand.BAND_4_MODERATE,
     region: { id: 151, name: 'East' },
     ons_matches: [
       { id: 164, name: 'Essex' },
@@ -628,6 +646,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 17,
     name: 'Gloucestershire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[17] || JobBand.BAND_4_MODERATE,
     region: { id: 309, name: 'South West' },
     ons_matches: [
       { id: 331, name: 'Gloucestershire' },
@@ -644,6 +663,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 18,
     name: 'Greater London',
     country: 'England',
+    band: TERRITORY_BAND_MAP[18] || JobBand.BAND_4_MODERATE,
     region: { id: 202, name: 'London' },
     ons_matches: [
       { id: 202, name: 'London' },
@@ -687,6 +707,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 19,
     name: 'Greater Manchester',
     country: 'England',
+    band: TERRITORY_BAND_MAP[19] || JobBand.BAND_4_MODERATE,
     region: { id: 19, name: 'North West' },
     ons_matches: [
       { id: 28, name: 'Greater Manchester' },
@@ -706,6 +727,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 20,
     name: 'Hampshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[20] || JobBand.BAND_4_MODERATE,
     region: { id: 238, name: 'South East' },
     ons_matches: [
       { id: 258, name: 'Hampshire' },
@@ -728,6 +750,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 21,
     name: 'Herefordshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[21] || JobBand.BAND_4_MODERATE,
     region: { id: 116, name: 'West Midlands' },
     ons_matches: [{ id: 117, name: 'Herefordshire' }]
   },
@@ -735,6 +758,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 22,
     name: 'Hertfordshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[22] || JobBand.BAND_4_MODERATE,
     region: { id: 151, name: 'East' },
     ons_matches: [
       { id: 177, name: 'Hertfordshire' },
@@ -754,6 +778,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 23,
     name: 'Isle of Wight',
     country: 'England',
+    band: TERRITORY_BAND_MAP[23] || JobBand.BAND_4_MODERATE,
     region: { id: 238, name: 'South East' },
     ons_matches: [{ id: 242, name: 'Isle of Wight' }]
   },
@@ -761,6 +786,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 24,
     name: 'Kent',
     country: 'England',
+    band: TERRITORY_BAND_MAP[24] || JobBand.BAND_4_MODERATE,
     region: { id: 238, name: 'South East' },
     ons_matches: [
       { id: 270, name: 'Kent' },
@@ -783,6 +809,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 25,
     name: 'Lancashire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[25] || JobBand.BAND_4_MODERATE,
     region: { id: 19, name: 'North West' },
     ons_matches: [
       { id: 39, name: 'Lancashire' },
@@ -806,6 +833,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 26,
     name: 'Leicestershire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[26] || JobBand.BAND_4_MODERATE,
     region: { id: 76, name: 'East Midlands' },
     ons_matches: [
       { id: 92, name: 'Leicestershire' },
@@ -823,6 +851,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 27,
     name: 'Lincolnshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[27] || JobBand.BAND_4_MODERATE,
     region: { id: 76, name: 'East Midlands' },
     ons_matches: [
       { id: 100, name: 'Lincolnshire' },
@@ -841,6 +870,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 28,
     name: 'Merseyside',
     country: 'England',
+    band: TERRITORY_BAND_MAP[28] || JobBand.BAND_4_MODERATE,
     region: { id: 19, name: 'North West' },
     ons_matches: [
       { id: 52, name: 'Merseyside' },
@@ -855,6 +885,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 29,
     name: 'Norfolk',
     country: 'England',
+    band: TERRITORY_BAND_MAP[29] || JobBand.BAND_4_MODERATE,
     region: { id: 151, name: 'East' },
     ons_matches: [
       { id: 188, name: 'Norfolk' },
@@ -871,6 +902,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 30,
     name: 'North Yorkshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[30] || JobBand.BAND_4_MODERATE,
     region: { id: 58, name: 'Yorkshire and The Humber' },
     ons_matches: [
       { id: 64, name: 'North Yorkshire' },
@@ -883,6 +915,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 31,
     name: 'Northamptonshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[31] || JobBand.BAND_4_MODERATE,
     region: { id: 76, name: 'East Midlands' },
     ons_matches: [
       { id: 79, name: 'North Northamptonshire' },
@@ -893,6 +926,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 32,
     name: 'Northumberland',
     country: 'England',
+    band: TERRITORY_BAND_MAP[32] || JobBand.BAND_4_MODERATE,
     region: { id: 5, name: 'North East' },
     ons_matches: [{ id: 12, name: 'Northumberland' }]
   },
@@ -900,6 +934,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 33,
     name: 'Nottinghamshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[33] || JobBand.BAND_4_MODERATE,
     region: { id: 76, name: 'East Midlands' },
     ons_matches: [
       { id: 108, name: 'Nottinghamshire' },
@@ -917,6 +952,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 34,
     name: 'Oxfordshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[34] || JobBand.BAND_4_MODERATE,
     region: { id: 238, name: 'South East' },
     ons_matches: [
       { id: 283, name: 'Oxfordshire' },
@@ -931,6 +967,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 35,
     name: 'Rutland',
     country: 'England',
+    band: TERRITORY_BAND_MAP[35] || JobBand.BAND_4_MODERATE,
     region: { id: 76, name: 'East Midlands' },
     ons_matches: [{ id: 81, name: 'Rutland' }]
   },
@@ -938,6 +975,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 36,
     name: 'Shropshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[36] || JobBand.BAND_4_MODERATE,
     region: { id: 116, name: 'West Midlands' },
     ons_matches: [
       { id: 120, name: 'Shropshire' },
@@ -948,6 +986,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 37,
     name: 'Somerset',
     country: 'England',
+    band: TERRITORY_BAND_MAP[37] || JobBand.BAND_4_MODERATE,
     region: { id: 309, name: 'South West' },
     ons_matches: [
       { id: 338, name: 'Somerset' },
@@ -959,6 +998,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 38,
     name: 'South Yorkshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[38] || JobBand.BAND_4_MODERATE,
     region: { id: 58, name: 'Yorkshire and The Humber' },
     ons_matches: [
       { id: 65, name: 'South Yorkshire' },
@@ -972,6 +1012,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 39,
     name: 'Staffordshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[39] || JobBand.BAND_4_MODERATE,
     region: { id: 116, name: 'West Midlands' },
     ons_matches: [
       { id: 121, name: 'Staffordshire' },
@@ -990,6 +1031,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 40,
     name: 'Suffolk',
     country: 'England',
+    band: TERRITORY_BAND_MAP[40] || JobBand.BAND_4_MODERATE,
     region: { id: 151, name: 'East' },
     ons_matches: [
       { id: 196, name: 'Suffolk' },
@@ -1004,6 +1046,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 41,
     name: 'Surrey',
     country: 'England',
+    band: TERRITORY_BAND_MAP[41] || JobBand.BAND_4_MODERATE,
     region: { id: 238, name: 'South East' },
     ons_matches: [
       { id: 289, name: 'Surrey' },
@@ -1024,6 +1067,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 42,
     name: 'Tyne and Wear',
     country: 'England',
+    band: TERRITORY_BAND_MAP[42] || JobBand.BAND_4_MODERATE,
     region: { id: 5, name: 'North East' },
     ons_matches: [
       { id: 13, name: 'Tyne and Wear' },
@@ -1038,6 +1082,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 43,
     name: 'Warwickshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[43] || JobBand.BAND_4_MODERATE,
     region: { id: 116, name: 'West Midlands' },
     ons_matches: [
       { id: 130, name: 'Warwickshire' },
@@ -1052,6 +1097,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 44,
     name: 'West Midlands',
     country: 'England',
+    band: TERRITORY_BAND_MAP[44] || JobBand.BAND_4_MODERATE,
     region: { id: 116, name: 'West Midlands' },
     ons_matches: [
       { id: 136, name: 'West Midlands' },
@@ -1068,6 +1114,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 45,
     name: 'West Sussex',
     country: 'England',
+    band: TERRITORY_BAND_MAP[45] || JobBand.BAND_4_MODERATE,
     region: { id: 238, name: 'South East' },
     ons_matches: [
       { id: 301, name: 'West Sussex' },
@@ -1084,6 +1131,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 46,
     name: 'West Yorkshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[46] || JobBand.BAND_4_MODERATE,
     region: { id: 58, name: 'Yorkshire and The Humber' },
     ons_matches: [
       { id: 70, name: 'West Yorkshire' },
@@ -1098,6 +1146,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 47,
     name: 'Wiltshire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[47] || JobBand.BAND_4_MODERATE,
     region: { id: 309, name: 'South West' },
     ons_matches: [
       { id: 321, name: 'Wiltshire' },
@@ -1108,6 +1157,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 48,
     name: 'Worcestershire',
     country: 'England',
+    band: TERRITORY_BAND_MAP[48] || JobBand.BAND_4_MODERATE,
     region: { id: 116, name: 'West Midlands' },
     ons_matches: [
       { id: 144, name: 'Worcestershire' },
@@ -1123,6 +1173,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 49,
     name: 'Isle of Anglesey',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[49] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 340, name: 'Isle of Anglesey' }]
   },
@@ -1130,6 +1181,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 50,
     name: 'Gwynedd',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[50] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 341, name: 'Gwynedd' }]
   },
@@ -1137,6 +1189,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 51,
     name: 'Conwy',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[51] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 342, name: 'Conwy' }]
   },
@@ -1144,6 +1197,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 52,
     name: 'Denbighshire',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[52] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 343, name: 'Denbighshire' }]
   },
@@ -1151,6 +1205,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 53,
     name: 'Flintshire',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[53] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 344, name: 'Flintshire' }]
   },
@@ -1158,6 +1213,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 54,
     name: 'Wrexham',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[54] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 345, name: 'Wrexham' }]
   },
@@ -1165,6 +1221,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 55,
     name: 'Powys',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[55] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 346, name: 'Powys' }]
   },
@@ -1172,6 +1229,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 56,
     name: 'Ceredigion',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[56] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 347, name: 'Ceredigion' }]
   },
@@ -1179,6 +1237,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 57,
     name: 'Pembrokeshire',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[57] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 348, name: 'Pembrokeshire' }]
   },
@@ -1186,6 +1245,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 58,
     name: 'Carmarthenshire',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[58] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 349, name: 'Carmarthenshire' }]
   },
@@ -1193,6 +1253,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 59,
     name: 'Swansea',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[59] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 350, name: 'Swansea' }]
   },
@@ -1200,6 +1261,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 60,
     name: 'Neath Port Talbot',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[60] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 351, name: 'Neath Port Talbot' }]
   },
@@ -1207,6 +1269,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 61,
     name: 'Bridgend',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[61] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 352, name: 'Bridgend' }]
   },
@@ -1214,6 +1277,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 62,
     name: 'Vale of Glamorgan',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[62] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 353, name: 'Vale of Glamorgan' }]
   },
@@ -1221,6 +1285,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 63,
     name: 'Cardiff',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[63] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 354, name: 'Cardiff' }]
   },
@@ -1228,6 +1293,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 64,
     name: 'Rhondda Cynon Taf',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[64] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 355, name: 'Rhondda Cynon Taf' }]
   },
@@ -1235,6 +1301,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 65,
     name: 'Merthyr Tydfil',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[65] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 356, name: 'Merthyr Tydfil' }]
   },
@@ -1242,6 +1309,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 66,
     name: 'Caerphilly',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[66] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 357, name: 'Caerphilly' }]
   },
@@ -1249,6 +1317,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 67,
     name: 'Blaenau Gwent',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[67] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 358, name: 'Blaenau Gwent' }]
   },
@@ -1256,6 +1325,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 68,
     name: 'Torfaen',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[68] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 359, name: 'Torfaen' }]
   },
@@ -1263,6 +1333,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 69,
     name: 'Monmouthshire',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[69] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 360, name: 'Monmouthshire' }]
   },
@@ -1270,6 +1341,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 70,
     name: 'Newport',
     country: 'Wales',
+    band: TERRITORY_BAND_MAP[70] || JobBand.BAND_4_MODERATE,
     region: { id: 339, name: 'Wales' },
     ons_matches: [{ id: 361, name: 'Newport' }]
   },
@@ -1277,6 +1349,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 71,
     name: 'Aberdeen',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[71] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 363, name: 'Aberdeen' }]
   },
@@ -1284,6 +1357,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 72,
     name: 'Aberdeenshire',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[72] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 364, name: 'Aberdeenshire' }]
   },
@@ -1291,6 +1365,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 73,
     name: 'Angus',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[73] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 365, name: 'Angus' }]
   },
@@ -1298,6 +1373,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 74,
     name: 'Argyll and Bute',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[74] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 366, name: 'Argyll and Bute' }]
   },
@@ -1305,6 +1381,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 75,
     name: 'Clackmannanshire',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[75] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 367, name: 'Clackmannanshire' }]
   },
@@ -1312,6 +1389,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 76,
     name: 'Dumfries and Galloway',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[76] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 368, name: 'Dumfries and Galloway' }]
   },
@@ -1319,6 +1397,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 77,
     name: 'Dundee',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[77] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 369, name: 'Dundee' }]
   },
@@ -1326,6 +1405,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 78,
     name: 'East Ayrshire',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[78] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 370, name: 'East Ayrshire' }]
   },
@@ -1333,6 +1413,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 79,
     name: 'East Dunbartonshire',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[79] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 371, name: 'East Dunbartonshire' }]
   },
@@ -1340,6 +1421,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 80,
     name: 'East Lothian',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[80] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 372, name: 'East Lothian' }]
   },
@@ -1347,6 +1429,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 81,
     name: 'East Renfrewshire',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[81] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 373, name: 'East Renfrewshire' }]
   },
@@ -1354,6 +1437,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 82,
     name: 'Edinburgh',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[82] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 374, name: 'Edinburgh' }]
   },
@@ -1361,6 +1445,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 83,
     name: 'Falkirk',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[83] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 375, name: 'Falkirk' }]
   },
@@ -1368,6 +1453,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 84,
     name: 'Fife',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[84] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 376, name: 'Fife' }]
   },
@@ -1375,6 +1461,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 85,
     name: 'Glasgow',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[85] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 377, name: 'Glasgow' }]
   },
@@ -1382,6 +1469,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 86,
     name: 'Highland',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[86] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 378, name: 'Highland' }]
   },
@@ -1389,6 +1477,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 87,
     name: 'Inverclyde',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[87] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 379, name: 'Inverclyde' }]
   },
@@ -1396,6 +1485,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 88,
     name: 'Midlothian',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[88] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 380, name: 'Midlothian' }]
   },
@@ -1403,6 +1493,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 89,
     name: 'Moray',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[89] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 381, name: 'Moray' }]
   },
@@ -1410,6 +1501,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 90,
     name: 'Na h-Eileanan Siar',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[90] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 382, name: 'Na h-Eileanan Siar' }]
   },
@@ -1417,6 +1509,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 91,
     name: 'North Ayrshire',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[91] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 383, name: 'North Ayrshire' }]
   },
@@ -1424,6 +1517,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 92,
     name: 'North Lanarkshire',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[92] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 384, name: 'North Lanarkshire' }]
   },
@@ -1431,6 +1525,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 93,
     name: 'Orkney Islands',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[93] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 385, name: 'Orkney Islands' }]
   },
@@ -1438,6 +1533,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 94,
     name: 'Perth and Kinross',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[94] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 386, name: 'Perth and Kinross' }]
   },
@@ -1445,6 +1541,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 95,
     name: 'Renfrewshire',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[95] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 387, name: 'Renfrewshire' }]
   },
@@ -1452,6 +1549,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 96,
     name: 'Scottish Borders',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[96] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 388, name: 'Scottish Borders' }]
   },
@@ -1459,6 +1557,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 97,
     name: 'Shetland Islands',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[97] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 389, name: 'Shetland Islands' }]
   },
@@ -1466,6 +1565,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 98,
     name: 'South Ayrshire',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[98] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 390, name: 'South Ayrshire' }]
   },
@@ -1473,6 +1573,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 99,
     name: 'South Lanarkshire',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[99] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 391, name: 'South Lanarkshire' }]
   },
@@ -1480,6 +1581,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 100,
     name: 'Stirling',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[100] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 392, name: 'Stirling' }]
   },
@@ -1487,6 +1589,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 101,
     name: 'West Dunbartonshire',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[101] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 393, name: 'West Dunbartonshire' }]
   },
@@ -1494,6 +1597,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 102,
     name: 'West Lothian',
     country: 'Scotland',
+    band: TERRITORY_BAND_MAP[102] || JobBand.BAND_4_MODERATE,
     region: { id: 362, name: 'Scotland' },
     ons_matches: [{ id: 394, name: 'West Lothian' }]
   },
@@ -1501,6 +1605,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 103,
     name: 'Antrim',
     country: 'Northern Ireland',
+    band: TERRITORY_BAND_MAP[103] || JobBand.BAND_4_MODERATE,
     region: { id: 395, name: 'Northern Ireland' },
     ons_matches: [{ id: 395, name: 'Northern Ireland' }]
   },
@@ -1508,6 +1613,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 104,
     name: 'Armagh',
     country: 'Northern Ireland',
+    band: TERRITORY_BAND_MAP[104] || JobBand.BAND_4_MODERATE,
     region: { id: 395, name: 'Northern Ireland' },
     ons_matches: [{ id: 395, name: 'Northern Ireland' }]
   },
@@ -1515,6 +1621,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 105,
     name: 'Down',
     country: 'Northern Ireland',
+    band: TERRITORY_BAND_MAP[105] || JobBand.BAND_4_MODERATE,
     region: { id: 395, name: 'Northern Ireland' },
     ons_matches: [{ id: 395, name: 'Northern Ireland' }]
   },
@@ -1522,6 +1629,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 106,
     name: 'Fermanagh',
     country: 'Northern Ireland',
+    band: TERRITORY_BAND_MAP[106] || JobBand.BAND_4_MODERATE,
     region: { id: 395, name: 'Northern Ireland' },
     ons_matches: [{ id: 395, name: 'Northern Ireland' }]
   },
@@ -1529,6 +1637,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 107,
     name: 'Londonderry',
     country: 'Northern Ireland',
+    band: TERRITORY_BAND_MAP[107] || JobBand.BAND_4_MODERATE,
     region: { id: 395, name: 'Northern Ireland' },
     ons_matches: [{ id: 395, name: 'Northern Ireland' }]
   },
@@ -1536,6 +1645,7 @@ export const RECRUITER_TERRITORIES_UK: Territory[] = [
     id: 108,
     name: 'Tyrone',
     country: 'Northern Ireland',
+    band: TERRITORY_BAND_MAP[108] || JobBand.BAND_4_MODERATE,
     region: { id: 395, name: 'Northern Ireland' },
     ons_matches: [{ id: 395, name: 'Northern Ireland' }]
   }
