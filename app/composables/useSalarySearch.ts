@@ -1,5 +1,5 @@
 import { ref, computed, watch, onMounted } from 'vue';
-import { useRoute, useRouter, useNuxtApp, useRequestURL, useSeoMeta, useHead } from '#imports';
+import { useRoute, useRouter, navigateTo, useNuxtApp, useRequestURL, useSeoMeta, useHead } from '#imports';
 import { getRawDiffPercentage } from '~/helpers/utility';
 import { useViewport } from '~/composables/useViewport';
 import { useAdzuna } from '~/composables/useAdzuna';
@@ -183,10 +183,13 @@ export async function useSalarySearch(options: SalarySearchOptions = { isBenchma
 
     // only trigger if other queries than compare are present
     if (Object.keys(remainingQuery).length > 0) {
-      router.replace({
-        path: route.path,
-        query: compare ? { compare: compare } : undefined
-      });
+      navigateTo(
+        {
+          path: route.path,
+          query: compare ? { compare: compare } : undefined
+        },
+        { replace: true }
+      );
     }
   });
 
@@ -231,11 +234,14 @@ export async function useSalarySearch(options: SalarySearchOptions = { isBenchma
         if (dbLocation.toLowerCase() === country.value.toLowerCase()) {
           const prefix = options.isBenchmark ? 'benchmark' : 'salary';
           const newPath = `/${prefix}/${route.params.title}/${route.params.country}`;
-          router.replace({
-            path: newPath,
-            query: route.query,
-            state: { ...history.state }
-          });
+          navigateTo(
+            {
+              path: newPath,
+              query: route.query,
+              state: { ...history.state }
+            },
+            { replace: true }
+          );
         }
       }
     }
@@ -249,12 +255,15 @@ export async function useSalarySearch(options: SalarySearchOptions = { isBenchma
 
   watch(userSalary, (newSalary) => {
     if (newSalary > 0) {
-      router.replace({
-        query: { ...route.query, compare: newSalary.toString() }
-      });
+      navigateTo(
+        {
+          query: { ...route.query, compare: newSalary.toString() }
+        },
+        { replace: true }
+      );
     } else {
       const { compare, ...rest } = route.query;
-      router.replace({ query: rest });
+      navigateTo({ query: rest }, { replace: true });
     }
   });
 
