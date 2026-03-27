@@ -13,7 +13,7 @@
 
       <div class="p-6">
         <div class="flex flex-col gap-4">
-          <AmIInput
+          <AmIInputGeneric
             v-model="wage"
             v-model:param-value="period"
             type="number"
@@ -23,7 +23,7 @@
             :params="periodOptions" />
 
           <div v-if="period === 'hour'">
-            <AmIInput
+            <AmIInputGeneric
               v-model="hoursPerWeek"
               type="number"
               label="Hours Per Week"
@@ -32,7 +32,7 @@
           </div>
 
           <div v-if="period === 'day'">
-            <AmIInput
+            <AmIInputGeneric
               v-model="daysPerWeek"
               type="number"
               label="Days Per Week"

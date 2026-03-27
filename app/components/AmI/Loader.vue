@@ -1,6 +1,5 @@
 <template>
-  <div
-    class="fixed backdrop-blur-sm backdrop-brightness-50 inset-0 z-50 flex items-center justify-center w-full h-full">
+  <div class="fixed backdrop-blur-lg inset-0 z-50 flex items-center justify-center w-full h-full">
     <div class="flex items-center justify-center p-4 bg-white rounded-2xl shadow-xl">
       <div class="flex flex-col items-center gap-4">
         <div

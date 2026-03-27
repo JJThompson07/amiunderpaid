@@ -25,7 +25,7 @@
     <div class="p-3 bg-white shadow-2xl rounded-3xl ring-1 ring-slate-900/5">
       <form class="flex flex-col gap-3" @submit.prevent="handleSearch">
         <div class="flex-1">
-          <AmIAutocompleteInput
+          <AmIInputAutocomplete
             v-model="title"
             :label="$t('search.title.label')"
             :helper="$t('search.title.helper')"
@@ -62,7 +62,7 @@
 
         <div class="flex flex-col md:flex-row gap-3">
           <div class="flex-1">
-            <AmIAutocompleteInput
+            <AmIInputAutocomplete
               v-model="location"
               :label="$t('search.location.label')"
               :placeholder="$t('search.location.placeholder')"
@@ -74,7 +74,7 @@
           </div>
 
           <div class="flex-1">
-            <AmIInput
+            <AmIInputGeneric
               v-model="salary"
               v-model:param-value="period"
               type="number"
@@ -110,8 +110,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Search, MapPin, CalculatorIcon, Wallet, ArrowRightIcon } from 'lucide-vue-next';
-import type { SearchClient } from 'algoliasearch';
-import type { AutocompleteOption } from '~/components/AmI/AutocompleteInput.vue';
+import { useSearchAutocomplete } from '~/composables/useSearchAutocomplete';
 
 const { t } = useI18n();
 
@@ -137,15 +136,12 @@ const location = ref('');
 const salary = ref('');
 const period = ref('year');
 const loading = ref(false);
-const fetching = ref(false);
-const titleOptions = ref<AutocompleteOption[]>([]);
-const locationOptions = ref<AutocompleteOption[]>([]);
 const showCalc = ref<boolean>(false);
 
-// Map to temporarily hold the IDs for the selected labels
-const labelToIdMap = ref<Record<string, string>>({});
-
 const { trackSearch } = useAnalytics();
+
+const { fetching, titleOptions, locationOptions, labelToIdMap, fetchTitles, fetchLocations } =
+  useSearchAutocomplete(currentCountry, location, title);
 
 const currencySymbol = computed(() => (currentCountry.value === 'USA' ? '$' : '£'));
 
@@ -155,153 +151,6 @@ const periodOptions = computed(() => {
   const opts = [{ label: '/ yr', value: 'year' }];
   return opts;
 });
-
-const fetchUKTitles = async (searchTerm: string) => {
-  const { $algolia } = useNuxtApp();
-  const index = ($algolia as SearchClient).initIndex('job_titles');
-
-  const { hits } = await index.search(searchTerm, {
-    filters: `country:UK`,
-    hitsPerPage: 100
-  });
-
-  const results = new Set<string>();
-  hits.forEach((hit: any) => {
-    const cleanGroup = hit.group ? hit.group.replace(/\s*\(.*\)$/, '') : '';
-    const label = cleanGroup ? `${hit.title} (${cleanGroup})` : hit.title;
-
-    // Store the SOC code linked to this specific label
-    if (hit.soc) {
-      labelToIdMap.value[label] = hit.soc;
-    }
-
-    results.add(label);
-  });
-
-  return Array.from(results).map((title) => {
-    return {
-      value: title,
-      label: title
-    };
-  });
-};
-
-const fetchUSATitles = async (searchTerm: string) => {
-  const { $algolia } = useNuxtApp();
-
-  const index = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
-
-  let filters = `country:USA`;
-  if (location.value && locationOptions.value.length > 0) {
-    const locVal = location.value.toLowerCase().replace(/"/g, '\\"');
-    filters += ` AND searchLocation:"${locVal}"`;
-  }
-
-  const { hits } = await index.search(searchTerm, {
-    filters,
-    hitsPerPage: 20
-  });
-
-  const results = new Set<string>();
-  hits.forEach((hit: any) => {
-    // Store the ID code linked to this specific title
-    const id = hit.id_code || hit.objectID;
-    if (id) {
-      labelToIdMap.value[hit.title] = id;
-    }
-    results.add(hit.title);
-  });
-
-  return Array.from(results).map((title) => {
-    return {
-      value: title,
-      label: title
-    };
-  });
-};
-
-const fetchUKLocations = async (searchTerm: string) => {
-  const { $algolia } = useNuxtApp();
-  const index = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
-
-  const { facetHits } = await index.searchForFacetValues('location', searchTerm, {
-    filters: `country:UK`,
-    maxFacetHits: 20
-  });
-
-  return facetHits.map((h: any) => {
-    return {
-      value: h.value,
-      label: h.value
-    };
-  });
-};
-
-const fetchUSALocations = async (searchTerm: string) => {
-  const { $algolia } = useNuxtApp();
-  const index = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
-
-  let filters = `country:USA`;
-  if (title.value && titleOptions.value.length > 0) {
-    const titleVal = title.value.toLowerCase().replace(/"/g, '\\"');
-    filters += ` AND searchTitle:"${titleVal}"`;
-  }
-
-  const { facetHits } = await index.searchForFacetValues('location', searchTerm, {
-    filters,
-    maxFacetHits: 20
-  });
-
-  return facetHits.map((h: any) => {
-    return {
-      value: h.value,
-      label: h.value
-    };
-  });
-};
-
-const fetchTitles = useDebounceFn(async (val: string) => {
-  if (!val || val.length < 2) {
-    titleOptions.value = [];
-    return;
-  }
-
-  fetching.value = true;
-  const searchTerm = val.trim();
-
-  try {
-    if (currentCountry.value === 'UK') {
-      titleOptions.value = await fetchUKTitles(searchTerm);
-    } else {
-      titleOptions.value = await fetchUSATitles(searchTerm);
-    }
-  } catch {
-    // Silent fail for autocomplete
-  } finally {
-    fetching.value = false;
-  }
-}, 300);
-
-const fetchLocations = useDebounceFn(async (val: string) => {
-  if (!val || val.length < 2) {
-    locationOptions.value = [];
-    return;
-  }
-
-  fetching.value = true;
-
-  try {
-    if (currentCountry.value === 'UK') {
-      locationOptions.value = await fetchUKLocations(val);
-    } else {
-      locationOptions.value = await fetchUSALocations(val);
-    }
-  } catch {
-    // Silent fail for autocomplete
-  } finally {
-    fetching.value = false;
-  }
-}, 300);
 
 const handleSearch = async () => {
   loading.value = true;

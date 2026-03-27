@@ -1,5 +1,5 @@
 <template>
-  <div ref="containerRef" class="ami-input relative w-full group">
+  <div ref="containerRef" class="ami-autocomplete-input relative w-full group">
     <label v-if="label" class="ml-1 text-xs font-bold uppercase tracking-wider text-slate-500">
       {{ label
       }}<span v-if="optional" class="text-slate-400 text-2xs uppercase">

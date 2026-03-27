@@ -17,12 +17,12 @@
         </NuxtLink>
 
         <!-- Nav -->
-        <LazyAmINavBar v-if="!isMobile" :is-admin="isAdmin" />
+        <LazyAmINavBar v-if="!isMobile" />
 
         <!-- CTA -->
         <div class="flex flex-1 md:flex-0 items-center justify-end gap-4 absolute right-4">
           <AmIButton
-            v-if="user"
+            v-if="isAdmin"
             bg-colour="bg-transparent"
             text-colour="text-slate-600"
             animation-colour="bg-primary-400"
@@ -38,11 +38,7 @@
       </div>
     </header>
 
-    <LazyAmINavBar
-      v-if="openMenu && isMobile"
-      :is-admin="isAdmin"
-      :is-mobile="true"
-      @close="openMenu = false" />
+    <LazyAmINavBar v-if="openMenu && isMobile" :is-mobile="true" @close="openMenu = false" />
 
     <!-- Main Content -->
     <div class="flex-1">
@@ -76,9 +72,9 @@
 </template>
 
 <script setup lang="ts">
-import { useCurrentUser } from 'vuefire';
 import { ref, onMounted, computed } from 'vue';
 import { MenuIcon, XIcon } from 'lucide-vue-next';
+const { isAdmin } = useUserRole();
 const { locale } = useI18n();
 
 const { $siteBrand } = useNuxtApp();
@@ -99,10 +95,6 @@ onMounted(() => {
 const isMobile = computed(() => isMounted.value && viewportIsMobile.value);
 
 const openMenu = ref<boolean>(false);
-
-const user = useCurrentUser();
-
-const isAdmin = computed(() => Boolean(user.value?.email));
 
 const handleLogout = async () => {
   await logout();

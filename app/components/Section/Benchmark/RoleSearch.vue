@@ -15,7 +15,7 @@
     <div class="p-3 bg-white shadow-2xl rounded-3xl ring-1 ring-slate-900/5">
       <form class="flex flex-col gap-3" @submit.prevent="handleSearch">
         <div class="flex-1">
-          <AmIAutocompleteInput
+          <AmIInputAutocomplete
             v-model="title"
             :label="$t('search.benchmark.title.label')"
             :helper="$t('search.benchmark.title.helper')"
@@ -52,7 +52,7 @@
 
         <div class="flex flex-col md:flex-row gap-3">
           <div class="flex-1">
-            <AmIAutocompleteInput
+            <AmIInputAutocomplete
               v-model="location"
               :label="
                 country === 'USA'
@@ -72,7 +72,7 @@
           </div>
 
           <div class="flex-1">
-            <AmIInput
+            <AmIInputGeneric
               v-model="salary"
               v-model:param-value="period"
               type="number"
@@ -109,7 +109,7 @@
 import { ref, computed, watch } from 'vue';
 import { Search, MapPin, Wallet } from 'lucide-vue-next';
 import type { SearchClient } from 'algoliasearch';
-import type { AutocompleteOption } from '~/components/AmI/AutocompleteInput.vue';
+import type { AutocompleteOption } from '~/components/AmI/Input/Autocomplete.vue';
 const { setLocale, locale, t } = useI18n();
 
 const props = defineProps<{

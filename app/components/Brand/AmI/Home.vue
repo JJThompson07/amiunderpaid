@@ -1,8 +1,5 @@
 <template>
-  <div class="relative min-h-screen overflow-hidden bg-slate-50">
-    <!-- Background Gradient -->
-    <SectionSharedBackdrop />
-
+  <div class="relative min-h-screen overflow-hidden">
     <!-- Hero Content -->
     <main class="relative z-10 px-4 pt-20 pb-20">
       <SectionAmIHero />

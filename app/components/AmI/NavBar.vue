@@ -6,9 +6,19 @@
         ? 'fixed inset-0 bg-slate-200 z-40 p-4 pt-20 flex-col text-slate-800 gap-6 animate-in slide-in-from-top-10 fade-in duration-300'
         : 'text-sm text-slate-600 justify-center gap-8'
     ">
-    <template v-if="isAdmin">
+    <template v-if="isAdmin && !isRoleLoading">
       <NuxtLink
         v-for="link in visibleAdminLinks"
+        :key="link.to"
+        :to="link.to"
+        class="transition-colors hover:text-primary-600"
+        @click="$emit('close')"
+        >{{ link.label }}</NuxtLink
+      >
+    </template>
+    <template v-else-if="isRecruiter && !isRoleLoading">
+      <NuxtLink
+        v-for="link in visibleRecruiterLinks"
         :key="link.to"
         :to="link.to"
         class="transition-colors hover:text-primary-600"
@@ -45,10 +55,6 @@
 import { computed, ref, onMounted } from 'vue';
 
 const props = defineProps({
-  isAdmin: {
-    type: Boolean,
-    default: false
-  },
   isMobile: {
     type: Boolean,
     default: false
@@ -56,6 +62,8 @@ const props = defineProps({
 });
 
 defineEmits(['close']);
+
+const { isAdmin, isRecruiter, isRoleLoading } = useUserRole();
 
 const isMounted = ref(false);
 onMounted(() => {
@@ -87,6 +95,29 @@ const adminLinks = [
   {
     to: '/admin/jobs-cache',
     label: $t('navbar.jobs-cache'),
+    mobileOnly: false
+  },
+  {
+    to: '/admin/banding',
+    label: $t('navbar.banding'),
+    mobileOnly: false
+  }
+];
+
+const recruiterLinks = [
+  {
+    to: '/recruiter/dashboard',
+    label: $t('navbar.home'),
+    mobileOnly: true
+  },
+  {
+    to: '/recruiter/dashboard',
+    label: $t('navbar.dashboard'),
+    mobileOnly: false
+  },
+  {
+    to: '/recruiter/territories',
+    label: $t('navbar.territories'),
     mobileOnly: false
   }
 ];
@@ -126,6 +157,9 @@ const navLinks = [
 
 const visibleAdminLinks = computed(() =>
   adminLinks.filter((link) => !link.mobileOnly || safeIsMobile.value)
+);
+const visibleRecruiterLinks = computed(() =>
+  recruiterLinks.filter((link) => !link.mobileOnly || safeIsMobile.value)
 );
 const visibleNavLinks = computed(() =>
   navLinks.filter((link) => !link.mobileOnly || safeIsMobile.value)

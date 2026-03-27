@@ -16,7 +16,7 @@
         </i18n-t>
       </p>
 
-      <AmIAutocompleteInput
+      <AmIInputAutocomplete
         v-model="searchQuery"
         :label="$t('sections.gov-user-selection.search')"
         :placeholder="$t('sections.gov-user-selection.search-placeholder')"
