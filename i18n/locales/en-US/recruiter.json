@@ -56,5 +56,8 @@
         "description": "Use the map to select which region's you cover"
       }
     }
+  },
+  "schedule": {
+    "target-row": "Territory & Category"
   }
 }
