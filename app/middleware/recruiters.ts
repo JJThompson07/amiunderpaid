@@ -16,8 +16,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const db = getFirestore(useFirebaseApp());
   const userDocSnap = await getDoc(doc(db, 'users', user.uid));
 
-  // If the document doesn't exist, OR the role isn't recruiter, kick them out.
-  if (!userDocSnap.exists() || userDocSnap.data().role !== 'recruiter') {
+  const role = userDocSnap.data()?.role;
+
+  // Allow both recruiters AND admins to view the Recruiter dashboard/matrix
+  if (!userDocSnap.exists() || (role !== 'recruiter' && role !== 'admin')) {
     return navigateTo('/recruiter/login');
   }
 });

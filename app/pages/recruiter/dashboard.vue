@@ -104,6 +104,35 @@
 
             <hr class="border-slate-100 my-6" />
 
+            <div class="relative">
+              <div class="flex items-center justify-between mb-1">
+                <p class="text-2xs font-bold text-slate-400 uppercase tracking-wider">
+                  Billing Currency
+                </p>
+                <div v-if="isUpdatingBilling" class="flex items-center gap-1.5">
+                  <span
+                    class="text-[9px] font-bold text-primary-600 uppercase tracking-wider animate-pulse"
+                    >Saving</span
+                  >
+                  <span
+                    class="w-2.5 h-2.5 border border-slate-200 border-t-primary-500 rounded-full animate-spin"></span>
+                </div>
+              </div>
+
+              <p class="text-xs text-slate-500 mb-3">
+                Sets the currency used when claiming exclusive territories.
+              </p>
+
+              <AmIInputSelect
+                v-model="billingPreference"
+                :options="currencyOptions"
+                :disabled="isUpdatingBilling"
+                single
+                @update:model-value="handleBillingChange" />
+            </div>
+
+            <hr class="border-slate-100 my-6" />
+
             <div>
               <p class="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1">
                 {{ $t('common.industries') }}
@@ -212,7 +241,7 @@ definePageMeta({
   middleware: 'recruiters'
 });
 
-// 1. Use our incredibly clean Composables!
+// Composables
 const { logout } = useRecruiterAuth();
 const { userProfile, updateProfile } = useUserProfile();
 const { categories: categoriesData, loadingCategories } = useCategories();
@@ -221,6 +250,15 @@ const { categories: categoriesData, loadingCategories } = useCategories();
 const selectedCategories = ref<string[]>([]);
 const isSaving = ref(false);
 const showSuccess = ref(false);
+
+// State for Billing UI
+const billingPreference = ref(['UK']);
+const isUpdatingBilling = ref(false);
+
+const currencyOptions = [
+  { label: 'United Kingdom (GBP £)', value: 'UK' },
+  { label: 'United States (USD $)', value: 'USA' }
+];
 
 // Format categories for the autocomplete component
 const formattedCategories = computed(() => {
@@ -242,24 +280,46 @@ const removeCategoryFromList = (val: string) => {
   selectedCategories.value = selectedCategories.value.filter((c) => c !== val);
 };
 
-// Sync database state to local ref
+// Sync database state to local refs
 watch(
   userProfile,
   (newProfile) => {
-    if (newProfile && newProfile.coveredCategories) {
-      selectedCategories.value = [...newProfile.coveredCategories];
+    if (newProfile) {
+      if (newProfile.coveredCategories) {
+        selectedCategories.value = [...newProfile.coveredCategories];
+      }
+      // Wrap the Firestore string in an Array for the Select component
+      if (newProfile.billingCountry) {
+        billingPreference.value = [newProfile.billingCountry];
+      }
     }
   },
   { immediate: true }
 );
+// Auto-Save Billing Preference when dropdown changes
+const handleBillingChange = async (newValArray: string[]) => {
+  // Extract the string from the array (fallback to UK if they somehow clear it)
+  const selectedCurrency = newValArray.length > 0 ? newValArray[0] : 'UK';
 
-// Clean Save Logic
+  isUpdatingBilling.value = true;
+  try {
+    // Save the raw string to Firestore
+    await updateProfile({ billingCountry: selectedCurrency });
+  } catch (error) {
+    console.error('Failed to update billing preference:', error);
+  } finally {
+    setTimeout(() => {
+      isUpdatingBilling.value = false;
+    }, 500);
+  }
+};
+
+// Clean Save Logic for Categories
 const saveProfileCategories = async () => {
   isSaving.value = true;
   showSuccess.value = false;
 
   try {
-    // Calling the abstracted Firestore method!
     await updateProfile({ coveredCategories: selectedCategories.value });
 
     showSuccess.value = true;
