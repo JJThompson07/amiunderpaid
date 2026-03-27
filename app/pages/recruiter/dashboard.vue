@@ -237,9 +237,9 @@
 import { ref, computed, watch } from 'vue';
 import { MapPin, BriefcaseBusiness, Map } from 'lucide-vue-next';
 
-// definePageMeta({
-//   middleware: 'recruiters'
-// });
+definePageMeta({
+  middleware: 'recruiters'
+});
 
 // Composables
 const { logout } = useRecruiterAuth();
