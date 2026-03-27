@@ -14,7 +14,7 @@
       {{ helper }}
     </span>
 
-    <div class="relative flex">
+    <div class="relative flex mt-1">
       <div v-if="icon" class="absolute left-3 top-3 z-10 pointer-events-none">
         <component
           :is="icon"
@@ -22,22 +22,22 @@
       </div>
 
       <div
-        class="w-full min-h-13 p-2 flex flex-wrap gap-2 items-center transition-all border bg-slate-50 rounded-xl cursor-text"
+        class="w-full min-h-13 p-2 flex flex-wrap items-center transition-all border bg-slate-50 rounded-xl cursor-text relative pr-10"
         :class="[
           icon ? 'pl-10' : 'pl-3',
           isOpen
-            ? 'border-primary-500 ring-2 ring-primary-500/20'
+            ? 'border-primary-500 ring-2 ring-primary-500/20 bg-white'
             : 'border-slate-200 hover:border-slate-300',
-          disabled ? 'opacity-60 cursor-not-allowed' : ''
+          disabled ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''
         ]"
         @click="onFocusContainer">
         <div
           v-if="!externalList && modelValue.length"
-          class="w-full flex flex-wrap items-center gap-1">
+          class="flex flex-wrap items-center gap-1.5 mr-1">
           <span
             v-for="val in modelValue"
             :key="val"
-            class="bg-primary-50 text-primary-700 border border-primary-100 rounded-lg flex items-center gap-1 px-2.5 py-1 text-sm font-bold shadow-xs">
+            class="bg-primary-50 text-primary-700 border border-primary-100 rounded-lg flex items-center gap-1 px-2.5 py-1 text-sm font-bold shadow-xs whitespace-nowrap">
             {{ getLabelForValue(val) }}
             <button
               type="button"
@@ -47,7 +47,8 @@
             </button>
           </span>
         </div>
-        <div v-if="externalList && modelValue.length">
+
+        <div v-if="externalList && modelValue.length" class="mr-2">
           <span class="text-primary-700 flex items-center gap-1 px-2.5 py-1 text-sm font-bold">
             {{ $t('common.items.selected', { count: modelValue.length }) }}
           </span>
@@ -58,9 +59,14 @@
           v-model="searchQuery"
           type="text"
           :disabled="disabled"
-          :placeholder="modelValue.length === 0 ? placeholder : ''"
+          :placeholder="showPlaceholder ? placeholder : ''"
           autocomplete="off"
-          class="flex-1 min-w-30 bg-transparent font-medium border-none focus:outline-none focus:ring-0 text-slate-900 placeholder:text-slate-400 p-1 text-sm"
+          class="flex-1 bg-transparent font-medium border-none focus:outline-none focus:ring-0 text-slate-900 placeholder:text-slate-400 p-1 text-sm transition-all duration-200"
+          :class="[
+            !isOpen && modelValue.length > 0
+              ? 'w-0 min-w-0 p-0 opacity-0 absolute'
+              : 'min-w-30 opacity-100 relative'
+          ]"
           @focus="isOpen = true"
           @keydown.down.prevent="navigateOptions(1)"
           @keydown.up.prevent="navigateOptions(-1)"
@@ -82,7 +88,7 @@
 
       <div
         v-if="isOpen && filteredOptions.length > 0"
-        class="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 py-1 custom-scrollbar">
+        class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 py-1.5 custom-scrollbar">
         <button
           v-for="(option, index) in filteredOptions"
           :key="option.value"
@@ -116,7 +122,7 @@
 
       <div
         v-else-if="isOpen && searchQuery && filteredOptions.length === 0"
-        class="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-4 text-center text-sm text-slate-500 font-medium">
+        class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-4 text-center text-sm text-slate-500 font-medium">
         {{ $t('common.items.none-found', { search: searchQuery }) }}
       </div>
     </div>
@@ -125,7 +131,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { onClickOutside } from '@vueuse/core';
+import { onClickOutside, useFocus } from '@vueuse/core';
 import type { Component, PropType } from 'vue';
 import { X } from 'lucide-vue-next';
 
@@ -143,6 +149,7 @@ const props = defineProps({
     type: Array as PropType<AutocompleteOption[]>,
     default: () => []
   },
+  single: { type: Boolean, default: false },
   placeholder: { type: String, default: '' },
   label: { type: String, default: '' },
   helper: { type: String, default: '' },
@@ -162,6 +169,9 @@ const isOpen = ref(false);
 const searchQuery = ref('');
 const activeIndex = ref(-1);
 
+// VueUse reactive focus!
+const { focused } = useFocus(searchInput);
+
 // Helpers
 const getLabelForValue = (val: string) => {
   const found = props.options.find((opt) => opt.value === val);
@@ -175,26 +185,39 @@ const filteredOptions = computed(() => {
   return props.options.filter((opt) => opt.label.toLowerCase().includes(search));
 });
 
+const showPlaceholder = computed(() => {
+  return (
+    props.modelValue.length === 0 || (props.single && isOpen.value && props.modelValue.length === 0)
+  );
+});
+
 // Methods
 const onFocusContainer = () => {
   if (props.disabled) return;
   isOpen.value = true;
-  searchInput.value?.focus();
+  focused.value = true; // Automatically handles the DOM focus
 };
 
 const toggleOption = (option: AutocompleteOption) => {
-  const newValue = [...props.modelValue];
-  const index = newValue.indexOf(option.value);
+  let newValue: string[];
 
-  if (index > -1) {
-    newValue.splice(index, 1); // Remove
+  // Handle single vs multi selection logic
+  if (props.single) {
+    newValue = props.modelValue.includes(option.value) ? [] : [option.value];
+    isOpen.value = false; // Auto-close dropdown on single selection
   } else {
-    newValue.push(option.value); // Add
+    newValue = [...props.modelValue];
+    const index = newValue.indexOf(option.value);
+    if (index > -1) {
+      newValue.splice(index, 1); // Remove
+    } else {
+      newValue.push(option.value); // Add
+    }
+    focused.value = true; // Keep focus for rapid multi-selection
   }
 
   emit('update:modelValue', newValue);
-  searchQuery.value = ''; // Clear search after selection
-  searchInput.value?.focus(); // Keep focus for rapid multi-selection
+  searchQuery.value = ''; // Clear search text
 };
 
 const removeOption = (val: string) => {
@@ -208,7 +231,7 @@ const clearAll = () => {
   isOpen.value = false;
 };
 
-// Keyboard Navigation (Mimicking your original component's logic)
+// Keyboard Navigation
 const navigateOptions = (direction: number) => {
   if (!isOpen.value || filteredOptions.value.length === 0) return;
   const max = filteredOptions.value.length - 1;
@@ -225,7 +248,7 @@ const selectActiveOption = () => {
 };
 
 const handleBackspace = () => {
-  // If they hit backspace and the search is empty, delete the last selected pill
+  // If search is empty, delete the last selected pill
   if (searchQuery.value === '' && props.modelValue.length > 0) {
     const newValue = [...props.modelValue];
     newValue.pop();
@@ -233,7 +256,7 @@ const handleBackspace = () => {
   }
 };
 
-// Close dropdown
+// Close dropdown when clicking outside
 onClickOutside(containerRef, () => {
   isOpen.value = false;
   searchQuery.value = ''; // Clear search when they click away

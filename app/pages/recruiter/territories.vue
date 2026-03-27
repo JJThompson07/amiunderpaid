@@ -6,17 +6,31 @@
       <header
         class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-3xl shadow-md border border-slate-200">
         <div>
-          <h1 class="text-3xl font-black text-slate-900">{{ $t('recruiter.territories.get') }}</h1>
+          <h1 class="text-3xl font-black text-slate-900">
+            {{ step === 1 ? $t('recruiter.territories.get') : 'Step 2: Claim Your Schedule' }}
+          </h1>
           <p class="text-slate-500 mt-1">
-            {{ $t('recruiter.territories.claim.leads') }}
+            {{
+              step === 1
+                ? $t('recruiter.territories.claim.leads')
+                : 'Select the upcoming months you want to receive leads for.'
+            }}
           </p>
         </div>
-        <AmITabs v-model="selectedCountry" :options="countries" round />
+        <AmITabs v-if="step === 1" v-model="selectedCountry" :options="countries" round />
+        <button
+          v-else
+          class="text-sm font-bold text-slate-400 hover:text-primary-600 transition-colors flex items-center gap-2"
+          @click="step = 1">
+          &larr; Back to Selection
+        </button>
       </header>
 
-      <AmITabs v-model="selectedView" :options="views" round class="w-max" />
+      <AmITabs v-if="step === 1" v-model="selectedView" :options="views" round class="w-max" />
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div
+        v-if="step === 1"
+        class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-left-4 duration-500">
         <div class="lg:col-span-2 flex flex-col gap-2">
           <template v-if="selectedView === 'list'">
             <TerritoryList
@@ -113,21 +127,43 @@
           </div>
         </div>
       </div>
+
+      <div v-else-if="step === 2" class="animate-in fade-in slide-in-from-right-4 duration-500">
+        <TerritoryScheduleMatrix
+          :territories="selectedTerritories"
+          :categories="selectedCategories"
+          :category-options="intelligentCategories"
+          @update:selections="scheduleSelections = $event" />
+
+        <div class="mt-6 flex justify-end">
+          <AmIButton
+            title="Finalize Claims"
+            :disabled="scheduleSelections.length === 0 || isSubmitting"
+            @click="submitSchedule">
+            <div class="flex items-center gap-2 px-4 py-1">
+              <span
+                v-if="isSubmitting"
+                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              <span>{{ isSubmitting ? 'Processing...' : 'Confirm & Save Schedule' }}</span>
+            </div>
+          </AmIButton>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 // IMPORT YOUR CONSTANTS
 import { RECRUITER_TERRITORIES_UK } from '~~/utils/locations/uk';
 import { RECRUITER_TERRITORIES_USA } from '~~/utils/locations/usa';
 import type { TerritoryListOption } from '../../components/Territory/List.vue';
 
-definePageMeta({
-  middleware: 'recruiters'
-});
+// definePageMeta({
+//   middleware: 'recruiters'
+// });
 
 export type CountryCode = 'UK' | 'USA';
 export type ViewType = 'list' | 'map';
@@ -154,6 +190,11 @@ const selectedCountry = ref<CountryCode>('UK');
 const selectedView = ref<ViewType>('map');
 const selectedTerritories = ref<any[]>([]); // Array of selected map regions
 const selectedCategories = ref<string[]>([]); // Array of selected industries
+
+// Wizard & Submission State
+const step = ref<1 | 2>(1);
+const scheduleSelections = ref<any[]>([]);
+const isSubmitting = ref(false);
 
 // 3. Map Data
 const activeTerritories = computed(() => {
@@ -184,25 +225,21 @@ const listOptions = computed<TerritoryListOption[]>(() => {
 const intelligentCategories = computed(() => {
   if (!categoriesData.value) return [];
 
-  // STEP 1: Filter the raw database categories by the active country toggle ('uk' or 'usa')
   const countrySpecificCategories = categoriesData.value.filter(
     (cat: any) => cat.country === selectedCountry.value.toUpperCase()
   );
 
-  // STEP 2: Format the filtered data into what the MultiSelectAutocomplete expects
   const allFormatted = countrySpecificCategories.map((cat: any) => ({
     label: cat.label || cat.id,
     value: cat.label || cat.id
   }));
 
-  // STEP 3: If the user has explicitly defined categories in their profile, ONLY return those!
   if (userProfile.value?.coveredCategories && userProfile.value.coveredCategories.length > 0) {
     return allFormatted.filter((cat: any) =>
       userProfile.value!.coveredCategories.includes(cat.value)
     );
   }
 
-  // STEP 4: Otherwise, return all the country-specific categories so brand new users aren't blocked
   return allFormatted;
 });
 
@@ -215,9 +252,9 @@ const isReadyForSchedule = computed(() => {
 const handleTerritoryClick = (territory: any) => {
   const index = selectedTerritories.value.findIndex((t) => t.id === territory.id);
   if (index > -1) {
-    selectedTerritories.value.splice(index, 1); // Remove if exists
+    selectedTerritories.value.splice(index, 1);
   } else {
-    selectedTerritories.value.push(territory); // Add if new
+    selectedTerritories.value.push(territory);
   }
 };
 
@@ -225,7 +262,6 @@ const removeTerritory = (id: number) => {
   selectedTerritories.value = selectedTerritories.value.filter((t) => t.id !== id);
 };
 
-// Remove individual category
 const removeCategoryFromList = (val: string) => {
   selectedCategories.value = selectedCategories.value.filter((c) => c !== val);
 };
@@ -233,20 +269,39 @@ const removeCategoryFromList = (val: string) => {
 // 7. Proceed to Step 2 (The Matrix)
 const continueToSchedule = () => {
   if (!isReadyForSchedule.value) return;
-
-  // We have the raw ingredients! Assemble the payload.
-  const payload = {
-    locations: selectedTerritories.value.map((t) => ({ id: t.id, name: t.name })),
-    categories: selectedCategories.value,
-    country: selectedCountry.value
-  };
-
-  console.log('READY FOR MATRIX:', payload);
-
-  // Todo: Trigger the Schedule View here!
+  step.value = 2; // Transition the UI
 };
 
+// 8. Final Submission
+const submitSchedule = async () => {
+  if (scheduleSelections.value.length === 0) return;
+
+  isSubmitting.value = true;
+
+  try {
+    // This is your final payload!
+    console.log('READY FOR BACKEND:', {
+      country: selectedCountry.value,
+      claims: scheduleSelections.value
+    });
+
+    // Simulate network delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Await your actual Firebase/API call here
+    // await claimTerritories(selectedCountry.value, scheduleSelections.value);
+
+    // Route them back to dashboard on success
+    await navigateTo('/recruiter/dashboard');
+  } catch (error) {
+    console.error('Failed to save schedule', error);
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+// Wipe cart when switching countries (Only happens in Step 1)
 watch(selectedCountry, () => {
-  selectedTerritories.value = []; // Wipe cart when switching countries
+  selectedTerritories.value = [];
 });
 </script>
