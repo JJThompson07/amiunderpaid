@@ -13,6 +13,8 @@ import meta from './meta.json';
 import card from './card.json';
 import email from './email.json';
 import faq from './faq.json';
+import login from './login.json';
+import recruiter from './recruiter.json';
 
 export default defineI18nLocale(async () => {
   return {
@@ -30,6 +32,8 @@ export default defineI18nLocale(async () => {
     meta,
     card,
     email,
-    faq
+    faq,
+    login,
+    recruiter
   };
 });

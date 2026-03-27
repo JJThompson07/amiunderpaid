@@ -1,0 +1,29 @@
+{
+  "common": {
+    "back-to-search": "Back to search",
+    "password-label": "Password",
+    "password-placeholder": "••••••••",
+    "sign-in-btn": "Sign In",
+    "sign-up-btn": "Create Account",
+    "loading-verify": "Verifying...",
+    "loading-process": "Processing..."
+  },
+  "admin": {
+    "title": "Admin Portal",
+    "subtitle": "Sign in to manage salary benchmarks",
+    "email-label": "Email Address",
+    "email-placeholder": "admin{'@'}amiunderpaid.com",
+    "footer-text": "Protected Environment"
+  },
+  "recruiter": {
+    "login-title": "Recruiter Portal",
+    "login-subtitle": "Sign in to manage your territories & leads",
+    "signup-title": "Create Account",
+    "signup-subtitle": "Claim exclusive regions and get candidates",
+    "email-label": "Work Email Address",
+    "email-placeholder": "you{'@'}agency.com",
+    "toggle-to-signup": "Don't have an account? Sign up",
+    "toggle-to-login": "Already have an account? Sign in",
+    "footer-text": "Recruiter Access"
+  }
+}

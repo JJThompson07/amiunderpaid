@@ -56,7 +56,7 @@
         </p>
 
         <div class="mt-auto">
-          <AmIAutocompleteInput
+          <AmIInputAutocomplete
             v-model="searchQuery"
             :label="$t('sections.no-data.option-2.label')"
             :placeholder="$t('sections.no-data.option-2.placeholder')"

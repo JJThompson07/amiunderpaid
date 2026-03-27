@@ -1,0 +1,63 @@
+{
+  "onboarding": {
+    "title": "Welcome aboard!",
+    "subtitle": "Let's get your profile set up so you can start claiming exclusive territories.",
+    "agency-label": "Agency Name",
+    "agency-placeholder": "e.g. Acme Recruiting Partners",
+    "btn-loading": "Saving Profile...",
+    "btn-default": "Continue to Dashboard",
+    "errors": {
+      "empty-agency": "Please enter your agency name.",
+      "no-session": "User session not found. Please refresh the page.",
+      "save-failed": "Could not save your profile. Please try again."
+    }
+  },
+  "dashboard": {
+    "title": "Recruiter Dashboard",
+    "welcome": "Welcome back, {name}",
+    "loading": "Loading profile..."
+  },
+  "account": {
+    "heading": "Agency Profile",
+    "name": "Agency Name",
+    "status": {
+      "label": "Account Status",
+      "active": "Active",
+      "inactive": "Inactive"
+    }
+  },
+  "industries": {
+    "none": "No industries selected",
+    "search": "Search Industries...",
+    "helper": "Select the industries your agency covers"
+  },
+  "territories": {
+    "get": "Get Territories",
+    "my": "My Territories",
+    "none": "No territories claimed",
+    "non-contiguous": "Non-Contiguous Regions",
+    "selected": "{count} selected | {count} selected",
+    "count": "{count} territory | {count} territories",
+    "list": "Territories List",
+    "amiunderpaid": {
+      "claim": {
+        "header": "Claim Candidate Territories"
+      }
+    },
+    "benchmark": {
+      "claim": {
+        "header": "Claim Client Territories"
+      }
+    },
+    "claim": {
+      "first": "Claim Your First Territory",
+      "leads": "Claim an exclusive region to start receiving leads from that area",
+      "map": {
+        "description": "Use the map to select which region's you cover"
+      }
+    }
+  },
+  "schedule": {
+    "target-row": "Territory & Category"
+  }
+}
