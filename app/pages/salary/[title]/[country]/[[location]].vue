@@ -12,17 +12,17 @@
     :currency-symbol="currencySymbol"
     :user-salary="userSalary"
     :search-title="searchTitle"
-    :show-user-selection-prop="showUserSelection"
+    :show-user-selection-prop="showUserSelection.value"
     :is-admin-verified="isAdminVerified"
     :adzuna-category="adzunaCategory"
     :job-listings="jobListings"
-    :show-ambiguity-modal-prop="showAmbiguityModal"
+    :show-ambiguity-modal-prop="showAmbiguityModal.value"
     :job-type="jobType"
     :contract-type="contractType"
     :is-underpaid="isUnderpaid"
     :diff-percent="diffPercent"
-    @update:show-user-selection="showUserSelection = $event"
-    @update:show-ambiguity-modal="showAmbiguityModal = $event">
+    @update:show-user-selection="showUserSelection.value = $event"
+    @update:show-ambiguity-modal="showAmbiguityModal.value = $event">
     <template #middle>
       <div class="flex flex-row gap-6">
         <SectionUKComparison

@@ -162,7 +162,6 @@ const props = defineProps<{
   currencySymbol: string;
   userSalary: number;
   searchTitle: string;
-  showUserSelection: boolean;
   isAdminVerified: boolean;
   adzunaCategory: string;
   jobListings: any[];
