@@ -48,8 +48,7 @@
               :country="country"
               :location="location"
               :display-title="displayTitle"
-              :jobs-count="jobsCount"
-              @fetch-data="fetchAdzunaHistogram(searchTitle, location, country)" />
+              :jobs-count="jobsCount" />
           </div>
 
           <div
@@ -284,14 +283,17 @@ const asyncDataKey = computed(
 const { data, refresh, pending } = await useAsyncData(
   asyncDataKey.value,
   async () => {
-    // Wait for Adzuna first to check for cached IDs
-    await fetchAdzunaJobs(
-      searchTitle.value,
-      location.value,
-      country.value,
-      jobType.value,
-      contractType.value
-    );
+    // 1. Fetch both Adzuna Jobs and Histogram data in parallel!
+    await Promise.all([
+      fetchAdzunaJobs(
+        searchTitle.value,
+        location.value,
+        country.value,
+        jobType.value,
+        contractType.value
+      ),
+      fetchAdzunaHistogram(searchTitle.value, location.value, country.value)
+    ]);
 
     // Determine the ID to pass to Algolia (User URL param > Cached DB Param > undefined)
     const targetGovId = govId.value || cachedGovIdCode.value;
