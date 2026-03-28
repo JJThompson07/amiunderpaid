@@ -29,9 +29,9 @@
         :comparison="comparison"
         :is-underpaid="isUnderpaid" />
     </template>
-    <template #footer>
+    <template v-if="hasData" #footer>
       <!-- Load Button State -->
-      <div v-if="!hasData || !showHistogram" class="flex items-center justify-center w-full">
+      <div v-if="!showHistogram" class="flex items-center justify-center w-full">
         <AmIButton
           :loading="loading"
           :title="$t('sections.adzuna.view-salary-distribution')"
@@ -61,8 +61,6 @@ import { computed, type PropType } from 'vue';
 import type { HistogramBucket } from '~/composables/useAdzuna';
 import { getRawDiffPercentage } from '~/helpers/utility';
 import { TrendingUp } from 'lucide-vue-next';
-
-const emit = defineEmits(['fetch-data']);
 
 const { trackDistribution } = useAnalytics();
 
@@ -144,9 +142,6 @@ const toggleHistogram = () => {
   trackDistribution(props.displayTitle, props.country, props.location, !hasData.value);
 
   showHistogram.value = !showHistogram.value;
-  if (!hasData.value) {
-    emit('fetch-data');
-  }
 };
 </script>
 

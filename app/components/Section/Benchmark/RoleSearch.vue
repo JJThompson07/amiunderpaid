@@ -108,9 +108,11 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Search, MapPin, Wallet } from 'lucide-vue-next';
-import type { SearchClient } from 'algoliasearch';
-import type { AutocompleteOption } from '~/components/AmI/Input/Autocomplete.vue';
+import { slugify } from '~/helpers/utility';
+
 const { setLocale, locale, t } = useI18n();
+const { trackSearch } = useAnalytics();
+const { logSearch } = useUserLogging();
 
 const props = defineProps<{
   initialCountry?: string;
@@ -142,14 +144,10 @@ const location = ref('');
 const salary = ref('');
 const period = ref('year');
 const loading = ref(false);
-const fetching = ref(false);
-const titleOptions = ref<AutocompleteOption[]>([]);
-const locationOptions = ref<AutocompleteOption[]>([]);
 
-// Map to temporarily hold the IDs for the selected labels
-const labelToIdMap = ref<Record<string, string>>({});
-
-const { trackSearch } = useAnalytics();
+// Consume our new Composable to handle Algolia fetching
+const { fetching, titleOptions, locationOptions, labelToIdMap, fetchTitles, fetchLocations } =
+  useJobAutocomplete(country, location, title);
 
 const contractOptions = computed(() => [
   {
@@ -166,7 +164,6 @@ const contractOptions = computed(() => [
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 
 // ** Period Options Logic **
-// Restricts options based on selected country
 const periodOptions = computed(() => {
   const opts = [{ label: '/ yr', value: 'year' }];
   return opts;
@@ -198,152 +195,6 @@ const switchLocale = () => {
   emit('country-change', country.value);
 };
 
-const fetchUKTitles = async (searchTerm: string) => {
-  const { $algolia } = useNuxtApp();
-  const index = ($algolia as SearchClient).initIndex('job_titles');
-
-  const { hits } = await index.search(searchTerm, {
-    filters: `country:UK`,
-    hitsPerPage: 100
-  });
-
-  const results = new Set<string>();
-  hits.forEach((hit: any) => {
-    const cleanGroup = hit.group ? hit.group.replace(/\s*\(.*\)$/, '') : '';
-    const label = cleanGroup ? `${hit.title} (${cleanGroup})` : hit.title;
-
-    // Store the SOC code linked to this specific label
-    if (hit.soc) {
-      labelToIdMap.value[label] = hit.soc;
-    }
-
-    results.add(label);
-  });
-
-  return Array.from(results).map((title) => {
-    return {
-      value: title,
-      label: title
-    };
-  });
-};
-
-const fetchUSATitles = async (searchTerm: string) => {
-  const { $algolia } = useNuxtApp();
-
-  const index = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
-
-  let filters = `country:USA`;
-  if (location.value && locationOptions.value.length > 0) {
-    const locVal = location.value.toLowerCase().replace(/"/g, '\\"');
-    filters += ` AND searchLocation:"${locVal}"`;
-  }
-
-  const { hits } = await index.search(searchTerm, {
-    filters,
-    hitsPerPage: 20
-  });
-
-  const results = new Set<string>();
-  hits.forEach((hit: any) => {
-    // Store the ID code linked to this specific title
-    const id = hit.id_code || hit.objectID;
-    if (id) {
-      labelToIdMap.value[hit.title] = id;
-    }
-    results.add(hit.title);
-  });
-  return Array.from(results).map((title) => {
-    return {
-      value: title,
-      label: title
-    };
-  });
-};
-
-const fetchUKLocations = async (searchTerm: string) => {
-  const { $algolia } = useNuxtApp();
-  const index = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
-
-  const { facetHits } = await index.searchForFacetValues('location', searchTerm, {
-    filters: `country:UK`,
-    maxFacetHits: 20
-  });
-
-  return facetHits.map((h: any) => {
-    return {
-      value: h.value,
-      label: h.value
-    };
-  });
-};
-
-const fetchUSALocations = async (searchTerm: string) => {
-  const { $algolia } = useNuxtApp();
-  const index = ($algolia as SearchClient).initIndex('regional_salary_benchmarks');
-
-  let filters = `country:USA`;
-  if (title.value && titleOptions.value.length > 0) {
-    const titleVal = title.value.toLowerCase().replace(/"/g, '\\"');
-    filters += ` AND searchTitle:"${titleVal}"`;
-  }
-
-  const { facetHits } = await index.searchForFacetValues('location', searchTerm, {
-    filters,
-    maxFacetHits: 20
-  });
-
-  return facetHits.map((h: any) => {
-    return {
-      value: h.value,
-      label: h.value
-    };
-  });
-};
-
-const fetchTitles = useDebounceFn(async (val: string) => {
-  if (!val || val.length < 2) {
-    titleOptions.value = [];
-    return;
-  }
-
-  fetching.value = true;
-  const searchTerm = val.trim();
-
-  try {
-    if (country.value === 'UK') {
-      titleOptions.value = await fetchUKTitles(searchTerm);
-    } else {
-      titleOptions.value = await fetchUSATitles(searchTerm);
-    }
-  } catch {
-    // Silent fail for autocomplete
-  } finally {
-    fetching.value = false;
-  }
-}, 300);
-
-const fetchLocations = useDebounceFn(async (val: string) => {
-  if (!val || val.length < 2) {
-    locationOptions.value = [];
-    return;
-  }
-
-  fetching.value = true;
-
-  try {
-    if (country.value === 'UK') {
-      locationOptions.value = await fetchUKLocations(val);
-    } else {
-      locationOptions.value = await fetchUSALocations(val);
-    }
-  } catch {
-    // Silent fail for autocomplete
-  } finally {
-    fetching.value = false;
-  }
-}, 300);
-
 const handleSearch = async () => {
   loading.value = true;
 
@@ -362,11 +213,7 @@ const handleSearch = async () => {
       .join(' ');
   }
 
-  const slugify = (str: string) => {
-    const cleanStr = str.replace(/,/g, '');
-    return cleanStr.toLowerCase().trim().replace(/\s+/g, '-').replace(/-+/g, '-');
-  };
-
+  // Uses the fixed global slugify!
   const titleSlug = slugify(cleanTitle);
   const countrySlug = country.value.toLowerCase();
   const locationSlug = location.value ? slugify(location.value) : '';
@@ -375,7 +222,23 @@ const handleSearch = async () => {
     ? `/benchmark/${titleSlug}/${countrySlug}/${locationSlug}`
     : `/benchmark/${titleSlug}/${countrySlug}`;
 
-  trackSearch(cleanTitle.trim(), country.value, location.value, salary.value);
+  trackSearch(
+    cleanTitle.trim(),
+    country.value,
+    location.value,
+    salary.value,
+    schedule.value,
+    contract.value
+  );
+
+  logSearch(
+    cleanTitle.trim(),
+    country.value,
+    location.value,
+    salary.value,
+    schedule.value,
+    contract.value
+  );
 
   await navigateTo({
     path,
@@ -392,6 +255,7 @@ const handleSearch = async () => {
       confirmed: !!exactGovId
     }
   });
+
   loading.value = false;
 };
 </script>
