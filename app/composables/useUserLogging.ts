@@ -19,7 +19,7 @@ export const useUserLogging = () => {
       // We use the native browser 'fetch' API here instead of $fetch
       // because we need the 'keepalive: true' flag. This tells the browser:
       // "Even if the user navigates to a new page right now, finish sending this data to the database!"
-      fetch('/api/track-search', {
+      fetch('/api/user/track-search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
