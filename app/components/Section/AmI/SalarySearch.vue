@@ -114,6 +114,7 @@ import { slugify } from '~/helpers/utility';
 
 const { t } = useI18n();
 const { trackSearch } = useAnalytics();
+const { logSearch } = useUserLogging();
 const { currentCountry, alternateSiteUrl } = useRegion();
 
 const scheduleOptions = [
@@ -177,7 +178,23 @@ const handleSearch = async () => {
     ? `/salary/${titleSlug}/${countrySlug}/${locationSlug}`
     : `/salary/${titleSlug}/${countrySlug}`;
 
-  trackSearch(cleanTitle.trim(), currentCountry.value, location.value, salary.value);
+  trackSearch(
+    cleanTitle.trim(),
+    currentCountry.value,
+    location.value,
+    salary.value,
+    schedule.value,
+    contract.value
+  );
+
+  logSearch(
+    cleanTitle.trim(),
+    currentCountry.value,
+    location.value,
+    salary.value,
+    schedule.value,
+    contract.value
+  );
 
   await navigateTo({
     path,

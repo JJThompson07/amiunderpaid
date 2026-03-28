@@ -112,6 +112,7 @@ import { slugify } from '~/helpers/utility';
 
 const { setLocale, locale, t } = useI18n();
 const { trackSearch } = useAnalytics();
+const { logSearch } = useUserLogging();
 
 const props = defineProps<{
   initialCountry?: string;
@@ -221,7 +222,23 @@ const handleSearch = async () => {
     ? `/benchmark/${titleSlug}/${countrySlug}/${locationSlug}`
     : `/benchmark/${titleSlug}/${countrySlug}`;
 
-  trackSearch(cleanTitle.trim(), country.value, location.value, salary.value);
+  trackSearch(
+    cleanTitle.trim(),
+    country.value,
+    location.value,
+    salary.value,
+    schedule.value,
+    contract.value
+  );
+
+  logSearch(
+    cleanTitle.trim(),
+    country.value,
+    location.value,
+    salary.value,
+    schedule.value,
+    contract.value
+  );
 
   await navigateTo({
     path,

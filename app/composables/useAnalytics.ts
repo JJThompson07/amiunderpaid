@@ -1,51 +1,54 @@
+import { computed } from 'vue';
+
 export const useAnalytics = () => {
   const { gtag } = useGtag();
   const { $siteBrand } = useNuxtApp();
 
-  // Track search events from the main search
-  const trackSearch = (title: string, country: string, location: string, currentSalary: string) => {
-    gtag('event', 'search', {
+  // Cookie Consent State
+  const analyticsConsent = useCookie('analytics_consent', { default: () => 'granted' });
+  const hasConsent = computed(() => analyticsConsent.value === 'granted');
+
+  const trackEvent = (eventName: string, payload: Record<string, any>) => {
+    if (hasConsent.value) {
+      gtag('event', eventName, {
+        ...payload,
+        brand: $siteBrand
+      });
+    }
+  };
+
+  const trackSearch = (
+    title: string,
+    country: string,
+    location: string,
+    currentSalary: string,
+    schedule: string = 'full-time',
+    contract: string = 'permanent'
+  ) => {
+    trackEvent('search', {
       job_title: title,
       country,
       location,
       current_salary: currentSalary,
-      brand: $siteBrand
+      schedule,
+      contract
     });
   };
 
   const trackAmbiguousSearch = (title: string, group: string) => {
-    gtag('event', 'ambiguous_search', {
-      job_title: title,
-      group: group,
-      brand: $siteBrand
-    });
+    trackEvent('ambiguous_search', { job_title: title, group });
   };
 
   const trackResultAction = (action: string) => {
-    gtag('event', 'result_action', {
-      action: action,
-      brand: $siteBrand
-    });
+    trackEvent('result_action', { action });
   };
 
   const trackDistribution = (title: string, country: string, location: string, fetch: boolean) => {
-    gtag('event', 'fetch_distribution', {
-      job_title: title,
-      country: country,
-      location: location,
-      fetch: fetch,
-      brand: $siteBrand
-    });
+    trackEvent('fetch_distribution', { job_title: title, country, location, fetch });
   };
 
   const trackViewRole = (title: string, company: string, location: string, url: string) => {
-    gtag('event', 'view_role', {
-      job_title: title,
-      company: company,
-      location: location,
-      url: url,
-      brand: $siteBrand
-    });
+    trackEvent('view_role', { job_title: title, company, location, url });
   };
 
   return {
@@ -53,6 +56,7 @@ export const useAnalytics = () => {
     trackAmbiguousSearch,
     trackResultAction,
     trackDistribution,
-    trackViewRole
+    trackViewRole,
+    analyticsConsent
   };
 };
