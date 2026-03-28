@@ -1,5 +1,7 @@
 export const useUserLogging = () => {
   // Track whenever a user performs a search
+  const { $siteBrand } = useNuxtApp();
+
   const logSearch = (
     title: string,
     country: string,
@@ -8,6 +10,11 @@ export const useUserLogging = () => {
     schedule: string = 'full-time',
     contract: string = 'permanent'
   ) => {
+    if (import.meta.dev) {
+      // do not log dev searches
+      return;
+    }
+
     if (import.meta.client) {
       // We use the native browser 'fetch' API here instead of $fetch
       // because we need the 'keepalive: true' flag. This tells the browser:
@@ -23,7 +30,8 @@ export const useUserLogging = () => {
           location,
           salary,
           schedule,
-          contract
+          contract,
+          brand: $siteBrand
         }),
         keepalive: true
       }).catch(() => {

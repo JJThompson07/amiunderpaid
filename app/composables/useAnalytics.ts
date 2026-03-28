@@ -9,6 +9,11 @@ export const useAnalytics = () => {
   const hasConsent = computed(() => analyticsConsent.value === 'granted');
 
   const trackEvent = (eventName: string, payload: Record<string, any>) => {
+    if (import.meta.dev) {
+      // safety dev check to not track dev events
+      return;
+    }
+
     if (hasConsent.value) {
       gtag('event', eventName, {
         ...payload,
