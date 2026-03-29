@@ -1,3 +1,11 @@
+import {
+  WEIGHTS,
+  LIVE_CONFIDENCE_THRESHOLDS,
+  calculatePercentile,
+  calculateLivePercentile,
+  calculateRegionalModifier
+} from './math';
+
 export const calculateUKBenchmarkScore = (
   userSalary: number,
   macroNationalData: PercentileData,

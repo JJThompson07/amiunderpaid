@@ -121,11 +121,44 @@ export const calculateLivePercentile = (
 ): number | null => {
   if (!buckets?.length || !totalJobs) return null;
 
-  const jobsBelow = buckets.reduce(
-    (acc, bucket) => (Number(bucket.value) < salary ? acc + bucket.count : acc),
-    0
-  );
+  // 1. Ensure buckets are sorted by value ascending
+  const sortedBuckets = [...buckets].sort((a, b) => Number(a.value) - Number(b.value));
 
+  let jobsBelow = 0;
+
+  for (let i = 0; i < sortedBuckets.length; i++) {
+    const currentBucket = sortedBuckets[i];
+
+    // 👈 TypeScript Fix: Proves to the compiler that currentBucket exists
+    if (!currentBucket) continue;
+
+    const lowerBound = Number(currentBucket.value);
+
+    // 👈 TypeScript Fix: Safely grab the next bucket
+    const nextBucket = sortedBuckets[i + 1];
+    const upperBound = nextBucket
+      ? Number(nextBucket.value)
+      : lowerBound * EXTRAPOLATION_CEILING_MULTIPLIER;
+
+    if (salary >= upperBound) {
+      // Salary clears this bucket entirely
+      jobsBelow += currentBucket.count;
+    } else if (salary >= lowerBound && salary < upperBound) {
+      // Salary falls INSIDE this bucket
+      if (lowerBound === upperBound) {
+        jobsBelow += currentBucket.count;
+      } else {
+        const proportion = (salary - lowerBound) / (upperBound - lowerBound);
+        jobsBelow += currentBucket.count * proportion;
+      }
+      break;
+    } else {
+      // Salary is below this bucket
+      break;
+    }
+  }
+
+  // 3. Calculate final percentile based on the interpolated jobs below
   const percentile = (jobsBelow / totalJobs) * 100;
   return Math.min(Math.max(Math.round(percentile * 10) / 10, SCORE_LIMITS.MIN), SCORE_LIMITS.MAX);
 };
