@@ -61,21 +61,6 @@
             <span class="text-sm" v-html="point"></span>
           </li>
         </ul>
-
-        <div class="mt-2 p-4 rounded-xl border flex items-center gap-2" :class="analysisBoxClasses">
-          <span
-            class="text-xs leading-relaxed"
-            v-html="
-              $t('mca.analysis.description', {
-                strong: `<strong>${$t('mca.analysis.strong')}</strong>`,
-                currencySymbol: currencySymbol,
-                userSalary: userSalary.toLocaleString(),
-                percentile: `<strong>${$t('mca.analysis.percentile', { rank: formatOrdinal(verdict.percentileRank) })}</strong>`,
-                matchedTitle: matchedTitle,
-                location: location ? 'in ' + location : 'nationally'
-              })
-            "></span>
-        </div>
       </div>
     </div>
   </div>
@@ -144,14 +129,6 @@ const dotClass = computed(() => {
   if (score >= 60) return 'bg-neutral-400';
   if (score >= 40) return 'bg-warning-500';
   return 'bg-negative-500';
-});
-
-const analysisBoxClasses = computed(() => {
-  const score = props.verdict?.score || 0;
-  if (score >= 80) return 'bg-positive-50/50 border-positive-100 text-positive-800';
-  if (score >= 60) return 'bg-slate-50 border-slate-200 text-slate-800';
-  if (score >= 40) return 'bg-warning-50/50 border-warning-100 text-warning-800';
-  return 'bg-negative-50/50 border-negative-100 text-negative-800';
 });
 
 // ==========================================

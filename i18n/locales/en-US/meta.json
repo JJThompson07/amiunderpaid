@@ -1,36 +1,36 @@
 {
   "location": {
-    "title": "Average {displayTitle} Salary in {locStr}{country} | Am I Underpaid?",
-    "description": "Discover the average compensation for a {displayTitle} in {locStr}. Compare your base pay against real-time market data and federal benchmarks.",
-    "ogTitle": "Typical {displayTitle} Salary in {locStr}{country}",
-    "ogDescription": "Are you earning what you deserve? Review the median {displayTitle} compensation in {locStr} today.",
+    "title": "{displayTitle} MCA Score in {locStr}{country} | Am I Underpaid?",
+    "description": "Check the average {displayTitle} salary in {locStr}. Compare your pay against live BLS benchmarks and US job listings to get your MCA alignment score.",
+    "ogTitle": "Average {displayTitle} Salary & Market Rate in {locStr}",
+    "ogDescription": "Are you being paid the market rate? Check the average {displayTitle} salary and your MCA alignment score in {locStr} now.",
     "header": {
-      "title": "Compensation for {displayTitle}"
+      "title": "Salary & MCA Score for {displayTitle}"
     }
   },
   "benchmark": {
     "location": {
-      "title": "Benchmark compensation for a {displayTitle} in {locStr}{country} | Benchmark My Role",
-      "description": "Establish the benchmark salary for a {displayTitle} in {locStr}. Evaluate your open position against live job market data and federal BLS statistics.",
-      "ogTitle": "Salary Benchmark for a {displayTitle} in {locStr}{country}",
-      "ogDescription": "Is your job offer competitive? Review the benchmarked salary for a {displayTitle} in {locStr}.",
+      "title": "Benchmark {displayTitle} Salary in {locStr}{country} | Pay Scales",
+      "description": "View the benchmark {displayTitle} salary and pay scales in {locStr}. Use our triangulated engine to compare roles against live market data and BLS statistics.",
+      "ogTitle": "Salary Benchmarking for {displayTitle} in {locStr}",
+      "ogDescription": "Ensure your job offer is competitive. View {displayTitle} pay scales and salary benchmarks in {locStr} today.",
       "header": {
-        "title": "Salary Benchmark for {displayTitle}"
+        "title": "US Salary Benchmarks for {displayTitle}"
       }
     }
   },
   "index": {
-    "name": "Am I Underpaid? US",
-    "title": "Am I Underpaid? — US Salary Comparison & Market Data",
-    "description": "Find out the average compensation for your position in the USA. Compare your pay against live market data and federal BLS benchmarks to see your true market value."
+    "name": "Am I Underpaid? USA",
+    "title": "Am I Underpaid? — Salary Checker & Market Pay Calculator USA",
+    "description": "Find the average salary for your role. Compare your wage against 7,000,000+ live jobs and BLS benchmarks to calculate your Market Compensation Alignment (MCA) score."
   },
   "benchmark_index": {
     "name": "Benchmark My Role",
-    "title": "Benchmark My Role — Job Requisition Salary Comparison",
-    "description": "Benchmark an open job requisition against real-time US market data. Whether you are hiring or applying, use our compensation tool to ensure your offer is competitive."
+    "title": "Benchmark My Role — US Salary Comparison & Hiring Tool",
+    "description": "Benchmark open vacancies against real-time US market data. Compare job offers against BLS salary scales and live vacancies to ensure pay alignment."
   },
   "privacy-policy": {
-    "title": "Privacy Policy — Am I Underpaid? — US",
+    "title": "Privacy Policy — Am I Underpaid? — USA",
     "description": "Privacy policy, data sources, and affiliate disclosure for Am I Underpaid?",
     "benchmark": {
       "title": "Privacy Policy — Benchmark My Role",
@@ -38,7 +38,7 @@
     }
   },
   "data-sources": {
-    "title": "Data Sources — Am I Underpaid? — US",
+    "title": "Data Sources — Am I Underpaid? — USA",
     "description": "Data Sources, What we use for Am I Underpaid?",
     "benchmark": {
       "title": "Data Sources — Benchmark My Role",
@@ -46,15 +46,15 @@
     }
   },
   "how-it-works": {
-    "title": "How it works — Am I Underpaid? — US",
-    "description": "How it works, a quick guide to Am I Underpaid?",
+    "title": "How it works — Am I Underpaid? — Salary Checker & MCA Engine",
+    "description": "Learn how we calculate your salary alignment using a 3-step engine that triangulates BLS data, national trends, and live job market listings.",
     "benchmark": {
       "title": "How it works — Benchmark My Role",
       "description": "How it works, a quick guide to Benchmark My Role"
     }
   },
   "about": {
-    "title": "About — Am I Underpaid? — US",
+    "title": "About — Am I Underpaid? — USA",
     "description": "Discover the reason for Am I Underpaid?",
     "benchmark": {
       "title": "About — Benchmark My Role",

@@ -28,10 +28,5 @@
       "mid": "Current job listings show active demand, and your pay aligns evenly with the <strong>{live} percentile</strong> of live offers.",
       "low": "Live market data indicates high demand for this role, with many current listings offering higher starting salaries. You map to the <strong>{live} percentile</strong> of live offers."
     }
-  },
-  "analysis": {
-    "strong": "Analysis:",
-    "percentile": "{rank} percentile",
-    "description": "{strong} A base salary of {currencySymbol}{userSalary} places you in the {percentile} for {matchedTitle} {location}."
   }
 }
