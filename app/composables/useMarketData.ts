@@ -1,125 +1,63 @@
-import type { SearchClient, SearchIndex } from 'algoliasearch';
+import type { SearchClient } from 'algoliasearch';
 
 export interface SalaryBenchmark {
   title: string;
-  location: string;
-  country: string;
-  salary: number;
+  location?: string;
+  country?: string;
+  salary?: number;
   avg_salary?: number;
   salary_10_pt?: number;
   salary_25_pt?: number;
   salary_75_pt?: number;
   salary_90_pt?: number;
-  year: number;
-  period?: string;
   id_code?: string;
+  soc?: string; // Added for UK job_titles dictionary
+  group?: string; // Added for UK job_titles dictionary
+}
+
+export interface ResolvedJobIdentity {
+  title: string;
+  id_code?: string; // The master ID we ultimately pass to the data engines
+  soc?: string; // UK-specific dictionary ID
+  group?: string; // UK-specific job category (e.g., "Software Engineering")
+  objectID?: string; // Default Algolia ID
 }
 
 export const useMarketData = () => {
-  // Grab the Algolia client synchronously at the top!
   const { $algolia } = useNuxtApp();
   const searchClient = $algolia as SearchClient;
 
-  // Global loading state for market data fetches
-  const loading = useState<boolean>('market_loading', () => false);
+  // Global loading state for the resolution phase
+  const resolving = useState<boolean>('market_resolving', () => false);
 
-  // --- Reactive State for Results ---
-  // We use Nuxt's useState to ensure the data is preserved across SSR and client hydration
-  const marketAverage = useState<number>('market_average', () => 0);
-  const marketMedian = useState<number>('market_median', () => 0);
-  const marketHigh = useState<number>('market_high', () => 0);
-  const marketLow = useState<number>('market_low', () => 0);
-  const marketDataYear = useState<number>('market_year', () => 0);
-  const marketPeriod = useState<string>('market_period', () => 'year');
+  // --- IDENTITY STATE ---
+  // These are the only variables we need to keep! They define "Who" the user is.
   const matchedTitle = useState<string>('market_matched_title', () => '');
-  const matchedLocation = useState<string>('market_matched_location', () => '');
-
-  // Stores the ID code (e.g. SOC code) of the matched benchmark.
-  // This is critical for saving automatic matches back to the Adzuna cache.
   const matchedIdCode = useState<string | undefined>('market_matched_id_code', () => undefined);
-
-  // Flag indicating if we failed to find a specific role and fell back to the generic "Professional" benchmark
+  const ambiguousMatches = useState<any[]>('market_ambiguous_matches', () => []);
   const isGenericFallback = useState<boolean>('market_generic_fallback', () => false);
 
-  // Flag for median salary being used instead of average
-  const isMedian = useState<boolean>('market_avg_is_median', () => false);
-
-  // Stores a list of potential matches if the search term is too broad (e.g., returns multiple different SOC groups)
-  const ambiguousMatches = useState<any[]>('market_ambiguous_matches', () => []);
-
-  // Stores localized salary data if the user searched for a specific region/city
-  const regionalData = useState<SalaryBenchmark | null>('market_regional_data', () => null);
-
-  // --- Internal Helpers ---
-
-  /**
-   * Resets all reactive state variables to their default values.
-   * Called at the start of every new fetch to prevent stale data.
-   */
-  const resetData = () => {
-    marketAverage.value = 0;
-    marketHigh.value = 0;
-    marketLow.value = 0;
-    marketDataYear.value = 0;
-    marketPeriod.value = 'year';
+  const resetIdentity = () => {
     matchedTitle.value = '';
-    matchedLocation.value = '';
     matchedIdCode.value = undefined;
-    isGenericFallback.value = false;
-    isMedian.value = false;
     ambiguousMatches.value = [];
-    regionalData.value = null;
-  };
-
-  /**
-   * Hydrates the reactive state with the data from a successful Algolia benchmark match.
-   */
-  const processRecord = async (record: SalaryBenchmark) => {
-    const average = record.avg_salary || record.salary;
-    const calcHigh = record.salary_90_pt || record.salary_75_pt || Math.round(average * 1.3);
-    const calcLow = record.salary_10_pt || record.salary_25_pt || Math.round(average * 0.75);
-
-    marketAverage.value = average;
-    marketMedian.value = record.salary;
-    isMedian.value = !record.avg_salary;
-    // Calculate high/low bounds (currently 30% above and 25% below the mean)
-    marketHigh.value = calcHigh;
-    marketLow.value = calcLow;
-    marketDataYear.value = record.year;
-    matchedTitle.value = record.title;
-    marketPeriod.value = record.period || 'year';
-    matchedLocation.value = record.location;
-    matchedIdCode.value = record.id_code; // Save the ID code so the frontend can cache it
-  };
-
-  /**
-   * Fetches the generic "Professional" baseline salary for a given country.
-   * Used as an absolute last resort if no specific job title matches are found.
-   */
-  const fetchGenericFallback = async (
-    country: string,
-    period: string,
-    nationalIndex: SearchIndex
-  ) => {
-    isGenericFallback.value = true;
-    const { hits } = await nationalIndex.search('professional', {
-      filters: `country:${country} AND period:${period}`,
-      hitsPerPage: 1
-    });
-    return hits.length > 0 ? (hits[0] as unknown as SalaryBenchmark) : undefined;
+    isGenericFallback.value = false;
   };
 
   // ==========================================
-  // UK SPECIFIC LOGIC
+  // 🇬🇧 UK SEARCH RESOLVER
   // ==========================================
-  const fetchUkMarketData = async (
-    title: string,
-    location: string,
-    period: string = 'year',
-    idCode?: string // Optional ID code from URL or Cache
-  ) => {
-    loading.value = true;
-    resetData();
+  const resolveUkIdentity = async (title: string, idCode?: string): Promise<void> => {
+    resolving.value = true;
+    resetIdentity();
+
+    // 1. EXACT ID BYPASS (Fastest)
+    if (idCode) {
+      matchedIdCode.value = String(idCode).trim();
+      matchedTitle.value = title;
+      resolving.value = false;
+      return;
+    }
 
     // Clean up title and extract any specified group (e.g., "Developer (Software Engineering)")
     let searchTitle = title.replace(/-/g, ' ');
@@ -130,261 +68,121 @@ export const useMarketData = () => {
       targetGroup = groupMatch[2] || '';
     }
 
-    const country = 'UK';
-
     try {
-      // Initialize the three UK indices
-      const nationalIndex = searchClient.initIndex('salary_benchmarks');
-      const regionalIndex = searchClient.initIndex('regional_salary_benchmarks');
       const jobTitlesIndex = searchClient.initIndex('job_titles');
+      const nationalIndex = searchClient.initIndex('salary_benchmarks');
 
-      let record: SalaryBenchmark | undefined;
+      // 2. FUZZY SEARCH THE ONS DICTIONARY
+      const sanitizedQuery = searchTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
-      // STEP 1: EXACT ID LOOKUP
-      // If we have a cached ID or a manual override, bypass fuzzy search entirely.
-      if (idCode) {
-        // NO QUOTES: Algolia strictly types this as a Number!
-        const cleanId = String(idCode).trim();
-        const { hits: benchmarkHits } = await nationalIndex.search<SalaryBenchmark>('', {
-          filters: `id_code:${cleanId} AND country:UK AND period:${period}`,
-          hitsPerPage: 1
-        });
-
-        if (benchmarkHits.length > 0) {
-          record = benchmarkHits[0];
-
-          // If a location is provided, try to find the regional variation of this exact ID
-          if (location && location.length > 2) {
-            const { hits: regionalHits } = await regionalIndex.search<SalaryBenchmark>('', {
-              // CRITICAL FIX: Added id_code filter here so we don't fetch random jobs!
-              filters: `id_code:${cleanId} AND country:UK AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
-              hitsPerPage: 10
-            });
-
-            const locLower = location.toLowerCase();
-            const bestRegional = regionalHits.find(
-              (h) =>
-                h.location.toLowerCase().includes(locLower) ||
-                locLower.includes(h.location.toLowerCase())
-            );
-
-            if (bestRegional) regionalData.value = bestRegional;
-          }
-        }
-      }
-
-      // STEP 2: SOC CODE TEXT LOOKUP (Fuzzy Search)
-      // If no exact ID was provided, search the `job_titles` index to find the correct SOC code.
-      if (!record && !idCode) {
-        const sanitizedQuery = searchTitle
-          .toLowerCase()
-          .replace(/[^a-z0-9\s]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-
-        const { hits: titleHits } = await jobTitlesIndex.search<any>(sanitizedQuery, {
-          filters: `country:UK`,
-          hitsPerPage: 10
-        });
-
-        let bestTitleMatch;
-
-        if (targetGroup) {
-          bestTitleMatch = titleHits.find(
-            (h: any) => h.group && h.group.toLowerCase() === targetGroup.toLowerCase()
-          );
-        }
-
-        if (!bestTitleMatch) {
-          if (titleHits.length > 1) {
-            const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
-            if (groups.size > 1) {
-              ambiguousMatches.value = titleHits; // <-- This is what was triggering your modal!
-            }
-          }
-          bestTitleMatch = titleHits[0];
-        }
-
-        if (bestTitleMatch && bestTitleMatch.soc) {
-          const { hits: benchmarkHits } = await nationalIndex.search<SalaryBenchmark>('', {
-            filters: `id_code:${bestTitleMatch.soc} AND country:UK AND period:${period}`,
-            hitsPerPage: 1
-          });
-
-          if (benchmarkHits.length > 0) {
-            record = benchmarkHits[0];
-
-            if (location && location.length > 2) {
-              const { hits: regionalHits } = await regionalIndex.search<SalaryBenchmark>('', {
-                filters: `country:UK AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
-                hitsPerPage: 10
-              });
-
-              const locLower = location.toLowerCase();
-              const bestRegional = regionalHits.find(
-                (h) =>
-                  h.location.toLowerCase().includes(locLower) ||
-                  locLower.includes(h.location.toLowerCase())
-              );
-              if (bestRegional) regionalData.value = bestRegional;
-            }
-          }
-        }
-      }
-
-      // STEP 3: DIRECT TITLE MATCH FALLBACK
-      // If the SOC dictionary lookup completely fails, try searching the benchmarks index directly.
-      if (!record) {
-        const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
-          filters: `country:UK AND period:${period}`,
-          hitsPerPage: 1
-        });
-        if (hits.length > 0) {
-          record = hits[0];
-        }
-      }
-
-      // STEP 4: GENERIC FALLBACK
-      // If everything above failed, give them the baseline UK Professional average.
-      if (!record) {
-        record = await fetchGenericFallback(country, period, nationalIndex);
-      }
-
-      // Hydrate the reactive state with whatever record we ended up with
-      if (record) {
-        await processRecord(record);
-      }
-    } catch (e: any) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: 'Error fetching UK market data',
-        cause: e
+      const { hits: titleHits } = await jobTitlesIndex.search<any>(sanitizedQuery, {
+        filters: `country:UK`,
+        hitsPerPage: 10
       });
+
+      let bestTitleMatch;
+
+      if (targetGroup) {
+        bestTitleMatch = titleHits.find(
+          (h: any) => h.group?.toLowerCase() === targetGroup.toLowerCase()
+        );
+      }
+
+      if (!bestTitleMatch && titleHits.length > 0) {
+        if (titleHits.length > 1) {
+          const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
+          if (groups.size > 1) {
+            ambiguousMatches.value = titleHits; // Trigger your UI modal!
+          }
+        }
+        bestTitleMatch = titleHits[0];
+      }
+
+      // 3. SET THE IDENTITY IF FOUND IN DICTIONARY
+      if (bestTitleMatch?.soc) {
+        matchedIdCode.value = bestTitleMatch.soc;
+        matchedTitle.value = bestTitleMatch.group || bestTitleMatch.title || searchTitle;
+        return; // Success!
+      }
+
+      // 4. FALLBACK: DIRECT BENCHMARK SEARCH
+      // If the SOC dictionary lookup completely fails, try searching the benchmarks index directly.
+      const { hits } = await nationalIndex.search<any>(searchTitle, {
+        filters: `country:UK`,
+        hitsPerPage: 1
+      });
+
+      if (hits.length > 0) {
+        matchedIdCode.value = hits[0].id_code;
+        matchedTitle.value = hits[0].title;
+      } else {
+        // Absolute worst case: Fallback to generic professional
+        isGenericFallback.value = true;
+        matchedTitle.value = 'Professional (Generic)';
+      }
+    } catch (error) {
+      console.error('Error resolving UK identity:', error);
     } finally {
-      loading.value = false;
+      resolving.value = false;
     }
   };
 
   // ==========================================
-  // USA SPECIFIC LOGIC
+  // 🇺🇸 USA SEARCH RESOLVER
   // ==========================================
-  const fetchUSAMarketData = async (
-    title: string,
-    location: string,
-    period: string = 'year',
-    idCode?: string // Optional ID code from URL or Cache
-  ) => {
-    loading.value = true;
-    resetData();
+  const resolveUsaIdentity = async (title: string, idCode?: string): Promise<void> => {
+    resolving.value = true;
+    resetIdentity();
+
+    // 1. EXACT ID BYPASS (Fastest)
+    if (idCode) {
+      matchedIdCode.value = String(idCode).trim();
+      matchedTitle.value = title;
+      resolving.value = false;
+      return;
+    }
 
     const searchTitle = title.replace(/-/g, ' ');
-    const country = 'USA';
 
     try {
       const nationalIndex = searchClient.initIndex('salary_benchmarks');
-      const regionalIndex = searchClient.initIndex('regional_salary_benchmarks');
 
-      let record: SalaryBenchmark | undefined;
-
-      // STEP 1: EXACT ID LOOKUP
-      // If we have a cached ID or a manual override, bypass fuzzy search entirely.
-      if (idCode) {
-        const cleanId = String(idCode).trim();
-
-        // Bulletproof filter: US SOC codes contain hyphens (e.g., 15-1252.00).
-        // Quotes are mandatory so Algolia doesn't treat the hyphen as a minus sign!
-        const exactFilters = `(id_code:${cleanId} OR id_code:"${cleanId}") AND country:USA AND period:${period}`;
-
-        // First try to find a regional benchmark for this exact ID
-        if (location && location.length > 2) {
-          const { hits } = await regionalIndex.search<SalaryBenchmark>('', {
-            filters: `${exactFilters} AND searchLocation:"${location.toLowerCase()}"`,
-            hitsPerPage: 1
-          });
-          if (hits.length > 0) record = hits[0];
-        }
-
-        // If no regional match (or no location provided), fall back to the National benchmark for this ID
-        if (!record) {
-          const { hits } = await nationalIndex.search<SalaryBenchmark>('', {
-            filters: exactFilters,
-            hitsPerPage: 1
-          });
-          if (hits.length > 0) record = hits[0];
-        }
-      }
-
-      // STEP 2: REGIONAL TEXT SEARCH (Fuzzy Search)
-      if (!record && !idCode && location && location.length > 2) {
-        const { hits } = await regionalIndex.search<SalaryBenchmark>(searchTitle, {
-          filters: `country:USA AND period:${period} AND searchLocation:"${location.toLowerCase()}"`,
-          queryLanguages: ['en'],
-          removeWordsIfNoResults: 'allOptional',
-          hitsPerPage: 10
-        });
-
-        const locLower = location.toLowerCase();
-        const bestRegional = hits.find(
-          (h) =>
-            h.location.toLowerCase().includes(locLower) ||
-            locLower.includes(h.location.toLowerCase())
-        );
-
-        if (bestRegional) {
-          record = bestRegional;
-        }
-      }
-
-      // STEP 3: NATIONAL TEXT SEARCH FALLBACK
-      if (!record && !idCode) {
-        const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
-          filters: `country:USA AND period:${period}`,
-          queryLanguages: ['en'],
-          removeWordsIfNoResults: 'allOptional',
-          hitsPerPage: 10
-        });
-        if (hits.length > 0) {
-          record = hits[0];
-        }
-      }
-
-      // STEP 4: GENERIC FALLBACK
-      // If everything above failed, give them the baseline USA Professional average.
-      if (!record) {
-        record = await fetchGenericFallback(country, period, nationalIndex);
-      }
-
-      // Hydrate the reactive state with whatever record we ended up with
-      if (record) {
-        await processRecord(record);
-      }
-    } catch (e: any) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: 'Error fetching USA market data',
-        cause: e
+      // 2. TEXT SEARCH THE MASTER INDEX
+      // The USA doesn't have a separate job_titles dictionary in this setup, so we fuzzy search
+      // the main benchmark index to find the closest official SOC code.
+      const { hits } = await nationalIndex.search<any>(searchTitle, {
+        filters: `country:USA`,
+        queryLanguages: ['en'],
+        removeWordsIfNoResults: 'allOptional',
+        hitsPerPage: 1
       });
+
+      if (hits.length > 0) {
+        matchedIdCode.value = hits[0].id_code;
+        matchedTitle.value = hits[0].title;
+      } else {
+        // Absolute worst case: Fallback to generic professional
+        isGenericFallback.value = true;
+        matchedTitle.value = 'Professional (Generic)';
+      }
+    } catch (error) {
+      console.error('Error resolving USA identity:', error);
     } finally {
-      loading.value = false;
+      resolving.value = false;
     }
   };
 
   return {
-    loading,
-    marketAverage,
-    marketMedian,
-    marketHigh,
-    marketLow,
-    marketDataYear,
-    marketPeriod,
+    resolving,
     matchedTitle,
-    matchedLocation,
-    matchedIdCode, // Exposed so UI can trigger background cache updates
-    isGenericFallback,
-    isMedian,
+    matchedIdCode,
     ambiguousMatches,
-    regionalData,
-    fetchUkMarketData,
-    fetchUSAMarketData
+    isGenericFallback,
+    resolveUkIdentity,
+    resolveUsaIdentity
   };
 };

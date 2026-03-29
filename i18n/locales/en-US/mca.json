@@ -1,0 +1,30 @@
+{
+  "labels": {
+    "leader": "Market Leader",
+    "strong": "Strong Alignment",
+    "competitive": "Competitive",
+    "below": "Below Market",
+    "review": "Action Required"
+  },
+  "points": {
+    "micro": {
+      "high": "Your base pay sits in the <strong>{micro}th percentile</strong> for {jobTitle} roles, placing you in the top tier of earners among your direct peers nationwide.",
+      "mid": "Your base pay sits in the <strong>{micro}th percentile</strong> for {jobTitle} roles, aligning closely with the median market rate.",
+      "low": "Your base pay sits in the <strong>{micro}th percentile</strong> for {jobTitle} roles, indicating you are currently compensated below the average market rate for your peers."
+    },
+    "macro": {
+      "high": "Compared to the wider US job market across all industries, your salary is highly competitive, ranking in the <strong>{macro}th percentile</strong>.",
+      "mid": "When mapped against all US occupations nationwide, your compensation sits comfortably in the <strong>{macro}th percentile</strong>.",
+      "low": "Compared to the broader national average across all US roles, your salary ranks in the <strong>{macro}th percentile</strong>."
+    },
+    "regional": {
+      "higher": "Adjusted for <strong>{location}</strong>, local market baselines are roughly <strong>{diff}% higher</strong> than the national average, which is factored into your score.",
+      "lower": "Adjusted for <strong>{location}</strong>, local market baselines are roughly <strong>{diff}% lower</strong> than the national average, meaning your salary stretches further locally."
+    },
+    "live": {
+      "high": "Live market data from Adzuna shows your compensation is strong, beating the <strong>{live}th percentile</strong> of currently advertised US roles.",
+      "mid": "Current job listings show active demand, and your pay aligns evenly with the <strong>{live}th percentile</strong> of live offers.",
+      "low": "Live market data indicates high demand for this role, with many current listings offering higher starting salaries. You map to the <strong>{live}th percentile</strong> of live offers."
+    }
+  }
+}

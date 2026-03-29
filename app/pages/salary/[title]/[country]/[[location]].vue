@@ -32,6 +32,13 @@
       v-show="!pending && (hasGovernmentData || hasJobsData)"
       class="relative grid grid-cols-1 px-4 gap-6">
       <div class="relative mx-auto flex flex-col gap-6 w-full">
+        <SectionScoreMca
+          v-if="McaScore"
+          :verdict="McaScore"
+          :user-salary="userSalary"
+          :currency-symbol="currencySymbol"
+          :matched-title="matchedTitle"
+          :location="location" />
         <div class="flex flex-col gap-6 md:flex-row">
           <div v-if="hasJobsData" class="flex flex-col flex-1 min-w-0 gap-3 adzuna-section">
             <LazySectionAdzunaComparison
@@ -198,8 +205,9 @@
 <script setup lang="ts">
 // ** imports **
 import { FileUser, Info } from 'lucide-vue-next';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { getRawDiffPercentage } from '~/helpers/utility';
+import type { SalaryBenchmark } from '../../../../composables/useMarketData';
 
 // ** data & refs **
 const { $siteBrand } = useNuxtApp();
@@ -215,8 +223,9 @@ const showUserSelection = ref(false);
 const userSelected = ref(false);
 
 const { isXl } = useViewport();
+const { t } = useI18n();
 
-// Destructure Adzuna from auto-imported composable
+// 1. ADZUNA
 const {
   histogramBuckets,
   fetchJobs: fetchAdzunaJobs,
@@ -230,27 +239,29 @@ const {
   meanSalary,
   jobsData,
   hasJobsData,
-  cachedGovIdCode // Now used to bypass Algolia sequentially
+  cachedGovIdCode
 } = useAdzuna();
 
 const { trackAmbiguousSearch } = useAnalytics();
 
-// Destructure market data from auto-imported composable
+// 2. THE RESOLVER (New Slimmed Down Version)
 const {
-  loading,
-  marketAverage,
-  marketHigh,
-  marketLow,
-  marketDataYear,
+  resolving: loading, // Aliased to 'loading' to keep your SEO / UI watchers happy
   matchedTitle,
-  matchedLocation,
   matchedIdCode,
   isGenericFallback,
   ambiguousMatches,
-  regionalData,
-  fetchUkMarketData,
-  fetchUSAMarketData
+  resolveUkIdentity,
+  resolveUsaIdentity
 } = useMarketData();
+
+// 3. THE DATA ENGINES
+const { fetchMacroBaselines } = useMacroData();
+const { fetchMicroBaselines } = useMicroData();
+
+// Local refs to hold the strict data types
+const macroResult = ref<any>(null);
+const microResult = ref<any>(null);
 
 // ** helpers **
 const unslugify = (slug: string) => {
@@ -270,16 +281,46 @@ const location = computed(() =>
 
 const userSalary = ref(Number(route.query.compare) || 0);
 const userPeriod = ref(route.query.period?.toString() || 'year');
-
-// Clean title for Adzuna and display purposes
 const searchTitle = ref((route.query.q as string) || displayTitle.value);
 
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
 const adzunaCategory = computed(() => jobsData.value?.results?.[0]?.category?.label);
 
-// Strict Data Check:
+// ==========================================
+// 🌉 THE BRIDGE: Map new data to UI variables
+// ==========================================
+// Prioritize mean, fallback to p50 (median), fallback to 0
+const marketAverage = computed(() => {
+  const data = microResult.value?.microNationalData;
+  return data?.mean || data?.p50 || 0;
+});
+
+const marketLow = computed(() => microResult.value?.microNationalData?.p25 || 0);
+const marketHigh = computed(() => microResult.value?.microNationalData?.p75 || 0);
+const marketDataYear = ref(new Date().getFullYear()); // Hardcoded to current year, or extract from API if available
+
+const matchedLocation = computed(() => {
+  return microResult.value?.microRegionalData ? location.value : 'National';
+});
+
+const regionalData = computed<SalaryBenchmark | null>(() => {
+  const data = microResult.value?.microRegionalData;
+  if (!data) return null;
+  return {
+    location: location.value,
+    title: matchedTitle.value || displayTitle.value,
+    salary: data.p50,
+    avg_salary: data.mean,
+    salary_10_pt: data.p10,
+    salary_25_pt: data.p25,
+    salary_75_pt: data.p75,
+    salary_90_pt: data.p90
+  };
+});
+
+// Original UI Computeds seamlessly relying on the Bridge
 const hasGovernmentData = computed(() => {
-  if ((marketAverage?.value ?? 0) === 0) return false;
+  if (marketAverage.value === 0) return false;
   if (isGenericFallback.value && displayTitle.value.toLowerCase() !== 'professional') return false;
   return true;
 });
@@ -298,34 +339,66 @@ const diffPercent = computed<number>(() => {
 });
 
 const jobListings = computed(() => {
-  return (jobsData.value?.results || []).sort((a: AdzunaJob, b: AdzunaJob) => {
-    return b.salary_max - a.salary_max;
-  });
+  return (jobsData.value?.results || []).sort((a: any, b: any) => b.salary_max - a.salary_max);
 });
 
 const isAdminVerified = computed(() => {
-  // If user selected it this session
   if (userSelected.value) return true;
-
   if (govId.value) return true;
-
-  // If useAdzuna found a match in the DB that isn't flagged as "automatic"
-  // (You may need to update useAdzuna to return the is_automatic status from the DB)
   return !!cachedGovIdCode.value;
 });
 
-// 1. Create a unique key for caching based on all parameters
+const McaScore = computed(() => {
+  if (!microResult.value?.microNationalData || !macroResult.value?.macroNationalData) {
+    return null;
+  }
+
+  // 1. Run the math engine (This generates the exact object you saw in your console log!)
+  const rawResult =
+    country.value === 'UK'
+      ? calculateUKBenchmarkScore(
+          userSalary.value,
+          macroResult.value.macroNationalData,
+          microResult.value.microNationalData,
+          macroResult.value.regionalMedianAllRoles,
+          macroResult.value.nationalMedianAllRoles,
+          histogramBuckets.value,
+          histogramTotalCount.value
+        )
+      : calculateUSABenchmarkScore(
+          userSalary.value,
+          macroResult.value.macroNationalData,
+          macroResult.value.macroRegionalData,
+          microResult.value.microNationalData,
+          microResult.value.microRegionalData,
+          macroResult.value.regionalMedianAllRoles,
+          macroResult.value.nationalMedianAllRoles,
+          histogramBuckets.value,
+          histogramTotalCount.value
+        );
+
+  // 2. THE MISSING LINK: Pass the raw math into the formatter, and return the formatted version!
+  return formatMcaScoreForUi(
+    rawResult,
+    matchedTitle.value,
+    location.value,
+    t // Your Vue I18n translation function
+  );
+});
+
+// ==========================================
+// 🚀 ORCHESTRATOR: The 1-2 Punch Data Fetch
+// ==========================================
 const asyncDataKey = computed(
   () =>
     `salary-${country.value}-${location.value}-${searchTitle.value}-${userPeriod.value}-${govId.value}-${jobType.value}-${contractType.value}`
 );
 
-// 2. Use useAsyncData to fetch sequentially
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { data, refresh, pending } = await useAsyncData(
   asyncDataKey.value,
   async () => {
-    // 1. Fetch both Adzuna Jobs and Histogram data in parallel!
+    // 1. Fetch Adzuna Jobs and Histogram data in parallel
     await Promise.all([
       fetchAdzunaJobs(
         searchTitle.value,
@@ -337,21 +410,37 @@ const { data, refresh, pending } = await useAsyncData(
       fetchAdzunaHistogram(searchTitle.value, location.value, country.value)
     ]);
 
-    // Determine the ID to pass to Algolia (User URL param > Cached DB Param > undefined)
     const targetGovId = govId.value || cachedGovIdCode.value;
 
-    // Fetch Government Match
+    // 2. Resolve the Identity (Turn text into SOC ID)
     if (country.value === 'UK') {
-      await fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
+      await resolveUkIdentity(searchTitle.value, targetGovId);
     } else {
-      await fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value, targetGovId);
+      await resolveUsaIdentity(searchTitle.value, targetGovId);
     }
+
+    // 3. Fetch Data from the Engines using the exact ID
+    const resolvedTitle = matchedTitle.value || searchTitle.value;
+    const resolvedId = matchedIdCode.value;
+
+    const [macro, micro] = await Promise.all([
+      fetchMacroBaselines(country.value, location.value),
+      fetchMicroBaselines(country.value, resolvedTitle, location.value, resolvedId)
+    ]);
+
+    if (micro.officialGroupTitle) {
+      matchedTitle.value = micro.officialGroupTitle;
+    }
+
+    // Update Local Refs to hydrate UI Bridge
+    macroResult.value = macro;
+    microResult.value = micro;
 
     return true;
   },
   {
     watch: [asyncDataKey],
-    dedupe: 'defer', // CRITICAL for live updates
+    dedupe: 'defer',
     server: true
   }
 );
@@ -359,11 +448,12 @@ const { data, refresh, pending } = await useAsyncData(
 // ** methods **
 const handleAmbiguitySelect = async (match: any) => {
   const exactId = match.id_code || match.soc || match.objectID;
+
+  // Updating govId automatically triggers the asyncDataKey watcher to run a full fresh data fetch!
   govId.value = exactId;
 
   trackAmbiguousSearch(match.title, match.group);
 
-  // Log user's manual correction securely
   try {
     await $fetch('/api/adzuna/update-match', {
       method: 'POST',
@@ -379,13 +469,7 @@ const handleAmbiguitySelect = async (match: any) => {
       }
     });
   } catch {
-    // Silently ignore so it doesn't disrupt the user's flow
-  }
-
-  if (country.value === 'UK') {
-    fetchUkMarketData(searchTitle.value, location.value, userPeriod.value, exactId);
-  } else {
-    fetchUSAMarketData(searchTitle.value, location.value, userPeriod.value, exactId);
+    return; // Silently fail, no need to alert the user
   }
 
   showAmbiguityModal.value = false;
@@ -396,14 +480,9 @@ const handleAmbiguitySelect = async (match: any) => {
 
 onMounted(() => {
   const { compare, ...remainingQuery } = route.query;
-
-  // only trigger if other queries than compare are present
   if (Object.keys(remainingQuery).length > 0) {
     navigateTo(
-      {
-        path: route.path,
-        query: compare ? { compare: compare } : undefined
-      },
+      { path: route.path, query: compare ? { compare: compare } : undefined },
       { replace: true }
     );
   }
@@ -417,7 +496,6 @@ watch(loading, (newLoading) => {
     const userLocation = location.value;
     const dbLocation = matchedLocation.value;
 
-    // Securely log automatic matches for admin review/approval
     if (
       import.meta.client &&
       hasGovernmentData.value &&
@@ -437,9 +515,7 @@ watch(loading, (newLoading) => {
           job_type: jobType.value,
           contract_type: contractType.value
         }
-      }).catch(() => {
-        // Let it fail silently in the background
-      });
+      }).catch(() => {});
     }
 
     if (
@@ -450,11 +526,7 @@ watch(loading, (newLoading) => {
       if (dbLocation.toLowerCase() === country.value.toLowerCase()) {
         const newPath = `/salary/${route.params.title}/${route.params.country}`;
         navigateTo(
-          {
-            path: newPath,
-            query: route.query,
-            state: { ...history.state }
-          },
+          { path: newPath, query: route.query, state: { ...history.state } },
           { replace: true }
         );
       }
@@ -470,12 +542,7 @@ watch(ambiguousMatches, (matches) => {
 
 watch(userSalary, (newSalary) => {
   if (newSalary > 0) {
-    navigateTo(
-      {
-        query: { ...route.query, compare: newSalary.toString() }
-      },
-      { replace: true }
-    );
+    navigateTo({ query: { ...route.query, compare: newSalary.toString() } }, { replace: true });
   } else {
     const { compare, ...rest } = route.query;
     navigateTo({ query: rest }, { replace: true });
@@ -496,10 +563,7 @@ useSeoMeta({
   },
   description: () => {
     const locStr = location.value || country.value;
-    return $t('meta.location.description', {
-      displayTitle: displayTitle.value,
-      locStr
-    });
+    return $t('meta.location.description', { displayTitle: displayTitle.value, locStr });
   },
   ogTitle: () => {
     const locStr = location.value ? `${location.value}, ` : '';
@@ -511,10 +575,7 @@ useSeoMeta({
   },
   ogDescription: () => {
     const locStr = location.value || country.value;
-    return $t('meta.location.ogDescription', {
-      displayTitle: displayTitle.value,
-      locStr
-    });
+    return $t('meta.location.ogDescription', { displayTitle: displayTitle.value, locStr });
   },
   ogImage: `${url.origin}/${$siteBrand}-og.png`,
   twitterCard: 'summary',
@@ -535,12 +596,7 @@ useHead({
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
           itemListElement: [
-            {
-              '@type': 'ListItem',
-              position: 1,
-              name: $t('navbar.home'),
-              item: url.origin
-            },
+            { '@type': 'ListItem', position: 1, name: $t('navbar.home'), item: url.origin },
             {
               '@type': 'ListItem',
               position: 2,

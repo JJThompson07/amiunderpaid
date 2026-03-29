@@ -20,6 +20,10 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
+  imports: {
+    dirs: ['utils/engineScoring/**']
+  },
+
   // ** 1. ENABLE SERVER-SIDE RENDERING **
   // This must be true for SEO and Caching to work
   ssr: true,

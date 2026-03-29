@@ -18,7 +18,7 @@
         </div>
         <div>
           <p class="text-sm text-slate-500 font-bold px-1">
-            AVG: £{{ regionalData?.salary.toLocaleString() }}
+            AVG: £{{ regionalData?.avg_salary?.toLocaleString() || '' }}
           </p>
         </div>
       </div>
@@ -154,14 +154,14 @@ const props = defineProps({
 
 const jobVsLocationDiff = computed(() => {
   if (!props.regionalData || !props.marketAverage) return 0;
-  const locAvg = props.regionalData.salary;
+  const locAvg = props.regionalData.avg_salary || 0;
   if (locAvg === 0) return 0;
   return Math.round(((props.marketAverage - locAvg) / locAvg) * 100);
 });
 
 const userVsLocationDiff = computed(() => {
   if (!props.regionalData || !props.userSalary) return 0;
-  const locAvg = props.regionalData.salary;
+  const locAvg = props.regionalData.avg_salary || 0;
   if (locAvg === 0) return 0;
   return Math.round(((props.userSalary - locAvg) / locAvg) * 100);
 });
