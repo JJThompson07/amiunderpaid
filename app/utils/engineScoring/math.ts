@@ -88,6 +88,10 @@ export const calculatePercentile = (salary: number, data: PercentileData): numbe
       ? { p: SCORE_LIMITS.MAX, v: lastPoint.v * EXTRAPOLATION_CEILING_MULTIPLIER } // 👈 Extrapolate to 99
       : points.find((pt) => salary <= pt.v) || lastPoint;
 
+  if (lower.v === upper.v) {
+    return lower.p;
+  }
+
   // Linear interpolation formula
   const percentile = lower.p + (upper.p - lower.p) * ((salary - lower.v) / (upper.v - lower.v));
 
