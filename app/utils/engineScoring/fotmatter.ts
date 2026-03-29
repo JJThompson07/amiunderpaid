@@ -28,9 +28,9 @@ export const formatMcaScoreForUi = (
   const templateVars = {
     jobTitle,
     location: location || '',
-    micro: breakdown.microPercentile,
-    macro: breakdown.macroPercentile,
-    live: breakdown.livePercentile || 0,
+    micro: formatOrdinal(breakdown.microPercentile),
+    macro: formatOrdinal(breakdown.macroPercentile),
+    live: formatOrdinal(breakdown.livePercentile || 0),
     diff: Math.abs(Math.round((1 - breakdown.modifier) * 100))
   };
 
@@ -69,4 +69,21 @@ export const formatMcaScoreForUi = (
     percentileRank: breakdown.microPercentile,
     comparisonPoints: points
   };
+};
+
+export const formatOrdinal = (num: number, locale = 'en-GB'): string => {
+  const rounded = Math.round(num);
+  const pr = new Intl.PluralRules(locale, { type: 'ordinal' });
+
+  // The browser natively knows which rule applies to the number!
+  const rule = pr.select(rounded);
+
+  const suffixes: Record<string, string> = {
+    one: 'st',
+    two: 'nd',
+    few: 'rd',
+    other: 'th'
+  };
+
+  return `${rounded}${suffixes[rule] || 'th'}`;
 };

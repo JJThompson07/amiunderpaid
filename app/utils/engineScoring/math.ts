@@ -15,42 +15,37 @@ export const BRACKETS = {
   P90: 90
 };
 
-export const WEIGHTS = {
-  // ==========================================
-  // 🇬🇧 UK ENGINE WEIGHTS
-  // ==========================================
-  STANDARD: {
-    MICRO: 0.6, // 60%
-    MACRO: 0.2, // 20%
-    LIVE: 0.2 // 20%
-  },
-  FALLBACK: {
-    MICRO: 0.75, // 75%
-    MACRO: 0.25 // 25%
-  },
+export const LIVE_CONFIDENCE_THRESHOLDS = {
+  LOW: 50,
+  HIGH: 150
+};
 
-  // ==========================================
-  // 🇺🇸 USA ENGINE WEIGHTS
-  // ==========================================
-  EXACT_MATCH: {
-    MICRO: 0.6, // 60% (We have local state data for their exact job)
-    MACRO: 0.2, // 20%
-    LIVE: 0.2 // 20%
+export const WEIGHTS = {
+  // 🇬🇧 UK WEIGHT SETS
+  UK: {
+    HIGH_CONFIDENCE: { MICRO: 0.25, MACRO: 0.3, LIVE: 0.45 }, // > 150 jobs
+    TARGET: { MICRO: 0.3, MACRO: 0.35, LIVE: 0.35 }, // 50-150 jobs
+    LOW_CONFIDENCE: { MICRO: 0.4, MACRO: 0.45, LIVE: 0.15 } // < 50 jobs
   },
-  FALLBACK_MATCH: {
-    MICRO: 0.5, // 50% (We only have national data for their exact job)
-    MACRO: 0.3, // 30% (Rely a bit more on national averages)
-    LIVE: 0.2 // 20%
+  // 🇺🇸 USA WEIGHT SETS
+  USA: {
+    HIGH_CONFIDENCE: { MICRO: 0.3, MACRO: 0.2, LIVE: 0.5 }, // > 150 jobs
+    TARGET: { MICRO: 0.5, MACRO: 0.2, LIVE: 0.3 }, // 50-150 jobs
+    LOW_CONFIDENCE: { MICRO: 0.7, MACRO: 0.2, LIVE: 0.1 } // < 50 jobs
   },
+  // FALLBACKS (When Live data is completely null)
   NO_LIVE_DATA: {
-    MICRO: 0.75, // 75%
-    MACRO: 0.25 // 25%
+    MICRO: 0.75,
+    MACRO: 0.25
   }
 };
 
 // If a user earns less than the 10th percentile, we assume the
 // absolute floor (1st percentile) is roughly 50% of the P10 value.
 const EXTRAPOLATION_FLOOR_MULTIPLIER = 0.5;
+
+// P99 is roughly 150% of the P100/P90 value, so we use this multiplier for any salary above the 90th percentile.
+const EXTRAPOLATION_CEILING_MULTIPLIER = 1.5;
 
 // ==========================================
 // 🧮 SHARED CORE FUNCTIONS
@@ -69,21 +64,19 @@ export const calculatePercentile = (salary: number, data: PercentileData): numbe
     { p: BRACKETS.P90, v: data.p90 }
   ].filter((pt) => pt.v !== undefined && pt.v !== null) as { p: number; v: number }[];
 
-  if (points.length < 2) return BRACKETS.P50; // Need at least two points to interpolate
+  if (points.length < 2) return BRACKETS.P50;
 
-  // 🎯 TS Fix: We use the non-null assertion (!) because the line above
-  // mathematically guarantees that index 0 and index length-1 exist.
   const firstPoint = points[0]!;
   const lastPoint = points[points.length - 1]!;
 
   const isBelowFloor = salary < firstPoint.v;
   const isAboveCeiling = salary > lastPoint.v;
 
-  // 🪄 Declarative bounds finding using our guaranteed variables
+  // 🪄 THE FIX: Dynamic Bounds for High Earners
   const lower = isBelowFloor
     ? { p: SCORE_LIMITS.MIN, v: firstPoint.v * EXTRAPOLATION_FLOOR_MULTIPLIER }
     : isAboveCeiling
-      ? points[points.length - 2]!
+      ? lastPoint // If above P90, our "lower" bound starts at P90
       : points
           .slice()
           .reverse()
@@ -92,9 +85,10 @@ export const calculatePercentile = (salary: number, data: PercentileData): numbe
   const upper = isBelowFloor
     ? firstPoint
     : isAboveCeiling
-      ? lastPoint
+      ? { p: SCORE_LIMITS.MAX, v: lastPoint.v * EXTRAPOLATION_CEILING_MULTIPLIER } // 👈 Extrapolate to 99
       : points.find((pt) => salary <= pt.v) || lastPoint;
 
+  // Linear interpolation formula
   const percentile = lower.p + (upper.p - lower.p) * ((salary - lower.v) / (upper.v - lower.v));
 
   return Math.min(Math.max(Math.round(percentile * 10) / 10, SCORE_LIMITS.MIN), SCORE_LIMITS.MAX);

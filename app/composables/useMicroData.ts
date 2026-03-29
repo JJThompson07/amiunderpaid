@@ -34,7 +34,7 @@ export const useMicroData = () => {
           baseFilter += ` AND (id_code:"${cleanId}")`;
         } else {
           // UK usually treats SOC codes as numbers
-          baseFilter += ` AND id_code:${cleanId}`;
+          // baseFilter += ` AND id_code:${cleanId}`;
         }
       } else {
         // FALLBACK: TEXT MATCH (If no ID was resolved)

@@ -321,6 +321,7 @@ const McaScore = computed(() => {
           userSalary.value,
           macroResult.value.macroNationalData,
           microResult.value.microNationalData,
+          microResult.value.microRegionalData,
           macroResult.value.regionalMedianAllRoles,
           macroResult.value.nationalMedianAllRoles,
           histogramBuckets.value,

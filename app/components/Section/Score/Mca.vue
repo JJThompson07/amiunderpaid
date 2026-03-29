@@ -1,13 +1,13 @@
 <template>
   <div
     v-if="verdict"
-    class="rounded-2xl shadow-xl border p-6 md:p-8 flex flex-col gap-3 items-center relative select-none"
+    class="rounded-2xl shadow-xl border p-6 md:p-8 flex flex-col gap-6 items-center relative select-none"
     :class="cardClasses">
     <header class="flex items-start justify-between w-full gap-4">
       <div>
-        <h3 class="text-xl lg:text-2xl font-black text-slate-900">Market Compensation Alignment</h3>
+        <h3 class="text-xl lg:text-2xl font-black text-slate-900">{{ $t('mca.header') }}</h3>
         <p class="text-xs text-slate-500 uppercase tracking-wider font-bold mt-1">
-          Your MCA Score Breakdown
+          {{ $t('mca.breakdown') }}
         </p>
       </div>
       <div
@@ -16,7 +16,8 @@
         {{ verdict.label }}
       </div>
     </header>
-    <div class="flex flex-col md:flex-row gap-3 md:gap-8">
+
+    <div class="flex flex-col md:flex-row gap-6 md:gap-8 w-full">
       <div class="flex flex-col items-center justify-center shrink-0 w-full md:w-auto">
         <div class="relative w-40 h-40 md:w-48 md:h-48">
           <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
@@ -42,31 +43,37 @@
           </svg>
 
           <div class="absolute inset-0 flex flex-col items-center justify-center">
-            <span class="text-4xl md:text-5xl font-black text-slate-900">
+            <span class="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter">
               {{ animatedScore
-              }}<span class="text-lg md:text-xl text-slate-400 font-medium">/100</span>
+              }}<span class="text-xl md:text-2xl text-slate-400 font-medium">/100</span>
             </span>
           </div>
         </div>
       </div>
 
-      <div class="flex-1 w-full flex flex-col gap-3">
+      <div class="flex-1 w-full flex flex-col gap-4">
         <ul class="flex flex-col gap-3 mt-1">
           <li
             v-for="(point, index) in verdict.comparisonPoints"
             :key="index"
             class="flex items-start gap-3 text-slate-600 leading-relaxed">
             <div class="mt-2 w-1.5 h-1.5 rounded-full shrink-0" :class="dotClass"></div>
-            <span class="text-xs" v-html="point"></span>
+            <span class="text-sm" v-html="point"></span>
           </li>
         </ul>
 
-        <div
-          class="mt-2 p-4 rounded-xl text-sm border flex items-center gap-2"
-          :class="analysisBoxClasses">
+        <div class="mt-2 p-4 rounded-xl border flex items-center gap-2" :class="analysisBoxClasses">
           <span
+            class="text-xs leading-relaxed"
             v-html="
-              `<strong>Analysis:</strong> A base salary of ${currencySymbol}${userSalary.toLocaleString()} places you in the <strong>${verdict.percentileRank}th percentile</strong> for ${matchedTitle} ${location ? 'in ' + location : 'nationally'}.`
+              $t('mca.analysis.description', {
+                strong: `<strong>${$t('mca.analysis.strong')}</strong>`,
+                currencySymbol: currencySymbol,
+                userSalary: userSalary.toLocaleString(),
+                percentile: `<strong>${$t('mca.analysis.percentile', { rank: formatOrdinal(verdict.percentileRank) })}</strong>`,
+                matchedTitle: matchedTitle,
+                location: location ? 'in ' + location : 'nationally'
+              })
             "></span>
         </div>
       </div>
@@ -76,6 +83,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue';
+// Note: formatOrdinal is assumed to be auto-imported by Nuxt from your utils/formatters.ts file!
 
 const props = defineProps({
   verdict: {
@@ -89,7 +97,9 @@ const props = defineProps({
   location: { type: String, default: '' }
 });
 
-// SVG Ring Math
+// ==========================================
+// ⚙️ SVG RING MATH
+// ==========================================
 const radius = 40;
 const circumference = 2 * Math.PI * radius;
 const animatedScore = ref(0);
@@ -100,9 +110,8 @@ const dashOffset = computed(() => {
 });
 
 // ==========================================
-// 🎨 DYNAMIC TAILWIND STYLING (MATCHING RESULT.VUE)
+// 🎨 DYNAMIC TAILWIND STYLING
 // ==========================================
-
 const ringColor = computed(() => {
   const score = animatedScore.value;
   if (score >= 80) return '#25c25d'; // Positive / Emerald
