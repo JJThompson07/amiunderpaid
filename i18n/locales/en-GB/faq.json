@@ -71,6 +71,10 @@
         "accuracy": {
           "question": "How accurate is the MCA Score?",
           "answer": "It is significantly more accurate than traditional salary calculators. By weighing real-time job vacancies (market demand) against official ONS data (historical baselines), our engine accounts for sudden economic shifts that static surveys often miss."
+        },
+        "locationImpact": {
+          "question": "Does my location affect my MCA Score?",
+          "answer": "Absolutely. Our engine applies dynamic regional modifiers. A $100k salary in San Francisco will result in a different MCA Score than the same salary in Austin, reflecting the specific cost of labor in your state or city."
         }
       }
     }
@@ -131,7 +135,7 @@
         },
         "mca": {
           "title": "MCA for Employers",
-          "employerValue": {
+          "recruitmentEdge": {
             "question": "Why should I use the MCA Score for hiring?",
             "answer": "The MCA Score allows you to validate your budget before you post a job. By ensuring your offer has a high alignment score, you increase applicant quality and reduce the time-to-hire by remaining competitive against live market vacancies."
           },

@@ -68,6 +68,10 @@
           "question": "How is my MCA Score calculated?",
           "answer": "Our engine uses a 'Triangulated' logic. We cross-reference official federal BLS statistics, national economic trends, and over 7,000,000+ live US job listings to identify exactly where your salary sits in today's economy."
         },
+        "accuracy": {
+          "question": "How accurate is the MCA Score?",
+          "answer": "It is significantly more accurate than traditional salary calculators. By weighing real-time job vacancies (market demand) against official BLS data (historical baselines), our engine accounts for sudden economic shifts that static surveys often miss."
+        },
         "locationImpact": {
           "question": "Does my location affect my MCA Score?",
           "answer": "Absolutely. Our engine applies dynamic regional modifiers. A $100k salary in San Francisco will result in a different MCA Score than the same salary in Austin, reflecting the specific cost of labor in your state or city."
@@ -134,6 +138,10 @@
           "recruitmentEdge": {
             "question": "How does the MCA Score help with talent acquisition?",
             "answer": "The MCA Score provides an objective third-party metric to justify your compensation bands. Using a data-driven score helps recruiters close candidates faster by proving that an offer is 'Market Leading' based on 7,000,000+ live data points."
+          },
+          "dataTriangulation": {
+            "question": "What are the 'Three Pillars' of the benchmark?",
+            "answer": "We triangulate every role using: 1. Micro Data (Specific peer-to-peer job roles), 2. Macro Data (National economic averages), and 3. Live Data (Real-time demand from 700,000+ active listings). This ensures your offer is grounded in both policy and reality."
           }
         }
       }
