@@ -1,34 +1,34 @@
 {
   "heading": "How It Works",
-  "description": "We calculate your salary potential in three simple steps.",
+  "description": "We calculate your Market Compensation Alignment (MCA) Score in three steps.",
   "step": {
     "1": {
-      "heading": "Enter Your Role",
-      "body": "Tell us your job title, location, and current salary. Our smart autocomplete helps you match standard industry roles for better accuracy."
+      "heading": "Input Your Details",
+      "body": "Tell us your job title, location, and current salary. Our smart autocomplete matches you against official industry SOC codes to ensure your benchmarking is laser-accurate."
     },
     "2": {
-      "heading": "We Check the Data",
-      "body": "We query our live database of over 700,000+ recent salary benchmarks, sourced from government data (ONS) as well as live job listings (Adzuna)."
+      "heading": "The Triangulation Engine",
+      "body": "Our algorithm cross-references your data against three distinct sources: official ONS government benchmarks, broader national economic trends, and over 700,000+ live UK job listings from Adzuna."
     },
     "3": {
-      "heading": "Get Your Salary Comparison",
-      "body": "Find out instantly if you are underpaid, fairly paid, or leading the market. We'll even give you a custom script to negotiate a raise."
+      "heading": "Your MCA Score",
+      "body": "You receive a definitive MCA Score from 1-99. Instantly see if you are a Market Leader, Highly Competitive, or Below Market, with a detailed breakdown to help you negotiate your true value."
     }
   },
   "benchmark": {
-    "description": "Discover your true role value in three simple steps.",
+    "description": "Benchmark your role's market competitiveness in three simple steps.",
     "step": {
       "1": {
-        "heading": "Enter The Role",
-        "body": "Tell us the job title, location, and target salary. Our smart autocomplete helps you match standard industry roles for better accuracy."
+        "heading": "Define the Role",
+        "body": "Enter the job title, target location, and offered salary. We map the position to standard industry categories for precise market comparison."
       },
       "2": {
-        "heading": "We Check the Data",
-        "body": "We query our live database of over 700,000+ recent salary benchmarks, sourced from government data (ONS) as well as live job listings (Adzuna)."
+        "heading": "Data Cross-Referencing",
+        "body": "We query our live database of 700,000+ UK salary benchmarks, combining official ONS data with real-time market demand to see how your offer stacks up."
       },
       "3": {
-        "heading": "Get Your Salary Comparison",
-        "body": "Find out instantly if your role offer is under valued, fair value or leading the market."
+        "heading": "Get the MCA Verdict",
+        "body": "Receive an instant alignment score. Find out if your offer is under-valued, fair value, or market-leading to ensure you attract and retain top talent."
       }
     }
   }

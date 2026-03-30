@@ -15,6 +15,7 @@ import email from './email.json';
 import faq from './faq.json';
 import login from './login.json';
 import recruiter from './recruiter.json';
+import mca from './mca.json';
 
 export default defineI18nLocale(async () => {
   return {
@@ -34,6 +35,7 @@ export default defineI18nLocale(async () => {
     email,
     faq,
     login,
-    recruiter
+    recruiter,
+    mca
   };
 });

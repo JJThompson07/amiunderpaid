@@ -8,7 +8,7 @@
         "title": "General Questions",
         "underpaid": {
           "question": "Am I being underpaid?",
-          "answer": "The most accurate way to find out if you are underpaid is to compare your current base pay with the average compensation for your specific title and location. Our tool uses live market data to give you realistic expectations."
+          "answer": "The best way to determine if you are undervalued is to calculate your MCA Score. By benchmarking your pay against live market demand and federal BLS data, we provide an objective look at your current market value."
         },
         "averageWage": {
           "question": "What is the typical compensation for my role?",
@@ -19,8 +19,8 @@
           "answer": "You should expect a salary that aligns with current market rates. Whether you are negotiating a raise or applying for a new job, knowing the expected salary range gives you the power to negotiate fairly."
         },
         "fairPay": {
-          "question": "Am I compensated fairly?",
-          "answer": "Fair pay is dictated by your role's market value, your experience, and your geography. If your salary falls within 2.5% of the median range for professionals in your city or state, you are generally considered fairly compensated."
+          "question": "What is a 'Competitive' MCA Score?",
+          "answer": "An MCA Score between 40 and 79 is generally considered 'Competitive' or 'Strong Alignment.' If your score is above 80, you are a Market Leader. If it falls below 40, it may be time to negotiate a raise or explore new opportunities."
         },
         "isMySalaryRight": {
           "question": "Is my salary right for my role?",
@@ -56,6 +56,25 @@
         "whatIfIAmWellPaid": {
           "question": "What if I am already well paid?",
           "answer": "If you are above the market average, you are in a strong position. Use our insights to see how much higher the top 10% of earners in your field are making and what skills might be required to stay at that level."
+        }
+      },
+      "mca": {
+        "title": "The MCA Score",
+        "whatIsMca": {
+          "question": "What is an MCA Score?",
+          "answer": "MCA stands for Market Compensation Alignment. It is a proprietary score from 1 to 99 that measures how your base pay aligns with the current US market. A higher score indicates you are a Market Leader, while a lower score suggest your compensation is below the current market rate."
+        },
+        "howIsItCalculated": {
+          "question": "How is my MCA Score calculated?",
+          "answer": "Our engine uses a 'Triangulated' logic. We cross-reference official federal BLS statistics, national economic trends, and over 7,000,000+ live US job listings to identify exactly where your salary sits in today's economy."
+        },
+        "accuracy": {
+          "question": "How accurate is the MCA Score?",
+          "answer": "It is significantly more accurate than traditional salary calculators. By weighing real-time job vacancies (market demand) against official BLS data (historical baselines), our engine accounts for sudden economic shifts that static surveys often miss."
+        },
+        "locationImpact": {
+          "question": "Does my location affect my MCA Score?",
+          "answer": "Absolutely. Our engine applies dynamic regional modifiers. A $100k salary in San Francisco will result in a different MCA Score than the same salary in Austin, reflecting the specific cost of labor in your state or city."
         }
       }
     }
@@ -112,6 +131,17 @@
           "percentileData": {
             "question": "How should I interpret the 'Market Leader' (90th percentile) data?",
             "answer": "For employers, this identifies what is required to headhunt elite talent. For applicants, the 90th percentile represents the rate usually reserved for highly specialized skills or leadership roles in high-competition regions."
+          }
+        },
+        "mca": {
+          "title": "MCA for Recruitment",
+          "recruitmentEdge": {
+            "question": "How does the MCA Score help with talent acquisition?",
+            "answer": "The MCA Score provides an objective third-party metric to justify your compensation bands. Using a data-driven score helps recruiters close candidates faster by proving that an offer is 'Market Leading' based on 7,000,000+ live data points."
+          },
+          "dataTriangulation": {
+            "question": "What are the 'Three Pillars' of the benchmark?",
+            "answer": "We triangulate every role using: 1. Micro Data (Specific peer-to-peer job roles), 2. Macro Data (National economic averages), and 3. Live Data (Real-time demand from 700,000+ active listings). This ensures your offer is grounded in both policy and reality."
           }
         }
       }

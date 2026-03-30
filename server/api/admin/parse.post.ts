@@ -85,12 +85,13 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 422, message: 'Could not detect UK (ONS) headers.' });
       }
 
-      const locIdx = headers.indexOf('Description'); // UK Region data uses Description for Location
+      // 1. Rename locIdx to titleIdx, as 'Description' is actually the Job Title
+      const titleIdx = headers.indexOf('Description');
       const codeIdx = headers.indexOf('Code');
       const medianIdx = headers.indexOf('Median');
       const meanIdx = headers.indexOf('Mean');
 
-      if (locIdx === -1 || medianIdx === -1) {
+      if (titleIdx === -1 || medianIdx === -1) {
         throw createError({
           statusCode: 422,
           message: 'Could not detect required UK (ONS) columns (Description/Median).'
@@ -103,7 +104,7 @@ export default defineEventHandler(async (event) => {
       const pct75Idx = headers.findIndex((h) => h?.toString().trim() === '75');
       const pct90Idx = headers.findIndex((h) => h?.toString().trim() === '90');
 
-      // Helper to strictly validate UK numeric values (handles null, undefined, strings, and missing data chars)
+      // Helper to strictly validate UK numeric values
       const parseUKVal = (val: any) => {
         if (val == null || val === 'x' || val === '..' || val === ':') return undefined;
         const parsed =
@@ -115,19 +116,20 @@ export default defineEventHandler(async (event) => {
       for (let i = headerRowIndex + 1; i < rawData.length; i++) {
         const row = rawData[i];
 
-        // Safely check if row exists and the location column actually has data
-        if (!row || row[locIdx] == null || String(row[locIdx]).trim() === '') continue;
+        // 2. Safely check using titleIdx instead of locIdx
+        if (!row || row[titleIdx] == null || String(row[titleIdx]).trim() === '') continue;
 
-        const location = String(row[locIdx]).trim();
+        const title = String(row[titleIdx]).trim(); // Extract the actual job title
         const id_code =
           codeIdx > -1 && row[codeIdx] != null ? String(row[codeIdx]).trim() : undefined;
 
         const salaryVal = parseUKVal(row[medianIdx]);
         if (salaryVal === undefined) continue;
 
+        // 3. Update the record generation to put Title and Location in the right places
         const record: SalaryRecord = {
-          title: 'All', // Region aggregates default to 'All'
-          location,
+          title, // Now mapping to the Description column
+          location: 'United Kingdom', // Hardcoded as National Data
           year: targetYear,
           salary: salaryVal,
           country: 'UK',

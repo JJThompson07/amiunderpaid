@@ -1,34 +1,34 @@
 {
   "heading": "How It Works",
-  "description": "Discover your true earning potential in three simple steps.",
+  "description": "Calculate your Market Compensation Alignment (MCA) Score in three steps.",
   "step": {
     "1": {
-      "heading": "Enter Your Position",
-      "body": "Provide your job title, state, and current base pay. Our smart autocomplete will try to match you to federal occupational classifications for maximum accuracy."
+      "heading": "Input Your Compensation",
+      "body": "Provide your job title, state, and current base pay. Our smart autocomplete matches your role against federal BLS occupational classifications for maximum benchmarking accuracy."
     },
     "2": {
-      "heading": "We Analyze the Market",
-      "body": "We instantly query our database of over 7,000,000 real-time compensation benchmarks, blending federal statistics (BLS) with active job board listings."
+      "heading": "The Triangulation Engine",
+      "body": "Our engine instantly cross-references your data against three distinct layers: official BLS federal statistics, national economic trends, and over 7,000,000 live US job listings."
     },
     "3": {
-      "heading": "Review Your Compensation",
-      "body": "Immediately see if you are underpaid, compensated fairly, or leading the pack. We will even provide you with a custom email template to help negotiate a raise."
+      "heading": "Your MCA Score",
+      "body": "Receive a definitive MCA Score from 1-99. Instantly see if you are a Market Leader, Highly Competitive, or Below Market, with a detailed breakdown to help you negotiate your true value."
     }
   },
   "benchmark": {
-    "description": "Discover your true role value in three simple steps.",
+    "description": "Benchmark your role's market competitiveness in three simple steps.",
     "step": {
       "1": {
-        "heading": "Enter The Role",
-        "body": "Provide us the job title, state, and target base pay. Our smart autocomplete will try to match you to federal occupational classifications for maximum accuracy."
+        "heading": "Define the Role",
+        "body": "Enter the job title, target state, and offered base pay. We map the position to standard federal categories to ensure precise market comparison."
       },
       "2": {
-        "heading": "We Check the Data",
-        "body": "We instantly query our database of over 7,000,000 real-time compensation benchmarks, blending federal statistics (BLS) with active job board listings."
+        "heading": "Data Cross-Referencing",
+        "body": "We query our live database of 7,000,000+ US salary benchmarks, combining official BLS data with real-time market demand to see how your offer stacks up."
       },
       "3": {
-        "heading": "Get Your Salary Comparison",
-        "body": "Find out instantly if your role offer compensation is under valued, fair value or leading the market."
+        "heading": "Get the MCA Verdict",
+        "body": "Receive an instant alignment score. Find out if your offer is under-valued, fair value, or market-leading to ensure you attract and retain top talent."
       }
     }
   }

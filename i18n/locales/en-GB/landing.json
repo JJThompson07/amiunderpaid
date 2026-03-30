@@ -1,16 +1,16 @@
 {
   "heading": "Am I Underpaid?",
-  "subheading": "Feeling undervalued? Curious about the market rate?",
-  "subheading-context": "Stop guessing. Check your salary against 700,000+ live job listings and official government benchmarks in seconds.",
+  "subheading": "Discover your Market Compensation Alignment (MCA) Score.",
+  "subheading-context": "Stop guessing. We combine official ONS benchmarks with over 700,000 live UK job listings to calculate your definitive MCA Score in seconds.",
   "privacy-note": "Your privacy matters. The information provided above is used solely to generate your results.",
   "why": {
-    "heading": "Why check your market rate?",
-    "body": "In the rapidly shifting {year} job market, staying informed about {benchmarks} is essential for fair compensation. Whether you are preparing for a performance review or exploring new opportunities, our tool provides the transparency you need to negotiate with confidence.",
-    "benchmarks_bold": "salary benchmarks"
+    "heading": "Why calculate your MCA Score?",
+    "body": "In the rapidly shifting {year} UK job market, knowing your exact {benchmarks} is essential. Our MCA Score breaks down your pay against your direct peers, national averages, and live market demand, giving you the transparency you need to negotiate with confidence.",
+    "benchmarks_bold": "market value"
   },
   "data": {
-    "heading": "Data-Driven Insights",
-    "body": "We aggregate data from the {bureau} and analyze thousands of live job listings. This ensures your {comparison} reflects real-world economic conditions and regional pay variations.",
+    "heading": "Powered by a Triangulated Data Engine",
+    "body": "We don't just show you generic national averages. Our engine cross-references official data from the {bureau} with thousands of live, regional job listings. This dynamic {comparison} ensures your score reflects real-world UK economic conditions today.",
     "comparison_bold": "salary comparison",
     "bureau": {
       "usa": "Bureau of Labor Statistics (BLS)",
@@ -24,7 +24,7 @@
   },
   "benchmark": {
     "heading": "Benchmark My Role",
-    "subheading": "Looking to hire for a new position? Ensure your role stands out from the competition by offering a market-leading package.",
-    "subheading-context": "BenchmarkMyRole compares your job description and salary against live market vacancies and official government benchmarks. Gain instant insights into your role's competitiveness and improve your applicant quality."
+    "subheading": "Looking to hire? Ensure your offer stands out.",
+    "subheading-context": "BenchmarkMyRole compares your open roles against live market vacancies and official ONS benchmarks. Generate an MCA Score for your job descriptions to ensure you are offering a highly competitive package to top talent."
   }
 }

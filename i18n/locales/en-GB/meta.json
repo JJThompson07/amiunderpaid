@@ -1,33 +1,33 @@
 {
   "location": {
-    "title": "Average {displayTitle} Salary in {locStr}{country} | Am I Underpaid?",
-    "description": "Find out the average {displayTitle} salary in {locStr}. Compare your pay against live market data and government benchmarks.",
-    "ogTitle": "Average {displayTitle} Salary in {locStr}{country}",
-    "ogDescription": "Are you being paid enough? Check the average {displayTitle} salary in {locStr} now.",
+    "title": "{displayTitle} MCA Score in {locStr}{country} | Am I Underpaid?",
+    "description": "Check the average {displayTitle} salary in {locStr}. Compare your pay against live ONS benchmarks and Adzuna job listings to get your MCA alignment score.",
+    "ogTitle": "Average {displayTitle} Salary & Market Rate in {locStr}",
+    "ogDescription": "Are you being paid the market rate? Check the average {displayTitle} salary and your MCA alignment score in {locStr} now.",
     "header": {
-      "title": "Salary for {displayTitle}"
+      "title": "Salary & MCA Score for {displayTitle}"
     }
   },
   "benchmark": {
     "location": {
-      "title": "Benchmark Salary for {displayTitle} in {locStr}{country} | Benchmark My Role",
-      "description": "Find out the benchmark salary for {displayTitle} in {locStr}. Compare your role against live market data and government benchmarks.",
-      "ogTitle": "Benchmark salary for {displayTitle} in {locStr}{country}",
-      "ogDescription": "Is your role attractive to candidates? Check the benchmark salary for {displayTitle} in {locStr} now.",
+      "title": "Benchmark {displayTitle} Salary in {locStr}{country} | Pay Scales",
+      "description": "View the benchmark {displayTitle} salary and pay scales in {locStr}. Use our triangulated engine to compare roles against live market data and ONS statistics.",
+      "ogTitle": "Salary Benchmarking for {displayTitle} in {locStr}",
+      "ogDescription": "Ensure your job offer is competitive. View {displayTitle} pay scales and salary benchmarks in {locStr} today.",
       "header": {
-        "title": "Salary Benchmark for {displayTitle}"
+        "title": "UK Salary Benchmarks for {displayTitle}"
       }
     }
   },
   "index": {
     "name": "Am I Underpaid? UK",
     "title": "Am I Underpaid? — Salary Checker & Market Pay Calculator UK",
-    "description": "Find out the average salary for your role. Compare your wage against live market data and official government benchmarks (ONS) to see if you are underpaid."
+    "description": "Find the average salary for your role. Compare your wage against 700,000+ live jobs and ONS benchmarks to calculate your Market Compensation Alignment (MCA) score."
   },
   "benchmark_index": {
     "name": "Benchmark My Role",
-    "title": "Benchmark My Role — Open Vacancy Salary Comparison Tool",
-    "description": "Benchmark an open vacancy against real-time market data. Whether hiring or applying, use our salary comparison tool to ensure your offer is competitive."
+    "title": "Benchmark My Role — UK Salary Comparison & Hiring Tool",
+    "description": "Benchmark open vacancies against real-time UK market data. Compare job offers against ONS salary scales and live vacancies to ensure pay alignment."
   },
   "privacy-policy": {
     "title": "Privacy Policy — Am I Underpaid? — UK",
@@ -46,8 +46,8 @@
     }
   },
   "how-it-works": {
-    "title": "How it works — Am I Underpaid? — UK",
-    "description": "How it works, a quick guide to Am I Underpaid?",
+    "title": "How it works — Am I Underpaid? — UK Salary Checker & MCA Engine",
+    "description": "Learn how we calculate your salary alignment using a 3-step engine that triangulates ONS data, national trends, and live job market listings.",
     "benchmark": {
       "title": "How it works — Benchmark My Role",
       "description": "How it works, a quick guide to Benchmark My Role"

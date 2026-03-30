@@ -23,8 +23,8 @@
         <div
           class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
           <div
-            class="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-white bg-slate-300 shadow md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-            <span class="font-bold text-white">1</span>
+            class="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-white bg-slate-500 shadow md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+            <UserSearch class="w-5 h-5 text-secondary-100" />
           </div>
           <div
             class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
@@ -49,7 +49,7 @@
         <div
           class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
           <div
-            class="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-white bg-indigo-600 shadow md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+            class="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-white bg-secondary-600 shadow md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
             <Database class="w-5 h-5 text-white" />
           </div>
           <div
@@ -75,8 +75,8 @@
         <div
           class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
           <div
-            class="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-white bg-emerald-500 shadow md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-            <Check class="w-5 h-5 text-white" />
+            class="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-white bg-positive-500 shadow md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
+            <BarChart3 class="w-5 h-5 text-white" />
           </div>
           <div
             class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
@@ -114,7 +114,7 @@
 
 <script setup lang="ts">
 // ** imports **
-import { Database, Check } from 'lucide-vue-next';
+import { Database, UserSearch, BarChart3 } from 'lucide-vue-next';
 
 const { $siteBrand } = useNuxtApp();
 const { t } = useI18n();

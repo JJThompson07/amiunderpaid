@@ -1,0 +1,42 @@
+{
+  "header": "Market Compensation Alignment",
+  "breakdown": "Your MCA Score Breakdown",
+  "toggle": {
+    "show": "View Score Breakdown",
+    "hide": "Hide Score Breakdown"
+  },
+  "confidence": {
+    "label": "Data Confidence",
+    "desc_high": "High confidence in this MCA result. Based on robust, exact-match market baselines and significant live job volume.",
+    "desc_medium": "Moderate confidence in this MCA result. Based on related market averages or a limited sample of live job listings.",
+    "desc_low": "Low confidence in this MCA result. Relies heavily on broad economic baselines due to limited specific data."
+  },
+  "labels": {
+    "leader": "Market Leader",
+    "strong": "Strong Alignment",
+    "competitive": "Competitive",
+    "below": "Below Market",
+    "review": "Action Required"
+  },
+  "points": {
+    "micro": {
+      "high": "Your base pay sits in the <strong>{micro} percentile</strong> for {jobTitle} roles, placing you in the top tier of earners among your direct peers.",
+      "mid": "Your base pay sits in the <strong>{micro} percentile</strong> for {jobTitle} roles, aligning closely with the median market rate.",
+      "low": "Your base pay sits in the <strong>{micro} percentile</strong> for {jobTitle} roles, indicating you are currently compensated below the average market rate for your peers."
+    },
+    "macro": {
+      "high": "Compared to the wider UK job market across all industries, your salary is highly competitive, ranking in the <strong>{macro} percentile</strong>.",
+      "mid": "When mapped against all UK occupations, your compensation sits comfortably in the <strong>{macro} percentile</strong>.",
+      "low": "Compared to the broader national average across all roles, your salary ranks in the <strong>{macro} percentile</strong>."
+    },
+    "regional": {
+      "higher": "Adjusted for <strong>{location}</strong>, local market baselines are roughly <strong>{diff}% higher</strong> than the national average, which is factored into your score.",
+      "lower": "Adjusted for <strong>{location}</strong>, local market baselines are roughly <strong>{diff}% lower</strong> than the national average, meaning your salary stretches further locally."
+    },
+    "live": {
+      "high": "Live market data from Adzuna shows your compensation is strong, beating the <strong>{live} percentile</strong> of currently advertised roles.",
+      "mid": "Current job listings show active demand, and your pay aligns evenly with the <strong>{live} percentile</strong> of live offers.",
+      "low": "Live market data indicates high demand for this role, with many current job listings offering higher starting salaries. You map to the <strong>{live} percentile</strong> of live offers."
+    }
+  }
+}
