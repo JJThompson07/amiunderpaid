@@ -165,7 +165,7 @@ export const calculateLivePercentile = (
 
 export const calculateConfidenceScore = (
   totalLiveJobs: number,
-  hasMicroRegional: boolean, // 👈 Split into two checks
+  hasMicroRegional: boolean,
   hasMicroNational: boolean,
   hasLivePercentile: boolean
 ): number => {
@@ -183,5 +183,5 @@ export const calculateConfidenceScore = (
     score += liveScore;
   }
 
-  return Math.round(score);
+  return Math.round(score * 10) / 10;
 };

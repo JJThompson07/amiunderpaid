@@ -84,7 +84,9 @@
           </div>
 
           <div
-            v-if="(hasJobsData && !hasGovernmentData && !loading && !pending) || showUserSelection"
+            v-if="
+              (hasJobsData && !hasGovernmentData && !resolving && !pending) || showUserSelection
+            "
             class="flex flex-col flex-1 min-w-0 gap-3 relative">
             <LazySectionGovernmentUserSelection
               class="flex-1 w-full"
@@ -166,283 +168,50 @@
 <script setup lang="ts">
 // ** imports **
 import { Info } from 'lucide-vue-next';
-import { ref, computed, watch, onMounted } from 'vue';
-import { getRawDiffPercentage } from '~/helpers/utility';
 
-// ** data & refs **
 const { $siteBrand } = useNuxtApp();
 const route = useRoute();
-const govId = ref(route.query.gov_id as string);
-const jobType = ref((route.query.schedule as string) || 'full-time');
-const contractType = ref((route.query.contract as string) || 'permanent');
-const showAmbiguityModal = ref(false);
-const searchConfirmed = ref(
-  (import.meta.client ? history.state?.confirmed : false) || !!govId.value || false
-);
-const showUserSelection = ref(false);
-const userSelected = ref(false);
 
-// 1. Destructure Adzuna from auto-imported composable
+// 🚀 Inject the Engine
 const {
+  pending,
+  adzunaLoading,
+  resolving,
+  showAmbiguityModal,
+  showUserSelection,
+  userSalary,
+  displayTitle,
+  country,
+  location,
+  searchTitle,
+  jobType,
+  contractType,
+  currencySymbol,
+  matchedTitle,
+  matchedLocation,
+  marketDataYear,
+  adzunaCategory,
+  hasGovernmentData,
+  hasJobsData,
+  McaScore,
+  diffPercent,
+  isUnderpaid,
+  marketAverage,
+  marketLow,
+  marketHigh,
+  regionalData,
+  jobListings,
+  isAdminVerified,
   histogramBuckets,
-  fetchJobs: fetchAdzunaJobs,
-  fetchHistogram: fetchAdzunaHistogram,
-  loading: adzunaLoading,
   histogramRange,
   histogramMaxCount,
   histogramTotalCount,
-  isUnderpaid: isUnderpaidAdzuna,
-  jobsCount,
   meanSalary,
-  jobsData,
-  hasJobsData,
-  cachedGovIdCode
-} = useAdzuna();
-
-const { trackAmbiguousSearch } = useAnalytics();
-const { t } = useI18n();
-
-// 2. Destructure the NEW slimmed-down Resolver
-const {
-  resolving: loading, // Aliased to loading to keep UI watchers happy
-  matchedTitle,
-  matchedIdCode,
-  isGenericFallback,
+  jobsCount,
   ambiguousMatches,
-  resolveUkIdentity,
-  resolveUsaIdentity
-} = useMarketData();
-
-// 3. Import the NEW Data Engines
-const { fetchMacroBaselines } = useMacroData();
-const { fetchMicroBaselines } = useMicroData();
-
-// ** helpers **
-const unslugify = (slug: string) => {
-  if (!slug) return '';
-  return slug
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
-
-// ** computed properties **
-const displayTitle = computed(() => unslugify((route.params.title as string) || 'Professional'));
-const country = computed(() => (route.params.country as string)?.toUpperCase() || 'UK');
-const location = computed(() =>
-  route.params.location ? unslugify(route.params.location as string) : ''
-);
-
-const userSalary = ref(Number(route.query.compare) || 0);
-
-// Clean title for Adzuna and display purposes
-const searchTitle = ref((route.query.q as string) || displayTitle.value);
-
-const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
-const adzunaCategory = computed(() => jobsData.value?.results?.[0]?.category?.label);
-
-// ==========================================
-// 🌉 THE BRIDGE: Map new data to old UI variables
-// ==========================================
-const marketAverage = computed(() => {
-  const data = pageData.value?.micro?.microNationalData;
-  return data?.mean || data?.p50 || 0;
-});
-
-const marketLow = computed(() => pageData.value?.micro?.microNationalData?.p25 || 0);
-const marketHigh = computed(() => pageData.value?.micro?.microNationalData?.p75 || 0);
-const marketDataYear = ref(new Date().getFullYear());
-
-const matchedLocation = computed(() => {
-  return pageData.value?.micro?.microRegionalData ? location.value : 'National';
-});
-
-const regionalData = computed(() => {
-  const data = pageData.value?.micro?.microRegionalData;
-  if (!data) return null;
-  return {
-    location: location.value,
-    title: matchedTitle.value || displayTitle.value,
-    salary: data.p50,
-    avg_salary: data.mean,
-    salary_10_pt: data.p10 || 0,
-    salary_25_pt: data.p25 || 0,
-    salary_75_pt: data.p75 || 0,
-    salary_90_pt: data.p90 || 0
-  };
-});
-
-// Original UI Computeds relying on the Bridge
-const hasGovernmentData = computed(() => {
-  if ((marketAverage?.value ?? 0) === 0) return false;
-  if (isGenericFallback.value && displayTitle.value.toLowerCase() !== 'professional') return false;
-  return true;
-});
-
-const isUnderpaid = computed<boolean>(
-  () =>
-    userSalary.value > 0 &&
-    userSalary.value < (marketAverage?.value ?? 0) &&
-    diffPercent.value < -2.5
-);
-
-const diffPercent = computed<number>(() => {
-  const avg = marketAverage?.value ?? 0;
-  if (userSalary.value === 0 || avg === 0) return 0;
-  return getRawDiffPercentage(userSalary.value, avg);
-});
-
-const jobListings = computed(() => {
-  return (jobsData.value?.results || []).sort((a: any, b: any) => {
-    return b.salary_max - a.salary_max;
-  });
-});
-
-const isAdminVerified = computed(() => {
-  if (userSelected.value) return true;
-  if (govId.value) return true;
-  return !!cachedGovIdCode.value;
-});
-
-const McaScore = computed(() => {
-  // 1. Core requirement: We MUST have Macro Data (The baseline economy)
-  if (!pageData.value?.macro?.macroNationalData) {
-    return null;
-  }
-
-  // 2. The Fix: We need at least ONE role-specific data source (Either Government OR Live)
-  const hasMicro = !!pageData.value?.micro?.microNationalData;
-  const hasLive = (histogramTotalCount.value || 0) > 0;
-
-  if (!hasMicro && !hasLive) {
-    return null;
-  }
-
-  // 3. Run the math engine
-  const rawResult =
-    country.value === 'UK'
-      ? calculateUKBenchmarkScore(
-          userSalary.value,
-          pageData.value?.macro.macroNationalData,
-          pageData.value?.micro?.microNationalData || null,
-          pageData.value?.micro?.officialGroupTitle || '',
-          pageData.value?.micro?.microRegionalData || null,
-          pageData.value?.macro.regionalMedianAllRoles,
-          pageData.value?.macro.nationalMedianAllRoles,
-          histogramBuckets.value,
-          histogramTotalCount.value || 0
-        )
-      : calculateUSABenchmarkScore(
-          userSalary.value,
-          pageData.value?.macro.macroNationalData,
-          pageData.value?.macro?.userRegionalData || null,
-          pageData.value?.micro?.microNationalData || null,
-          pageData.value?.micro?.microRegionalData || null,
-          pageData.value?.macro.regionalMedianAllRoles,
-          pageData.value?.macro.nationalMedianAllRoles,
-          histogramBuckets.value,
-          histogramTotalCount.value || 0
-        );
-
-  // 4. Pass the raw math into the formatter
-  return formatMcaScoreForUi(
-    rawResult,
-    matchedTitle.value || searchTitle.value, // Fallback to search title if DB match drops
-    location.value,
-    t
-  );
-});
-
-// ==========================================
-// 🚀 ORCHESTRATOR: The 1-2 Punch Data Fetch
-// ==========================================
-const asyncDataKey = computed(
-  () => `salary-${country.value}-${location.value}-${searchTitle.value}`
-);
-
-const { data: pageData, pending } = await useAsyncData(
-  asyncDataKey.value,
-  async () => {
-    // 1. Fetch Adzuna Jobs and Histogram data in parallel
-    await Promise.all([
-      fetchAdzunaJobs(
-        searchTitle.value,
-        location.value,
-        country.value,
-        jobType.value,
-        contractType.value
-      ),
-      fetchAdzunaHistogram(searchTitle.value, location.value, country.value)
-    ]);
-
-    const targetGovId = govId.value || cachedGovIdCode.value;
-
-    // 2. Resolve the Identity (Turn text into SOC ID)
-    if (country.value === 'UK') {
-      await resolveUkIdentity(searchTitle.value, targetGovId);
-    } else {
-      await resolveUsaIdentity(searchTitle.value, targetGovId);
-    }
-
-    // 3. Fetch Data from the Engines using the exact ID
-    const resolvedTitle = matchedTitle.value || searchTitle.value;
-    const resolvedId = matchedIdCode.value;
-
-    const [macro, micro] = await Promise.all([
-      fetchMacroBaselines(country.value, location.value),
-      fetchMicroBaselines(country.value, resolvedTitle, location.value, resolvedId)
-    ]);
-
-    if (micro.officialGroupTitle) {
-      matchedTitle.value = micro.officialGroupTitle;
-    }
-
-    return {
-      macro,
-      micro,
-      resolvedTitle: micro.officialGroupTitle || resolvedTitle,
-      resolvedId
-    };
-  },
-  {
-    watch: [asyncDataKey],
-    dedupe: 'defer',
-    server: true
-  }
-);
-
-// ** methods **
-const handleAmbiguitySelect = async (match: any) => {
-  const exactId = match.id_code || match.soc || match.objectID;
-
-  // Updating govId triggers the asyncDataKey watcher to refresh data
-  govId.value = exactId;
-
-  trackAmbiguousSearch(match.title, match.group);
-
-  try {
-    await $fetch('/api/adzuna/update-match', {
-      method: 'POST',
-      body: {
-        title: searchTitle.value,
-        location: location.value,
-        country: country.value === 'USA' ? 'us' : 'gb',
-        gov_id_code: exactId,
-        gov_title: match.title,
-        is_automatic: false,
-        job_type: jobType.value,
-        contract_type: contractType.value
-      }
-    });
-  } catch {
-    return;
-  }
-
-  showAmbiguityModal.value = false;
-  showUserSelection.value = false;
-  userSelected.value = true;
-  searchConfirmed.value = true;
-};
+  handleAmbiguitySelect,
+  isUnderpaidAdzuna
+} = await useLocationEngine('benchmark');
 
 onMounted(() => {
   const { compare, ...remainingQuery } = route.query;
@@ -451,65 +220,6 @@ onMounted(() => {
       { path: route.path, query: compare ? { compare: compare } : undefined },
       { replace: true }
     );
-  }
-});
-
-// ** watchers **
-watch(loading, (newLoading) => {
-  if (newLoading === false) {
-    const userLocation = location.value;
-    const dbLocation = matchedLocation.value;
-
-    if (
-      import.meta.client &&
-      hasGovernmentData.value &&
-      !isGenericFallback.value &&
-      matchedIdCode.value &&
-      !govId.value
-    ) {
-      $fetch('/api/adzuna/update-match', {
-        method: 'POST',
-        body: {
-          title: searchTitle.value,
-          location: location.value,
-          country: country.value === 'USA' ? 'us' : 'gb',
-          gov_id_code: matchedIdCode.value,
-          gov_title: matchedTitle.value,
-          is_automatic: true,
-          job_type: jobType.value,
-          contract_type: contractType.value
-        }
-      }).catch(() => {});
-    }
-
-    if (
-      userLocation &&
-      hasGovernmentData.value &&
-      dbLocation.toLowerCase() !== userLocation.toLowerCase()
-    ) {
-      if (dbLocation.toLowerCase() === country.value.toLowerCase()) {
-        const newPath = `/benchmark/${route.params.title}/${route.params.country}`;
-        navigateTo(
-          { path: newPath, query: route.query, state: { ...history.state } },
-          { replace: true }
-        );
-      }
-    }
-  }
-});
-
-watch(ambiguousMatches, (matches) => {
-  if (matches.length > 1 && !searchConfirmed.value) {
-    showAmbiguityModal.value = true;
-  }
-});
-
-watch(userSalary, (newSalary) => {
-  if (newSalary > 0) {
-    navigateTo({ query: { ...route.query, compare: newSalary.toString() } }, { replace: true });
-  } else {
-    const { compare, ...rest } = route.query;
-    navigateTo({ query: rest }, { replace: true });
   }
 });
 
@@ -547,7 +257,12 @@ useSeoMeta({
   ogImage: `${url.origin}/${$siteBrand}-og.png`,
   twitterCard: 'summary',
   robots: () => {
-    if (!loading.value && !adzunaLoading.value && !hasGovernmentData.value && !hasJobsData.value) {
+    if (
+      !resolving.value &&
+      !adzunaLoading.value &&
+      !hasGovernmentData.value &&
+      !hasJobsData.value
+    ) {
       return 'noindex';
     }
     return 'index, follow';

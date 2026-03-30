@@ -48,7 +48,7 @@ export const useMarketData = () => {
   // 🇬🇧 UK SEARCH RESOLVER
   // ==========================================
   const resolveUkIdentity = async (title: string, idCode?: string): Promise<void> => {
-    if (!matchedIdCode.value) {
+    if (!matchedIdCode.value || matchedTitle.value.toLowerCase() !== title.toLowerCase()) {
       resolving.value = true;
       resetIdentity();
     }
@@ -136,7 +136,7 @@ export const useMarketData = () => {
   // 🇺🇸 USA SEARCH RESOLVER
   // ==========================================
   const resolveUsaIdentity = async (title: string, idCode?: string): Promise<void> => {
-    if (!matchedIdCode.value) {
+    if (!matchedIdCode.value || matchedTitle.value.toLowerCase() !== title.toLowerCase()) {
       resolving.value = true;
       resetIdentity();
     }

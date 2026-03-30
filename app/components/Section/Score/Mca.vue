@@ -14,8 +14,6 @@
       </div>
     </header>
 
-    {{ verdict }}
-
     <div class="flex flex-col md:flex-row gap-8 md:gap-12 w-full items-center md:items-center">
       <div class="flex flex-col items-center justify-center shrink-0">
         <div class="relative w-40 h-40 md:w-48 md:h-48">
