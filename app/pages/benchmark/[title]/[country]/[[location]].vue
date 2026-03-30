@@ -172,7 +172,7 @@ import { getRawDiffPercentage } from '~/helpers/utility';
 // ** data & refs **
 const { $siteBrand } = useNuxtApp();
 const route = useRoute();
-const govId = ref((route.query.gov_id as string) || undefined);
+const govId = ref(route.query.gov_id as string);
 const jobType = ref((route.query.schedule as string) || 'full-time');
 const contractType = ref((route.query.contract as string) || 'permanent');
 const showAmbiguityModal = ref(false);
@@ -217,10 +217,6 @@ const {
 const { fetchMacroBaselines } = useMacroData();
 const { fetchMicroBaselines } = useMicroData();
 
-// Local refs to hold the strict data types from the engines
-const macroResult = ref<any>(null);
-const microResult = ref<any>(null);
-
 // ** helpers **
 const unslugify = (slug: string) => {
   if (!slug) return '';
@@ -249,30 +245,30 @@ const adzunaCategory = computed(() => jobsData.value?.results?.[0]?.category?.la
 // 🌉 THE BRIDGE: Map new data to old UI variables
 // ==========================================
 const marketAverage = computed(() => {
-  const data = microResult.value?.microNationalData;
+  const data = pageData.value?.micro?.microNationalData;
   return data?.mean || data?.p50 || 0;
 });
 
-const marketLow = computed(() => microResult.value?.microNationalData?.p25 || 0);
-const marketHigh = computed(() => microResult.value?.microNationalData?.p75 || 0);
+const marketLow = computed(() => pageData.value?.micro?.microNationalData?.p25 || 0);
+const marketHigh = computed(() => pageData.value?.micro?.microNationalData?.p75 || 0);
 const marketDataYear = ref(new Date().getFullYear());
 
 const matchedLocation = computed(() => {
-  return microResult.value?.microRegionalData ? location.value : 'National';
+  return pageData.value?.micro?.microRegionalData ? location.value : 'National';
 });
 
 const regionalData = computed(() => {
-  const data = microResult.value?.microRegionalData;
+  const data = pageData.value?.micro?.microRegionalData;
   if (!data) return null;
   return {
     location: location.value,
     title: matchedTitle.value || displayTitle.value,
     salary: data.p50,
     avg_salary: data.mean,
-    salary_10_pt: data.p10,
-    salary_25_pt: data.p25,
-    salary_75_pt: data.p75,
-    salary_90_pt: data.p90
+    salary_10_pt: data.p10 || 0,
+    salary_25_pt: data.p25 || 0,
+    salary_75_pt: data.p75 || 0,
+    salary_90_pt: data.p90 || 0
   };
 });
 
@@ -310,12 +306,12 @@ const isAdminVerified = computed(() => {
 
 const McaScore = computed(() => {
   // 1. Core requirement: We MUST have Macro Data (The baseline economy)
-  if (!macroResult.value?.macroNationalData) {
+  if (!pageData.value?.macro?.macroNationalData) {
     return null;
   }
 
   // 2. The Fix: We need at least ONE role-specific data source (Either Government OR Live)
-  const hasMicro = !!microResult.value?.microNationalData;
+  const hasMicro = !!pageData.value?.micro?.microNationalData;
   const hasLive = (histogramTotalCount.value || 0) > 0;
 
   if (!hasMicro && !hasLive) {
@@ -327,23 +323,23 @@ const McaScore = computed(() => {
     country.value === 'UK'
       ? calculateUKBenchmarkScore(
           userSalary.value,
-          macroResult.value.macroNationalData,
-          microResult.value?.microNationalData || null,
-          microResult.value?.officialGroupTitle || '',
-          microResult.value?.microRegionalData || null,
-          macroResult.value.regionalMedianAllRoles,
-          macroResult.value.nationalMedianAllRoles,
+          pageData.value?.macro.macroNationalData,
+          pageData.value?.micro?.microNationalData || null,
+          pageData.value?.micro?.officialGroupTitle || '',
+          pageData.value?.micro?.microRegionalData || null,
+          pageData.value?.macro.regionalMedianAllRoles,
+          pageData.value?.macro.nationalMedianAllRoles,
           histogramBuckets.value,
           histogramTotalCount.value || 0
         )
       : calculateUSABenchmarkScore(
           userSalary.value,
-          macroResult.value.macroNationalData,
-          macroResult.value?.macroRegionalData || null,
-          microResult.value?.microNationalData || null,
-          microResult.value?.microRegionalData || null,
-          macroResult.value.regionalMedianAllRoles,
-          macroResult.value.nationalMedianAllRoles,
+          pageData.value?.macro.macroNationalData,
+          pageData.value?.macro?.userRegionalData || null,
+          pageData.value?.micro?.microNationalData || null,
+          pageData.value?.micro?.microRegionalData || null,
+          pageData.value?.macro.regionalMedianAllRoles,
+          pageData.value?.macro.nationalMedianAllRoles,
           histogramBuckets.value,
           histogramTotalCount.value || 0
         );
@@ -364,11 +360,10 @@ const asyncDataKey = computed(
   () => `salary-${country.value}-${location.value}-${searchTitle.value}`
 );
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const { data, refresh, pending } = await useAsyncData(
+const { data: pageData, pending } = await useAsyncData(
   asyncDataKey.value,
   async () => {
-    // 1. Fetch Adzuna in parallel
+    // 1. Fetch Adzuna Jobs and Histogram data in parallel
     await Promise.all([
       fetchAdzunaJobs(
         searchTitle.value,
@@ -382,14 +377,14 @@ const { data, refresh, pending } = await useAsyncData(
 
     const targetGovId = govId.value || cachedGovIdCode.value;
 
-    // 2. Resolve the Identity
+    // 2. Resolve the Identity (Turn text into SOC ID)
     if (country.value === 'UK') {
       await resolveUkIdentity(searchTitle.value, targetGovId);
     } else {
       await resolveUsaIdentity(searchTitle.value, targetGovId);
     }
 
-    // 3. Fetch Data from the Engines using the resolved ID
+    // 3. Fetch Data from the Engines using the exact ID
     const resolvedTitle = matchedTitle.value || searchTitle.value;
     const resolvedId = matchedIdCode.value;
 
@@ -402,11 +397,12 @@ const { data, refresh, pending } = await useAsyncData(
       matchedTitle.value = micro.officialGroupTitle;
     }
 
-    // Save to local refs
-    macroResult.value = macro;
-    microResult.value = micro;
-
-    return true;
+    return {
+      macro,
+      micro,
+      resolvedTitle: micro.officialGroupTitle || resolvedTitle,
+      resolvedId
+    };
   },
   {
     watch: [asyncDataKey],

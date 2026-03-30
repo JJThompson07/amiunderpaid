@@ -95,7 +95,7 @@ export const useMacroData = () => {
     } catch (error) {
       console.error(`Failed to fetch ${country} macro baseline data:`, error);
       return {
-        macroNationalData: { p50: 35000 },
+        macroNationalData: { mean: 35000, p10: 0, p25: 0, p50: 35000, p75: 0, p90: 0 },
         userRegionalData: null,
         allRegionalData: {},
         nationalMedianAllRoles: 35000,

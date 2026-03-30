@@ -212,7 +212,7 @@ import type { SalaryBenchmark } from '../../../../composables/useMarketData';
 // ** data & refs **
 const { $siteBrand } = useNuxtApp();
 const route = useRoute();
-const govId = ref((route.query.gov_id as string) || undefined);
+const govId = ref(route.query.gov_id as string);
 const jobType = ref((route.query.schedule as string) || 'full-time');
 const contractType = ref((route.query.contract as string) || 'permanent');
 const showAmbiguityModal = ref(false);
@@ -259,10 +259,6 @@ const {
 const { fetchMacroBaselines } = useMacroData();
 const { fetchMicroBaselines } = useMicroData();
 
-// Local refs to hold the strict data types
-const macroResult = ref<any>(null);
-const microResult = ref<any>(null);
-
 // ** helpers **
 const unslugify = (slug: string) => {
   if (!slug) return '';
@@ -290,37 +286,35 @@ const adzunaCategory = computed(() => jobsData.value?.results?.[0]?.category?.la
 // ==========================================
 // Prioritize mean, fallback to p50 (median), fallback to 0
 const marketAverage = computed(() => {
-  const data = microResult.value?.microNationalData;
-  console.log(data, microResult.value);
+  const data = pageData.value?.micro?.microNationalData;
   return data?.mean || data?.p50 || 0;
 });
 
-const marketLow = computed(() => microResult.value?.microNationalData?.p25 || 0);
-const marketHigh = computed(() => microResult.value?.microNationalData?.p75 || 0);
+const marketLow = computed(() => pageData.value?.micro?.microNationalData?.p25 || 0);
+const marketHigh = computed(() => pageData.value?.micro?.microNationalData?.p75 || 0);
 const marketDataYear = ref(new Date().getFullYear()); // Hardcoded to current year, or extract from API if available
 
 const matchedLocation = computed(() => {
-  return microResult.value?.microRegionalData ? location.value : 'National';
+  return pageData.value?.micro?.microRegionalData ? location.value : 'National';
 });
 
 const regionalData = computed<SalaryBenchmark | null>(() => {
-  const data = microResult.value?.microRegionalData;
+  const data = pageData.value?.micro?.microRegionalData;
   if (!data) return null;
   return {
-    location: location.value,
     title: matchedTitle.value || displayTitle.value,
+    location: location.value,
     salary: data.p50,
     avg_salary: data.mean,
-    salary_10_pt: data.p10,
-    salary_25_pt: data.p25,
-    salary_75_pt: data.p75,
-    salary_90_pt: data.p90
+    salary_10_pt: data.p10 || 0,
+    salary_25_pt: data.p25 || 0,
+    salary_75_pt: data.p75 || 0,
+    salary_90_pt: data.p90 || 0
   };
 });
 
 // Original UI Computeds seamlessly relying on the Bridge
 const hasGovernmentData = computed(() => {
-  console.log(marketAverage.value, isGenericFallback.value);
   if (marketAverage.value === 0) return false;
   if (isGenericFallback.value && displayTitle.value.toLowerCase() !== 'professional') return false;
   return true;
@@ -351,12 +345,12 @@ const isAdminVerified = computed(() => {
 
 const McaScore = computed(() => {
   // 1. Core requirement: We MUST have Macro Data (The baseline economy)
-  if (!macroResult.value?.macroNationalData) {
+  if (!pageData.value?.macro?.macroNationalData) {
     return null;
   }
 
   // 2. The Fix: We need at least ONE role-specific data source (Either Government OR Live)
-  const hasMicro = !!microResult.value?.microNationalData;
+  const hasMicro = !!pageData.value?.micro?.microNationalData;
   const hasLive = (histogramTotalCount.value || 0) > 0;
 
   if (!hasMicro && !hasLive) {
@@ -368,23 +362,23 @@ const McaScore = computed(() => {
     country.value === 'UK'
       ? calculateUKBenchmarkScore(
           userSalary.value,
-          macroResult.value.macroNationalData,
-          microResult.value?.microNationalData || null,
-          microResult.value?.officialGroupTitle || '',
-          microResult.value?.microRegionalData || null,
-          macroResult.value.regionalMedianAllRoles,
-          macroResult.value.nationalMedianAllRoles,
+          pageData.value?.macro.macroNationalData,
+          pageData.value?.micro?.microNationalData || null,
+          pageData.value?.micro?.officialGroupTitle || '',
+          pageData.value?.micro?.microRegionalData || null,
+          pageData.value?.macro.regionalMedianAllRoles,
+          pageData.value?.macro.nationalMedianAllRoles,
           histogramBuckets.value,
           histogramTotalCount.value || 0
         )
       : calculateUSABenchmarkScore(
           userSalary.value,
-          macroResult.value.macroNationalData,
-          macroResult.value?.macroRegionalData || null,
-          microResult.value?.microNationalData || null,
-          microResult.value?.microRegionalData || null,
-          macroResult.value.regionalMedianAllRoles,
-          macroResult.value.nationalMedianAllRoles,
+          pageData.value?.macro.macroNationalData,
+          pageData.value?.macro?.userRegionalData || null,
+          pageData.value?.micro?.microNationalData || null,
+          pageData.value?.micro?.microRegionalData || null,
+          pageData.value?.macro.regionalMedianAllRoles,
+          pageData.value?.macro.nationalMedianAllRoles,
           histogramBuckets.value,
           histogramTotalCount.value || 0
         );
@@ -405,8 +399,7 @@ const asyncDataKey = computed(
   () => `salary-${country.value}-${location.value}-${searchTitle.value}`
 );
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const { data, refresh, pending } = await useAsyncData(
+const { data: pageData, pending } = await useAsyncData(
   asyncDataKey.value,
   async () => {
     // 1. Fetch Adzuna Jobs and Histogram data in parallel
@@ -443,13 +436,12 @@ const { data, refresh, pending } = await useAsyncData(
       matchedTitle.value = micro.officialGroupTitle;
     }
 
-    // Update Local Refs to hydrate UI Bridge
-    macroResult.value = macro;
-    microResult.value = micro;
-
-    console.log('microResult', microResult.value);
-
-    return true;
+    return {
+      macro,
+      micro,
+      resolvedTitle: micro.officialGroupTitle || resolvedTitle,
+      resolvedId
+    };
   },
   {
     watch: [asyncDataKey],
