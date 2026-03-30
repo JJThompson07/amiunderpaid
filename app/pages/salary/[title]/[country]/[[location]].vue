@@ -128,17 +128,6 @@
         </div>
 
         <div class="flex flex-row gap-6">
-          <SectionUKComparison
-            v-show="country === 'UK' && regionalData && location"
-            class="flex-4"
-            :country="country"
-            :location="location"
-            :display-title="matchedTitle || displayTitle"
-            :market-average="marketAverage"
-            :user-salary="userSalary"
-            :regional-data="regionalData"
-            :year="marketDataYear" />
-
           <LazyAmICardAction
             v-if="country === 'UK' && isXl"
             bg-colour="bg-cv-library-50"
@@ -239,7 +228,6 @@ const {
   marketAverage,
   marketLow,
   marketHigh,
-  regionalData,
   jobListings,
   isAdminVerified,
   histogramBuckets,
