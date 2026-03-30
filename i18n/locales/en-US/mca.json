@@ -1,6 +1,16 @@
 {
   "header": "Market Compensation Alignment",
   "breakdown": "Your MCA Score Breakdown",
+  "toggle": {
+    "show": "View Score Breakdown",
+    "hide": "Hide Score Breakdown"
+  },
+  "confidence": {
+    "label": "Data Confidence",
+    "desc_high": "High confidence in this MCA result. Based on robust, exact-match market baselines and significant live job volume.",
+    "desc_medium": "Moderate confidence in this MCA result. Based on related market averages or a limited sample of live job listings.",
+    "desc_low": "Low confidence in this MCA result. Relies heavily on broad economic baselines due to limited specific data."
+  },
   "labels": {
     "leader": "Market Leader",
     "strong": "Strong Alignment",

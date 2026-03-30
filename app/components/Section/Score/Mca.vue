@@ -1,14 +1,11 @@
 <template>
   <div
     v-if="verdict"
-    class="rounded-2xl shadow-xl border p-6 md:p-8 flex flex-col gap-6 items-center relative select-none"
+    class="rounded-2xl shadow-xl border p-6 md:p-8 flex flex-col gap-6 items-center relative select-none transition-colors duration-500"
     :class="cardClasses">
     <header class="flex items-start justify-between w-full gap-4">
       <div>
         <h3 class="text-xl lg:text-2xl font-black text-slate-900">{{ $t('mca.header') }}</h3>
-        <p class="text-xs text-slate-500 uppercase tracking-wider font-bold mt-1">
-          {{ $t('mca.breakdown') }}
-        </p>
       </div>
       <div
         class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap"
@@ -17,8 +14,10 @@
       </div>
     </header>
 
-    <div class="flex flex-col md:flex-row gap-6 md:gap-8 w-full">
-      <div class="flex flex-col items-center justify-center shrink-0 w-full md:w-auto">
+    {{ verdict }}
+
+    <div class="flex flex-col md:flex-row gap-8 md:gap-12 w-full items-center md:items-center">
+      <div class="flex flex-col items-center justify-center shrink-0">
         <div class="relative w-40 h-40 md:w-48 md:h-48">
           <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
             <circle
@@ -51,16 +50,53 @@
         </div>
       </div>
 
-      <div class="flex-1 w-full flex flex-col gap-4">
-        <ul class="flex flex-col gap-3 mt-1">
-          <li
-            v-for="(point, index) in verdict.comparisonPoints"
-            :key="index"
-            class="flex items-start gap-3 text-slate-600 leading-relaxed">
-            <div class="mt-2 w-1.5 h-1.5 rounded-full shrink-0" :class="dotClass"></div>
-            <span class="text-sm" v-html="point"></span>
-          </li>
-        </ul>
+      <div class="flex-1 w-full flex flex-col gap-3 justify-center">
+        <p class="text-xs text-slate-500 uppercase tracking-wider font-bold">
+          {{ $t('mca.confidence.label') }}
+        </p>
+
+        <div class="flex items-center gap-4">
+          <div class="w-full max-w-xs h-2.5 bg-slate-200 rounded-full overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all duration-1000 ease-out"
+              :class="confidenceBgColor"
+              :style="{ width: `${(verdict.confidenceScore || 0) * 10}%` }"></div>
+          </div>
+          <span class="text-sm font-bold text-slate-700"
+            >{{ verdict.confidenceScore || 0 }}/10</span
+          >
+        </div>
+
+        <p class="text-sm text-slate-600 leading-relaxed font-medium mt-1">
+          {{ confidenceDescription }}
+        </p>
+      </div>
+    </div>
+
+    <div class="w-full border-t border-slate-200/60 pt-4 mt-2">
+      <button
+        class="flex items-center justify-between w-full text-left font-bold text-slate-700 hover:text-slate-900 transition-colors group"
+        @click="showBreakdown = !showBreakdown">
+        <span>{{ showBreakdown ? $t('mca.toggle.hide') : $t('mca.toggle.show') }}</span>
+        <ChevronDown
+          class="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-transform duration-300"
+          :class="showBreakdown ? 'rotate-180' : ''" />
+      </button>
+
+      <div
+        class="grid transition-all duration-300 ease-in-out"
+        :class="showBreakdown ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0'">
+        <div class="overflow-hidden">
+          <ul class="flex flex-col gap-4">
+            <li
+              v-for="(point, index) in verdict.comparisonPoints"
+              :key="index"
+              class="flex items-start gap-3 text-slate-600 leading-relaxed">
+              <div class="mt-2 w-1.5 h-1.5 rounded-full shrink-0" :class="dotClass"></div>
+              <span class="text-sm" v-html="point"></span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -68,7 +104,10 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue';
-// Note: formatOrdinal is assumed to be auto-imported by Nuxt from your utils/formatters.ts file!
+import { ChevronDown } from 'lucide-vue-next'; // 👈 Added the icon import
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
   verdict: {
@@ -81,6 +120,9 @@ const props = defineProps({
   matchedTitle: { type: String, required: true },
   location: { type: String, default: '' }
 });
+
+// UI State
+const showBreakdown = ref(false); // 👈 Controls the accordion
 
 // ==========================================
 // ⚙️ SVG RING MATH
@@ -99,10 +141,10 @@ const dashOffset = computed(() => {
 // ==========================================
 const ringColor = computed(() => {
   const score = animatedScore.value;
-  if (score >= 80) return '#25c25d'; // Positive / Emerald
-  if (score >= 60) return '#2881cf'; // Neutral / Slate
-  if (score >= 40) return '#d38e1f'; // Warning / Amber
-  return '#f34040'; // Negative / Red
+  if (score >= 80) return '#25c25d';
+  if (score >= 60) return '#2881cf';
+  if (score >= 40) return '#d38e1f';
+  return '#f34040';
 });
 
 const cardClasses = computed(() => {
@@ -129,6 +171,23 @@ const dotClass = computed(() => {
   if (score >= 60) return 'bg-neutral-400';
   if (score >= 40) return 'bg-warning-500';
   return 'bg-negative-500';
+});
+
+// ==========================================
+// 📊 CONFIDENCE BAR LOGIC
+// ==========================================
+const confidenceBgColor = computed(() => {
+  const score = props.verdict?.confidenceScore || 0;
+  if (score >= 8) return 'bg-positive-500'; // Green
+  if (score >= 5) return 'bg-warning-500'; // Amber
+  return 'bg-negative-500'; // Red
+});
+
+const confidenceDescription = computed(() => {
+  const score = props.verdict?.confidenceScore || 0;
+  if (score >= 8) return t('mca.confidence.desc_high');
+  if (score >= 5) return t('mca.confidence.desc_medium');
+  return t('mca.confidence.desc_low');
 });
 
 // ==========================================

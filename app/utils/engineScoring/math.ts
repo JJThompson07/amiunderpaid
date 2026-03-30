@@ -162,3 +162,26 @@ export const calculateLivePercentile = (
   const percentile = (jobsBelow / totalJobs) * 100;
   return Math.min(Math.max(Math.round(percentile * 10) / 10, SCORE_LIMITS.MIN), SCORE_LIMITS.MAX);
 };
+
+export const calculateConfidenceScore = (
+  totalLiveJobs: number,
+  hasMicroRegional: boolean, // 👈 Split into two checks
+  hasMicroNational: boolean,
+  hasLivePercentile: boolean
+): number => {
+  let score = 2; // Baseline Macro
+
+  // Tiered Micro Points
+  if (hasMicroRegional) {
+    score += 4; // Perfect local match
+  } else if (hasMicroNational) {
+    score += 1; // National match (Still better than nothing!)
+  }
+
+  if (hasLivePercentile && totalLiveJobs > 0) {
+    const liveScore = Math.min(4, (totalLiveJobs / LIVE_CONFIDENCE_THRESHOLDS.HIGH) * 4);
+    score += liveScore;
+  }
+
+  return Math.round(score);
+};

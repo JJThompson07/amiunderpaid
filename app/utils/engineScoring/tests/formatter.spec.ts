@@ -35,6 +35,7 @@ describe('UI Formatter: formatMcaScoreForUi', () => {
 
   const mockResult: BenchmarkResult = {
     score: 85,
+    confidenceScore: 9,
     breakdown: {
       modifier: 1.1,
       normalizedSalary: 50000,

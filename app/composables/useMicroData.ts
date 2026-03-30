@@ -24,31 +24,40 @@ export const useMicroData = () => {
       // ==========================================
       // 1. BUILD THE BULLETPROOF FILTER
       // ==========================================
-      let baseFilter = `country:${country}`;
+      let baseNationalFilter = `country:${country}`;
+      let baseRegionalFilter = `country:${country}`;
 
       if (idCode) {
         // EXACT ID MATCH (Fastest & Safest)
         const cleanId = String(idCode).trim();
         if (country === 'USA') {
           // USA has hyphens, so we need quotes to prevent math subtraction bugs in Algolia
-          baseFilter += ` AND (id_code:"${cleanId}")`;
+          baseNationalFilter += ` AND (id_code:"${cleanId}")`;
+          baseRegionalFilter += ` AND (id_code:"${cleanId}")`;
         } else {
           // UK usually treats SOC codes as numbers
-          // baseFilter += ` AND id_code:${cleanId}`;
+          baseNationalFilter += ` AND id_code:${cleanId}`;
         }
       } else {
         // FALLBACK: TEXT MATCH (If no ID was resolved)
         const cleanTitle = title.toLowerCase().replace(/"/g, '\\"');
-        baseFilter += ` AND searchTitle:"${cleanTitle}"`;
+        baseNationalFilter += ` AND searchTitle:"${cleanTitle}"`;
+        baseRegionalFilter += ` AND searchTitle:"${cleanTitle}"`;
       }
 
       // ==========================================
       // 2. BUILD QUERIES
       // ==========================================
-      const nationalQuery = nationalIndex.search('', { filters: baseFilter, hitsPerPage: 1 });
+      const nationalQuery = nationalIndex.search('', {
+        filters: baseNationalFilter,
+        hitsPerPage: 1
+      });
 
       // For regional, we grab all regions for this specific job
-      const regionalQuery = regionalIndex.search('', { filters: baseFilter, hitsPerPage: 1000 });
+      const regionalQuery = regionalIndex.search('', {
+        filters: baseRegionalFilter,
+        hitsPerPage: 1000
+      });
 
       // ==========================================
       // 3. EXECUTE IN PARALLEL

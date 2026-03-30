@@ -4,7 +4,8 @@ import {
   LIVE_CONFIDENCE_THRESHOLDS,
   calculatePercentile,
   calculateLivePercentile,
-  calculateRegionalModifier
+  calculateRegionalModifier,
+  calculateConfidenceScore
 } from './math';
 
 export const calculateUSABenchmarkScore = (
@@ -73,13 +74,21 @@ export const calculateUSABenchmarkScore = (
         : macroPercentile;
   }
 
+  const confidenceScore = calculateConfidenceScore(
+    totalLiveJobs,
+    microRegionalData !== null, // We have micro data and it's regional (not just national)
+    microPercentile !== null,
+    livePercentile !== null
+  );
+
   return {
     score: Math.min(99, Math.max(1, Math.round(finalScore))),
+    confidenceScore, // 👈 Inject the score out of 10
     breakdown: {
       modifier,
       normalizedSalary,
       macroPercentile,
-      microPercentile: microPercentile || 50, // UI fallback, doesn't impact math
+      microPercentile,
       livePercentile
     }
   };

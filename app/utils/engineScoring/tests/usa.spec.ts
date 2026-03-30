@@ -69,8 +69,8 @@ describe('USA Engine: calculateUSABenchmarkScore', () => {
       mockBuckets,
       100
     );
-    // Should complete math without throwing errors and mark UI fallback as 50
-    expect(result.breakdown.microPercentile).toBe(50);
+    // Should complete math without throwing errors and return null for microPercentile since no location data is available
+    expect(result.breakdown.microPercentile).toBe(null); // UI Fallback is null since no micro data
     expect(result.score).toBeGreaterThan(0);
   });
 

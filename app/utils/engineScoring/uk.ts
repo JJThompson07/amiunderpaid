@@ -3,13 +3,15 @@ import {
   LIVE_CONFIDENCE_THRESHOLDS,
   calculatePercentile,
   calculateLivePercentile,
-  calculateRegionalModifier
+  calculateRegionalModifier,
+  calculateConfidenceScore
 } from './math';
 
 export const calculateUKBenchmarkScore = (
   userSalary: number,
   macroNationalData: PercentileData,
   microNationalData: PercentileData | null,
+  microNationalOfficialTitle: string | null,
   microRegionalData: PercentileData | null,
   regionalMedianAllRoles: number | null,
   nationalMedianAllRoles: number | null,
@@ -69,13 +71,21 @@ export const calculateUKBenchmarkScore = (
         : macroPercentile;
   }
 
+  const confidenceScore = calculateConfidenceScore(
+    totalLiveJobs,
+    microNationalData !== null && microNationalOfficialTitle !== 'All', // We have micro data and it's regional (not just national)
+    microPercentile !== null,
+    livePercentile !== null
+  );
+
   return {
     score: Math.min(99, Math.max(1, Math.round(finalScore))),
+    confidenceScore, // 👈 Inject the score out of 10
     breakdown: {
       modifier,
       normalizedSalary,
       macroPercentile,
-      microPercentile: microPercentile || 50, // This 50 is just a fallback for the UI to display, it doesn't hurt the math anymore!
+      microPercentile,
       livePercentile
     }
   };

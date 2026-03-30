@@ -48,132 +48,134 @@ export const useMarketData = () => {
   // 🇬🇧 UK SEARCH RESOLVER
   // ==========================================
   const resolveUkIdentity = async (title: string, idCode?: string): Promise<void> => {
-    resolving.value = true;
-    resetIdentity();
+    if (!matchedIdCode.value) {
+      resolving.value = true;
+      resetIdentity();
+    }
 
     // 1. EXACT ID BYPASS (Fastest)
     if (idCode) {
       matchedIdCode.value = String(idCode).trim();
       matchedTitle.value = title;
-      resolving.value = false;
-      return;
-    }
-
-    // Clean up title and extract any specified group (e.g., "Developer (Software Engineering)")
-    let searchTitle = title.replace(/-/g, ' ');
-    let targetGroup = '';
-    const groupMatch = searchTitle.match(/^(.*?)\s*\((.*?)\)$/);
-    if (groupMatch) {
-      searchTitle = groupMatch[1] || '';
-      targetGroup = groupMatch[2] || '';
-    }
-
-    try {
-      const jobTitlesIndex = searchClient.initIndex('job_titles');
-      const nationalIndex = searchClient.initIndex('salary_benchmarks');
-
-      // 2. FUZZY SEARCH THE ONS DICTIONARY
-      const sanitizedQuery = searchTitle
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      const { hits: titleHits } = await jobTitlesIndex.search<any>(sanitizedQuery, {
-        filters: `country:UK`,
-        hitsPerPage: 10
-      });
-
-      let bestTitleMatch;
-
-      if (targetGroup) {
-        bestTitleMatch = titleHits.find(
-          (h: any) => h.group?.toLowerCase() === targetGroup.toLowerCase()
-        );
+    } else {
+      // Clean up title and extract any specified group (e.g., "Developer (Software Engineering)")
+      let searchTitle = title.replace(/-/g, ' ');
+      let targetGroup = '';
+      const groupMatch = searchTitle.match(/^(.*?)\s*\((.*?)\)$/);
+      if (groupMatch) {
+        searchTitle = groupMatch[1] || '';
+        targetGroup = groupMatch[2] || '';
       }
 
-      if (!bestTitleMatch && titleHits.length > 0) {
-        if (titleHits.length > 1) {
-          const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
-          if (groups.size > 1) {
-            ambiguousMatches.value = titleHits; // Trigger your UI modal!
-          }
+      try {
+        const jobTitlesIndex = searchClient.initIndex('job_titles');
+        const nationalIndex = searchClient.initIndex('salary_benchmarks');
+
+        // 2. FUZZY SEARCH THE ONS DICTIONARY
+        const sanitizedQuery = searchTitle
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        const { hits: titleHits } = await jobTitlesIndex.search<any>(sanitizedQuery, {
+          filters: `country:UK`,
+          hitsPerPage: 10
+        });
+
+        let bestTitleMatch;
+
+        if (targetGroup) {
+          bestTitleMatch = titleHits.find(
+            (h: any) => h.group?.toLowerCase() === targetGroup.toLowerCase()
+          );
         }
-        bestTitleMatch = titleHits[0];
-      }
 
-      // 3. SET THE IDENTITY IF FOUND IN DICTIONARY
-      if (bestTitleMatch?.soc) {
-        matchedIdCode.value = bestTitleMatch.soc;
-        matchedTitle.value = bestTitleMatch.group || bestTitleMatch.title || searchTitle;
-        return; // Success!
-      }
+        if (!bestTitleMatch && titleHits.length > 0) {
+          if (titleHits.length > 1) {
+            const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
+            if (groups.size > 1) {
+              ambiguousMatches.value = titleHits; // Trigger your UI modal!
+            }
+          }
+          bestTitleMatch = titleHits[0];
+        }
 
-      // 4. FALLBACK: DIRECT BENCHMARK SEARCH
-      // If the SOC dictionary lookup completely fails, try searching the benchmarks index directly.
-      const { hits } = await nationalIndex.search<any>(searchTitle, {
-        filters: `country:UK`,
-        hitsPerPage: 1
-      });
+        // 3. SET THE IDENTITY IF FOUND IN DICTIONARY
+        if (bestTitleMatch?.soc) {
+          matchedIdCode.value = bestTitleMatch.soc;
+          matchedTitle.value = bestTitleMatch.group || bestTitleMatch.title || searchTitle;
+          return; // Success!
+        }
 
-      if (hits.length > 0) {
-        matchedIdCode.value = hits[0].id_code;
-        matchedTitle.value = hits[0].title;
-      } else {
-        // Absolute worst case: Fallback to generic professional
-        isGenericFallback.value = true;
-        matchedTitle.value = 'Professional (Generic)';
+        // 4. FALLBACK: DIRECT BENCHMARK SEARCH
+        // If the SOC dictionary lookup completely fails, try searching the benchmarks index directly.
+        const { hits } = await nationalIndex.search<any>(searchTitle, {
+          filters: `country:UK`,
+          hitsPerPage: 1
+        });
+
+        if (hits.length > 0) {
+          matchedIdCode.value = hits[0].id_code;
+          matchedTitle.value = hits[0].title;
+        } else {
+          // Absolute worst case: Fallback to generic professional
+          isGenericFallback.value = true;
+          matchedTitle.value = 'Professional (Generic)';
+        }
+      } catch (error) {
+        console.error('Error resolving UK identity:', error);
+      } finally {
+        resolving.value = false;
       }
-    } catch (error) {
-      console.error('Error resolving UK identity:', error);
-    } finally {
-      resolving.value = false;
     }
+    resolving.value = false;
   };
 
   // ==========================================
   // 🇺🇸 USA SEARCH RESOLVER
   // ==========================================
   const resolveUsaIdentity = async (title: string, idCode?: string): Promise<void> => {
-    resolving.value = true;
-    resetIdentity();
+    if (!matchedIdCode.value) {
+      resolving.value = true;
+      resetIdentity();
+    }
 
     // 1. EXACT ID BYPASS (Fastest)
     if (idCode) {
       matchedIdCode.value = String(idCode).trim();
       matchedTitle.value = title;
-      resolving.value = false;
-      return;
-    }
+    } else {
+      const searchTitle = title.replace(/-/g, ' ');
 
-    const searchTitle = title.replace(/-/g, ' ');
+      try {
+        const nationalIndex = searchClient.initIndex('salary_benchmarks');
 
-    try {
-      const nationalIndex = searchClient.initIndex('salary_benchmarks');
+        // 2. TEXT SEARCH THE MASTER INDEX
+        // The USA doesn't have a separate job_titles dictionary in this setup, so we fuzzy search
+        // the main benchmark index to find the closest official SOC code.
+        const { hits } = await nationalIndex.search<any>(searchTitle, {
+          filters: `country:USA`,
+          queryLanguages: ['en'],
+          removeWordsIfNoResults: 'allOptional',
+          hitsPerPage: 1
+        });
 
-      // 2. TEXT SEARCH THE MASTER INDEX
-      // The USA doesn't have a separate job_titles dictionary in this setup, so we fuzzy search
-      // the main benchmark index to find the closest official SOC code.
-      const { hits } = await nationalIndex.search<any>(searchTitle, {
-        filters: `country:USA`,
-        queryLanguages: ['en'],
-        removeWordsIfNoResults: 'allOptional',
-        hitsPerPage: 1
-      });
-
-      if (hits.length > 0) {
-        matchedIdCode.value = hits[0].id_code;
-        matchedTitle.value = hits[0].title;
-      } else {
-        // Absolute worst case: Fallback to generic professional
-        isGenericFallback.value = true;
-        matchedTitle.value = 'Professional (Generic)';
+        if (hits.length > 0) {
+          matchedIdCode.value = hits[0].id_code;
+          matchedTitle.value = hits[0].title;
+        } else {
+          // Absolute worst case: Fallback to generic professional
+          isGenericFallback.value = true;
+          matchedTitle.value = 'Professional (Generic)';
+        }
+      } catch (error) {
+        console.error('Error resolving USA identity:', error);
+      } finally {
+        resolving.value = false;
       }
-    } catch (error) {
-      console.error('Error resolving USA identity:', error);
-    } finally {
-      resolving.value = false;
     }
+    resolving.value = false;
   };
 
   return {

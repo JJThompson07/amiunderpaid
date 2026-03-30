@@ -4,6 +4,7 @@ import type { BenchmarkResult } from './types'; // Adjust this path if types.ts 
 export interface McaUiData {
   score: number;
   label: string;
+  confidenceScore: number;
   percentileRank: number;
   comparisonPoints: string[];
 }
@@ -24,13 +25,13 @@ export const formatMcaScoreForUi = (
   const { score, breakdown } = result;
   const points: string[] = [];
 
-  // Variables available for Vue I18n to inject into your {tags}
+  // Variables available for Vue I18n
   const templateVars = {
     jobTitle,
     location: location || '',
-    micro: formatOrdinal(breakdown.microPercentile),
+    micro: breakdown.microPercentile !== null ? formatOrdinal(breakdown.microPercentile) : '',
     macro: formatOrdinal(breakdown.macroPercentile),
-    live: formatOrdinal(breakdown.livePercentile || 0),
+    live: breakdown.livePercentile !== null ? formatOrdinal(breakdown.livePercentile) : '',
     diff: Math.abs(Math.round((1 - breakdown.modifier) * 100))
   };
 
@@ -45,11 +46,15 @@ export const formatMcaScoreForUi = (
           : score >= 25
             ? 'mca.labels.below'
             : 'mca.labels.review';
-
   const label = t(labelKey);
 
   // 2. BUILD THE BULLET POINTS
-  points.push(t(`mca.points.micro.${getTier(breakdown.microPercentile, 75, 45)}`, templateVars));
+
+  // 👈 Only push the Micro (Government) point if we actually have the data!
+  if (breakdown.microPercentile !== null) {
+    points.push(t(`mca.points.micro.${getTier(breakdown.microPercentile, 75, 45)}`, templateVars));
+  }
+
   points.push(t(`mca.points.macro.${getTier(breakdown.macroPercentile, 75, 40)}`, templateVars));
 
   // Regional
@@ -63,10 +68,16 @@ export const formatMcaScoreForUi = (
     points.push(t(`mca.points.live.${getTier(breakdown.livePercentile, 60, 40)}`, templateVars));
   }
 
+  // 3. DETERMINE THE PRIMARY RANK (For the bottom analysis box)
+  // If we don't have Government data, use the Live Market rank!
+  const primaryRank =
+    breakdown.microPercentile !== null ? breakdown.microPercentile : breakdown.livePercentile;
+
   return {
     score,
     label,
-    percentileRank: breakdown.microPercentile,
+    confidenceScore: result.confidenceScore,
+    percentileRank: primaryRank || breakdown.macroPercentile,
     comparisonPoints: points
   };
 };

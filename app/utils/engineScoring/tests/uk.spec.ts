@@ -26,6 +26,7 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       50000,
       mockNationalData,
       mockNationalData,
+      'All',
       mockRegionalData,
       50000,
       40000,
@@ -43,6 +44,7 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       50000,
       mockNationalData,
       mockNationalData,
+      'All',
       mockRegionalData,
       null,
       null,
@@ -58,6 +60,7 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       50000,
       mockNationalData,
       null,
+      '',
       null,
       null,
       null,
@@ -65,7 +68,7 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       100
     );
     // Without Micro data, it rebalances. It should NOT return the generic 50 as actual weight.
-    expect(result.breakdown.microPercentile).toBe(50); // UI Fallback is 50
+    expect(result.breakdown.microPercentile).toBe(null); // UI Fallback is null
     expect(result.score).toBeDefined(); // Math succeeds via rebalancing
   });
 
@@ -74,6 +77,7 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       50000,
       mockNationalData,
       mockNationalData,
+      'All',
       mockRegionalData,
       null,
       null,
@@ -90,6 +94,7 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       50000,
       mockNationalData,
       null,
+      '',
       null,
       null,
       null,

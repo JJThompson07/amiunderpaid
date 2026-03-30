@@ -280,7 +280,6 @@ const location = computed(() =>
 );
 
 const userSalary = ref(Number(route.query.compare) || 0);
-const userPeriod = ref(route.query.period?.toString() || 'year');
 const searchTitle = ref((route.query.q as string) || displayTitle.value);
 
 const currencySymbol = computed(() => (country.value === 'USA' ? '$' : '£'));
@@ -292,6 +291,7 @@ const adzunaCategory = computed(() => jobsData.value?.results?.[0]?.category?.la
 // Prioritize mean, fallback to p50 (median), fallback to 0
 const marketAverage = computed(() => {
   const data = microResult.value?.microNationalData;
+  console.log(data, microResult.value);
   return data?.mean || data?.p50 || 0;
 });
 
@@ -320,6 +320,7 @@ const regionalData = computed<SalaryBenchmark | null>(() => {
 
 // Original UI Computeds seamlessly relying on the Bridge
 const hasGovernmentData = computed(() => {
+  console.log(marketAverage.value, isGenericFallback.value);
   if (marketAverage.value === 0) return false;
   if (isGenericFallback.value && displayTitle.value.toLowerCase() !== 'professional') return false;
   return true;
@@ -349,41 +350,51 @@ const isAdminVerified = computed(() => {
 });
 
 const McaScore = computed(() => {
-  if (!microResult.value?.microNationalData || !macroResult.value?.macroNationalData) {
+  // 1. Core requirement: We MUST have Macro Data (The baseline economy)
+  if (!macroResult.value?.macroNationalData) {
     return null;
   }
 
-  // 1. Run the math engine (This generates the exact object you saw in your console log!)
+  // 2. The Fix: We need at least ONE role-specific data source (Either Government OR Live)
+  const hasMicro = !!microResult.value?.microNationalData;
+  const hasLive = (histogramTotalCount.value || 0) > 0;
+
+  if (!hasMicro && !hasLive) {
+    return null;
+  }
+
+  // 3. Run the math engine
   const rawResult =
     country.value === 'UK'
       ? calculateUKBenchmarkScore(
           userSalary.value,
           macroResult.value.macroNationalData,
-          microResult.value.microNationalData,
-          microResult.value.microRegionalData,
+          microResult.value?.microNationalData || null,
+          microResult.value?.officialGroupTitle || '',
+          microResult.value?.microRegionalData || null,
           macroResult.value.regionalMedianAllRoles,
           macroResult.value.nationalMedianAllRoles,
           histogramBuckets.value,
-          histogramTotalCount.value
+          histogramTotalCount.value || 0
         )
       : calculateUSABenchmarkScore(
           userSalary.value,
           macroResult.value.macroNationalData,
-          macroResult.value.macroRegionalData,
-          microResult.value.microNationalData,
-          microResult.value.microRegionalData,
+          macroResult.value?.macroRegionalData || null,
+          microResult.value?.microNationalData || null,
+          microResult.value?.microRegionalData || null,
           macroResult.value.regionalMedianAllRoles,
           macroResult.value.nationalMedianAllRoles,
           histogramBuckets.value,
-          histogramTotalCount.value
+          histogramTotalCount.value || 0
         );
 
-  // 2. THE MISSING LINK: Pass the raw math into the formatter, and return the formatted version!
+  // 4. Pass the raw math into the formatter
   return formatMcaScoreForUi(
     rawResult,
-    matchedTitle.value,
+    matchedTitle.value || searchTitle.value, // Fallback to search title if DB match drops
     location.value,
-    t // Your Vue I18n translation function
+    t
   );
 });
 
@@ -391,8 +402,7 @@ const McaScore = computed(() => {
 // 🚀 ORCHESTRATOR: The 1-2 Punch Data Fetch
 // ==========================================
 const asyncDataKey = computed(
-  () =>
-    `salary-${country.value}-${location.value}-${searchTitle.value}-${userPeriod.value}-${govId.value}-${jobType.value}-${contractType.value}`
+  () => `salary-${country.value}-${location.value}-${searchTitle.value}`
 );
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -436,6 +446,8 @@ const { data, refresh, pending } = await useAsyncData(
     // Update Local Refs to hydrate UI Bridge
     macroResult.value = macro;
     microResult.value = micro;
+
+    console.log('microResult', microResult.value);
 
     return true;
   },
@@ -488,8 +500,6 @@ onMounted(() => {
     );
   }
 });
-
-watch(asyncDataKey, () => refresh());
 
 // ** watchers **
 watch(loading, (newLoading) => {
