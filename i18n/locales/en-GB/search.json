@@ -5,7 +5,7 @@
     "placeholder": "e.g. Software Engineer"
   },
   "location": {
-    "label": "City",
+    "label": "Region",
     "placeholder": "e.g. London"
   },
 
@@ -37,7 +37,7 @@
     "location": {
       "label": {
         "usa": "State",
-        "uk": "City"
+        "uk": "Region"
       },
       "placeholder": {
         "usa": "e.g. New York",
