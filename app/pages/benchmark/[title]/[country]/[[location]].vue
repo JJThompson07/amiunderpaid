@@ -96,19 +96,6 @@
           </div>
         </div>
 
-        <div class="flex flex-row gap-6">
-          <SectionUKComparison
-            v-show="country === 'UK' && regionalData && location"
-            class="flex-4"
-            :country="country"
-            :location="location"
-            :display-title="matchedTitle || displayTitle"
-            :market-average="marketAverage"
-            :user-salary="userSalary"
-            :regional-data="regionalData"
-            :year="marketDataYear" />
-        </div>
-
         <div v-if="jobListings.length" class="flex flex-col gap-2">
           <h3 class="relative text-xl md:text-2xl text-slate-900 font-bold sm:whitespace-nowrap">
             <a
@@ -199,7 +186,6 @@ const {
   marketAverage,
   marketLow,
   marketHigh,
-  regionalData,
   jobListings,
   isAdminVerified,
   histogramBuckets,

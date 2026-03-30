@@ -49,7 +49,11 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
     () => `${mode}-${country.value}-${location.value}-${searchTitle.value}`
   );
 
-  const { data: pageData, pending } = await useAsyncData(
+  const {
+    data: pageData,
+    pending,
+    refresh
+  } = await useAsyncData(
     asyncDataKey.value,
     async () => {
       await Promise.all([
@@ -214,6 +218,8 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
     showUserSelection.value = false;
     userSelected.value = true;
     searchConfirmed.value = true;
+
+    await refresh();
   };
 
   // 7. Shared Watchers
