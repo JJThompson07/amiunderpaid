@@ -33,7 +33,7 @@
       class="relative grid grid-cols-1 px-4 gap-6">
       <div class="relative mx-auto flex flex-col gap-6 w-full">
         <SectionScoreMca
-          v-if="McaScore"
+          v-if="McaScore && userSalary"
           :verdict="McaScore"
           :user-salary="userSalary"
           :currency-symbol="currencySymbol"
