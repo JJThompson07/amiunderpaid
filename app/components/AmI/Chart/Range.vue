@@ -13,7 +13,7 @@
         :class="
           mca
             ? [
-                'bg-[linear-gradient(to_right,var(--color-negative-400),var(--color-warning-300)40%60%,var(--color-neutral-400)60%80%,var(--color-positive-500))]'
+                'bg-[linear-gradient(to_right,var(--color-negative-400),var(--color-warning-300)_40%_60%,var(--color-neutral-400)_60%_80%,var(--color-positive-500))]'
               ]
             : ['bg-linear-to-r', from, via, to]
         "

@@ -83,7 +83,7 @@
 
       <div
         class="grid transition-all duration-300 ease-in-out"
-        :class="showBreakdown ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0'">
+        :class="showBreakdown ? 'grid-rows-[1fr] opacity-100 pt-4' : 'grid-rows-[0fr] opacity-0'">
         <div class="overflow-hidden px-4">
           <div class="flex flex-col gap-6 py-2 pr-1">
             <AmIChartRange
