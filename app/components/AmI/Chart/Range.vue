@@ -2,7 +2,7 @@
   <div class="w-full">
     <div class="flex justify-between items-end mb-2">
       <span class="text-sm font-bold text-slate-700 truncate mr-2">{{ label }}</span>
-      <span class="text-sm font-bold text-slate-900 shrink-0">{{
+      <span class="text-xs sm:text-sm font-bold text-slate-900 shrink-0">{{
         $t('mca.percentile', { percentile: formatOrdinal(Math.round(percentile)) })
       }}</span>
     </div>
@@ -24,7 +24,7 @@
         :style="{ left: `${clampedPercentile}%` }"></div>
     </div>
 
-    <p v-if="description" class="text-xs text-slate-500 font-medium mt-2 leading-tight">
+    <p v-if="description" class="text-2xs sm:text-xs text-slate-500 font-medium mt-2 leading-tight">
       {{ description }}
     </p>
   </div>
