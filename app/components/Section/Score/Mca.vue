@@ -5,7 +5,7 @@
     :class="cardClasses">
     <header class="flex items-start justify-between w-full gap-4">
       <div>
-        <h3 class="text-xl lg:text-2xl font-black text-slate-900">{{ $t('mca.header') }}</h3>
+        <h3 class="text-lg lg:text-2xl font-bold text-slate-900">{{ $t('mca.header') }}</h3>
       </div>
       <div
         class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap"
@@ -73,7 +73,7 @@
 
     <div class="w-full border-t border-slate-200/60 pt-4 mt-2">
       <button
-        class="flex items-center justify-between w-full text-left font-bold text-slate-700 hover:text-slate-900 transition-colors group"
+        class="flex items-center justify-between w-full text-left font-bold text-slate-700 hover:text-slate-900 transition-colors group cursor-pointer"
         @click="showBreakdown = !showBreakdown">
         <span>{{ showBreakdown ? $t('mca.toggle.hide') : $t('mca.toggle.show') }}</span>
         <ChevronDown
@@ -84,16 +84,28 @@
       <div
         class="grid transition-all duration-300 ease-in-out"
         :class="showBreakdown ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0'">
-        <div class="overflow-hidden">
-          <ul class="flex flex-col gap-4">
-            <li
-              v-for="(point, index) in verdict.comparisonPoints"
-              :key="index"
-              class="flex items-start gap-3 text-slate-600 leading-relaxed">
-              <div class="mt-2 w-1.5 h-1.5 rounded-full shrink-0" :class="dotClass"></div>
-              <span class="text-sm" v-html="point"></span>
-            </li>
-          </ul>
+        <div class="overflow-hidden px-4">
+          <div class="flex flex-col gap-6 py-2 pr-1">
+            <AmIChartRange
+              v-if="verdict.livePercentile !== null"
+              :percentile="verdict.livePercentile"
+              mca
+              :label="$t('mca.breakdowns.live.label')"
+              :description="$t('mca.breakdowns.live.description')" />
+
+            <AmIChartRange
+              v-if="verdict.microPercentile !== null"
+              :percentile="verdict.microPercentile"
+              mca
+              :label="$t('mca.breakdowns.micro.label')"
+              :description="$t('mca.breakdowns.micro.description')" />
+
+            <AmIChartRange
+              :percentile="verdict.macroPercentile"
+              mca
+              :label="$t('mca.breakdowns.macro.label')"
+              :description="$t('mca.breakdowns.macro.description')" />
+          </div>
         </div>
       </div>
     </div>
@@ -161,14 +173,6 @@ const badgeClasses = computed(() => {
   if (score >= 60) return 'bg-neutral-200/50 text-neutral-700';
   if (score >= 40) return 'bg-warning-200/50 text-warning-700';
   return 'bg-negative-200/50 text-negative-700';
-});
-
-const dotClass = computed(() => {
-  const score = props.verdict?.score || 0;
-  if (score >= 80) return 'bg-positive-500';
-  if (score >= 60) return 'bg-neutral-400';
-  if (score >= 40) return 'bg-warning-500';
-  return 'bg-negative-500';
 });
 
 // ==========================================

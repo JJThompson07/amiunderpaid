@@ -18,25 +18,19 @@
     "below": "Below Market",
     "review": "Action Required"
   },
-  "points": {
+  "percentile": "{percentile} Percentile",
+  "breakdowns": {
+    "live": {
+      "label": "Live Market Demand",
+      "description": "How you compare to current live job listings in the market"
+    },
     "micro": {
-      "high": "Your base pay sits in the <strong>{micro} percentile</strong> for {jobTitle} roles, placing you in the top tier of earners among your direct peers nationwide.",
-      "mid": "Your base pay sits in the <strong>{micro} percentile</strong> for {jobTitle} roles, aligning closely with the median market rate.",
-      "low": "Your base pay sits in the <strong>{micro} percentile</strong> for {jobTitle} roles, indicating you are currently compensated below the average market rate for your peers."
+      "label": "Role Benchmark",
+      "description": "How you compare to official government data for direct peers"
     },
     "macro": {
-      "high": "Compared to the wider US job market across all industries, your salary is highly competitive, ranking in the <strong>{macro} percentile</strong>.",
-      "mid": "When mapped against all US occupations nationwide, your compensation sits comfortably in the <strong>{macro} percentile</strong>.",
-      "low": "Compared to the broader national average across all US roles, your salary ranks in the <strong>{macro} percentile</strong>."
-    },
-    "regional": {
-      "higher": "Adjusted for <strong>{location}</strong>, local market baselines are roughly <strong>{diff}% higher</strong> than the national average, which is factored into your score.",
-      "lower": "Adjusted for <strong>{location}</strong>, local market baselines are roughly <strong>{diff}% lower</strong> than the national average, meaning your salary stretches further locally."
-    },
-    "live": {
-      "high": "Live market data from Adzuna shows your compensation is strong, beating the <strong>{live} percentile</strong> of currently advertised US roles.",
-      "mid": "Current job listings show active demand, and your pay aligns evenly with the <strong>{live} percentile</strong> of live offers.",
-      "low": "Live market data indicates high demand for this role, with many current listings offering higher starting salaries. You map to the <strong>{live} percentile</strong> of live offers."
+      "label": "National Economy Baseline",
+      "description": "How you compare to the broader national average across all occupations"
     }
   }
 }

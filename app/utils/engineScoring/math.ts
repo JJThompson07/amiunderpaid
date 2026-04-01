@@ -23,9 +23,9 @@ export const LIVE_CONFIDENCE_THRESHOLDS = {
 export const WEIGHTS = {
   // 🇬🇧 UK WEIGHT SETS
   UK: {
-    HIGH_CONFIDENCE: { MICRO: 0.25, MACRO: 0.3, LIVE: 0.45 }, // > 150 jobs
-    TARGET: { MICRO: 0.3, MACRO: 0.35, LIVE: 0.35 }, // 50-150 jobs
-    LOW_CONFIDENCE: { MICRO: 0.4, MACRO: 0.45, LIVE: 0.15 } // < 50 jobs
+    HIGH_CONFIDENCE: { MICRO: 0.35, MACRO: 0.2, LIVE: 0.45 }, // > 150 jobs
+    TARGET: { MICRO: 0.35, MACRO: 0.3, LIVE: 0.35 }, // 50-150 jobs
+    LOW_CONFIDENCE: { MICRO: 0.5, MACRO: 0.35, LIVE: 0.15 } // < 50 jobs
   },
   // 🇺🇸 USA WEIGHT SETS
   USA: {
