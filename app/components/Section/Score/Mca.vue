@@ -25,7 +25,7 @@
               fill="transparent"
               stroke="currentColor"
               stroke-width="8"
-              class="text-slate-200/50" />
+              class="text-slate-300/50" />
             <circle
               cx="50"
               cy="50"
@@ -65,7 +65,7 @@
           >
         </div>
 
-        <p class="text-sm text-slate-600 leading-relaxed font-medium mt-1">
+        <p class="text-xs text-slate-600 leading-relaxed font-medium">
           {{ confidenceDescription }}
         </p>
       </div>
