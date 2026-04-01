@@ -25,7 +25,7 @@
               fill="transparent"
               stroke="currentColor"
               stroke-width="8"
-              class="text-slate-200/50" />
+              class="text-slate-300/50" />
             <circle
               cx="50"
               cy="50"
