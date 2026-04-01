@@ -65,7 +65,7 @@
           >
         </div>
 
-        <p class="text-sm text-slate-600 leading-relaxed font-medium mt-1">
+        <p class="text-xs text-slate-600 leading-relaxed font-medium">
           {{ confidenceDescription }}
         </p>
       </div>
