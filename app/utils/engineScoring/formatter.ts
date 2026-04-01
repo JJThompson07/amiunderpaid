@@ -7,6 +7,10 @@ export interface McaUiData {
   confidenceScore: number;
   percentileRank: number;
   comparisonPoints: string[];
+  microPercentile: number | null;
+  macroPercentile: number;
+  livePercentile: number | null;
+  modifier: number;
 }
 
 // Helper: Converts a percentile into a JSON key ('high', 'mid', or 'low')
@@ -78,7 +82,11 @@ export const formatMcaScoreForUi = (
     label,
     confidenceScore: result.confidenceScore,
     percentileRank: primaryRank || breakdown.macroPercentile,
-    comparisonPoints: points
+    comparisonPoints: points,
+    microPercentile: breakdown.microPercentile,
+    macroPercentile: breakdown.macroPercentile,
+    livePercentile: breakdown.livePercentile,
+    modifier: breakdown.modifier
   };
 };
 
