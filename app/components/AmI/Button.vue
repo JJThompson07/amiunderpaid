@@ -11,7 +11,8 @@
     ]"
     role="button"
     :disabled="disabled"
-    :title="title">
+    :title="title"
+    @click="handleClick">
     <section class="relative z-10 flex h-full flex-col rounded-md">
       <slot />
     </section>
@@ -57,6 +58,8 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['click']);
+
 // ** Data & Refs **
 const button = ref<HTMLElement | null>(null);
 const isHovered = useElementHover(button);
@@ -70,6 +73,16 @@ const backgroundColour = computed<string>(() => {
   }
   return isHovered.value ? props.animationColour : props.bgColour;
 });
+
+const handleClick = (event: Event) => {
+  // Completely block the click event from firing if disabled
+  if (props.disabled) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  emit('click', event);
+};
 </script>
 
 <style scoped></style>

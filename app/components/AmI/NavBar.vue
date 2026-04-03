@@ -111,6 +111,11 @@ const adminLinks = [
     to: '/admin/job-groups',
     label: $t('navbar.job-groups'),
     mobileOnly: false
+  },
+  {
+    to: '/admin/search-logs',
+    label: $t('navbar.search-logs'),
+    mobileOnly: false
   }
 ];
 
