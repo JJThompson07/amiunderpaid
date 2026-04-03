@@ -178,6 +178,8 @@ interface JobGroup {
   titles: string[];
 }
 
+const firebaseAuth = useFirebaseAuth();
+
 const activeCountry = ref<'UK' | 'USA'>('UK');
 const isProcessing = ref<string | null>(null);
 const isMigrating = ref(false);
@@ -244,9 +246,13 @@ const addTitle = async (idCode: string) => {
 
   isProcessing.value = idCode;
   try {
+    const token = await firebaseAuth?.currentUser?.getIdToken();
     // 1. Save to Firestore
     await $fetch('/api/admin/job-groups/title', {
       method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
       body: { country: activeCountry.value, idCode, newTitle }
     });
     newInputs[idCode] = '';
@@ -255,6 +261,9 @@ const addTitle = async (idCode: string) => {
     // 2. SILENT ALGOLIA SYNC
     await $fetch('/api/admin/job-groups/migrate', {
       method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
       body: { country: activeCountry.value }
     });
   } catch {
@@ -270,9 +279,13 @@ const removeTitle = async (idCode: string, titleToRemove: string) => {
 
   isProcessing.value = idCode;
   try {
+    const token = await fireebuth?.currentUser?.getIdToken();
     // 1. Remove from Firestore
     await $fetch('/api/admin/job-groups/title', {
       method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
       body: { country: activeCountry.value, idCode, titleToRemove }
     });
     await refresh();
@@ -280,6 +293,9 @@ const removeTitle = async (idCode: string, titleToRemove: string) => {
     // 2. SILENT ALGOLIA SYNC
     await $fetch('/api/admin/job-groups/migrate', {
       method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
       body: { country: activeCountry.value }
     });
   } catch {
@@ -294,8 +310,12 @@ const runMigration = async () => {
   if (!confirm(`Are you sure you want to migrate ${activeCountry.value} data?`)) return;
   isMigrating.value = true;
   try {
+    const token = await fireebuth?.currentUser?.getIdToken();
     const res = await $fetch('/api/admin/job-groups/migrate', {
       method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
       body: { country: activeCountry.value }
     });
     await refresh();

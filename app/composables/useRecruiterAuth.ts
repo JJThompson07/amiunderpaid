@@ -102,8 +102,11 @@ export const useRecruiterAuth = () => {
       const sessionCookie = useCookie('__session');
       sessionCookie.value = null;
 
-      // Give nuxt-vuefire time to send its DELETE request to the server
+      // Give the background request time to destroy the HttpOnly cookie
       await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Kick them out!
+      await navigateTo('/recruiter/login');
     }
   };
 

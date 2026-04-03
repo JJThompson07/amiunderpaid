@@ -83,6 +83,7 @@ definePageMeta({
   middleware: 'admin'
 });
 
+const firebaseAuth = useFirebaseAuth();
 const isProcessing = ref<string | null>(null);
 
 // --- Define AmITable Columns ---
@@ -106,8 +107,12 @@ const suggestions = computed<Suggestion[]>(() => {
 const approveItem = async (item: Suggestion) => {
   isProcessing.value = item.id;
   try {
+    const token = await firebaseAuth?.currentUser?.getIdToken();
     await $fetch('/api/admin/approve-suggestion', {
       method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
       body: {
         suggestionId: item.id,
         searchTerm: item.search_term,
@@ -130,9 +135,14 @@ const approveItem = async (item: Suggestion) => {
 const rejectItem = async (id: string) => {
   isProcessing.value = id;
   try {
+    const token = await firebaseAuth?.currentUser?.getIdToken();
+
     await $fetch('/api/admin/reject-suggestion', {
       method: 'DELETE',
-      body: { suggestionId: id }
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      query: { suggestionId: id }
     });
     await refresh();
   } catch (error) {

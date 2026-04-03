@@ -2,7 +2,7 @@ export default defineEventHandler(async (event) => {
   await verifyAdmin(event);
 
   const query = getQuery(event);
-  const suggestionId = query.id as string;
+  const suggestionId = query.suggestionId as string;
 
   if (!suggestionId) {
     throw createError({ statusCode: 400, statusMessage: 'Suggestion ID is required' });

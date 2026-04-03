@@ -124,6 +124,12 @@ export default defineNuxtConfig({
     adzunaAppKey: process.env.ADZUNA_APP_KEY,
     firebaseServiceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
 
+    vuefire: {
+      options: {
+        serviceAccount: process.env.FIREBASE_SERVICE_ACCOUNT
+      }
+    },
+
     public: {
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
       adminAccessKey: process.env.NUXT_ADMIN_ACCESS_KEY,
