@@ -279,7 +279,7 @@ const removeTitle = async (idCode: string, titleToRemove: string) => {
 
   isProcessing.value = idCode;
   try {
-    const token = await fireebuth?.currentUser?.getIdToken();
+    const token = await firebaseAuth?.currentUser?.getIdToken();
     // 1. Remove from Firestore
     await $fetch('/api/admin/job-groups/title', {
       method: 'DELETE',
@@ -310,7 +310,7 @@ const runMigration = async () => {
   if (!confirm(`Are you sure you want to migrate ${activeCountry.value} data?`)) return;
   isMigrating.value = true;
   try {
-    const token = await fireebuth?.currentUser?.getIdToken();
+    const token = await firebaseAuth?.currentUser?.getIdToken();
     const res = await $fetch('/api/admin/job-groups/migrate', {
       method: 'POST',
       headers: {
