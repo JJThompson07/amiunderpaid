@@ -3,34 +3,30 @@
     <div class="grid md:grid-cols-2 gap-12 text-slate-600">
       <div>
         <h3 class="text-xl font-bold text-secondary-900 mb-4">Why check your market rate?</h3>
-        <p class="leading-relaxed">
-          <i18n-t
-            keypath="landing.why.body"
-            tag="p"
-            class="leading-relaxed"
-            :values="{ year: new Date().getFullYear() }">
-            <template #benchmarks>
-              <strong>{{ $t('landing.why.benchmarks_bold') }}</strong>
-            </template>
-          </i18n-t>
-        </p>
+        <i18n-t
+          keypath="landing.why.body"
+          tag="p"
+          class="leading-relaxed"
+          :values="{ year: new Date().getFullYear() }">
+          <template #benchmarks>
+            <strong>{{ $t('landing.why.benchmarks_bold') }}</strong>
+          </template>
+        </i18n-t>
       </div>
       <div>
         <h3 class="text-xl font-bold text-secondary-900 mb-4">
           {{ $t('landing.data.heading') }}
         </h3>
-        <p class="leading-relaxed">
-          <i18n-t keypath="landing.data.body" tag="p" class="leading-relaxed">
-            <template #comparison>
-              <strong>{{ $t('landing.data.comparison_bold') }}</strong>
-            </template>
-            <template #bureau>
-              <strong>{{
-                isUSA ? $t('landing.data.bureau.usa') : $t('landing.data.bureau.uk')
-              }}</strong>
-            </template>
-          </i18n-t>
-        </p>
+        <i18n-t keypath="landing.data.body" tag="p" class="leading-relaxed">
+          <template #comparison>
+            <strong>{{ $t('landing.data.comparison_bold') }}</strong>
+          </template>
+          <template #bureau>
+            <strong>{{
+              isUSA ? $t('landing.data.bureau.usa') : $t('landing.data.bureau.uk')
+            }}</strong>
+          </template>
+        </i18n-t>
       </div>
     </div>
   </section>
@@ -44,5 +40,3 @@ defineProps({
   }
 });
 </script>
-
-<style scoped></style>

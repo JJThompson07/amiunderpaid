@@ -201,7 +201,7 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
         body: {
           title: searchTitle.value,
           location: location.value,
-          country: country.value === 'USA' ? 'us' : 'uk',
+          country: country.value === 'USA' ? 'USA' : 'UK',
           gov_id_code: exactId,
           gov_title: match.title,
           is_automatic: false,
