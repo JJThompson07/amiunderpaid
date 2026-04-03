@@ -246,7 +246,7 @@ const handleSearch = async () => {
         loading.value = false;
         return; // Stop and wait for user to pick from the modal
 
-      case 'unknown':
+      case 'unmapped':
       case 'error':
         // Proceed without ID to allow fallback UI on the results page
         break;

@@ -9,7 +9,8 @@ export default defineEventHandler(async (event) => {
   if (!cleanSearchTerm || !body.gov_id_code) return { success: false };
 
   // 1. Grab the country from the request body
-  const countryCode = body.country === 'us' ? 'US' : 'GB';
+  const countryCode =
+    body.country === 'us' || body.country === 'US' || body.country === 'USA' ? 'USA' : 'UK';
 
   try {
     const suggestionsRef = db.collection('job_suggestions');

@@ -201,7 +201,7 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
         body: {
           title: searchTitle.value,
           location: location.value,
-          country: country.value === 'USA' ? 'us' : 'gb',
+          country: country.value === 'USA' ? 'us' : 'uk',
           gov_id_code: exactId,
           gov_title: match.title,
           is_automatic: false,
@@ -235,7 +235,7 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
           body: {
             title: searchTitle.value,
             location: location.value,
-            country: country.value === 'USA' ? 'us' : 'gb',
+            country: country.value === 'USA' ? 'us' : 'uk',
             gov_id_code: marketData.matchedIdCode.value,
             gov_title: marketData.matchedTitle.value,
             is_automatic: true,

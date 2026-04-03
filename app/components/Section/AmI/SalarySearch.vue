@@ -212,7 +212,7 @@ const handleSearch = async () => {
         loading.value = false;
         return;
 
-      case 'unknown':
+      case 'unmapped':
       case 'error':
         // No match found; we proceed with exactGovId as null
         // This lets the results page try a raw keyword search
