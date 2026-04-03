@@ -11,7 +11,6 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
   const govId = ref<string>(route.query.gov_id as string);
   const jobType = ref<string>((route.query.schedule as string) || 'full-time');
   const contractType = ref<string>((route.query.contract as string) || 'permanent');
-  const showAmbiguityModal = ref<boolean>(false);
   const searchConfirmed = ref<boolean>(
     (import.meta.client ? history.state?.confirmed : false) || !!govId.value
   );
@@ -214,7 +213,6 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
       /* Silent fail */
     }
 
-    showAmbiguityModal.value = false;
     showUserSelection.value = false;
     userSelected.value = true;
     searchConfirmed.value = true;
@@ -267,10 +265,6 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
     }
   });
 
-  watch(marketData.ambiguousMatches, (matches) => {
-    if (matches.length > 1 && !searchConfirmed.value) showAmbiguityModal.value = true;
-  });
-
   watch(userSalary, (newSalary) => {
     if (newSalary > 0) {
       navigateTo({ query: { ...route.query, compare: newSalary.toString() } }, { replace: true });
@@ -286,7 +280,6 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
     pending,
     adzunaLoading: adzuna.loading,
     resolving: marketData.resolving,
-    showAmbiguityModal,
     showUserSelection,
     userSalary,
     // Data
@@ -319,7 +312,6 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
     histogramTotalCount: adzuna.histogramTotalCount,
     meanSalary: adzuna.meanSalary,
     jobsCount: adzuna.jobsCount,
-    ambiguousMatches: marketData.ambiguousMatches,
     // Methods
     handleAmbiguitySelect,
     isUnderpaidAdzuna: adzuna.isUnderpaid

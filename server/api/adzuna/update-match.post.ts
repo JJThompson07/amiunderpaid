@@ -1,88 +1,45 @@
-import { FieldValue } from 'firebase-admin/firestore';
+// server/api/adzuna/update-match.post.ts
+import { getFirestore } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  const {
-    title,
-    location,
-    country,
-    gov_id_code,
-    is_automatic,
-    gov_title,
-    job_type,
-    contract_type
-  } = body;
+  const db = getFirestore();
 
-  if (!title || !gov_id_code) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Missing required fields for suggestion.'
-    });
-  }
+  const cleanSearchTerm = (body.title || '').trim().toLowerCase();
+  if (!cleanSearchTerm || !body.gov_id_code) return { success: false };
 
-  // Sanitize and format inputs securely
-  const titleStr = String(title).trim().toLowerCase();
-  const locationStr = location ? String(location).trim().toLowerCase() : '';
-  const countryCode = String(country || 'gb').toLowerCase();
-  const sanitizedGovId = String(gov_id_code).trim();
-  const sanitizedGovTitle = gov_title ? String(gov_title).trim() : 'Unknown Role';
-  const jobType = job_type ? String(job_type).toLowerCase() : 'full-time';
-  const contractType = contract_type ? String(contract_type).toLowerCase() : 'permanent';
-
-  const ipAddress = getRequestHeader(event, 'x-forwarded-for') || 'unknown';
-
-  const db = useAdminFirestore();
-  const suggestionsRef = db.collection('user_match_suggestions');
+  // 1. Grab the country from the request body
+  const countryCode = body.country === 'us' ? 'US' : 'GB';
 
   try {
-    // 1. DEDUPLICATION: Check if this exact Title + Gov ID combo already exists in the queue
-    const existingSnap = await suggestionsRef
-      .where('title', '==', titleStr)
-      .where('suggested_gov_id', '==', sanitizedGovId)
-      .where('country', '==', countryCode)
-      .limit(1)
+    const suggestionsRef = db.collection('job_suggestions');
+
+    // 2. Include country in the duplicate check!
+    const existingQuery = await suggestionsRef
+      .where('search_term', '==', cleanSearchTerm)
+      .where('target_id_code', '==', body.gov_id_code)
+      .where('country', '==', countryCode) // 👈 Added country check
+      .where('status', '==', 'pending')
       .get();
 
-    if (!existingSnap.empty) {
-      // 2. SPAM PREVENTION: It already exists! Just bump the vote count.
-      const existingDoc = existingSnap.docs[0];
-
-      if (existingDoc) {
-        await existingDoc.ref.update({
-          votes: FieldValue.increment(1),
-          last_suggested_at: new Date(),
-          // If a human manually clicked it (is_automatic = false), override the system flag so you know it was verified
-          is_automatic_system_save: is_automatic
-            ? existingDoc.data().is_automatic_system_save
-            : false
-        });
-
-        return { success: true, message: 'Suggestion vote incremented!' };
-      }
+    if (!existingQuery.empty && existingQuery.docs[0]) {
+      const docId = existingQuery.docs[0].id;
+      const currentCount = existingQuery.docs[0].data().count || 1;
+      await suggestionsRef.doc(docId).update({ count: currentCount + 1 });
+    } else {
+      await suggestionsRef.add({
+        search_term: cleanSearchTerm,
+        target_id_code: body.gov_id_code,
+        target_group_name: body.gov_title,
+        country: countryCode, // 👈 Save the country to the queue!
+        count: 1,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      });
     }
 
-    // 3. NEW SUGGESTION: Only create a new document if we've never seen this combo before
-    await suggestionsRef.add({
-      title: titleStr,
-      location: locationStr,
-      country: countryCode,
-      suggested_gov_id: sanitizedGovId,
-      suggested_gov_title: sanitizedGovTitle,
-      is_automatic_system_save: !!is_automatic,
-      timestamp: new Date(),
-      last_suggested_at: new Date(),
-      votes: 1, // Start the counter
-      ip_address: ipAddress,
-      job_type: jobType,
-      contract_type: contractType
-    });
-
-    return { success: true, message: 'New match suggestion logged safely!' };
-  } catch (e: any) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Failed to log suggestion',
-      data: e.message
-    });
+    return { success: true };
+  } catch {
+    return { success: false };
   }
 });

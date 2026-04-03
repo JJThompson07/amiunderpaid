@@ -180,13 +180,6 @@
       </div>
     </div>
 
-    <LazyModalAmbiguity
-      v-if="showAmbiguityModal"
-      :title="displayTitle"
-      :matches="ambiguousMatches"
-      @select="handleAmbiguitySelect"
-      @close="showAmbiguityModal = false" />
-
     <ClientOnly>
       <AmILoader v-if="pending || adzunaLoading" :message="$t('common.searching')" />
     </ClientOnly>
@@ -206,7 +199,6 @@ const {
   pending,
   adzunaLoading,
   resolving,
-  showAmbiguityModal,
   showUserSelection,
   userSalary,
   displayTitle,
@@ -236,7 +228,6 @@ const {
   histogramTotalCount,
   meanSalary,
   jobsCount,
-  ambiguousMatches,
   handleAmbiguitySelect,
   isUnderpaidAdzuna
 } = await useLocationEngine('salary');

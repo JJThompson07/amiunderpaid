@@ -19,8 +19,8 @@
     "average": "AVG"
   },
   "gov-user-selection": {
-    "title": "Refine Government Match",
-    "content": "We found live job data for {category}, but couldn't automatically match a government benchmark. Please search for the most relevant government category below:",
+    "title": "No Official Government Data",
+    "content": "This is a highly specialized role without a direct government classification. The insights provided are calculated in real-time from active market listings in the {category} sector. To view official benchmarks, please search for the closest government category below:",
     "search": "Search government categories",
     "search-placeholder": "e.g. Engineering professionals"
   },

@@ -11,7 +11,9 @@ export default defineEventHandler(async (event) => {
   const db = useAdminFirestore();
 
   try {
-    await db.collection('user_match_suggestions').doc(suggestionId).delete();
+    // 👇 Updated to target the new 'job_suggestions' collection
+    await db.collection('job_suggestions').doc(suggestionId).delete();
+
     return { success: true, message: 'Suggestion rejected and deleted.' };
   } catch (e: any) {
     throw createError({

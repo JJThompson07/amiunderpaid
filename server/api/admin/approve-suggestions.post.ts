@@ -1,60 +1,35 @@
+// server/api/admin/approve-suggestion.post.ts
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+
 export default defineEventHandler(async (event) => {
-  // Security check
-  await verifyAdmin(event);
-
   const body = await readBody(event);
-  const {
-    suggestionId,
-    title,
-    location,
-    country,
-    gov_id_code,
-    limit = 10,
-    job_type = 'full-time',
-    contract_type = 'permanent'
-  } = body;
+  // 1. Extract the country
+  const { suggestionId, searchTerm, targetIdCode, targetGroupName, country } = body;
 
-  if (!suggestionId || !title || !gov_id_code) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Missing required fields to approve suggestion.'
-    });
-  }
-
-  const db = useAdminFirestore();
+  const db = getFirestore();
 
   try {
-    // 1. Re-generate the exact cache key that this job title uses
-    const titleStr = String(title);
-    const countryCode = String(country || 'gb').toLowerCase();
-    const locationStr = location ? String(location) : '';
-    const jobType = String(job_type).toLowerCase();
-    const contractType = String(contract_type).toLowerCase();
+    // 2. Dynamically route to the correct Master Dictionary
+    const targetCollection = country === 'US' ? 'us_job_groups' : 'uk_job_groups';
 
-    const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${jobType}-${contractType}-${limit}`;
-    const cacheRef = db.collection('adzuna_jobs_cache').doc(cacheKey);
+    const groupRef = db.collection(targetCollection).doc(targetIdCode);
 
-    // 2. Write the approved ID to the live cache
-    await cacheRef.set(
+    await groupRef.set(
       {
-        gov_id_code: String(gov_id_code),
-        is_admin_verified: true, // Flag it as officially verified by you
-        updatedAt: new Date(),
-        job_type: jobType,
-        contract_type: contractType
+        group_name: targetGroupName,
+        titles: FieldValue.arrayUnion(searchTerm)
       },
-      { merge: true } // Merge ensures we don't accidentally overwrite the job listing data
+      { merge: true }
     );
 
-    // 3. Delete the suggestion from the queue so it doesn't show up in your dashboard anymore
-    await db.collection('user_match_suggestions').doc(suggestionId).delete();
-
-    return { success: true, message: 'Suggestion approved and applied to live cache!' };
-  } catch (e: any) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Failed to approve suggestion',
-      data: e.message
+    // Mark as approved in the queue
+    await db.collection('job_suggestions').doc(suggestionId).update({
+      status: 'approved'
     });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error approving suggestion:', error);
+    throw createError({ statusCode: 500, message: 'Approval failed' });
   }
 });
