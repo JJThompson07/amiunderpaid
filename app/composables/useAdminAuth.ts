@@ -49,12 +49,15 @@ export const useAdminAuth = () => {
     if (auth) {
       await signOut(auth);
 
-      // FIX: Explicitly clear the stale cookie from the browser
+      // Explicitly clear the stale cookie from the browser
       const sessionCookie = useCookie('__session');
       sessionCookie.value = null;
 
-      // FIX: Give nuxt-vuefire time to send its DELETE request to the server
+      // Give the background request time to destroy the HttpOnly cookie
       await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Kick them out!
+      await navigateTo('/');
     }
   };
 

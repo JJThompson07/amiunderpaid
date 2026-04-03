@@ -130,6 +130,7 @@ definePageMeta({
 });
 
 const adminFetch = useAdminFetch();
+const firebaseAuth = useFirebaseAuth();
 
 // --- Cache Cleanup Logic ---
 const isCleaning = ref(false);
@@ -147,8 +148,12 @@ const runCleanup = async () => {
   cleanupStats.value = null;
 
   try {
+    const token = await firebaseAuth?.currentUser?.getIdToken();
     // 1. Updated to useAdminFetch
-    const res: any = await adminFetch('/api/admin/clean-cache', { method: 'POST' });
+    const res: any = await adminFetch('/api/admin/clean-cache', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    });
     cleanupStats.value = res.stats;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to clean cache.';
@@ -174,9 +179,13 @@ const suggestions = computed(() => suggestionsData.value?.suggestions || []);
 
 const approveMatch = async (suggestion: any) => {
   try {
+    const token = await firebaseAuth?.currentUser?.getIdToken();
     // 3. Updated to useAdminFetch
     await adminFetch('/api/admin/approve-suggestions', {
       method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
       body: {
         suggestionId: suggestion.id,
         title: suggestion.title,
@@ -199,9 +208,13 @@ const rejectMatch = async (id: string) => {
   if (!confirm('Are you sure you want to reject and delete this suggestion?')) return;
 
   try {
+    const token = await firebaseAuth?.currentUser?.getIdToken();
     // 4. Updated to useAdminFetch
     await adminFetch('/api/admin/reject-suggestion', {
       method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
       query: { id }
     });
     refreshSuggestions();

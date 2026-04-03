@@ -6,7 +6,7 @@
   },
   "ambiguity": {
     "title": "Which role fits best?",
-    "content": "We found multiple groups for {title}. Select the one that matches your job.",
+    "content": "We could not find an exact government match for {title}. Select the one that matches your job.",
     "use-default": "Use Default Match"
   }
 }

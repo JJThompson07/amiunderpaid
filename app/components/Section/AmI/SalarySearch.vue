@@ -104,6 +104,14 @@
         </div>
       </form>
     </div>
+
+    <LazyModalAmbiguity
+      v-if="showAmbiguityModal"
+      :search-term="cleanSearchTitle"
+      :country="currentCountry"
+      :options="ambiguityOptions"
+      @close="showAmbiguityModal = false"
+      @resolve="onAmbiguityResolved" />
   </div>
 </template>
 
@@ -132,45 +140,106 @@ const contractOptions = [
 const schedule = ref('full-time');
 const contract = ref('permanent');
 
-const title = ref('');
-const location = ref('');
-const salary = ref('');
-const period = ref('year');
-const loading = ref(false);
+const title = ref<string>('');
+const location = ref<string>('');
+const salary = ref<number>(0);
+const period = ref<string>('year');
+const loading = ref<boolean>(false);
 const showCalc = ref<boolean>(false);
 
-// Consume our new Composable to handle Algolia fetching
+// --- NEW DICTIONARY & MODAL STATE ---
+const { resolveJobId } = useJobDictionary();
+const showAmbiguityModal = ref<boolean>(false);
+const ambiguityOptions = ref<any[]>([]);
+const cleanSearchTitle = ref<string>('');
+
 const { fetching, titleOptions, locationOptions, labelToIdMap, fetchTitles, fetchLocations } =
   useJobAutocomplete(currentCountry, location, title);
 
 const currencySymbol = computed(() => (currentCountry.value === 'USA' ? '$' : '£'));
 
-// ** Period Options Logic **
 const periodOptions = computed(() => {
   const opts = [{ label: '/ yr', value: 'year' }];
   return opts;
 });
 
+/**
+ * Main Search Handler
+ * 1. Resolves the Job Title to a Government SOC Code
+ * 2. Cleans the title for third-party API (Adzuna) compatibility
+ * 3. Navigates or shows Ambiguity Modal if needed
+ */
 const handleSearch = async () => {
   loading.value = true;
 
-  // 1. Get exact ID if they picked an option from the autocomplete dropdown
-  const exactGovId = labelToIdMap.value[title.value];
+  // STEP 1: Check if the user picked a specific result from the Autocomplete dropdown
+  // labelToIdMap maps the "Job Title (Group)" string to the SOC ID
+  let exactGovId = labelToIdMap.value[title.value];
 
-  // 2. Remove parent group in parentheses to give Adzuna a clean job title
-  let cleanTitle = title.value.replace(/\s*\(.*\)$/, '');
+  // STEP 2: Clean the title for search
+  // Remove any parenthetical groups (e.g., "Developer (Programmers)" -> "Developer")
+  let cleaned = title.value.replace(/\s*\(.*\)$/, '');
 
-  // if the government title is being used we want to change this order as the government uses a bad order for searching
+  // If the title came from an official government list, it's often "Lastname, Firstname"
+  // We reverse this so Adzuna/Job boards can search it naturally
   if (exactGovId) {
-    cleanTitle = cleanTitle
+    cleaned = cleaned
       .split(',')
       .map((word) => word.trim())
       .reverse()
       .join(' ');
   }
 
-  // Uses the fixed global slugify!
-  const titleSlug = slugify(cleanTitle);
+  // Store this for the Ambiguity Modal and Analytics
+  cleanSearchTitle.value = cleaned;
+
+  // STEP 3: Dictionary Resolution (Only if they didn't pick an autocomplete item)
+  if (!exactGovId) {
+    // resolveJobId handles Firestore exact matches and Algolia fuzzy fallbacks
+    const result = await resolveJobId(cleanSearchTitle.value);
+
+    switch (result.type) {
+      case 'exact':
+        // A hand-curated synonym was found 1:1 in Firestore
+        exactGovId = result.id;
+        break;
+
+      case 'ambiguous':
+        // Multiple matches found OR fuzzy Algolia suggestions available
+        // Stop navigation and show the modal
+        ambiguityOptions.value = result.options;
+        showAmbiguityModal.value = true;
+        loading.value = false;
+        return;
+
+      case 'unmapped':
+      case 'error':
+        // No match found; we proceed with exactGovId as null
+        // This lets the results page try a raw keyword search
+        break;
+    }
+  }
+
+  // STEP 4: Final Execution
+  // If we reach here, we either have an ID or are searching by raw title
+  executeNavigation(cleanSearchTitle.value, exactGovId);
+};
+
+// ==========================================
+// 2. THE MODAL CALLBACK
+// ==========================================
+// When the user clicks an option in the Modal, it emits the resolved SOC Code
+const onAmbiguityResolved = (resolvedGovId: string) => {
+  showAmbiguityModal.value = false;
+  loading.value = true; // Turn button loader back on
+  executeNavigation(cleanSearchTitle.value, resolvedGovId);
+};
+
+// ==========================================
+// 3. THE ROUTER
+// ==========================================
+const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
+  const titleSlug = slugify(finalTitle);
   const countrySlug = currentCountry.value.toLowerCase();
   const locationSlug = location.value ? slugify(location.value) : '';
 
@@ -179,19 +248,18 @@ const handleSearch = async () => {
     : `/salary/${titleSlug}/${countrySlug}`;
 
   trackSearch(
-    cleanTitle.trim(),
+    finalTitle.trim(),
     currentCountry.value,
     location.value,
-    salary.value,
+    String(salary.value),
     schedule.value,
     contract.value
   );
-
   logSearch(
-    cleanTitle.trim(),
+    finalTitle.trim(),
     currentCountry.value,
     location.value,
-    salary.value,
+    String(salary.value),
     schedule.value,
     contract.value
   );
@@ -199,15 +267,15 @@ const handleSearch = async () => {
   await navigateTo({
     path,
     query: {
-      q: cleanTitle.trim(),
-      gov_id: exactGovId, // Send exact DB ID for 100% accurate Government matching
+      q: finalTitle.trim(),
+      gov_id: finalGovId, // Send exact DB ID for 100% accurate Government matching
       schedule: schedule.value,
       contract: contract.value,
       compare: salary.value || undefined,
       period: period.value !== 'year' ? period.value : undefined
     },
     state: {
-      confirmed: !!exactGovId
+      confirmed: !!finalGovId
     }
   });
 

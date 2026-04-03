@@ -14,11 +14,11 @@ export interface McaUiData {
 }
 
 // Helper: Converts a percentile into a JSON key ('high', 'mid', or 'low')
-const getTier = (val: number, highBound: number, midBound: number): 'high' | 'mid' | 'low' => {
-  if (val >= highBound) return 'high';
-  if (val >= midBound) return 'mid';
-  return 'low';
-};
+// const getTier = (val: number, highBound: number, midBound: number): 'high' | 'mid' | 'low' => {
+//   if (val >= highBound) return 'high';
+//   if (val >= midBound) return 'mid';
+//   return 'low';
+// };
 
 export const formatMcaScoreForUi = (
   result: BenchmarkResult,
@@ -30,14 +30,14 @@ export const formatMcaScoreForUi = (
   const points: string[] = [];
 
   // Variables available for Vue I18n
-  const templateVars = {
-    jobTitle,
-    location: location || '',
-    micro: breakdown.microPercentile !== null ? formatOrdinal(breakdown.microPercentile) : '',
-    macro: formatOrdinal(breakdown.macroPercentile),
-    live: breakdown.livePercentile !== null ? formatOrdinal(breakdown.livePercentile) : '',
-    diff: Math.abs(Math.round((1 - breakdown.modifier) * 100))
-  };
+  // const templateVars = {
+  //   jobTitle,
+  //   location: location || '',
+  //   micro: breakdown.microPercentile !== null ? formatOrdinal(breakdown.microPercentile) : '',
+  //   macro: formatOrdinal(breakdown.macroPercentile),
+  //   live: breakdown.livePercentile !== null ? formatOrdinal(breakdown.livePercentile) : '',
+  //   diff: Math.abs(Math.round((1 - breakdown.modifier) * 100))
+  // };
 
   // 1. DYNAMIC LABEL
   const labelKey =
@@ -55,22 +55,22 @@ export const formatMcaScoreForUi = (
   // 2. BUILD THE BULLET POINTS
 
   // 👈 Only push the Micro (Government) point if we actually have the data!
-  if (breakdown.microPercentile !== null) {
-    points.push(t(`mca.points.micro.${getTier(breakdown.microPercentile, 75, 45)}`, templateVars));
-  }
+  // if (breakdown.microPercentile !== null) {
+  //   points.push(t(`mca.points.micro.${getTier(breakdown.microPercentile, 75, 45)}`, templateVars));
+  // }
 
-  points.push(t(`mca.points.macro.${getTier(breakdown.macroPercentile, 75, 40)}`, templateVars));
+  // points.push(t(`mca.points.macro.${getTier(breakdown.macroPercentile, 75, 40)}`, templateVars));
 
-  // Regional
-  if (location && breakdown.modifier !== 1) {
-    const regKey = breakdown.modifier > 1 ? 'higher' : 'lower';
-    points.push(t(`mca.points.regional.${regKey}`, templateVars));
-  }
+  // // Regional
+  // if (location && breakdown.modifier !== 1) {
+  //   const regKey = breakdown.modifier > 1 ? 'higher' : 'lower';
+  //   points.push(t(`mca.points.regional.${regKey}`, templateVars));
+  // }
 
-  // Live Market
-  if (breakdown.livePercentile !== null) {
-    points.push(t(`mca.points.live.${getTier(breakdown.livePercentile, 60, 40)}`, templateVars));
-  }
+  // // Live Market
+  // if (breakdown.livePercentile !== null) {
+  //   points.push(t(`mca.points.live.${getTier(breakdown.livePercentile, 60, 40)}`, templateVars));
+  // }
 
   // 3. DETERMINE THE PRIMARY RANK (For the bottom analysis box)
   // If we don't have Government data, use the Live Market rank!

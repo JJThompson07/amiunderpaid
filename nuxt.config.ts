@@ -87,7 +87,7 @@ export default defineNuxtConfig({
         file: 'en-GB/index.ts',
         // Update the dev domain here
         domains: isDev
-          ? ['ami-uk.localhost:3000', 'bmr.localhost:3000']
+          ? ['localhost:3000', 'ami-uk.localhost:3000', 'bmr.localhost:3000']
           : ['www.amiunderpaid.co.uk', 'www.benchmarkmyrole.com']
       },
       {
@@ -123,6 +123,12 @@ export default defineNuxtConfig({
     adzunaAppId: process.env.ADZUNA_APP_ID,
     adzunaAppKey: process.env.ADZUNA_APP_KEY,
     firebaseServiceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
+
+    vuefire: {
+      options: {
+        serviceAccount: process.env.FIREBASE_SERVICE_ACCOUNT
+      }
+    },
 
     public: {
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,

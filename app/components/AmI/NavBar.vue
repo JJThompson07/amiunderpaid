@@ -101,6 +101,16 @@ const adminLinks = [
     to: '/admin/banding',
     label: $t('navbar.banding'),
     mobileOnly: false
+  },
+  {
+    to: '/admin/user-suggestions',
+    label: $t('navbar.user-suggestions'),
+    mobileOnly: false
+  },
+  {
+    to: '/admin/job-groups',
+    label: $t('navbar.job-groups'),
+    mobileOnly: false
   }
 ];
 
