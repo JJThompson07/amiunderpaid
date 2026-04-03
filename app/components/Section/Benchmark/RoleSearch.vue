@@ -102,6 +102,14 @@
         </div>
       </form>
     </div>
+
+    <LazyModalAmbiguity
+      v-if="showAmbiguityModal"
+      :search-term="cleanSearchTitle"
+      :country="country"
+      :options="ambiguityOptions"
+      @close="showAmbiguityModal = false"
+      @resolve="onAmbiguityResolved" />
   </div>
 </template>
 
@@ -139,11 +147,17 @@ const scheduleOptions = [
 // const userPersonas = ['employer', 'employee'];
 // const userPersona = useState('userPersona', () => 'employer');
 
-const title = ref('');
-const location = ref('');
-const salary = ref('');
-const period = ref('year');
-const loading = ref(false);
+const title = ref<string>('');
+const location = ref<string>('');
+const salary = ref<number>(0);
+const period = ref<string>('year');
+const loading = ref<boolean>(false);
+
+// --- NEW DICTIONARY & MODAL STATE ---
+const { resolveJobId } = useJobDictionary();
+const showAmbiguityModal = ref<boolean>(false);
+const ambiguityOptions = ref<any[]>([]);
+const cleanSearchTitle = ref<string>('');
 
 // Consume our new Composable to handle Algolia fetching
 const { fetching, titleOptions, locationOptions, labelToIdMap, fetchTitles, fetchLocations } =
@@ -195,47 +209,90 @@ const switchLocale = () => {
   emit('country-change', country.value);
 };
 
+/**
+ * 1. Main Search Handler
+ */
 const handleSearch = async () => {
   loading.value = true;
 
-  // 1. Get exact ID if they picked an option from the autocomplete dropdown
-  const exactGovId = labelToIdMap.value[title.value];
+  // STEP 1: Check dropdown autocomplete ID
+  let exactGovId = labelToIdMap.value[title.value];
 
-  // 2. Remove parent group in parentheses to give Adzuna a clean job title
-  let cleanTitle = title.value.replace(/\s*\(.*\)$/, '');
+  // STEP 2: Clean the title
+  let cleaned = title.value.replace(/\s*\(.*\)$/, '');
 
-  // if the government title is being used we want to change this order as the government uses a bad order for searching
   if (exactGovId) {
-    cleanTitle = cleanTitle
+    cleaned = cleaned
       .split(',')
       .map((word) => word.trim())
       .reverse()
       .join(' ');
   }
 
-  // Uses the fixed global slugify!
-  const titleSlug = slugify(cleanTitle);
+  cleanSearchTitle.value = cleaned;
+
+  // STEP 3: Dictionary Resolution
+  if (!exactGovId) {
+    const result = await resolveJobId(cleanSearchTitle.value);
+
+    switch (result.type) {
+      case 'exact':
+        exactGovId = result.id;
+        break;
+
+      case 'ambiguous':
+        ambiguityOptions.value = result.options;
+        showAmbiguityModal.value = true;
+        loading.value = false;
+        return; // Stop and wait for user to pick from the modal
+
+      case 'unknown':
+      case 'error':
+        // Proceed without ID to allow fallback UI on the results page
+        break;
+    }
+  }
+
+  // STEP 4: Navigate
+  executeNavigation(cleanSearchTitle.value, exactGovId);
+};
+
+/**
+ * 2. THE MODAL CALLBACK
+ */
+const onAmbiguityResolved = (resolvedGovId: string) => {
+  showAmbiguityModal.value = false;
+  loading.value = true;
+  executeNavigation(cleanSearchTitle.value, resolvedGovId);
+};
+
+/**
+ * 3. THE ROUTER (Using /benchmark/ instead of /salary/)
+ */
+const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
+  const titleSlug = slugify(finalTitle);
   const countrySlug = country.value.toLowerCase();
   const locationSlug = location.value ? slugify(location.value) : '';
 
+  // Notice: We keep the /benchmark/ path for the RoleSearch page
   const path = locationSlug
     ? `/benchmark/${titleSlug}/${countrySlug}/${locationSlug}`
     : `/benchmark/${titleSlug}/${countrySlug}`;
 
   trackSearch(
-    cleanTitle.trim(),
+    finalTitle.trim(),
     country.value,
     location.value,
-    salary.value,
+    String(salary.value),
     schedule.value,
     contract.value
   );
 
   logSearch(
-    cleanTitle.trim(),
+    finalTitle.trim(),
     country.value,
     location.value,
-    salary.value,
+    String(salary.value),
     schedule.value,
     contract.value
   );
@@ -243,16 +300,15 @@ const handleSearch = async () => {
   await navigateTo({
     path,
     query: {
-      q: cleanTitle.trim(),
-      gov_id: exactGovId, // Send exact DB ID for 100% accurate Government matching
+      q: finalTitle.trim(),
+      gov_id: finalGovId,
       schedule: schedule.value,
       contract: contract.value,
       compare: salary.value || undefined,
-      // persona: userPersona.value,
       period: period.value !== 'year' ? period.value : undefined
     },
     state: {
-      confirmed: !!exactGovId
+      confirmed: !!finalGovId
     }
   });
 

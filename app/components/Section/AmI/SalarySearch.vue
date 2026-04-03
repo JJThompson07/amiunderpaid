@@ -140,18 +140,18 @@ const contractOptions = [
 const schedule = ref('full-time');
 const contract = ref('permanent');
 
-const title = ref('');
-const location = ref('');
-const salary = ref('');
-const period = ref('year');
-const loading = ref(false);
+const title = ref<string>('');
+const location = ref<string>('');
+const salary = ref<number>(0);
+const period = ref<string>('year');
+const loading = ref<boolean>(false);
 const showCalc = ref<boolean>(false);
 
-// --- NEW MODAL STATE ---
+// --- NEW DICTIONARY & MODAL STATE ---
 const { resolveJobId } = useJobDictionary();
-const showAmbiguityModal = ref(false);
+const showAmbiguityModal = ref<boolean>(false);
 const ambiguityOptions = ref<any[]>([]);
-const cleanSearchTitle = ref('');
+const cleanSearchTitle = ref<string>('');
 
 const { fetching, titleOptions, locationOptions, labelToIdMap, fetchTitles, fetchLocations } =
   useJobAutocomplete(currentCountry, location, title);
@@ -251,7 +251,7 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
     finalTitle.trim(),
     currentCountry.value,
     location.value,
-    salary.value,
+    String(salary.value),
     schedule.value,
     contract.value
   );
@@ -259,7 +259,7 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
     finalTitle.trim(),
     currentCountry.value,
     location.value,
-    salary.value,
+    String(salary.value),
     schedule.value,
     contract.value
   );

@@ -7,66 +7,66 @@
         <p class="text-slate-500 mt-1">Review and approve job title synonyms mapped by users.</p>
       </header>
 
-      <div v-if="pending" class="text-slate-500 font-medium">Loading queue...</div>
-
-      <div
-        v-else-if="suggestions.length === 0"
-        class="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center text-slate-500">
-        The queue is currently empty. Good job!
+      <div v-if="pending" class="text-slate-500 font-medium flex items-center gap-2">
+        <span
+          class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full"></span>
+        Loading queue...
       </div>
 
-      <div v-else class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr
-              class="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
-              <th class="p-4 font-bold">User Searched For</th>
-              <th class="p-4 font-bold">Mapped To (Target Group)</th>
-              <th class="p-4 font-bold">Country</th>
-              <th class="p-4 font-bold">Code</th>
-              <th class="p-4 font-bold text-center">Requests</th>
-              <th class="p-4 font-bold text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr
-              v-for="item in suggestions"
-              :key="item.id"
-              class="hover:bg-slate-50 transition-colors">
-              <td class="p-4 font-bold text-slate-900">"{{ item.search_term }}"</td>
-              <td class="p-4 text-sm text-slate-600">{{ item.target_group_name }}</td>
-              <td class="p-4 text-sm font-mono text-slate-500">{{ item.country }}</td>
-              <td class="p-4 text-sm font-mono text-slate-500">{{ item.target_id_code }}</td>
-              <td class="p-4 text-center">
-                <span
-                  class="inline-flex items-center justify-center bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                  {{ item.count }}
-                </span>
-              </td>
-              <td class="p-4 flex items-center justify-end gap-2">
-                <button
-                  class="px-3 py-1.5 text-xs font-bold text-negative-600 bg-negative-50 hover:bg-negative-100 rounded-lg transition-colors disabled:opacity-50"
-                  :disabled="isProcessing === item.id"
-                  @click="rejectItem(item.id)">
-                  Reject
-                </button>
-                <button
-                  class="px-3 py-1.5 text-xs font-bold text-white bg-positive-600 hover:bg-positive-700 rounded-lg shadow-sm transition-colors disabled:opacity-50"
-                  :disabled="isProcessing === item.id"
-                  @click="approveItem(item)">
-                  Approve
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-else class="flex flex-col gap-4">
+        <AmITable
+          :columns="tableColumns"
+          :data="suggestions"
+          empty-message="The queue is currently empty. Good job!">
+          <template #search_term="{ value }">
+            <span class="font-bold text-slate-900">"{{ value }}"</span>
+          </template>
+
+          <template #target_group_name="{ value }">
+            <span class="text-sm text-slate-600">{{ value }}</span>
+          </template>
+
+          <template #country="{ value }">
+            <span class="text-sm font-mono text-slate-500">{{ value }}</span>
+          </template>
+
+          <template #target_id_code="{ value }">
+            <span class="text-sm font-mono text-slate-500">{{ value }}</span>
+          </template>
+
+          <template #count="{ value }">
+            <div class="text-center">
+              <span
+                class="inline-flex items-center justify-center bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-full">
+                {{ value }}
+              </span>
+            </div>
+          </template>
+
+          <template #actions="{ row }">
+            <div class="flex items-center justify-end gap-2">
+              <button
+                class="px-3 py-1.5 text-xs font-bold text-negative-600 bg-negative-50 hover:bg-negative-100 rounded-lg transition-colors disabled:opacity-50"
+                :disabled="isProcessing === row.id"
+                @click="rejectItem(row.id)">
+                Reject
+              </button>
+              <button
+                class="px-3 py-1.5 text-xs font-bold text-white bg-positive-600 hover:bg-positive-700 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+                :disabled="isProcessing === row.id"
+                @click="approveItem(row)">
+                Approve
+              </button>
+            </div>
+          </template>
+        </AmITable>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 interface Suggestion {
   id: string;
@@ -80,10 +80,20 @@ interface Suggestion {
 
 // Define layout and middleware if required for your admin section
 definePageMeta({
-  middleware: 'admin' // Assuming you have an admin guard!
+  middleware: 'admin'
 });
 
 const isProcessing = ref<string | null>(null);
+
+// --- Define AmITable Columns ---
+const tableColumns = [
+  { key: 'search_term', label: 'User Searched For', class: 'w-1/4' },
+  { key: 'target_group_name', label: 'Mapped To (Target Group)' },
+  { key: 'country', label: 'Country', class: 'w-24' },
+  { key: 'target_id_code', label: 'Code', class: 'w-24' },
+  { key: 'count', label: 'Requests', class: 'w-24 text-center', cellClass: 'text-center' },
+  { key: 'actions', label: 'Actions', class: 'w-48 text-right', cellClass: 'text-right' }
+];
 
 // 1. Fetch the Queue
 const { data, pending, refresh } = await useFetch('/api/admin/suggestions');
@@ -103,7 +113,7 @@ const approveItem = async (item: Suggestion) => {
         searchTerm: item.search_term,
         targetIdCode: item.target_id_code,
         targetGroupName: item.target_group_name,
-        country: item.country // 👈 Pass the country to the API
+        country: item.country
       }
     });
     // Remove it from the local list instantly for snappy UX

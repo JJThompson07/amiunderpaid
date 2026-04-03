@@ -3,7 +3,9 @@ import { useRegion } from './useRegion'; // Assuming you use this to get current
 
 interface JobGroupHit {
   objectID: string;
+  gov_id: string;
   group_name: string;
+  titles?: string[];
 }
 
 interface MasterMatch {
@@ -43,7 +45,8 @@ export const useJobDictionary = () => {
       const index = ($algolia as SearchClient).initIndex(indexName);
 
       const { hits } = await index.search<JobGroupHit>(cleanTitle, {
-        hitsPerPage: 5
+        hitsPerPage: 5,
+        removeWordsIfNoResults: 'allOptional'
       });
 
       if (hits.length > 0) {
@@ -51,7 +54,7 @@ export const useJobDictionary = () => {
           type: 'ambiguous' as const,
           id: null,
           options: hits.map((hit) => ({
-            id_code: hit.objectID,
+            id_code: hit.gov_id,
             group_name: hit.group_name
           }))
         };

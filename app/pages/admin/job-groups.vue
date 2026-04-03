@@ -244,12 +244,19 @@ const addTitle = async (idCode: string) => {
 
   isProcessing.value = idCode;
   try {
+    // 1. Save to Firestore
     await $fetch('/api/admin/job-groups/title', {
       method: 'POST',
       body: { country: activeCountry.value, idCode, newTitle }
     });
     newInputs[idCode] = '';
     await refresh();
+
+    // 2. SILENT ALGOLIA SYNC
+    await $fetch('/api/admin/job-groups/migrate', {
+      method: 'POST',
+      body: { country: activeCountry.value }
+    });
   } catch {
     alert('Failed to add title');
   } finally {
@@ -263,11 +270,18 @@ const removeTitle = async (idCode: string, titleToRemove: string) => {
 
   isProcessing.value = idCode;
   try {
+    // 1. Remove from Firestore
     await $fetch('/api/admin/job-groups/title', {
       method: 'DELETE',
       body: { country: activeCountry.value, idCode, titleToRemove }
     });
     await refresh();
+
+    // 2. SILENT ALGOLIA SYNC
+    await $fetch('/api/admin/job-groups/migrate', {
+      method: 'POST',
+      body: { country: activeCountry.value }
+    });
   } catch {
     alert('Failed to remove title');
   } finally {
@@ -285,8 +299,9 @@ const runMigration = async () => {
       body: { country: activeCountry.value }
     });
     await refresh();
-    alert(res.message);
-  } catch {
+    alert(res.success ? 'Migration completed successfully.' : 'Migration failed.');
+  } catch (e) {
+    console.error(e);
     alert('Migration failed.');
   } finally {
     isMigrating.value = false;
