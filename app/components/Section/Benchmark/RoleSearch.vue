@@ -121,6 +121,7 @@ import { slugify } from '~/helpers/utility';
 const { setLocale, locale, t } = useI18n();
 const { trackSearch } = useAnalytics();
 const { logSearch } = useUserLogging();
+const route = useRoute();
 
 const props = defineProps<{
   initialCountry?: string;
@@ -241,10 +242,19 @@ const handleSearch = async () => {
         break;
 
       case 'ambiguous':
+        // Multiple matches found OR fuzzy Algolia suggestions available
+        // Stop navigation and show the modal
         ambiguityOptions.value = result.options;
+
+        // Auto-select if there is exactly 1 match
+        if (result.options && result.options.length === 1 && result.options[0]) {
+          await onAmbiguityResolved(result.options[0].id_code);
+          return;
+        }
+
         showAmbiguityModal.value = true;
         loading.value = false;
-        return; // Stop and wait for user to pick from the modal
+        return;
 
       case 'unmapped':
       case 'error':
@@ -254,13 +264,13 @@ const handleSearch = async () => {
   }
 
   // STEP 4: Navigate
-  executeNavigation(cleanSearchTitle.value, exactGovId);
+  await executeNavigation(cleanSearchTitle.value, exactGovId);
 };
 
 /**
  * 2. THE MODAL CALLBACK
  */
-const onAmbiguityResolved = (resolvedGovId: string) => {
+const onAmbiguityResolved = async (resolvedGovId: string) => {
   showAmbiguityModal.value = false;
   loading.value = true;
 
@@ -279,7 +289,7 @@ const onAmbiguityResolved = (resolvedGovId: string) => {
     }).catch((err) => console.error('Failed to save suggestion tracking', err));
   }
 
-  executeNavigation(cleanSearchTitle.value, resolvedGovId);
+  await executeNavigation(cleanSearchTitle.value, resolvedGovId);
 };
 
 /**
@@ -313,6 +323,9 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
     contract.value
   );
 
+  // Check if we are staying on the same base path
+  const isSamePath = route.path === path;
+
   await navigateTo({
     path,
     query: {
@@ -328,6 +341,15 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
     }
   });
 
-  loading.value = false;
+  // If we are just updating queries on the same page, turn off the loader so it doesn't spin forever
+  if (isSamePath) {
+    loading.value = false;
+  } else {
+    // Navigating to a new page! Leave loading = true so the button keeps spinning.
+    // Failsafe timeout in case navigation gets cancelled/fails for any reason:
+    setTimeout(() => {
+      if (loading.value) loading.value = false;
+    }, 5000);
+  }
 };
 </script>
