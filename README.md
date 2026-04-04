@@ -31,15 +31,25 @@ This project has been updated to **Nuxt 4**, leveraging the new directory struct
 ### 🌍 Core Functionality
 
 - **Domain-Level i18n & SEO**: Fully internationalized architecture mapping `en-GB` to `.co.uk` and `en-US` to `.com` for precise regional formatting and Google indexing.
+- **Smart Job Matching**: Uses a custom Job Dictionary with Algolia fuzzy-search fallbacks to handle ambiguous job titles and map them to official SOC codes.
+- **Privacy First**: Built-in cookie consent management and GDPR/CCPA compliant tracking.
 - **Salary Search**: Check your salary against 700,000+ job listings and benchmarks in real-time.
 - **Location Analysis**: Compare your salary against regional and national averages.
 - **Salary Converter**: Convert hourly, daily, or weekly wages to an annual equivalent.
 - **Negotiation Support**: Get custom email scripts and actionable tips to negotiate a raise.
+- **Multi-Tenant Architecture**: Dynamic branding and tenant resolution via `app/plugins/tenant.ts`. A single codebase seamlessly powers both the **Am I Underpaid?** and **Benchmark My Role** domains, serving customized logos, meta tags, and privacy policies based on the requested host.
 
 ### 🛡️ Admin Portal
 
 - **Data Seeder**: Upload CSV/XLSX files to seed Firestore with official government data.
 - **Verified Cache**: Manually approve SOC code matches to bypass Algolia fuzzy searches for future users, improving both speed and accuracy.
+- **Crowdsourced Suggestions**: Review, approve, or reject user-resolved job titles to continuously train and improve the search dictionary.
+
+### 🏢 Recruiter Portal (B2B)
+
+- **Dedicated Dashboards**: Secure login and onboarding flow for recruitment agencies.
+- **Territory Management**: Visual map-based territory selection (e.g., UK regions, US non-contiguous regions) to manage market data.
+- **Custom Access**: Specific middleware and auth logic separating general users, admins, and recruiters.
 
 ## 🛠 Tech Stack
 
@@ -127,6 +137,21 @@ This project has been updated to **Nuxt 4**, leveraging the new directory struct
 
     The application will be available at `http://localhost:3000`.
 
+## 🧪 Testing & Code Quality
+
+This project uses **Vitest** for unit testing, particularly to ensure the accuracy of the complex salary math and regional tax engines.
+
+```bash
+# Run unit tests
+pnpm test
+
+# Run tests with UI
+pnpm test:ui
+
+# Check i18n translation keys for missing values
+pnpm ts-node scripts/check-i18n.ts
+```
+
 ## Admin Access
 
 To access the administrative tools (`/admin/seed`, `/admin/coding-index`), you must be authenticated. The login page is protected and securely located at `/admin/login?access=YOUR_SECRET_KEY` (where the key matches `NUXT_ADMIN_ACCESS_KEY` in your environment variables). Authentication is persisted securely via Firebase Session Cookies.
@@ -134,3 +159,7 @@ To access the administrative tools (`/admin/seed`, `/admin/coding-index`), you m
 ## Deployment
 
 Because this project uses Nuxt Server-Side Rendering (SSR) and Nitro edge-caching rules (`swr`), it is optimized for deployment on serverless platforms such as Vercel, Netlify, or Cloudflare Pages.
+
+```
+
+```

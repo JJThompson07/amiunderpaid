@@ -78,6 +78,21 @@
           </ul>
         </section>
 
+        <section>
+          <h2 class="text-xl font-bold text-slate-900 mb-4">
+            {{ $t('privacy-policy.cookies.heading') }}
+          </h2>
+          <p>
+            {{ $t('privacy-policy.cookies.body.1') }}
+          </p>
+          <p class="mt-2">
+            {{ $t('privacy-policy.cookies.body.2') }}
+          </p>
+          <p class="mt-2">
+            {{ $t('privacy-policy.cookies.body.3') }}
+          </p>
+        </section>
+
         <section v-if="$siteBrand !== 'benchmarkmyrole'">
           <h2 class="text-xl font-bold text-slate-900 mb-4">
             {{ $t('privacy-policy.affiliate.heading') }}
