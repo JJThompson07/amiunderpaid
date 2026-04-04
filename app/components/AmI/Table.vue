@@ -1,13 +1,14 @@
 <template>
   <div
-    class="ami-table overflow-x-auto rounded-2xl border border-slate-200 custom-scrollbar bg-white">
+    class="ami-table overflow-auto rounded-2xl border border-slate-200 custom-scrollbar bg-white"
+    :class="[maxHeight]">
     <table class="w-full text-left border-collapse" :class="[minWidth]">
       <thead>
         <tr>
           <th
             v-for="col in columns"
             :key="col.key"
-            class="p-4 border-b border-slate-200 bg-slate-50 font-bold text-slate-400 text-xs uppercase tracking-wider"
+            class="sticky top-0 z-10 p-4 bg-slate-50 font-bold text-slate-400 text-xs uppercase tracking-wider [box-shadow:inset_0_-1px_0_0_#cad5e2]"
             :class="[col.class]">
             {{ col.label }}
           </th>
@@ -43,7 +44,6 @@
 <script setup lang="ts">
 import type { PropType } from 'vue';
 
-// No 'export' keyword here!
 type TableColumn = {
   key: string;
   label: string;
@@ -63,6 +63,10 @@ defineProps({
   minWidth: {
     type: String,
     default: 'min-w-[400px]'
+  },
+  maxHeight: {
+    type: String,
+    default: ''
   },
   emptyMessage: {
     type: String,

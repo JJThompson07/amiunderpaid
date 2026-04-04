@@ -255,6 +255,7 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
     schedule.value,
     contract.value
   );
+
   logSearch(
     finalTitle.trim(),
     currentCountry.value,

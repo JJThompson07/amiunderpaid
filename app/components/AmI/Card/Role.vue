@@ -18,7 +18,9 @@
         <div class="flex flex-row items-center justify-between">
           <span class="text-xl font-bold">{{ salaryRange }}</span>
           <div>
-            <div class="flex flex-col items-end gap-1 text-sm text-right relative">
+            <div
+              v-if="userSalary"
+              class="flex flex-col items-end gap-1 text-sm text-right relative">
               <AmIChip v-bind="comparisonChipAttributes" text-size="text-sm" compact
                 >{{ salaryMaxComparison }}%</AmIChip
               >

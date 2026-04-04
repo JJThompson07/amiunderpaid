@@ -1,7 +1,16 @@
 import { FieldValue } from 'firebase-admin/firestore';
+interface TrackSearchBody {
+  title: string;
+  country: string;
+  location?: string | null;
+  salary?: string | number | null;
+  schedule?: string | null;
+  contract?: string | null;
+  brand?: string | null;
+}
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
+  const body = await readBody<TrackSearchBody>(event);
 
   const db = useAdminFirestore();
 
