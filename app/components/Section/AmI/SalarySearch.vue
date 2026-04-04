@@ -121,9 +121,10 @@ import { Search, MapPin, CalculatorIcon, Wallet, ArrowRightIcon } from 'lucide-v
 import { slugify } from '~/helpers/utility';
 
 const { t } = useI18n();
-const { trackSearch } = useAnalytics();
+const { trackSearch, trackAmbiguousSearch } = useAnalytics();
 const { logSearch } = useUserLogging();
 const { currentCountry, alternateSiteUrl } = useRegion();
+const route = useRoute();
 
 const scheduleOptions = [
   { label: t('search.time.full-time'), value: 'full-time' },
@@ -208,6 +209,13 @@ const handleSearch = async () => {
         // Multiple matches found OR fuzzy Algolia suggestions available
         // Stop navigation and show the modal
         ambiguityOptions.value = result.options;
+
+        // Auto-select if there is exactly 1 match
+        if (result.options && result.options.length === 1 && result.options[0]) {
+          await onAmbiguityResolved(result.options[0].id_code);
+          return;
+        }
+
         showAmbiguityModal.value = true;
         loading.value = false;
         return;
@@ -222,14 +230,14 @@ const handleSearch = async () => {
 
   // STEP 4: Final Execution
   // If we reach here, we either have an ID or are searching by raw title
-  executeNavigation(cleanSearchTitle.value, exactGovId);
+  await executeNavigation(cleanSearchTitle.value, exactGovId);
 };
 
 // ==========================================
 // 2. THE MODAL CALLBACK
 // ==========================================
 // When the user clicks an option in the Modal, it emits the resolved SOC Code
-const onAmbiguityResolved = (resolvedGovId: string) => {
+const onAmbiguityResolved = async (resolvedGovId: string) => {
   showAmbiguityModal.value = false;
   loading.value = true; // Turn button loader back on
 
@@ -246,9 +254,11 @@ const onAmbiguityResolved = (resolvedGovId: string) => {
         country: currentCountry.value
       }
     }).catch((err) => console.error('Failed to save suggestion tracking', err));
+
+    trackAmbiguousSearch(cleanSearchTitle.value, selectedMatch.group_name);
   }
 
-  executeNavigation(cleanSearchTitle.value, resolvedGovId);
+  await executeNavigation(cleanSearchTitle.value, resolvedGovId);
 };
 
 // ==========================================
@@ -281,11 +291,14 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
     contract.value
   );
 
+  // Check if we are staying on the same base path
+  const isSamePath = route.path === path;
+
   await navigateTo({
     path,
     query: {
       q: finalTitle.trim(),
-      gov_id: finalGovId, // Send exact DB ID for 100% accurate Government matching
+      gov_id: finalGovId,
       schedule: schedule.value,
       contract: contract.value,
       compare: salary.value || undefined,
@@ -296,6 +309,17 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
     }
   });
 
-  loading.value = false;
+  // If we are just updating queries on the same page, turn off the loader so it doesn't spin forever
+  if (isSamePath) {
+    loading.value = false;
+  } else {
+    // Navigating to a new page! Leave loading = true so the button keeps spinning.
+    // The component will naturally destroy itself when the transition is completely done.
+
+    // Failsafe timeout in case navigation gets cancelled/fails for any reason:
+    setTimeout(() => {
+      if (loading.value) loading.value = false;
+    }, 5000);
+  }
 };
 </script>
