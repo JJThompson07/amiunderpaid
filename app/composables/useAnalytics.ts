@@ -5,7 +5,11 @@ export const useAnalytics = () => {
   const { $siteBrand } = useNuxtApp();
 
   // Cookie Consent State
-  const analyticsConsent = useCookie('analytics_consent', { default: () => 'granted' });
+  const analyticsConsent = useCookie<string | null>('analytics_consent', {
+    default: () => null,
+    maxAge: 60 * 60 * 24 * 365
+  });
+
   const hasConsent = computed(() => analyticsConsent.value === 'granted');
 
   const trackEvent = (eventName: string, payload: Record<string, any>) => {

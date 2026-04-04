@@ -27,8 +27,16 @@
       }
     }
   },
+  "cookies": {
+    "heading": "3. Cookies & Consent",
+    "body": {
+      "1": "We use cookies solely for Google Analytics to understand how visitors interact with our site.",
+      "2": "When you first visit our website, you are asked to accept or decline these analytics cookies. If you accept, a small file (cookie) is stored in your browser for up to one year to remember your preference and enable analytics tracking. If you decline, your visit will not be tracked.",
+      "3": "You can clear your cookies or change your preferences at any time through your web browser settings."
+    }
+  },
   "affiliate": {
-    "heading": "3. Affiliate Disclosure",
+    "heading": "4. Affiliate Disclosure",
     "body": {
       "1": "This website contains affiliate links. If you click on a link for a third-party service (such as CV writing services or negotiation courses) and make a purchase, we may earn a commission at no extra cost to you.",
       "2": "We believe the only way to successfully progress in your career is to invest in yourself, and we only recommend services that provide genuine value to our users. We carefully vet all affiliate partners to ensure they meet our standards for quality and relevance to career development."

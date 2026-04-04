@@ -68,6 +68,8 @@
         </NuxtLink>
       </div>
     </footer>
+
+    <SectionSharedCookieBanner />
   </div>
 </template>
 

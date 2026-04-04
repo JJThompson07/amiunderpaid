@@ -15,6 +15,12 @@
       "copy": "2026 Benchmark My Role. All rights reserved."
     }
   },
+  "cookie": {
+    "strong": "We value your privacy.",
+    "message": "We use cookies solely for Google Analytics to understand how visitors interact with our site so we can improve it. You can choose to accept or decline these analytics cookies.",
+    "accept": "Accept",
+    "decline": "Decline"
+  },
   "data": {
     "disclaimer": "Data based on recent listings from Adzuna. Government benchmarks are based on full-time roles."
   },
