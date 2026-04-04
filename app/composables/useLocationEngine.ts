@@ -167,7 +167,8 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
             pageData.value.macro.regionalMedianAllRoles,
             pageData.value.macro.nationalMedianAllRoles,
             adzuna.histogramBuckets.value,
-            adzuna.jobsCount.value || 0
+            adzuna.jobsCount.value || 0,
+            adzuna.meanSalary.value || 0
           )
         : calculateUSABenchmarkScore(
             userSalary.value,
@@ -178,7 +179,8 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
             pageData.value.macro.regionalMedianAllRoles,
             pageData.value.macro.nationalMedianAllRoles,
             adzuna.histogramBuckets.value,
-            adzuna.jobsCount.value || 0
+            adzuna.jobsCount.value || 0,
+            adzuna.meanSalary.value || 0
           );
 
     return formatMcaScoreForUi(
