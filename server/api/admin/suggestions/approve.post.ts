@@ -1,4 +1,4 @@
-// server/api/admin/approve-suggestion.post.ts
+// server/api/admin/suggestions/approve.post.ts
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
