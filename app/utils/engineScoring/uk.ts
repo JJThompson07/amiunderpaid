@@ -16,7 +16,8 @@ export const calculateUKBenchmarkScore = (
   regionalMedianAllRoles: number | null,
   nationalMedianAllRoles: number | null,
   liveBuckets: HistogramBucket[],
-  totalLiveJobs: number
+  totalLiveJobs: number,
+  meanLiveSalary: number
 ): BenchmarkResult => {
   // 1. Core Calculations
   const modifier = calculateRegionalModifier(regionalMedianAllRoles, nationalMedianAllRoles);
@@ -26,7 +27,12 @@ export const calculateUKBenchmarkScore = (
   const macroPercentile = calculatePercentile(userSalary, macroNationalData);
 
   // LIVE: Real-time Adzuna data
-  const livePercentile = calculateLivePercentile(userSalary, liveBuckets, totalLiveJobs);
+  const livePercentile = calculateLivePercentile(
+    userSalary,
+    liveBuckets,
+    totalLiveJobs,
+    meanLiveSalary
+  );
 
   // MICRO: Try Regional first, then National, else NULL
   const microPercentile = microRegionalData

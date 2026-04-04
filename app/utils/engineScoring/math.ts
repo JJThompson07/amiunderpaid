@@ -117,50 +117,101 @@ export const calculateRegionalModifier = (
 export const calculateLivePercentile = (
   salary: number,
   buckets: HistogramBucket[],
-  totalJobs: number
+  totalJobs: number, // Still required for the signature, but we'll override it internally
+  meanSalary: number
 ): number | null => {
-  if (!buckets?.length || !totalJobs) return null;
+  if (!buckets?.length || !meanSalary) return null;
 
-  // 1. Ensure buckets are sorted by value ascending
+  // 1. Sort buckets ascending
   const sortedBuckets = [...buckets].sort((a, b) => Number(a.value) - Number(b.value));
+  const topBucket = sortedBuckets[sortedBuckets.length - 1];
+  if (!topBucket) return null;
+
+  const topBucketMin = Number(topBucket.value);
+  const topBucketCount = topBucket.count;
+
+  // 2. CRITICAL FIX: Calculate the true number of jobs that actually have salary data
+  const validSalaryJobs = sortedBuckets.reduce((sum, bucket) => sum + bucket.count, 0);
+  if (validSalaryJobs === 0) return null;
 
   let jobsBelow = 0;
 
-  for (let i = 0; i < sortedBuckets.length; i++) {
-    const currentBucket = sortedBuckets[i];
+  // --- SCENARIO A: Salary is below the open-ended bucket ---
+  if (salary <= topBucketMin) {
+    for (let i = 0; i < sortedBuckets.length; i++) {
+      const currentBucket = sortedBuckets[i];
+      if (!currentBucket) continue;
 
-    // 👈 TypeScript Fix: Proves to the compiler that currentBucket exists
-    if (!currentBucket) continue;
+      const lowerBound = Number(currentBucket.value);
+      const nextBucket = sortedBuckets[i + 1];
+      const upperBound = nextBucket
+        ? Number(nextBucket.value)
+        : lowerBound * EXTRAPOLATION_CEILING_MULTIPLIER;
 
-    const lowerBound = Number(currentBucket.value);
-
-    // 👈 TypeScript Fix: Safely grab the next bucket
-    const nextBucket = sortedBuckets[i + 1];
-    const upperBound = nextBucket
-      ? Number(nextBucket.value)
-      : lowerBound * EXTRAPOLATION_CEILING_MULTIPLIER;
-
-    if (salary >= upperBound) {
-      // Salary clears this bucket entirely
-      jobsBelow += currentBucket.count;
-    } else if (salary >= lowerBound && salary < upperBound) {
-      // Salary falls INSIDE this bucket
-      if (lowerBound === upperBound) {
+      if (salary >= upperBound) {
         jobsBelow += currentBucket.count;
+      } else if (salary >= lowerBound && salary < upperBound) {
+        if (lowerBound === upperBound) {
+          jobsBelow += currentBucket.count;
+        } else {
+          const proportion = (salary - lowerBound) / (upperBound - lowerBound);
+          jobsBelow += currentBucket.count * proportion;
+        }
+        break;
       } else {
-        const proportion = (salary - lowerBound) / (upperBound - lowerBound);
-        jobsBelow += currentBucket.count * proportion;
+        break;
       }
-      break;
-    } else {
-      // Salary is below this bucket
-      break;
     }
+
+    // Use validSalaryJobs instead of totalJobs
+    const percentile = (jobsBelow / validSalaryJobs) * 100;
+    return Math.min(Math.max(Math.round(percentile * 10) / 10, SCORE_LIMITS.MIN), SCORE_LIMITS.MAX);
   }
 
-  // 3. Calculate final percentile based on the interpolated jobs below
-  const percentile = (jobsBelow / totalJobs) * 100;
-  return Math.min(Math.max(Math.round(percentile * 10) / 10, SCORE_LIMITS.MIN), SCORE_LIMITS.MAX);
+  // --- SCENARIO B: Salary is IN the open-ended bucket ---
+  const lowerJobsCount = validSalaryJobs - topBucketCount;
+
+  // Calculate the "Salary Mass" of the known lower buckets using midpoints
+  let lowerSalaryMass = 0;
+  for (let i = 0; i < sortedBuckets.length - 1; i++) {
+    const current = sortedBuckets[i];
+    const next = sortedBuckets[i + 1];
+    if (!current || !next) continue;
+
+    const min = Number(current.value);
+    const max = Number(next.value);
+    const midpoint = (min + max) / 2;
+    lowerSalaryMass += midpoint * current.count;
+  }
+
+  // Calculate total mass based on overall mean, but scaled ONLY to jobs with salaries
+  const totalSalaryMass = meanSalary * validSalaryJobs;
+  const topBucketMass = Math.max(totalSalaryMass - lowerSalaryMass, 0);
+
+  // Find the true average of the top earners
+  let topBucketMean = topBucketMin * EXTRAPOLATION_CEILING_MULTIPLIER;
+  if (topBucketCount > 0) {
+    topBucketMean = Math.max(topBucketMass / topBucketCount, topBucketMin * 1.1);
+  }
+
+  // Synthetic Maximum
+  const syntheticMax = topBucketMean + (topBucketMean - topBucketMin);
+  const cappedSalary = Math.min(salary, syntheticMax);
+  let positionInTopBucket = 0;
+
+  if (syntheticMax > topBucketMin) {
+    positionInTopBucket = (cappedSalary - topBucketMin) / (syntheticMax - topBucketMin);
+  }
+
+  jobsBelow = lowerJobsCount + topBucketCount * positionInTopBucket;
+
+  // Use validSalaryJobs instead of totalJobs
+  const finalPercentile = (jobsBelow / validSalaryJobs) * 100;
+
+  return Math.min(
+    Math.max(Math.round(finalPercentile * 10) / 10, SCORE_LIMITS.MIN),
+    SCORE_LIMITS.MAX
+  );
 };
 
 export const calculateConfidenceScore = (
