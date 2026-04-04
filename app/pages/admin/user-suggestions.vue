@@ -108,7 +108,7 @@ const approveItem = async (item: Suggestion) => {
   isProcessing.value = item.id;
   try {
     const token = await firebaseAuth?.currentUser?.getIdToken();
-    await $fetch('/api/admin/approve-suggestion', {
+    await $fetch('/api/admin/suggestions/approve' as any, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`
@@ -137,7 +137,7 @@ const rejectItem = async (id: string) => {
   try {
     const token = await firebaseAuth?.currentUser?.getIdToken();
 
-    await $fetch('/api/admin/reject-suggestion', {
+    await $fetch('/api/admin/suggestions/reject' as any, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`

@@ -181,7 +181,7 @@ const approveMatch = async (suggestion: any) => {
   try {
     const token = await firebaseAuth?.currentUser?.getIdToken();
     // 3. Updated to useAdminFetch
-    await adminFetch('/api/admin/approve-suggestions', {
+    await adminFetch('/api/admin/suggestions/approve', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`
@@ -210,7 +210,7 @@ const rejectMatch = async (id: string) => {
   try {
     const token = await firebaseAuth?.currentUser?.getIdToken();
     // 4. Updated to useAdminFetch
-    await adminFetch('/api/admin/reject-suggestion', {
+    await adminFetch('/api/admin/suggestions/reject', {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`

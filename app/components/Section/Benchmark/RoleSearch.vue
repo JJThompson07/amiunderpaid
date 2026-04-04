@@ -263,6 +263,22 @@ const handleSearch = async () => {
 const onAmbiguityResolved = (resolvedGovId: string) => {
   showAmbiguityModal.value = false;
   loading.value = true;
+
+  const selectedMatch = ambiguityOptions.value.find((opt) => opt.id_code === resolvedGovId);
+
+  if (selectedMatch) {
+    // Fire and forget: log the suggestion without awaiting
+    $fetch('/api/user/suggestion', {
+      method: 'POST',
+      body: {
+        search_term: cleanSearchTitle.value,
+        target_id_code: resolvedGovId,
+        target_group_name: selectedMatch.group_name,
+        country: country.value
+      }
+    }).catch((err) => console.error('Failed to save suggestion tracking', err));
+  }
+
   executeNavigation(cleanSearchTitle.value, resolvedGovId);
 };
 
