@@ -14,8 +14,6 @@ export interface SearchLog {
 }
 
 export default defineEventHandler(async () => {
-  // await verifyAdmin(event);
-
   const db = getFirestore();
 
   try {
