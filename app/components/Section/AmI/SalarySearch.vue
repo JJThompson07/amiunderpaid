@@ -121,7 +121,7 @@ import { Search, MapPin, CalculatorIcon, Wallet, ArrowRightIcon } from 'lucide-v
 import { slugify } from '~/helpers/utility';
 
 const { t } = useI18n();
-const { trackSearch } = useAnalytics();
+const { trackSearch, trackAmbiguousSearch } = useAnalytics();
 const { logSearch } = useUserLogging();
 const { currentCountry, alternateSiteUrl } = useRegion();
 const route = useRoute();
@@ -254,6 +254,8 @@ const onAmbiguityResolved = async (resolvedGovId: string) => {
         country: currentCountry.value
       }
     }).catch((err) => console.error('Failed to save suggestion tracking', err));
+
+    trackAmbiguousSearch(cleanSearchTitle.value, selectedMatch.group_name);
   }
 
   await executeNavigation(cleanSearchTitle.value, resolvedGovId);
