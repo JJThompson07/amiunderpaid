@@ -2,8 +2,8 @@
 
 ## Roadmap
 
-- [/] Optimise SEO
-- [/] Redo layout of results page
+- [x] Optimise SEO
+- [x] Redo layout of results page
 - [ ] Create Recruiter portal
 - [ ] Create Payment integration for recruiters
 - [ ] Email Notifications (Role average updates)
