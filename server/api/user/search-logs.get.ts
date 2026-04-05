@@ -18,16 +18,39 @@ export default defineEventHandler(async () => {
   try {
     const collectionRef = db.collection('search_history');
 
-    // 1. Get the TOTAL lifetime count efficiently using Aggregation
-    const countSnapshot = await collectionRef.count().get();
+    const [countSnapshot, oldestSnapshot, latestSnapshot] = await Promise.all([
+      collectionRef.count().get(),
+      collectionRef.orderBy('timestamp', 'asc').limit(1).get(),
+      collectionRef.orderBy('timestamp', 'desc').limit(100).get()
+    ]);
+
     const totalCount = countSnapshot.data().count;
 
-    // 2. Get the latest 100 documents for the table
-    const snapshot = await collectionRef.orderBy('timestamp', 'desc').limit(100).get();
+    let oldestDate = 'the beginning';
+    let averagePerDay = 0; // 👈 New variable
 
-    const logs: SearchLog[] = snapshot.docs.map((doc) => {
+    if (!oldestSnapshot.empty) {
+      const oldestData = oldestSnapshot.docs[0].data();
+      if (oldestData.timestamp) {
+        // Format the UI date
+        oldestDate = oldestData.timestamp.toDate().toLocaleDateString('en-GB', {
+          month: 'short',
+          year: 'numeric'
+        });
+
+        // 👈 NEW: Calculate the average searches per day
+        const now = Date.now();
+        const oldestMs = oldestData.timestamp.toMillis();
+        const diffMs = now - oldestMs;
+
+        // Convert ms to days (Math.max prevents dividing by 0 if it's the very first day)
+        const daysElapsed = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        averagePerDay = Math.round(totalCount / daysElapsed);
+      }
+    }
+
+    const logs: SearchLog[] = latestSnapshot.docs.map((doc) => {
       const data = doc.data();
-
       return {
         id: doc.id,
         title: data.title || '',
@@ -48,8 +71,8 @@ export default defineEventHandler(async () => {
       };
     });
 
-    // 3. Return the totalCount alongside the logs
-    return { success: true, totalCount, logs };
+    // 👈 Return averagePerDay to the frontend
+    return { success: true, totalCount, oldestDate, averagePerDay, logs };
   } catch (error) {
     throw createError({
       statusCode: 500,

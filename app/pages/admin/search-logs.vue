@@ -10,18 +10,41 @@
             Live feed of the latest 100 searches across the platform.
           </p>
         </div>
-        <div
-          class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
-          <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
-            >Lifetime Searches</span
-          >
-          <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse">---</span>
-          <span v-else class="text-2xl font-black text-primary-500">{{
-            totalLifetimeSearches.toLocaleString()
-          }}</span>
+
+        <div class="flex items-center gap-3">
+          <div
+            class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+              >Daily Avg</span
+            >
+            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+              >---</span
+            >
+            <div v-else class="flex flex-col items-end">
+              <span class="text-2xl font-black text-primary-500 leading-none mt-1">
+                {{ averageDailySearches.toLocaleString() }}
+              </span>
+              <span class="text-xs text-slate-400 font-medium mt-1"> Searches / Day </span>
+            </div>
+          </div>
+
+          <div
+            class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+              >Lifetime Searches</span
+            >
+            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+              >---</span
+            >
+            <div v-else class="flex flex-col items-end">
+              <span class="text-2xl font-black text-primary-500 leading-none mt-1">
+                {{ totalLifetimeSearches.toLocaleString() }}
+              </span>
+              <span class="text-xs text-slate-400 font-medium mt-1"> Since {{ sinceDate }} </span>
+            </div>
+          </div>
         </div>
       </header>
-
       <div
         class="mb-4 flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div class="w-full max-w-md">
@@ -149,6 +172,8 @@ const tableColumns = [
 const { data, pending } = await useFetch<{
   success: boolean;
   totalCount: number;
+  oldestDate: string;
+  averagePerDay: number;
   logs: SearchLog[];
 }>('/api/user/search-logs');
 
@@ -156,9 +181,17 @@ const logs = computed(() => {
   return data.value?.logs || [];
 });
 
-// NEW: Computed property for the lifetime search count
+// Computed property for the lifetime search count
 const totalLifetimeSearches = computed(() => {
   return data.value?.totalCount || 0;
+});
+
+const sinceDate = computed(() => {
+  return data.value?.oldestDate || 'the beginning';
+});
+
+const averageDailySearches = computed(() => {
+  return data.value?.averagePerDay || 0;
 });
 
 // --- SEARCH & PAGINATION STATE ---
