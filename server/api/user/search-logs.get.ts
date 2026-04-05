@@ -1,6 +1,5 @@
 import { getFirestore } from 'firebase-admin/firestore';
 
-// 1. Define the exact shape of the outgoing data (matches your frontend!)
 export interface SearchLog {
   id: string;
   title: string;
@@ -17,13 +16,15 @@ export default defineEventHandler(async () => {
   const db = getFirestore();
 
   try {
-    const snapshot = await db
-      .collection('search_history')
-      .orderBy('timestamp', 'desc')
-      .limit(100)
-      .get();
+    const collectionRef = db.collection('search_history');
 
-    // 2. Explicitly tell TypeScript that `logs` is an array of `SearchLog`
+    // 1. Get the TOTAL lifetime count efficiently using Aggregation
+    const countSnapshot = await collectionRef.count().get();
+    const totalCount = countSnapshot.data().count;
+
+    // 2. Get the latest 100 documents for the table
+    const snapshot = await collectionRef.orderBy('timestamp', 'desc').limit(100).get();
+
     const logs: SearchLog[] = snapshot.docs.map((doc) => {
       const data = doc.data();
 
@@ -47,7 +48,8 @@ export default defineEventHandler(async () => {
       };
     });
 
-    return { success: true, logs };
+    // 3. Return the totalCount alongside the logs
+    return { success: true, totalCount, logs };
   } catch (error) {
     throw createError({
       statusCode: 500,

@@ -3,9 +3,23 @@
     <SectionSharedBackdrop bg-from="from-secondary-900/50" />
 
     <div class="px-6 md:px-8 max-w-7xl mx-auto w-full relative">
-      <header class="mb-8">
-        <h1 class="text-2xl font-black text-slate-900">User Search Logs</h1>
-        <p class="text-slate-500 mt-1">Live feed of the latest 100 searches across the platform.</p>
+      <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-black text-slate-900">User Search Logs</h1>
+          <p class="text-slate-500 mt-1">
+            Live feed of the latest 100 searches across the platform.
+          </p>
+        </div>
+        <div
+          class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
+          <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+            >Lifetime Searches</span
+          >
+          <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse">---</span>
+          <span v-else class="text-2xl font-black text-primary-500">{{
+            totalLifetimeSearches.toLocaleString()
+          }}</span>
+        </div>
       </header>
 
       <div
@@ -131,12 +145,20 @@ const tableColumns = [
   { key: 'brand', label: 'Platform', class: 'w-32 text-right', cellClass: 'text-right' }
 ];
 
-const { data, pending } = await useFetch<{ success: boolean; logs: SearchLog[] }>(
-  '/api/user/search-logs'
-);
+// UPDATED: Now expecting totalCount from the backend
+const { data, pending } = await useFetch<{
+  success: boolean;
+  totalCount: number;
+  logs: SearchLog[];
+}>('/api/user/search-logs');
 
 const logs = computed(() => {
   return data.value?.logs || [];
+});
+
+// NEW: Computed property for the lifetime search count
+const totalLifetimeSearches = computed(() => {
+  return data.value?.totalCount || 0;
 });
 
 // --- SEARCH & PAGINATION STATE ---
