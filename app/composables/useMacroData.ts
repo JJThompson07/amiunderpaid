@@ -23,7 +23,7 @@ export const useMacroData = () => {
       if (country === 'USA') {
         nationalFilter = `country:USA AND id_code:"00-0000"`;
       } else {
-        nationalFilter = `country:UK AND searchTitle:"all" AND searchLocation:"all employees"`;
+        nationalFilter = `country:UK AND searchTitle:"all employees" AND searchLocation:"united kingdom"`;
       }
       const nationalQuery = nationalIndex.search('', { filters: nationalFilter, hitsPerPage: 1 });
 
@@ -34,11 +34,11 @@ export const useMacroData = () => {
 
       let regionalFilter = '';
       if (country === 'USA') {
-        regionalFilter = `country:USA AND id_code:"00-0000"`;
+        regionalFilter = `country:USA AND id_code:"00-0000" AND searchLocation:"${userLocation?.toLowerCase() || 'all'}"`;
       } else {
         // Fetch ALL regions by excluding the national "all employees" record
         // We set hitsPerPage to 50 to make sure we grab every single UK region in one go
-        regionalFilter = `country:UK AND searchTitle:"all" AND NOT searchLocation:"all employees"`;
+        regionalFilter = `country:UK AND searchTitle:"all" AND NOT searchLocation:"uk"`;
       }
       regionalQuery = regionalIndex.search('', { filters: regionalFilter, hitsPerPage: 1000 });
 
