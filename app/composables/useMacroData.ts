@@ -34,11 +34,11 @@ export const useMacroData = () => {
 
       let regionalFilter = '';
       if (country === 'USA') {
-        regionalFilter = `country:USA AND id_code:"00-0000" AND searchLocation:"${userLocation?.toLowerCase() || 'all'}"`;
+        regionalFilter = `country:USA AND id_code:"00-0000"`;
       } else {
         // Fetch ALL regions by excluding the national "all employees" record
         // We set hitsPerPage to 50 to make sure we grab every single UK region in one go
-        regionalFilter = `country:UK AND searchTitle:"all" AND NOT searchLocation:"uk"`;
+        regionalFilter = `country:UK AND searchTitle:"all employees" AND NOT searchLocation:"uk"`;
       }
       regionalQuery = regionalIndex.search('', { filters: regionalFilter, hitsPerPage: 1000 });
 
