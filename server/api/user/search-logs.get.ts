@@ -27,9 +27,9 @@ export default defineEventHandler(async () => {
     const totalCount = countSnapshot.data().count;
 
     let oldestDate = 'the beginning';
-    let averagePerDay = 0; // 👈 New variable
+    let averagePerDay = 0;
 
-    if (!oldestSnapshot.empty) {
+    if (!oldestSnapshot.empty && oldestSnapshot.docs[0]) {
       const oldestData = oldestSnapshot.docs[0].data();
       if (oldestData.timestamp) {
         // Format the UI date
