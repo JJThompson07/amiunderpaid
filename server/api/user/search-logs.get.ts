@@ -1,6 +1,5 @@
 import { getFirestore } from 'firebase-admin/firestore';
 
-// 1. Define the exact shape of the outgoing data (matches your frontend!)
 export interface SearchLog {
   id: string;
   title: string;
@@ -17,16 +16,41 @@ export default defineEventHandler(async () => {
   const db = getFirestore();
 
   try {
-    const snapshot = await db
-      .collection('search_history')
-      .orderBy('timestamp', 'desc')
-      .limit(100)
-      .get();
+    const collectionRef = db.collection('search_history');
 
-    // 2. Explicitly tell TypeScript that `logs` is an array of `SearchLog`
-    const logs: SearchLog[] = snapshot.docs.map((doc) => {
+    const [countSnapshot, oldestSnapshot, latestSnapshot] = await Promise.all([
+      collectionRef.count().get(),
+      collectionRef.orderBy('timestamp', 'asc').limit(1).get(),
+      collectionRef.orderBy('timestamp', 'desc').limit(100).get()
+    ]);
+
+    const totalCount = countSnapshot.data().count;
+
+    let oldestDate = 'the beginning';
+    let averagePerDay = 0;
+
+    if (!oldestSnapshot.empty && oldestSnapshot.docs[0]) {
+      const oldestData = oldestSnapshot.docs[0].data();
+      if (oldestData.timestamp) {
+        // Format the UI date
+        oldestDate = oldestData.timestamp.toDate().toLocaleDateString('en-GB', {
+          month: 'short',
+          year: 'numeric'
+        });
+
+        // 👈 NEW: Calculate the average searches per day
+        const now = Date.now();
+        const oldestMs = oldestData.timestamp.toMillis();
+        const diffMs = now - oldestMs;
+
+        // Convert ms to days (Math.max prevents dividing by 0 if it's the very first day)
+        const daysElapsed = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        averagePerDay = Math.round(totalCount / daysElapsed);
+      }
+    }
+
+    const logs: SearchLog[] = latestSnapshot.docs.map((doc) => {
       const data = doc.data();
-
       return {
         id: doc.id,
         title: data.title || '',
@@ -47,7 +71,8 @@ export default defineEventHandler(async () => {
       };
     });
 
-    return { success: true, logs };
+    // 👈 Return averagePerDay to the frontend
+    return { success: true, totalCount, oldestDate, averagePerDay, logs };
   } catch (error) {
     throw createError({
       statusCode: 500,

@@ -3,11 +3,48 @@
     <SectionSharedBackdrop bg-from="from-secondary-900/50" />
 
     <div class="px-6 md:px-8 max-w-7xl mx-auto w-full relative">
-      <header class="mb-8">
-        <h1 class="text-2xl font-black text-slate-900">User Search Logs</h1>
-        <p class="text-slate-500 mt-1">Live feed of the latest 100 searches across the platform.</p>
-      </header>
+      <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-black text-slate-900">User Search Logs</h1>
+          <p class="text-slate-500 mt-1">
+            Live feed of the latest 100 searches across the platform.
+          </p>
+        </div>
 
+        <div class="flex items-center gap-3">
+          <div
+            class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+              >Daily Avg</span
+            >
+            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+              >---</span
+            >
+            <div v-else class="flex flex-col items-end">
+              <span class="text-2xl font-black text-primary-500 leading-none mt-1">
+                {{ averageDailySearches.toLocaleString() }}
+              </span>
+              <span class="text-xs text-slate-400 font-medium mt-1"> Searches / Day </span>
+            </div>
+          </div>
+
+          <div
+            class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
+            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+              >Lifetime Searches</span
+            >
+            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+              >---</span
+            >
+            <div v-else class="flex flex-col items-end">
+              <span class="text-2xl font-black text-primary-500 leading-none mt-1">
+                {{ totalLifetimeSearches.toLocaleString() }}
+              </span>
+              <span class="text-xs text-slate-400 font-medium mt-1"> Since {{ sinceDate }} </span>
+            </div>
+          </div>
+        </div>
+      </header>
       <div
         class="mb-4 flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div class="w-full max-w-md">
@@ -131,12 +168,30 @@ const tableColumns = [
   { key: 'brand', label: 'Platform', class: 'w-32 text-right', cellClass: 'text-right' }
 ];
 
-const { data, pending } = await useFetch<{ success: boolean; logs: SearchLog[] }>(
-  '/api/user/search-logs'
-);
+// UPDATED: Now expecting totalCount from the backend
+const { data, pending } = await useFetch<{
+  success: boolean;
+  totalCount: number;
+  oldestDate: string;
+  averagePerDay: number;
+  logs: SearchLog[];
+}>('/api/user/search-logs');
 
 const logs = computed(() => {
   return data.value?.logs || [];
+});
+
+// Computed property for the lifetime search count
+const totalLifetimeSearches = computed(() => {
+  return data.value?.totalCount || 0;
+});
+
+const sinceDate = computed(() => {
+  return data.value?.oldestDate || 'the beginning';
+});
+
+const averageDailySearches = computed(() => {
+  return data.value?.averagePerDay || 0;
 });
 
 // --- SEARCH & PAGINATION STATE ---
