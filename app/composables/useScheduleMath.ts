@@ -71,6 +71,9 @@ export const useScheduleMath = (
     return pricingData.value[billingCountry.value][`band${safeBand}`] || { basic: 0, exclusive: 0 };
   };
 
+  // ==========================================
+  // UPDATED: Dynamic Display Price
+  // ==========================================
   const getMonthDisplayPrice = (
     rowId: string,
     monthValue: string,
@@ -81,8 +84,17 @@ export const useScheduleMath = (
     if (!config) return null;
     const prices = getRowPricing(band);
 
+    // The true cost of an exclusive month
+    const upgradeCost = config.isBasic ? prices.exclusive - prices.basic : prices.exclusive;
+
     if (config.selectedMonths.has(monthValue)) {
-      return index === 0 && isPastHalfway.value ? prices.exclusive / 2 : prices.exclusive;
+      const isFirstMonth = index === 0;
+
+      // VISUAL FIX: If it's month 1 and basic is active, the total value is JUST the upgrade cost (£40).
+      // If it's month 2+, the total visual value is the full exclusive price (£50).
+      const baseVisual = isFirstMonth && config.isBasic ? upgradeCost : prices.exclusive;
+
+      return isFirstMonth && isPastHalfway.value ? baseVisual / 2 : baseVisual;
     } else if (config.isBasic) {
       return index === 0 ? 0 : prices.basic;
     }
@@ -114,7 +126,9 @@ export const useScheduleMath = (
   const isMonthSelected = (rowId: string, monthValue: string) =>
     rowConfigs.value.get(rowId)?.selectedMonths.has(monthValue) || false;
 
-  // The Big Math Loop
+  // ==========================================
+  // UPDATED: The Big Math Loop
+  // ==========================================
   const emitUpdates = () => {
     const payload = [];
     let calcMatrixTotal = 0,
@@ -130,21 +144,36 @@ export const useScheduleMath = (
       if (config.isBasic || config.selectedMonths.size > 0) {
         let rowTotalCost = 0;
 
+        // The upfront cost is NOW UNIVERSAL! Always subtract basic if they have the plan.
+        const upfrontUpgradeCost = config.isBasic
+          ? prices.exclusive - prices.basic
+          : prices.exclusive;
+
         upcomingMonths.value.forEach((month, index) => {
-          let monthCost = 0;
+          let visualMonthCost = 0;
+          const isFirstMonth = index === 0;
+
           if (config.selectedMonths.has(month.value)) {
-            monthCost =
-              index === 0 && isPastHalfway.value ? prices.exclusive / 2 : prices.exclusive;
+            // Visual Matrix UI logic
+            const baseVisual =
+              isFirstMonth && config.isBasic ? upfrontUpgradeCost : prices.exclusive;
+            visualMonthCost = isFirstMonth && isPastHalfway.value ? baseVisual / 2 : baseVisual;
+
+            // Due Today logic
+            const upfrontCost =
+              isFirstMonth && isPastHalfway.value ? upfrontUpgradeCost / 2 : upfrontUpgradeCost;
+            calcPayNow += upfrontCost;
           } else if (config.isBasic) {
-            monthCost = index === 0 ? 0 : prices.basic;
+            visualMonthCost = isFirstMonth ? 0 : prices.basic;
+            // First month basic is £0, so nothing adds to calcPayNow
           }
 
-          rowTotalCost += monthCost;
-          if (index === 0) calcPayNow += monthCost;
-          if (index === 1) calcNextMonth += monthCost;
+          rowTotalCost += visualMonthCost;
         });
 
         calcMatrixTotal += rowTotalCost;
+        if (config.isBasic) calcNextMonth += prices.basic;
+
         payload.push({
           territoryId: row.territory.id,
           territoryName: row.territory.name,

@@ -97,10 +97,12 @@ const loadAndDrawMap = async () => {
 
     chart.value.on('click', (params: any) => {
       const clickedName = normalizeName(params.name);
-
       const matchedTerritory = territoryLookup.value.get(clickedName);
 
       if (matchedTerritory) {
+        // BLOCK CLICK IF ALREADY CLAIMED!
+        if (props.claimedIds.includes(matchedTerritory.id)) return;
+
         emit('territory-clicked', matchedTerritory);
       } else {
         console.warn(`No match found in constants for map shape: ${params.name}`);
@@ -129,6 +131,8 @@ const updateMapData = () => {
   const primary100 = getThemeColor('--color-primary-100', '#cef9f6');
   const primary500 = getThemeColor('--color-primary-500', '#1cabb0');
   const primary600 = getThemeColor('--color-primary-600', '#14868d');
+  const positive200 = getThemeColor('--color-positive-200', '#bcf6cf');
+  const positive600 = getThemeColor('--color-positive-600', '#179644');
 
   // 1. Grab the raw GeoJSON memory that ECharts is using
   const mapObj = echarts.getMap(props.country);
@@ -150,25 +154,42 @@ const updateMapData = () => {
     // 4. If it's a match, tell ECharts to color it using the RAW GeoJSON name!
     if (matchedTerritory) {
       const isSelected = props.selectedIds.includes(matchedTerritory.id);
+      const isClaimed = props.claimedIds.includes(matchedTerritory.id);
 
-      mapData.push({
-        name: rawGeoName,
-        value: isSelected ? 1 : 0,
-        itemStyle: {
-          areaColor: isSelected ? primary500 : white,
-          borderColor: isSelected ? primary600 : slate400,
-          borderWidth: isSelected ? 2 : 1
-        },
-        emphasis: {
-          disabled: false,
+      if (isClaimed) {
+        mapData.push({
+          name: rawGeoName,
+          value: 2, // Arbitrary value to separate it from selected
           itemStyle: {
-            areaColor: isSelected ? primary500 : primary100,
-            borderColor: primary600,
+            areaColor: positive200,
+            borderColor: positive600,
             borderWidth: 1.5
-          }
-        },
-        cursor: 'pointer'
-      });
+          },
+          emphasis: {
+            disabled: true // Keep it green on hover
+          },
+          cursor: 'not-allowed'
+        });
+      } else {
+        mapData.push({
+          name: rawGeoName,
+          value: isSelected ? 1 : 0,
+          itemStyle: {
+            areaColor: isSelected ? primary500 : white,
+            borderColor: isSelected ? primary600 : slate400,
+            borderWidth: isSelected ? 2 : 1
+          },
+          emphasis: {
+            disabled: false,
+            itemStyle: {
+              areaColor: isSelected ? primary500 : primary100,
+              borderColor: primary600,
+              borderWidth: 1.5
+            }
+          },
+          cursor: 'pointer'
+        });
+      }
     }
   });
 
@@ -215,6 +236,7 @@ const updateMapData = () => {
 // We removed the `territories` watch to kill the double-trigger bug.
 watch(() => props.country, loadAndDrawMap);
 watch(() => props.selectedIds, updateMapData, { deep: true });
+watch(() => props.claimedIds, updateMapData, { deep: true });
 
 onMounted(() => {
   if (import.meta.client) {

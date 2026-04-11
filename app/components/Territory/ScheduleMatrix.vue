@@ -139,9 +139,16 @@
           }}{{ matrixTotal }}
         </span>
         <span v-else>Select "Ongoing" or specific months to build your schedule.</span>
-        <p class="text-xs text-slate-400 mt-1">
-          Ongoing Basic plans get the first month completely free.
-        </p>
+
+        <div class="flex flex-col gap-1 mt-1.5 text-left">
+          <p class="text-xs text-slate-400">
+            * Ongoing Basic plans get the first month completely free.
+          </p>
+          <p class="text-xs text-slate-400 max-w-lg leading-relaxed">
+            * Exclusive upgrades are secured today by paying the upgrade difference upfront. Your
+            standard basic rate will be billed normally during the exclusive month.
+          </p>
+        </div>
       </div>
 
       <div class="flex items-center gap-3 w-full lg:w-auto justify-end">

@@ -36,6 +36,7 @@
             <TerritoryList
               :options="listOptions"
               :selected-options="selectedTerritories"
+              :claimed-ids="userClaimedIds"
               @territory-click="handleTerritoryClick" />
           </template>
           <div v-else class="map-view flex flex-col gap-6">
@@ -43,7 +44,7 @@
               <TerritoryMap
                 :country="selectedCountry"
                 :territories="activeTerritories"
-                :claimed-ids="[]"
+                :claimed-ids="userClaimedIds"
                 :selected-ids="selectedTerritories.map((t) => t.id)"
                 @territory-clicked="handleTerritoryClick" />
             </div>
@@ -51,6 +52,7 @@
             <TerritoryNonContiguousRegions
               v-if="selectedCountry === 'USA'"
               :selected-territories="selectedTerritories"
+              :claimed-ids="userClaimedIds"
               @territory-clicked="handleTerritoryClick" />
           </div>
         </div>
@@ -157,8 +159,6 @@
 import { ref, computed, watch } from 'vue';
 
 // IMPORT YOUR CONSTANTS
-import { RECRUITER_TERRITORIES_UK } from '~~/utils/locations/uk';
-import { RECRUITER_TERRITORIES_USA } from '~~/utils/locations/usa';
 import type { TerritoryListOption } from '../../components/Territory/List.vue';
 
 // definePageMeta({
@@ -170,6 +170,9 @@ export type ViewType = 'list' | 'map';
 export type TerritoryOption = { label: string; value: number };
 
 const { t } = useI18n();
+
+const firebaseAuth = useFirebaseAuth();
+const { ukTerritories, usaTerritories } = useTerritories();
 
 const countries = [
   { value: 'UK', label: t('common.uk') },
@@ -196,9 +199,15 @@ const step = ref<1 | 2>(1);
 const scheduleSelections = ref<any[]>([]);
 const isSubmitting = ref(false);
 
+const userClaimedIds = computed(() => {
+  if (!userProfile.value) return [];
+  const active = userProfile.value.activeTerritories || userProfile.value.claims || [];
+  return active.map((t: any) => t.territoryId || t.id);
+});
+
 // 3. Map Data
 const activeTerritories = computed(() => {
-  return selectedCountry.value === 'UK' ? RECRUITER_TERRITORIES_UK : RECRUITER_TERRITORIES_USA;
+  return selectedCountry.value === 'UK' ? ukTerritories : usaTerritories;
 });
 
 const territoryOptions = computed<TerritoryOption[]>(() => {
@@ -209,8 +218,7 @@ const territoryOptions = computed<TerritoryOption[]>(() => {
 });
 
 const listOptions = computed<TerritoryListOption[]>(() => {
-  const list =
-    selectedCountry.value === 'UK' ? RECRUITER_TERRITORIES_UK : RECRUITER_TERRITORIES_USA;
+  const list = selectedCountry.value === 'UK' ? ukTerritories : usaTerritories;
 
   return list.map((t) => {
     return {
@@ -273,28 +281,39 @@ const continueToSchedule = () => {
 };
 
 // 8. Final Submission
+// 8. Final Submission & Payment Routing
 const submitSchedule = async () => {
   if (scheduleSelections.value.length === 0) return;
 
   isSubmitting.value = true;
 
   try {
-    // This is your final payload!
-    console.log('READY FOR BACKEND:', {
-      country: selectedCountry.value,
-      claims: scheduleSelections.value
+    const token = await firebaseAuth?.currentUser?.getIdToken();
+
+    // Determine the currency based on the selected country
+    const targetCurrency = selectedCountry.value === 'USA' ? 'usd' : 'gbp';
+
+    // Call your Stripe endpoint, passing the detailed schedule matrix!
+    const response = await $fetch<{ url: string }>('/api/stripe/create-checkout', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: {
+        // We pass the matrix selections so the backend knows exactly
+        // which months are basic vs exclusive
+        territories: scheduleSelections.value,
+        currency: targetCurrency
+      }
     });
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Await your actual Firebase/API call here
-    // await claimTerritories(selectedCountry.value, scheduleSelections.value);
-
-    // Route them back to dashboard on success
-    await navigateTo('/recruiter/dashboard');
+    // Redirect the user to the Stripe hosted checkout page
+    if (response.url) {
+      window.location.href = response.url;
+    }
   } catch (error) {
-    console.error('Failed to save schedule', error);
+    console.error('Failed to initialize payment:', error);
+    alert('Something went wrong calculating the cart. Please try again.');
   } finally {
     isSubmitting.value = false;
   }
