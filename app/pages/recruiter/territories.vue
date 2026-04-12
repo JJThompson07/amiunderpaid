@@ -264,6 +264,8 @@ const handleTerritoryClick = (territory: any) => {
   } else {
     selectedTerritories.value.push(territory);
   }
+
+  console.log('Selected Territories:', selectedTerritories.value);
 };
 
 const removeTerritory = (id: number) => {

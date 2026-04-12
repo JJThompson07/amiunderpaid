@@ -465,9 +465,9 @@ export const RECRUITER_TERRITORIES_USA: USATerritory[] = [
 ];
 
 export const NON_CONTIGUOUS_TERRITORIES_USA = [
-  { id: 2, gov_name: 'Alaska', name: 'Alaska' },
-  { id: 12, gov_name: 'Guam', name: 'Guam' },
-  { id: 13, gov_name: 'Hawaii', name: 'Hawaii' },
-  { id: 41, gov_name: 'Puerto Rico', name: 'Puerto Rico' },
-  { id: 42, gov_name: 'Virgin Islands', name: 'Virgin Islands' }
+  { id: 202, gov_name: 'Alaska', name: 'Alaska' },
+  { id: 212, gov_name: 'Guam', name: 'Guam' },
+  { id: 213, gov_name: 'Hawaii', name: 'Hawaii' },
+  { id: 241, gov_name: 'Puerto Rico', name: 'Puerto Rico' },
+  { id: 249, gov_name: 'Virgin Islands', name: 'Virgin Islands' }
 ];

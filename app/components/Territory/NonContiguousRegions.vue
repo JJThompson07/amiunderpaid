@@ -16,7 +16,7 @@
               ? 'bg-primary-50 border-primary-200 text-primary-700 shadow-inner'
               : 'bg-white border-slate-200 text-slate-700 hover:border-primary-300 hover:shadow-md cursor-pointer'
         ]"
-        @click="!claimedIds.includes(state.id) && $emit('territory-clicked', state)">
+        @click="handleRegionClick(state)">
         <div
           :class="[
             'w-20 h-20 shrink-0 transition-colors',
@@ -62,7 +62,7 @@
 import { NON_CONTIGUOUS_TERRITORIES_USA } from '../../../utils/locations/usa';
 import type { PropType } from 'vue';
 
-defineProps({
+const props = defineProps({
   selectedTerritories: {
     type: Array as PropType<any[]>,
     required: true
@@ -73,5 +73,20 @@ defineProps({
   }
 });
 
-defineEmits(['territory-clicked']);
+const emit = defineEmits(['territory-clicked']);
+
+// 1. Bring in our global master list helper
+const { getTerritoryById } = useTerritories();
+
+// 2. Create a smarter click handler
+const handleRegionClick = (state: any) => {
+  // Double-check they don't already own it
+  if (props.claimedIds.includes(state.id)) return;
+
+  // Grab the FULL territory object from the master list (which has the 'band'!)
+  const fullTerritory = getTerritoryById(state.id);
+
+  // Emit the rich object back to the parent cart
+  emit('territory-clicked', fullTerritory || state);
+};
 </script>

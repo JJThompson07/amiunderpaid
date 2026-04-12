@@ -44,14 +44,15 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div class="flex items-center gap-3">
             <div
-              class="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600">
+              class="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600 shrink-0">
               <MapPin class="w-5 h-5" />
             </div>
             <h2 class="text-xl font-bold text-slate-900">{{ $t('recruiter.territories.my') }}</h2>
           </div>
+
           <NuxtLink
             to="/recruiter/territories"
-            class="transition-all duration-300 ease-in-out bg-primary-500 text-white hover:bg-primary-400 py-2.5 px-5 rounded-xl font-bold text-sm shadow-sm hover:shadow-md text-center">
+            class="transition-all duration-300 ease-in-out bg-primary-500 text-white hover:bg-primary-400 py-2.5 px-5 rounded-xl font-bold text-sm shadow-sm hover:shadow-md text-center shrink-0 w-full sm:w-auto">
             {{ $t('recruiter.territories.get') }}
           </NuxtLink>
         </div>
@@ -71,16 +72,20 @@
           </AmIButton>
         </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
-          <TerritoryCard
-            v-for="(territory, index) in userProfile?.activeTerritories || userProfile?.claims"
-            :key="index"
-            :territory="territory"
-            :is-cancelling="isCancelling === territory.territoryId"
-            @cancel="handleCancelTerritory" />
+        <div v-else class="mt-4 animate-in fade-in duration-300">
+          <TerritoryDashboardMatrix
+            :territories="userProfile?.activeTerritories || userProfile?.claims"
+            :is-cancelling="isCancelling ? territoryToCancel : null"
+            @cancel="promptCancel"
+            @edit="handleEdit" />
         </div>
       </div>
     </div>
+
+    <ModalCancelTerritory
+      v-model="showCancelModal"
+      :is-cancelling="isCancelling"
+      @confirm="executeCancel" />
   </div>
 </template>
 
@@ -92,22 +97,27 @@ definePageMeta({
   middleware: 'recruiters'
 });
 
+// 1. Composables
 const { logout } = useRecruiterAuth();
 const { userProfile } = useUserProfile();
 const firebaseAuth = useFirebaseAuth();
 
-const isCancelling = ref<number | null>(null);
+// 2. Cancellation State
+const showCancelModal = ref(false);
+const territoryToCancel = ref<number | null>(null);
+const isCancelling = ref(false);
 
-const handleCancelTerritory = async (territoryId: number) => {
-  if (
-    !confirm(
-      'Are you sure you want to cancel this territory? You will lose access to its leads at the end of your billing cycle.'
-    )
-  ) {
-    return;
-  }
+// Step A: User clicks "Cancel" on a matrix row
+const promptCancel = (territoryId: number) => {
+  territoryToCancel.value = territoryId;
+  showCancelModal.value = true;
+};
 
-  isCancelling.value = territoryId;
+// Step B: User confirms inside the modal
+const executeCancel = async () => {
+  if (!territoryToCancel.value) return;
+
+  isCancelling.value = true;
 
   try {
     const token = await firebaseAuth?.currentUser?.getIdToken();
@@ -115,23 +125,31 @@ const handleCancelTerritory = async (territoryId: number) => {
     await $fetch('/api/stripe/cancel-territory', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
-      body: { territoryId }
+      body: { territoryId: territoryToCancel.value }
     });
 
-    // Visually remove it from the UI immediately
+    // Remove it from the UI immediately
     if (userProfile.value?.activeTerritories) {
       userProfile.value.activeTerritories = userProfile.value.activeTerritories.filter(
-        (t: any) => t.territoryId !== territoryId
+        (t: any) => t.territoryId !== territoryToCancel.value
       );
     }
+
+    // Close the modal and reset state
+    showCancelModal.value = false;
+    territoryToCancel.value = null;
   } catch (error) {
     console.error('Failed to cancel territory:', error);
-    alert('There was an issue cancelling this plan. Please try again.');
   } finally {
-    isCancelling.value = null;
+    isCancelling.value = false;
   }
 };
 
+const handleEdit = (territoryId: number) => {
+  navigateTo(`/recruiter/territories/edit?id=${territoryId}`);
+};
+
+// 3. Auth
 const handleLogout = async () => {
   await logout();
   await navigateTo('/recruiter/login');
