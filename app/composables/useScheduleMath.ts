@@ -2,6 +2,13 @@
 import { ref, computed, watch } from 'vue';
 import type { Territory } from '~/components/Territory/ScheduleMatrix.vue';
 
+type RowConfig = {
+  isBasic: boolean;
+  selectedMonths: Set<string>;
+  lockedBasic: boolean; // NEW: tracks if they already own basic
+  lockedMonths: Set<string>; // NEW: tracks already owned exclusive months
+};
+
 export const useScheduleMath = (
   props: { territories: Territory[]; categories: string[]; categoryOptions: any[] },
   emit: any
@@ -10,7 +17,7 @@ export const useScheduleMath = (
   const { userProfile } = useUserProfile();
 
   // State
-  const rowConfigs = ref<Map<string, { isBasic: boolean; selectedMonths: Set<string> }>>(new Map());
+  const rowConfigs = ref<Map<string, RowConfig>>(new Map());
   const matrixTotal = ref(0);
   const payNowTotal = ref(0);
   const nextMonthTotal = ref(0);
@@ -39,7 +46,16 @@ export const useScheduleMath = (
     return months;
   });
 
-  // Rows & Helpers
+  // NEW: Helper to find owned territory data
+  const getOwnedTerritory = (territoryId: number, categoryValue: string) => {
+    if (!userProfile.value) return null;
+    const active = userProfile.value.activeTerritories || userProfile.value.claims || [];
+    return (
+      active.find((t: any) => t.territoryId === territoryId && t.categoryValue === categoryValue) ||
+      null
+    );
+  };
+
   const getCategoryLabel = (val: string) => {
     const found = props.categoryOptions.find((c) => c.value === val);
     return found ? found.label : val;
@@ -56,8 +72,16 @@ export const useScheduleMath = (
           categoryValue: category,
           categoryLabel: getCategoryLabel(category)
         });
+
+        // UPDATED: Pre-fill locks based on Firebase data!
         if (!rowConfigs.value.has(rowId)) {
-          rowConfigs.value.set(rowId, { isBasic: false, selectedMonths: new Set() });
+          const owned = getOwnedTerritory(territory.id, category);
+          rowConfigs.value.set(rowId, {
+            isBasic: owned ? owned.isBasic : false,
+            selectedMonths: new Set(owned?.exclusiveMonths || []),
+            lockedBasic: owned ? owned.isBasic : false,
+            lockedMonths: new Set(owned?.exclusiveMonths || [])
+          });
         }
       }
     }
@@ -71,9 +95,6 @@ export const useScheduleMath = (
     return pricingData.value[billingCountry.value][`band${safeBand}`] || { basic: 0, exclusive: 0 };
   };
 
-  // ==========================================
-  // UPDATED: Dynamic Display Price
-  // ==========================================
   const getMonthDisplayPrice = (
     rowId: string,
     monthValue: string,
@@ -84,16 +105,11 @@ export const useScheduleMath = (
     if (!config) return null;
     const prices = getRowPricing(band);
 
-    // The true cost of an exclusive month
     const upgradeCost = config.isBasic ? prices.exclusive - prices.basic : prices.exclusive;
 
     if (config.selectedMonths.has(monthValue)) {
       const isFirstMonth = index === 0;
-
-      // VISUAL FIX: If it's month 1 and basic is active, the total value is JUST the upgrade cost (£40).
-      // If it's month 2+, the total visual value is the full exclusive price (£50).
       const baseVisual = isFirstMonth && config.isBasic ? upgradeCost : prices.exclusive;
-
       return isFirstMonth && isPastHalfway.value ? baseVisual / 2 : baseVisual;
     } else if (config.isBasic) {
       return index === 0 ? 0 : prices.basic;
@@ -101,10 +117,10 @@ export const useScheduleMath = (
     return null;
   };
 
-  // Interactions
+  // UPDATED: Respect the Locks!
   const toggleBasic = (rowId: string) => {
     const config = rowConfigs.value.get(rowId);
-    if (config) {
+    if (config && !config.lockedBasic) {
       config.isBasic = !config.isBasic;
       emitUpdates();
     }
@@ -112,7 +128,7 @@ export const useScheduleMath = (
 
   const toggleMonth = (rowId: string, monthValue: string) => {
     const config = rowConfigs.value.get(rowId);
-    if (config) {
+    if (config && !config.lockedMonths.has(monthValue)) {
       if (config.selectedMonths.has(monthValue)) {
         config.selectedMonths.delete(monthValue);
       } else {
@@ -126,9 +142,11 @@ export const useScheduleMath = (
   const isMonthSelected = (rowId: string, monthValue: string) =>
     rowConfigs.value.get(rowId)?.selectedMonths.has(monthValue) || false;
 
-  // ==========================================
-  // UPDATED: The Big Math Loop
-  // ==========================================
+  // NEW: Expose lock status to the UI
+  const isBasicLocked = (rowId: string) => rowConfigs.value.get(rowId)?.lockedBasic || false;
+  const isMonthLocked = (rowId: string, monthValue: string) =>
+    rowConfigs.value.get(rowId)?.lockedMonths.has(monthValue) || false;
+
   const emitUpdates = () => {
     const payload = [];
     let calcMatrixTotal = 0,
@@ -143,8 +161,6 @@ export const useScheduleMath = (
 
       if (config.isBasic || config.selectedMonths.size > 0) {
         let rowTotalCost = 0;
-
-        // The upfront cost is NOW UNIVERSAL! Always subtract basic if they have the plan.
         const upfrontUpgradeCost = config.isBasic
           ? prices.exclusive - prices.basic
           : prices.exclusive;
@@ -154,18 +170,18 @@ export const useScheduleMath = (
           const isFirstMonth = index === 0;
 
           if (config.selectedMonths.has(month.value)) {
-            // Visual Matrix UI logic
             const baseVisual =
               isFirstMonth && config.isBasic ? upfrontUpgradeCost : prices.exclusive;
             visualMonthCost = isFirstMonth && isPastHalfway.value ? baseVisual / 2 : baseVisual;
 
-            // Due Today logic
-            const upfrontCost =
-              isFirstMonth && isPastHalfway.value ? upfrontUpgradeCost / 2 : upfrontUpgradeCost;
-            calcPayNow += upfrontCost;
+            // UPDATED MATH: Only charge today if the month is NOT already locked!
+            if (!config.lockedMonths.has(month.value)) {
+              const upfrontCost =
+                isFirstMonth && isPastHalfway.value ? upfrontUpgradeCost / 2 : upfrontUpgradeCost;
+              calcPayNow += upfrontCost;
+            }
           } else if (config.isBasic) {
             visualMonthCost = isFirstMonth ? 0 : prices.basic;
-            // First month basic is £0, so nothing adds to calcPayNow
           }
 
           rowTotalCost += visualMonthCost;
@@ -180,6 +196,7 @@ export const useScheduleMath = (
           band: row.territory.band || 1,
           categoryValue: row.categoryValue,
           isBasic: config.isBasic,
+          // Convert the Set to an array for the backend
           exclusiveMonths: Array.from(config.selectedMonths),
           rowCost: rowTotalCost
         });
@@ -212,6 +229,8 @@ export const useScheduleMath = (
     toggleMonth,
     isBasic,
     isMonthSelected,
+    isBasicLocked, // Exported!
+    isMonthLocked, // Exported!
     getMonthDisplayPrice,
     getRowPricing
   };

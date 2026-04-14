@@ -18,7 +18,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch, shallowRef } from 'vue';
 import * as echarts from 'echarts';
-import type { CountryCode } from '../../pages/recruiter/territories.vue';
+import type { CountryCode } from '../../pages/recruiter/territories/index.vue';
 
 const props = defineProps<{
   country: CountryCode;
@@ -131,8 +131,8 @@ const updateMapData = () => {
   const primary100 = getThemeColor('--color-primary-100', '#cef9f6');
   const primary500 = getThemeColor('--color-primary-500', '#1cabb0');
   const primary600 = getThemeColor('--color-primary-600', '#14868d');
-  const positive200 = getThemeColor('--color-positive-200', '#bcf6cf');
-  const positive600 = getThemeColor('--color-positive-600', '#179644');
+  const secondary200 = getThemeColor('--color-secondary-200', '#c8ddef');
+  const secondary600 = getThemeColor('--color-secondary-600', '#2c699d');
 
   // 1. Grab the raw GeoJSON memory that ECharts is using
   const mapObj = echarts.getMap(props.country);
@@ -161,8 +161,8 @@ const updateMapData = () => {
           name: rawGeoName,
           value: 2, // Arbitrary value to separate it from selected
           itemStyle: {
-            areaColor: positive200,
-            borderColor: positive600,
+            areaColor: secondary200,
+            borderColor: secondary600,
             borderWidth: 1.5
           },
           emphasis: {

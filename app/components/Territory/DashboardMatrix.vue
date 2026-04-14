@@ -5,7 +5,7 @@
       :data="territories"
       min-width="min-w-[800px]"
       class="border-0! rounded-none!">
-      <template #header-target>Industry & Region</template>
+      <template #header-target>{{ $t('recruiter.schedule.target-row') }}</template>
 
       <template
         v-for="month in displayMonths"
@@ -38,14 +38,14 @@
         <div class="flex flex-col items-center justify-center gap-1">
           <div
             v-if="isExclusive(row, month.value)"
-            class="bg-primary-50 text-primary-700 border border-primary-200 px-2 py-1 rounded-md flex items-center justify-center gap-1.5 text-2xs uppercase tracking-wider font-bold shadow-inner w-full max-w-22.5">
+            class="bg-primary-100 text-primary-800 border border-primary-400 px-2 py-1 rounded-md flex items-center justify-center gap-1.5 text-2xs uppercase tracking-wider font-bold shadow-inner w-full max-w-22.5">
             <CrownIcon class="w-3.5 h-3.5" />
             <span class="hidden sm:inline">Excl</span>
           </div>
 
           <div
             v-else-if="row.isBasic"
-            class="bg-secondary-50 text-secondary-700 border border-secondary-200 px-2 py-1 rounded-md flex items-center justify-center gap-1.5 text-2xs uppercase tracking-wider font-bold w-full max-w-22.5">
+            class="bg-secondary-50 text-secondary-800 border border-secondary-400 px-2 py-1 rounded-md flex items-center justify-center gap-1.5 text-2xs uppercase tracking-wider font-bold w-full max-w-22.5">
             <CheckSquareIcon class="w-3 h-3" />
             <span class="hidden sm:inline">Basic</span>
           </div>

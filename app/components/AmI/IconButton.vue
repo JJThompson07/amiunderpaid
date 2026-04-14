@@ -2,7 +2,7 @@
   <button
     :title="title"
     :disabled="disabled || loading"
-    class="p-2 rounded-lg transition-all duration-200 flex items-center justify-center shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+    class="p-2 rounded-lg transition-all duration-200 flex items-center justify-center shrink-0 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
     :class="[bgColour, bgHoverColour, textColour, textHoverColour]"
     @click="$emit('click', $event)">
     <span

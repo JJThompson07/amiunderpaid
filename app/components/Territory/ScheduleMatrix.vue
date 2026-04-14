@@ -5,7 +5,7 @@
       :columns="matrixColumns"
       :data="matrixRows"
       min-width="min-w-225"
-      class="!border-0 !rounded-none !border-b !border-slate-200 pb-2">
+      class="border-0! rounded-none! border-b! border-slate-200! pb-2">
       <template #header-target>
         {{ $t('recruiter.schedule.target-row') }}
       </template>
@@ -21,36 +21,47 @@
       </template>
 
       <template #target="{ row }">
-        <div class="flex flex-col">
-          <span class="font-bold text-slate-800 text-sm">{{ row.categoryLabel }}</span>
-          <div class="flex items-center justify-between mt-0.5 pr-2">
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="font-bold text-slate-800 text-sm">{{ row.categoryLabel }}</span>
             <span class="text-slate-500 text-xs flex items-center gap-1">
               <MapPinIcon class="w-3 h-3" />
               {{ row.territory.name }}
             </span>
-            <span class="text-2xs font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
-              Band {{ row.territory.band || 1 }}
-            </span>
           </div>
+          <span class="text-2xs font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
+            Band {{ row.territory.band || 1 }}
+          </span>
         </div>
       </template>
 
       <template #basic="{ row }">
         <button
           type="button"
+          :disabled="isBasicLocked(row.id)"
           :class="[
             'px-3 py-2 rounded-xl font-bold text-xs transition-all duration-200 flex flex-col items-center justify-center gap-1 mx-auto w-full max-w-25',
-            isBasic(row.id)
-              ? 'bg-secondary-700 text-white shadow-md ring-2'
-              : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-secondary-700'
+            isBasicLocked(row.id)
+              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm cursor-not-allowed opacity-90'
+              : isBasic(row.id)
+                ? 'bg-secondary-700 text-white shadow-md ring-2'
+                : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-secondary-700'
           ]"
           @click="toggleBasic(row.id)">
           <div class="flex items-center gap-1.5">
-            <CheckCircle2Icon v-if="isBasic(row.id)" class="w-3.5 h-3.5 text-positive-400" />
+            <CheckCircle2Icon
+              v-if="isBasic(row.id) || isBasicLocked(row.id)"
+              class="w-3.5 h-3.5"
+              :class="isBasicLocked(row.id) ? 'text-emerald-500' : 'text-positive-400'" />
             <CircleIcon v-else class="w-3.5 h-3.5 text-slate-400" />
-            <span>Ongoing</span>
+            <span v-if="isBasicLocked(row.id)" class="uppercase tracking-wider text-2xs"
+              >Owned</span
+            >
+            <span v-else>Ongoing</span>
           </div>
-          <span :class="isBasic(row.id) ? 'text-slate-300' : 'text-slate-400 font-medium'">
+          <span
+            v-if="!isBasicLocked(row.id)"
+            :class="isBasic(row.id) ? 'text-slate-300' : 'text-slate-400 font-medium'">
             {{ currencySymbol }}{{ getRowPricing(row.territory.band).basic }}/mo
           </span>
         </button>
@@ -63,19 +74,25 @@
         <div class="flex flex-col items-center justify-start gap-1.5">
           <button
             type="button"
+            :disabled="isMonthLocked(row.id, month.value)"
             :title="
-              isMonthSelected(row.id, month.value)
-                ? 'Downgrade'
-                : `Upgrade to Exclusive (${currencySymbol}${getRowPricing(row.territory.band).exclusive})`
+              isMonthLocked(row.id, month.value)
+                ? 'Already Owned'
+                : isMonthSelected(row.id, month.value)
+                  ? 'Downgrade'
+                  : `Upgrade to Exclusive (${currencySymbol}${getRowPricing(row.territory.band).exclusive})`
             "
             :class="[
               'w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200',
-              isMonthSelected(row.id, month.value)
-                ? 'bg-primary-50 text-primary-600 border border-primary-200 shadow-inner'
-                : 'bg-white border border-slate-200 text-slate-300 hover:border-primary-300 hover:text-primary-400 shadow-sm'
+              isMonthLocked(row.id, month.value)
+                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 cursor-not-allowed opacity-90'
+                : isMonthSelected(row.id, month.value)
+                  ? 'bg-primary-50 text-primary-600 border border-primary-200 shadow-inner'
+                  : 'bg-white border border-slate-200 text-slate-300 hover:border-primary-300 hover:text-primary-400 shadow-sm'
             ]"
             @click="toggleMonth(row.id, month.value)">
-            <CrownIcon v-if="isMonthSelected(row.id, month.value)" class="w-5 h-5" />
+            <CheckCircle2Icon v-if="isMonthLocked(row.id, month.value)" class="w-5 h-5" />
+            <CrownIcon v-else-if="isMonthSelected(row.id, month.value)" class="w-5 h-5" />
             <PlusIcon v-else class="w-4 h-4" />
           </button>
 
@@ -99,7 +116,7 @@
                 }}{{ getMonthDisplayPrice(row.id, month.value, index, row.territory.band) }}
                 <span
                   v-if="index === 0 && isPastHalfway && isMonthSelected(row.id, month.value)"
-                  class="text-[8px] text-primary-400 whitespace-nowrap">
+                  class="text-3xs text-primary-400 whitespace-nowrap">
                   (50%)
                 </span>
               </span>
@@ -192,6 +209,8 @@ const {
   toggleMonth,
   isBasic,
   isMonthSelected,
+  isBasicLocked,
+  isMonthLocked,
   getMonthDisplayPrice,
   getRowPricing
 } = useScheduleMath(props, emit);

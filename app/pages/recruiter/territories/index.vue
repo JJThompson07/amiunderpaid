@@ -159,7 +159,7 @@
 import { ref, computed, watch } from 'vue';
 
 // IMPORT YOUR CONSTANTS
-import type { TerritoryListOption } from '../../components/Territory/List.vue';
+import type { TerritoryListOption } from '../../../components/Territory/List.vue';
 
 // definePageMeta({
 //   middleware: 'recruiters'
@@ -264,8 +264,6 @@ const handleTerritoryClick = (territory: any) => {
   } else {
     selectedTerritories.value.push(territory);
   }
-
-  console.log('Selected Territories:', selectedTerritories.value);
 };
 
 const removeTerritory = (id: number) => {
@@ -292,8 +290,8 @@ const submitSchedule = async () => {
   try {
     const token = await firebaseAuth?.currentUser?.getIdToken();
 
-    // Determine the currency based on the selected country
-    const targetCurrency = selectedCountry.value === 'USA' ? 'usd' : 'gbp';
+    // Determine the currency based on the user's billing country
+    const targetCurrency = userProfile.value?.billingCountry === 'USA' ? 'usd' : 'gbp';
 
     // Call your Stripe endpoint, passing the detailed schedule matrix!
     const response = await $fetch<{ url: string }>('/api/stripe/create-checkout', {
