@@ -1,93 +1,138 @@
 // server/api/stripe/webhook.post.ts
 import Stripe from 'stripe';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
+  // 1. Initialize config and Stripe
   const config = useRuntimeConfig();
   const stripe = new Stripe(config.stripeSecretKey, {
     apiVersion: '2026-03-25.dahlia'
   });
 
-  // Stripe requires the raw, unparsed body to verify the cryptographic signature
-  const body = await readRawBody(event);
-  const sig = getRequestHeader(event, 'stripe-signature');
-
-  // You will get this secret from the Stripe Dashboard (or Stripe CLI for local testing)
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  // 2. CRITICAL: Get the raw string body, NOT the parsed JSON!
+  const rawBody = await readRawBody(event);
+  const stripeSignature = getHeader(event, 'stripe-signature');
 
   let stripeEvent;
 
   try {
-    if (!body || !sig || !endpointSecret) throw new Error('Missing webhook requirements');
-    stripeEvent = stripe.webhooks.constructEvent(body, sig, endpointSecret);
+    // 3. Verify the signature using the raw string and your webhook secret
+    stripeEvent = stripe.webhooks.constructEvent(
+      rawBody as string,
+      stripeSignature as string,
+      config.stripeWebhookSecret
+    );
   } catch (err: any) {
-    console.error(`⚠️  Webhook signature verification failed:`, err.message);
-    return createError({ statusCode: 400, message: `Webhook Error: ${err.message}` });
+    console.error('⚠️ Webhook signature verification failed.', err.message);
+    throw createError({ statusCode: 400, message: 'Invalid signature' });
   }
 
-  // ==========================================
-  // HANDLE SUCCESSFUL PAYMENTS
-  // ==========================================
+  // 4. Process the successful payment
   if (stripeEvent.type === 'checkout.session.completed') {
     const session = stripeEvent.data.object as Stripe.Checkout.Session;
 
-    // 1. Unpack our secure passport!
-    const userId = session.metadata?.userId;
-    const compressedCart = session.metadata?.cart;
-
-    // 2. Grab the Stripe IDs we need for future downgrades/cancellations
-    const stripeCustomerId = session.customer as string;
-    const stripeSubscriptionId = session.subscription as string | null;
-
-    if (!userId || userId === 'anonymous') {
-      console.error('Webhook Error: No userId found in metadata.');
-      return { received: true };
-    }
-
-    const db = getFirestore();
-    const userRef = db.collection('users').doc(userId);
-
-    // 3. Decode the cart string ("29:IT:1:2,40:IT:1:0")
-    const newTerritories = compressedCart
-      ? compressedCart.split(',').map((item) => {
-          const [territoryId, categoryValue, isBasicStr, excMonthsStr] = item.split(':');
-
-          // Split the tilde-separated string back into a beautiful array of exact months!
-          const exclusiveMonths = excMonthsStr === 'none' ? [] : (excMonthsStr || '').split('~');
-
-          return {
-            territoryId: Number(territoryId),
-            categoryValue,
-            isBasic: isBasicStr === '1',
-            exclusiveMonths: exclusiveMonths, // <-- Now contains the exact dates!
-            purchasedAt: new Date().toISOString()
-          };
-        })
-      : [];
-
-    // 4. Update the user in Firebase
     try {
-      await userRef.set(
+      const userId = session.metadata?.userId;
+      const rawCart = session.metadata?.cart;
+
+      if (!userId || !rawCart) {
+        throw new Error('Missing metadata in Stripe session');
+      }
+
+      console.log('🔍 1. RAW CART FROM STRIPE:', rawCart);
+
+      // UN-COMPRESS THE CART
+      const purchasedItems = rawCart.split(',').map((itemStr) => {
+        const [tId, catCode, hasBasic, excMonths] = itemStr.split(':');
+        return {
+          territoryId: Number(tId),
+          categoryValue: catCode,
+          isBasic: hasBasic === '1',
+          exclusiveMonths: !excMonths || excMonths === 'none' ? [] : excMonths.split('~')
+        };
+      });
+
+      console.log('🔍 2. PARSED ITEMS:', JSON.stringify(purchasedItems, null, 2));
+
+      const db = getFirestore();
+      const batch = db.batch();
+      let writeCount = 0;
+
+      // GET THE USER'S CURRENT PROFILE
+      const userRef = db.collection('users').doc(userId);
+      const userDoc = await userRef.get();
+      const userData = userDoc.data() || {};
+
+      const existingTerritories = userData.activeTerritories || [];
+      const updatedTerritories = [...existingTerritories];
+
+      for (const item of purchasedItems) {
+        // --- UPDATE 1: THE USER'S PROFILE DATA ---
+        const existingIndex = updatedTerritories.findIndex(
+          (t) => t.territoryId === item.territoryId && t.categoryValue === item.categoryValue
+        );
+
+        if (existingIndex > -1) {
+          // Upgrade existing territory
+          updatedTerritories[existingIndex].isBasic =
+            item.isBasic || updatedTerritories[existingIndex].isBasic;
+          const combinedMonths = new Set([
+            ...(updatedTerritories[existingIndex].exclusiveMonths || []),
+            ...item.exclusiveMonths
+          ]);
+          updatedTerritories[existingIndex].exclusiveMonths = Array.from(combinedMonths);
+        } else {
+          // Brand new territory
+          updatedTerritories.push(item);
+        }
+
+        // --- UPDATE 2: THE GLOBAL LOCK ---
+        if (item.exclusiveMonths && item.exclusiveMonths.length > 0) {
+          const claimDocId = `${item.territoryId}_${item.categoryValue}`;
+          const claimRef = db.collection('territory_claims').doc(claimDocId);
+
+          const newExclusiveLocks: Record<string, string> = {};
+          for (const month of item.exclusiveMonths) {
+            newExclusiveLocks[month] = userId;
+          }
+
+          console.log(`📝 3. QUEUING WRITE FOR ${claimDocId}:`, newExclusiveLocks);
+
+          batch.set(
+            claimRef,
+            {
+              territoryId: item.territoryId,
+              categoryValue: item.categoryValue,
+              takenExclusiveMonths: newExclusiveLocks,
+              updatedAt: new Date().toISOString()
+            },
+            { merge: true }
+          );
+          writeCount++;
+        }
+      }
+
+      // Add the updated user profile array to the batch
+      batch.set(
+        userRef,
         {
-          // Save their Stripe IDs so we can use them later
-          stripeCustomerId: stripeCustomerId,
-          ...(stripeSubscriptionId && { stripeSubscriptionId: stripeSubscriptionId }),
-
-          // Add the new territories to their account using an array union
-          // (so we don't overwrite any they bought previously!)
-          activeTerritories: FieldValue.arrayUnion(...newTerritories),
-
-          updatedAt: FieldValue.serverTimestamp()
+          activeTerritories: updatedTerritories,
+          // Optional: Save the subscription ID if this was a recurring checkout
+          ...(session.subscription ? { stripeSubscriptionId: session.subscription as string } : {}),
+          updatedAt: new Date().toISOString()
         },
         { merge: true }
       );
+      writeCount++;
 
-      console.log(`✅ Successfully provisioned territories for user: ${userId}`);
+      // COMMIT EVERYTHING AT ONCE
+      await batch.commit();
+      console.log(`✅ 4. SUCCESSFULLY COMMITTED ${writeCount} WRITES FOR USER ${userId}`);
     } catch (error) {
-      console.error('🔥 Failed to update Firebase user document:', error);
+      console.error('🔥 Error fulfilling Stripe order:', error);
+      throw createError({ statusCode: 500, message: 'Database fulfillment failed' });
     }
   }
 
-  // Return a 200 response to acknowledge receipt of the event
   return { received: true };
 });

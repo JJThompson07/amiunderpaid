@@ -144,7 +144,8 @@ export default defineNuxtConfig({
       stripePublicKey: process.env.NUXT_PUBLIC_STRIPE_KEY
     },
 
-    stripeSecretKey: process.env.STRIPE_SECRET_KEY
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET
   },
 
   // ** 6. Vite / Tailwind **

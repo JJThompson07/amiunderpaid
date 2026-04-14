@@ -12,7 +12,9 @@
             @click="navigateTo('/recruiter/dashboard')">
             &larr;
           </button>
-          <h1 class="text-2xl font-black text-slate-900">My Profile</h1>
+          <h1 class="text-2xl font-black text-slate-900">
+            {{ $t('recruiter.account.page-title') }}
+          </h1>
         </div>
       </header>
 
@@ -46,12 +48,12 @@
           <div class="relative">
             <div class="flex items-center justify-between mb-1">
               <p class="text-2xs font-bold text-slate-400 uppercase tracking-wider">
-                Billing Currency
+                {{ $t('recruiter.account.billing-currency') }}
               </p>
               <div v-if="isUpdatingBilling" class="flex items-center gap-1.5">
                 <span
                   class="text-[9px] font-bold text-primary-600 uppercase tracking-wider animate-pulse"
-                  >Saving</span
+                  >{{ $t('recruiter.account.saving') }}</span
                 >
                 <span
                   class="w-2.5 h-2.5 border border-slate-200 border-t-primary-500 rounded-full animate-spin"></span>
@@ -59,7 +61,7 @@
             </div>
 
             <p class="text-xs text-slate-500 mb-3">
-              Sets the currency used when claiming exclusive territories.
+              {{ $t('recruiter.account.billing-helper') }}
             </p>
 
             <AmIInputSelect
@@ -88,7 +90,7 @@
             <div class="mt-5">
               <div class="flex justify-between items-end mb-2">
                 <h4 class="text-2xs font-bold text-slate-400 uppercase tracking-wider">
-                  {{ $t('common.selected') }} ({{ selectedCategories.length }})
+                  {{ $t('recruiter.industries.selected-count') }} ({{ selectedCategories.length }})
                 </h4>
                 <button
                   v-if="selectedCategories.length > 0"
@@ -181,6 +183,7 @@ definePageMeta({
 
 const { userProfile, updateProfile } = useUserProfile();
 const { categories: categoriesData, loadingCategories } = useCategories();
+const { t } = useI18n();
 
 const selectedCategories = ref<string[]>([]);
 const isSaving = ref(false);
@@ -190,16 +193,28 @@ const billingPreference = ref(['UK']);
 const isUpdatingBilling = ref(false);
 
 const currencyOptions = [
-  { label: 'United Kingdom (GBP £)', value: 'UK' },
-  { label: 'United States (USD $)', value: 'USA' }
+  { label: t('recruiter.account.currency-uk'), value: 'UK' },
+  { label: t('recruiter.account.currency-usa'), value: 'USA' }
 ];
 
 const formattedCategories = computed(() => {
   if (!categoriesData.value) return [];
-  return categoriesData.value.map((cat: any) => ({
-    label: cat.label || cat.id,
-    value: cat.label || cat.id
-  }));
+
+  const uniqueCategories = new Map();
+
+  categoriesData.value.forEach((cat: any) => {
+    const val = cat.label || cat.id;
+
+    // Only add it if we haven't seen this exact category name yet
+    if (!uniqueCategories.has(val)) {
+      uniqueCategories.set(val, {
+        label: val,
+        value: val
+      });
+    }
+  });
+
+  return Array.from(uniqueCategories.values());
 });
 
 const getCategoryLabel = (val: string) => {

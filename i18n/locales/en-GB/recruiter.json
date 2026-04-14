@@ -19,17 +19,30 @@
   },
   "account": {
     "heading": "Agency Profile",
+    "page-title": "My Profile",
     "name": "Agency Name",
-    "status": {
-      "label": "Account Status",
-      "active": "Active",
-      "inactive": "Inactive"
-    }
+    "billing-currency": "Billing Currency",
+    "billing-helper": "Sets the currency used when claiming exclusive territories.",
+    "saving": "Saving",
+    "currency-uk": "United Kingdom (GBP £)",
+    "currency-usa": "United States (USD $)"
   },
   "industries": {
-    "none": "No industries selected",
+    "heading": "Covered Industries",
+    "helper": "Select the industries your agency covers",
     "search": "Search Industries...",
-    "helper": "Select the industries your agency covers"
+    "none": "No industries selected",
+    "selected-count": "Selected"
+  },
+  "common": {
+    "email": "Email Address",
+    "clear": "Clear All",
+    "saved": {
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "success": "{items} saved successfully!"
+    },
+    "categories": "Categories"
   },
   "territories": {
     "get": "Get Territories",
@@ -40,24 +53,57 @@
     "count": "{count} territory | {count} territories",
     "list": "Territories List",
     "amiunderpaid": {
-      "claim": {
-        "header": "Claim Candidate Territories"
-      }
+      "claim": { "header": "Claim Candidate Territories" }
     },
     "benchmark": {
-      "claim": {
-        "header": "Claim Client Territories"
-      }
+      "claim": { "header": "Claim Client Territories" }
     },
     "claim": {
       "first": "Claim Your First Territory",
       "leads": "Claim an exclusive region to start receiving leads from that area",
-      "map": {
-        "description": "Use the map to select which region's you cover"
-      }
+      "map": { "description": "Use the map to select which region's you cover" },
+      "action": "Confirm & Save Schedule",
+      "step-1": "Step 1: Select Targets",
+      "step-2": "Step 2: Claim Your Schedule",
+      "step-2-helper": "Select the upcoming months you want to receive leads for.",
+      "back-to-selection": "Back to Selection",
+      "click-map": "Click regions on the map to begin.",
+      "target-regions": "Target Regions",
+      "target-industries": "Target Industries {country}",
+      "agency-profile-helper": "Showing industries from your Agency Profile.",
+      "configure-schedule": "Configure Schedule",
+      "processing": "Processing...",
+      "finalize": "Finalize Claims",
+      "clear-all": "Clear All",
+      "search-industries": "Search industries..."
+    },
+    "edit": {
+      "title": "Edit Schedule",
+      "subtitle": "Add exclusive months to your {name} plan.",
+      "loading": "Loading your schedule...",
+      "not-found": "Territory Not Found",
+      "not-found-helper": "We couldn't find this territory in your active plans.",
+      "return": "Return to Dashboard",
+      "upgrade-btn": "Proceed to Checkout"
     }
   },
   "schedule": {
-    "target-row": "Territory & Category"
+    "target-row": "Territory & Category",
+    "industry-region": "Industry & Region",
+    "basic-plan": "Basic Plan",
+    "ongoing": "Ongoing",
+    "owned": "Owned",
+    "taken": "Taken",
+    "in-cart": "In Cart",
+    "free": "Free",
+    "matrix-value": "7-Month Matrix Value:",
+    "empty-state": "Select \"Ongoing\" or specific months to build your schedule.",
+    "helper-basic": "* Ongoing Basic plans get the first month completely free.",
+    "helper-exclusive": "* Exclusive upgrades are secured today by paying the upgrade difference upfront. Your standard basic rate will be billed normally during the exclusive month.",
+    "next-month": "Next Month",
+    "due-today": "Due Today",
+    "already-owned": "Already Owned",
+    "downgrade": "Remove from Cart",
+    "upgrade-tooltip": "Upgrade to Exclusive ({price})"
   }
 }

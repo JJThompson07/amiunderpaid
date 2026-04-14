@@ -7,13 +7,17 @@
         class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-3xl shadow-md border border-slate-200">
         <div>
           <h1 class="text-3xl font-black text-slate-900">
-            {{ step === 1 ? $t('recruiter.territories.get') : 'Step 2: Claim Your Schedule' }}
+            {{
+              step === 1
+                ? $t('recruiter.territories.get')
+                : $t('recruiter.territories.claim.step-2')
+            }}
           </h1>
           <p class="text-slate-500 mt-1">
             {{
               step === 1
                 ? $t('recruiter.territories.claim.leads')
-                : 'Select the upcoming months you want to receive leads for.'
+                : $t('recruiter.territories.claim.step-2-helper')
             }}
           </p>
         </div>
@@ -22,7 +26,7 @@
           v-else
           class="text-sm font-bold text-slate-400 hover:text-primary-600 transition-colors flex items-center gap-2"
           @click="step = 1">
-          &larr; Back to Selection
+          &larr; {{ $t('recruiter.territories.claim.back-to-selection') }}
         </button>
       </header>
 
@@ -60,25 +64,29 @@
         <div class="lg:col-span-1">
           <div class="bg-white p-6 rounded-3xl shadow-xs border border-slate-200 sticky top-8">
             <div class="flex justify-between items-center mb-6">
-              <h2 class="text-xl font-black text-slate-900">Step 1: Select Targets</h2>
+              <h2 class="text-xl font-black text-slate-900">
+                {{ $t('recruiter.territories.claim.step-1') }}
+              </h2>
             </div>
 
             <div
               v-if="selectedTerritories.length === 0"
               class="text-center py-12 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
-              <p class="text-slate-500 font-medium">Click regions on the map to begin.</p>
+              <p class="text-slate-500 font-medium">
+                {{ $t('recruiter.territories.claim.click-map') }}
+              </p>
             </div>
 
             <div v-else class="space-y-6">
               <div>
                 <div class="flex justify-between items-end mb-2">
-                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block"
-                    >Target Regions</label
-                  >
+                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                    {{ $t('recruiter.territories.claim.target-regions') }}
+                  </label>
                   <button
                     class="text-xs font-bold text-slate-400 hover:text-negative-500 transition-colors"
                     @click="selectedTerritories = []">
-                    Clear All
+                    {{ $t('recruiter.territories.claim.clear-all') }}
                   </button>
                 </div>
 
@@ -91,18 +99,22 @@
 
               <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">
-                  Target Industries {{ selectedCountry }}
+                  {{
+                    $t('recruiter.territories.claim.target-industries', {
+                      country: selectedCountry
+                    })
+                  }}
                 </label>
                 <p
                   v-if="userProfile?.coveredCategories?.length"
                   class="text-2xs text-slate-400 mt-2 font-medium">
-                  Showing industries from your Agency Profile.
+                  {{ $t('recruiter.territories.claim.agency-profile-helper') }}
                 </p>
 
                 <AmIInputSelect
                   v-model="selectedCategories"
                   :options="intelligentCategories"
-                  placeholder="Search industries..."
+                  :placeholder="$t('recruiter.territories.claim.search-industries')"
                   :loading="loadingCategories"
                   external-list />
 
@@ -123,7 +135,7 @@
                     : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                 ]"
                 @click="continueToSchedule">
-                Configure Schedule &rarr;
+                {{ $t('recruiter.territories.claim.configure-schedule') }} &rarr;
               </button>
             </div>
           </div>
@@ -135,18 +147,25 @@
           :territories="selectedTerritories"
           :categories="selectedCategories"
           :category-options="intelligentCategories"
+          :taken-months="globalTakenMonths"
           @update:selections="scheduleSelections = $event" />
 
         <div class="mt-6 flex justify-end">
           <AmIButton
-            title="Finalize Claims"
+            :title="$t('recruiter.territories.claim.finalize')"
             :disabled="scheduleSelections.length === 0 || isSubmitting"
             @click="submitSchedule">
             <div class="flex items-center gap-2 px-4 py-1">
               <span
                 v-if="isSubmitting"
                 class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-              <span>{{ isSubmitting ? 'Processing...' : 'Confirm & Save Schedule' }}</span>
+              <span>
+                {{
+                  isSubmitting
+                    ? $t('recruiter.territories.claim.processing')
+                    : $t('recruiter.territories.claim.action')
+                }}
+              </span>
             </div>
           </AmIButton>
         </div>
@@ -204,6 +223,12 @@ const userClaimedIds = computed(() => {
   const active = userProfile.value.activeTerritories || userProfile.value.claims || [];
   return active.map((t: any) => t.territoryId || t.id);
 });
+
+// 1. Create a reactive array of all the territory IDs they clicked
+const selectedIds = computed(() => selectedTerritories.value.map((t) => t.id));
+
+// 2. Call the exact same composable!
+const { globalTakenMonths } = useTerritoryClaims(selectedIds);
 
 // 3. Map Data
 const activeTerritories = computed(() => {
@@ -318,6 +343,24 @@ const submitSchedule = async () => {
     isSubmitting.value = false;
   }
 };
+
+watch(
+  [() => globalTakenMonths.value, selectedTerritories, selectedCategories],
+  () => {
+    console.log('--- MATRIX LOCK DIAGNOSTICS ---');
+
+    // 1. What does the matrix expect the row name to be?
+    const expectedRowId =
+      selectedTerritories.value.length && selectedCategories.value.length
+        ? `${selectedTerritories.value[0].id}|${selectedCategories.value[0]}`
+        : 'Waiting for selection...';
+
+    console.log('📍 1. Matrix is looking for row:', expectedRowId);
+    console.log('🔒 2. Data returned from Firebase:', globalTakenMonths.value);
+    console.log('👤 3. User Profile Loaded?', !!userProfile.value);
+  },
+  { deep: true }
+);
 
 // Wipe cart when switching countries (Only happens in Step 1)
 watch(selectedCountry, () => {

@@ -9,13 +9,13 @@
           <button
             class="text-slate-400 hover:text-primary-600 transition-colors flex items-center gap-1 text-sm font-bold mb-2"
             @click="navigateTo('/recruiter/dashboard')">
-            &larr; Back to Dashboard
+            &larr; {{ $t('recruiter.territories.claim.back-to-selection') }}
           </button>
-          <h1 class="text-3xl font-black text-slate-900">Edit Schedule</h1>
+          <h1 class="text-3xl font-black text-slate-900">
+            {{ $t('recruiter.territories.edit.title') }}
+          </h1>
           <p class="text-slate-500 mt-1">
-            Add exclusive months to your
-            <strong v-if="fullTerritory" class="text-primary-700">{{ fullTerritory.name }}</strong>
-            plan.
+            {{ $t('recruiter.territories.edit.subtitle', { name: fullTerritory?.name || '' }) }}
           </p>
         </div>
       </header>
@@ -23,19 +23,23 @@
       <div
         v-if="loading"
         class="flex justify-center p-12 bg-white rounded-3xl border border-slate-200">
-        <AmILoader message="Loading your schedule..." />
+        <AmILoader :message="$t('recruiter.territories.edit.loading')" />
       </div>
 
       <div
         v-else-if="!ownedTerritory"
         class="bg-white p-12 rounded-3xl text-center border border-slate-200 shadow-sm">
-        <h3 class="text-lg font-bold text-slate-800">Territory Not Found</h3>
+        <h3 class="text-lg font-bold text-slate-800">
+          {{ $t('recruiter.territories.edit.not-found') }}
+        </h3>
         <p class="text-slate-500 mt-2 mb-6">
-          We couldn't find this territory in your active plans.
+          {{ $t('recruiter.territories.edit.not-found-helper') }}
         </p>
-        <AmIButton title="Go Back" @click="navigateTo('/recruiter/dashboard')"
-          >Return to Dashboard</AmIButton
-        >
+        <AmIButton
+          :title="$t('recruiter.territories.edit.return')"
+          @click="navigateTo('/recruiter/dashboard')">
+          {{ $t('recruiter.territories.edit.return') }}
+        </AmIButton>
       </div>
 
       <div
@@ -45,18 +49,25 @@
           :territories="fullTerritory ? [fullTerritory] : []"
           :categories="[ownedTerritory.categoryValue]"
           :category-options="[{ label: categoryLabel, value: ownedTerritory.categoryValue }]"
+          :taken-months="globalTakenMonths"
           @update:selections="scheduleSelections = $event" />
 
         <div class="flex justify-end mt-4">
           <AmIButton
-            title="Secure Upgrades"
+            :title="$t('recruiter.territories.edit.upgrade-btn')"
             :disabled="scheduleSelections.length === 0 || isSubmitting"
             @click="submitUpgrade">
             <div class="flex items-center gap-2 px-4 py-1">
               <span
                 v-if="isSubmitting"
                 class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-              <span>{{ isSubmitting ? 'Processing...' : 'Proceed to Checkout' }}</span>
+              <span>
+                {{
+                  isSubmitting
+                    ? $t('recruiter.territories.claim.processing')
+                    : $t('recruiter.territories.edit.upgrade-btn')
+                }}
+              </span>
             </div>
           </AmIButton>
         </div>
@@ -96,7 +107,7 @@ const ownedTerritory = computed(() => {
 // 3. Get the full territory details (for the name and band)
 const fullTerritory = computed(() => {
   if (!ownedTerritory.value) return null;
-  return getTerritoryById(territoryId.value) || null;
+  return getTerritoryById(territoryId.value);
 });
 
 // 4. Format the industry label nicely
@@ -107,7 +118,14 @@ const categoryLabel = computed(() => {
   return found ? found.label || found.id : val;
 });
 
-// 5. Checkout handler
+// 5. NEW: Use our clean composable for real-time locks!
+// 1. Get the ID from the URL as an array
+const territoryIdsForQuery = computed(() => [Number(route.query.id)]);
+
+// 2. Call the composable
+const { globalTakenMonths } = useTerritoryClaims(territoryIdsForQuery);
+
+// 6. Checkout handler
 const submitUpgrade = async () => {
   if (scheduleSelections.value.length === 0) return;
 

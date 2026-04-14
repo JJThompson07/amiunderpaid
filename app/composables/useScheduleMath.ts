@@ -5,12 +5,18 @@ import type { Territory } from '~/components/Territory/ScheduleMatrix.vue';
 type RowConfig = {
   isBasic: boolean;
   selectedMonths: Set<string>;
-  lockedBasic: boolean; // NEW: tracks if they already own basic
-  lockedMonths: Set<string>; // NEW: tracks already owned exclusive months
+  lockedBasic: boolean;
+  lockedMonths: Set<string>;
 };
 
 export const useScheduleMath = (
-  props: { territories: Territory[]; categories: string[]; categoryOptions: any[] },
+  props: {
+    territories: Territory[];
+    categories: string[];
+    categoryOptions: any[];
+    // NEW: Accept the globally taken months from the database
+    takenMonths?: Record<string, string[]>;
+  },
   emit: any
 ) => {
   const { pricingData } = usePricing();
@@ -46,7 +52,6 @@ export const useScheduleMath = (
     return months;
   });
 
-  // NEW: Helper to find owned territory data
   const getOwnedTerritory = (territoryId: number, categoryValue: string) => {
     if (!userProfile.value) return null;
     const active = userProfile.value.activeTerritories || userProfile.value.claims || [];
@@ -73,7 +78,6 @@ export const useScheduleMath = (
           categoryLabel: getCategoryLabel(category)
         });
 
-        // UPDATED: Pre-fill locks based on Firebase data!
         if (!rowConfigs.value.has(rowId)) {
           const owned = getOwnedTerritory(territory.id, category);
           rowConfigs.value.set(rowId, {
@@ -95,6 +99,21 @@ export const useScheduleMath = (
     return pricingData.value[billingCountry.value][`band${safeBand}`] || { basic: 0, exclusive: 0 };
   };
 
+  // NEW: Helper to check if a month is owned by someone else
+  const isMonthTaken = (rowId: string, monthStr: string) => {
+    // 1. Safety check: Are there any locks at all?
+    if (!props.takenMonths) return false;
+
+    // 2. Get the array of locked months for this specific territory/category row
+    const lockedMonthsForThisRow = props.takenMonths[rowId];
+
+    // 3. If the row isn't in the database, or the month isn't in the array, it's free!
+    if (!lockedMonthsForThisRow) return false;
+
+    // 4. Return true if someone else owns this month
+    return lockedMonthsForThisRow.includes(monthStr);
+  };
+
   const getMonthDisplayPrice = (
     rowId: string,
     monthValue: string,
@@ -112,12 +131,13 @@ export const useScheduleMath = (
       const baseVisual = isFirstMonth && config.isBasic ? upgradeCost : prices.exclusive;
       return isFirstMonth && isPastHalfway.value ? baseVisual / 2 : baseVisual;
     } else if (config.isBasic) {
-      return index === 0 ? 0 : prices.basic;
+      // UPDATED: Show 0 if the month is taken by someone else
+      const isTaken = isMonthTaken(rowId, monthValue);
+      return index === 0 || isTaken ? 0 : prices.basic;
     }
     return null;
   };
 
-  // UPDATED: Respect the Locks!
   const toggleBasic = (rowId: string) => {
     const config = rowConfigs.value.get(rowId);
     if (config && !config.lockedBasic) {
@@ -128,7 +148,8 @@ export const useScheduleMath = (
 
   const toggleMonth = (rowId: string, monthValue: string) => {
     const config = rowConfigs.value.get(rowId);
-    if (config && !config.lockedMonths.has(monthValue)) {
+    // UPDATED: Prevent toggling if the month is globally taken
+    if (config && !config.lockedMonths.has(monthValue) && !isMonthTaken(rowId, monthValue)) {
       if (config.selectedMonths.has(monthValue)) {
         config.selectedMonths.delete(monthValue);
       } else {
@@ -141,8 +162,6 @@ export const useScheduleMath = (
   const isBasic = (rowId: string) => rowConfigs.value.get(rowId)?.isBasic || false;
   const isMonthSelected = (rowId: string, monthValue: string) =>
     rowConfigs.value.get(rowId)?.selectedMonths.has(monthValue) || false;
-
-  // NEW: Expose lock status to the UI
   const isBasicLocked = (rowId: string) => rowConfigs.value.get(rowId)?.lockedBasic || false;
   const isMonthLocked = (rowId: string, monthValue: string) =>
     rowConfigs.value.get(rowId)?.lockedMonths.has(monthValue) || false;
@@ -174,14 +193,15 @@ export const useScheduleMath = (
               isFirstMonth && config.isBasic ? upfrontUpgradeCost : prices.exclusive;
             visualMonthCost = isFirstMonth && isPastHalfway.value ? baseVisual / 2 : baseVisual;
 
-            // UPDATED MATH: Only charge today if the month is NOT already locked!
             if (!config.lockedMonths.has(month.value)) {
               const upfrontCost =
                 isFirstMonth && isPastHalfway.value ? upfrontUpgradeCost / 2 : upfrontUpgradeCost;
               calcPayNow += upfrontCost;
             }
           } else if (config.isBasic) {
-            visualMonthCost = isFirstMonth ? 0 : prices.basic;
+            // UPDATED MATH: Do not charge for this month if it's taken
+            const isTaken = isMonthTaken(row.id, month.value);
+            visualMonthCost = isFirstMonth || isTaken ? 0 : prices.basic;
           }
 
           rowTotalCost += visualMonthCost;
@@ -196,7 +216,6 @@ export const useScheduleMath = (
           band: row.territory.band || 1,
           categoryValue: row.categoryValue,
           isBasic: config.isBasic,
-          // Convert the Set to an array for the backend
           exclusiveMonths: Array.from(config.selectedMonths),
           rowCost: rowTotalCost
         });
@@ -215,7 +234,10 @@ export const useScheduleMath = (
     });
   };
 
-  watch([matrixRows, pricingData], emitUpdates, { immediate: true, deep: true });
+  watch([matrixRows, pricingData, () => props.takenMonths], emitUpdates, {
+    immediate: true,
+    deep: true
+  });
 
   return {
     matrixRows,
@@ -229,8 +251,9 @@ export const useScheduleMath = (
     toggleMonth,
     isBasic,
     isMonthSelected,
-    isBasicLocked, // Exported!
-    isMonthLocked, // Exported!
+    isBasicLocked,
+    isMonthLocked,
+    isMonthTaken,
     getMonthDisplayPrice,
     getRowPricing
   };
