@@ -12,7 +12,7 @@
         {{ $t('login.common.back-to-search') }}
       </NuxtLink>
 
-      <div class="bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-2xl">
+      <div class="bg-white p-4 md:p-8 rounded-3xl border border-slate-200 shadow-2xl">
         <div class="mb-8 text-center">
           <div
             class="w-16 h-16 bg-secondary-50 rounded-2xl flex items-center justify-center text-primary-600 mx-auto mb-4 border border-secondary-100">

@@ -176,8 +176,12 @@ const matrixColumns = computed(() => {
     {
       key: 'target',
       label: 'Industry & Region',
-      class: 'sticky left-0 z-20 w-48 shadow-[1px_0_0_0_#e2e8f0]',
-      cellClass: 'bg-white sticky left-0 z-10 shadow-[1px_0_0_0_#f1f5f9]'
+      // 👇 1. Strict min/max bounds + whitespace-normal to allow text wrapping
+      class:
+        'sticky left-0 z-20 w-32 min-w-[8rem] max-w-[8rem] md:w-56 md:min-w-[14rem] md:max-w-[14rem] whitespace-normal leading-tight shadow-[1px_0_0_0_#e2e8f0]',
+      // 👇 2. Apply the same strict bounds to the cells
+      cellClass:
+        'bg-white sticky left-0 z-10 w-32 min-w-[8rem] max-w-[8rem] md:w-56 md:min-w-[14rem] md:max-w-[14rem] shadow-[1px_0_0_0_#f1f5f9]'
     }
   ];
 

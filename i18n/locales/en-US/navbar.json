@@ -15,5 +15,13 @@
   "territories": "Territories",
   "user-suggestions": "User Suggestions",
   "job-groups": "Job Groups",
-  "search-logs": "Search Logs"
+  "search-logs": "Search Logs",
+  "recruiters": "Recruiters",
+  "group": {
+    "data-api": "Data & API",
+    "platform-config": "Platform Config",
+    "analytics": "Analytics",
+    "resources": "Resources",
+    "partners": "Partners"
+  }
 }

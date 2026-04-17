@@ -24,6 +24,21 @@
     "email-placeholder": "you{'@'}agency.com",
     "toggle-to-signup": "Don't have an account? Sign up",
     "toggle-to-login": "Already have an account? Sign in",
-    "footer-text": "Recruiter Access"
+    "footer-text": "Recruiter Access",
+    "benefits": {
+      "title": "Why partner with our platform?",
+      "item-1-title": "Targeted Visibility",
+      "item-1-desc": "Display your agency directly on the results page exactly when users search for roles within your claimed industry and territory.",
+      "item-2-title": "High-Intent Candidates",
+      "item-2-desc": "Connect with professionals on AmIUnderpaid actively seeking better opportunities to increase their MCA score and maximize their salary.",
+      "item-3-title": "High-Intent Clients",
+      "item-3-desc": "Engage directly with hiring managers and companies using BenchmarkMyRole to evaluate their compensation and hiring strategies.",
+      "item-4-title": "Exclusive Monthly Locks",
+      "item-4-desc": "Claim a territory exclusively and be the ONLY agency shown to both candidates and clients for that month.",
+      "item-5-title": "Stop Chasing Leads",
+      "item-5-desc": "Say goodbye to cold outreach. High-quality, motivated candidates and clients come directly to you the moment they opt-in.",
+      "item-6-title": "Flexible Month-to-Month",
+      "item-6-desc": "Scale your reach on your terms. No fixed long-term contracts. Build a custom schedule for the specific regions you want to target."
+    }
   }
 }

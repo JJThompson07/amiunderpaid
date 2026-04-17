@@ -4,7 +4,7 @@
 
     <div class="max-w-6xl mx-auto relative flex flex-col gap-6">
       <header
-        class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-3xl shadow-md border border-slate-200">
+        class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-5 rounded-3xl shadow-md border border-slate-200">
         <div>
           <h1 class="text-3xl font-black text-slate-900">
             {{
@@ -21,16 +21,17 @@
             }}
           </p>
         </div>
-        <AmITabs v-if="step === 1" v-model="selectedCountry" :options="countries" round />
-        <button
-          v-else
-          class="text-sm font-bold text-slate-400 hover:text-primary-600 transition-colors flex items-center gap-2"
-          @click="step = 1">
-          &larr; {{ $t('recruiter.territories.claim.back-to-selection') }}
-        </button>
+        <div class="flex flex-wrap gap-4 items-center">
+          <AmITabs v-if="step === 1" v-model="selectedView" :options="views" round class="w-max" />
+          <AmITabs v-if="step === 1" v-model="selectedCountry" :options="countries" round />
+          <button
+            v-else
+            class="text-sm font-bold text-slate-400 hover:text-primary-600 transition-colors flex items-center gap-2"
+            @click="step = 1">
+            &larr; {{ $t('recruiter.territories.claim.back-to-selection') }}
+          </button>
+        </div>
       </header>
-
-      <AmITabs v-if="step === 1" v-model="selectedView" :options="views" round class="w-max" />
 
       <div
         v-if="step === 1"
@@ -44,7 +45,7 @@
               @territory-click="handleTerritoryClick" />
           </template>
           <div v-else class="map-view flex flex-col gap-6">
-            <div class="bg-white p-6 rounded-3xl shadow-xs border border-slate-200 mb-6">
+            <div class="bg-white p-5 rounded-3xl shadow-xs border border-slate-200">
               <TerritoryMap
                 :country="selectedCountry"
                 :territories="activeTerritories"

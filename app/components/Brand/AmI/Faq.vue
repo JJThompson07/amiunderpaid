@@ -26,12 +26,12 @@
             @click="toggleItem(`${section.id}-${key}`)">
             <dt>
               <button
-                class="flex w-full items-center justify-between px-6 py-5 text-left focus:outline-none hover:bg-slate-100 focus-visible:bg-slate-50 transition-all duration-500 ease-in-out"
+                class="flex w-full items-center justify-between p-4 md:p-5 text-left focus:outline-none hover:bg-slate-100 focus-visible:bg-slate-50 transition-all duration-500 ease-in-out"
                 :class="{ 'bg-slate-100': openItems.has(`${section.id}-${key}`) }">
                 <span class="text-base font-bold text-slate-800">
                   {{ t(`faq.questions.section.${section.id}.${key}.question`) }}
                 </span>
-                <span class="ml-6 flex items-center shrink-0">
+                <span class="flex items-center shrink-0">
                   <ChevronDown
                     class="w-5 h-5 text-slate-400 transition-transform duration-300"
                     :class="
@@ -47,7 +47,7 @@
               leave-active-class="transition-all duration-200 ease-in-out overflow-hidden"
               leave-from-class="opacity-100 max-h-96"
               leave-to-class="opacity-0 max-h-0">
-              <dd v-show="openItems.has(`${section.id}-${key}`)" class="px-6 pb-5 pt-1">
+              <dd v-show="openItems.has(`${section.id}-${key}`)" class="p-4 md:p-5">
                 <p class="text-sm text-slate-600 leading-relaxed">
                   {{ t(`faq.questions.section.${section.id}.${key}.answer`) }}
                 </p>

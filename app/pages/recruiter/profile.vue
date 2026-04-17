@@ -46,6 +46,23 @@
           <hr class="border-slate-100 my-6" />
 
           <div class="relative">
+            <label class="text-2xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+              {{ $t('recruiter.account.inbound.email') }}
+            </label>
+            <p class="text-xs text-slate-500 mb-3">
+              {{ $t('recruiter.account.inbound.email-helper') }}
+            </p>
+
+            <input
+              v-model="inboundEmail"
+              type="email"
+              :placeholder="$t('recruiter.account.inbound.email-placeholder')"
+              class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400 shadow-sm" />
+          </div>
+
+          <hr class="border-slate-100 my-6" />
+
+          <div class="relative">
             <div class="flex items-center justify-between mb-1">
               <p class="text-2xs font-bold text-slate-400 uppercase tracking-wider">
                 {{ $t('recruiter.account.billing-currency') }}
@@ -188,6 +205,7 @@ const { t } = useI18n();
 const selectedCategories = ref<string[]>([]);
 const isSaving = ref(false);
 const showSuccess = ref(false);
+const inboundEmail = ref<string>('');
 
 const billingPreference = ref(['UK']);
 const isUpdatingBilling = ref(false);
@@ -236,6 +254,9 @@ watch(
       if (newProfile.billingCountry) {
         billingPreference.value = [newProfile.billingCountry];
       }
+      if (newProfile.inboundEmail) {
+        inboundEmail.value = newProfile.inboundEmail;
+      }
     }
   },
   { immediate: true }
@@ -259,7 +280,10 @@ const saveProfileCategories = async () => {
   isSaving.value = true;
   showSuccess.value = false;
   try {
-    await updateProfile({ coveredCategories: selectedCategories.value });
+    await updateProfile({
+      coveredCategories: selectedCategories.value,
+      inboundEmail: inboundEmail.value
+    });
     showSuccess.value = true;
     setTimeout(() => {
       showSuccess.value = false;

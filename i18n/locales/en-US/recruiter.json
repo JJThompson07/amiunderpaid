@@ -25,7 +25,12 @@
     "billing-helper": "Sets the currency used when claiming exclusive territories.",
     "saving": "Saving",
     "currency-uk": "United Kingdom (GBP £)",
-    "currency-usa": "United States (USD $)"
+    "currency-usa": "United States (USD $)",
+    "inbound": {
+      "email": "Lead Routing Email",
+      "email-helper": "Where should we send your candidate and client leads? (Leave blank to use your login email)",
+      "email-placeholder": "e.g. leads@youragency.com"
+    }
   },
   "industries": {
     "heading": "Covered Industries",

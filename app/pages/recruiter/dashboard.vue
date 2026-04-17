@@ -4,7 +4,7 @@
 
     <div class="max-w-6xl mx-auto relative flex flex-col gap-8">
       <header
-        class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-md border border-slate-200">
+        class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 md:p-6 rounded-3xl shadow-md border border-slate-200">
         <div>
           <h1 class="text-2xl font-black text-slate-900">{{ $t('recruiter.dashboard.title') }}</h1>
           <p v-if="userProfile" class="text-slate-500">
@@ -40,8 +40,9 @@
         </div>
       </header>
 
-      <div class="bg-white p-6 md:p-8 rounded-3xl shadow-xs border border-slate-200">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div class="bg-white p-0 md:p-8 rounded-3xl shadow-xs border border-slate-200">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-0 gap-4 mb-6">
           <div class="flex items-center gap-3">
             <div
               class="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600 shrink-0">
