@@ -32,9 +32,17 @@ export default defineEventHandler(async (event) => {
   const stripeSubId = userData.stripeSubscriptionId;
 
   // 2. FILTER OUT THE CANCELED TERRITORY
-  const updatedTerritories = currentTerritories.filter(
-    (t: any) => t.territoryId !== territoryIdToCancel
-  );
+  const updatedTerritories = currentTerritories
+    .map((t: any) => {
+      if (t.territoryId === territoryIdToCancel) {
+        return { ...t, isBasic: false }; // Downgrade to remove the basic plan
+      }
+      return t;
+    })
+    .filter((t: any) => {
+      // ONLY completely remove the territory if it has NO basic plan AND NO exclusive months left
+      return t.isBasic || (t.exclusiveMonths && t.exclusiveMonths.length > 0);
+    });
 
   // 3. RECALCULATE THE NEW MONTHLY TOTAL
   // We must fetch pricing to know exactly how much to charge them now

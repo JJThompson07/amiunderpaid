@@ -87,6 +87,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue';
+import { useCurrentUser } from 'vuefire';
 
 const props = defineProps({
   isMobile: {
@@ -100,7 +101,7 @@ defineEmits(['close']);
 const { t } = useI18n();
 const { isAdmin, isRecruiter, isRoleLoading } = useUserRole();
 
-const firebaseAuth = useFirebaseAuth();
+const user = useCurrentUser();
 const isEmailVerified = ref<boolean>(false);
 
 const isMounted = ref(false);
@@ -193,10 +194,6 @@ const activeLinks = computed(() => {
 });
 
 watchEffect(() => {
-  if (firebaseAuth?.currentUser) {
-    isEmailVerified.value = firebaseAuth.currentUser.emailVerified;
-  } else {
-    isEmailVerified.value = false;
-  }
+  isEmailVerified.value = user.value?.emailVerified || false;
 });
 </script>

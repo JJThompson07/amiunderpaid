@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 
 definePageMeta({
@@ -153,10 +153,10 @@ const submitUpgrade = async () => {
   }
 };
 
-onMounted(() => {
-  // Give the userProfile a tiny fraction of a second to hydrate before showing the 404
-  setTimeout(() => {
+watchEffect(() => {
+  // Assuming userProfile is initially undefined/null when loading
+  if (userProfile.value !== undefined) {
     loading.value = false;
-  }, 500);
+  }
 });
 </script>
