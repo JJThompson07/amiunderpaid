@@ -183,6 +183,7 @@ const activeCountry = ref<'UK' | 'USA'>('UK');
 const isProcessing = ref<string | null>(null);
 const isMigrating = ref(false);
 const newInputs = reactive<Record<string, string>>({});
+const { showToast } = useSystemToast();
 
 // --- UI STATE ---
 const expandedRows = reactive<Record<string, boolean>>({});
@@ -258,8 +259,9 @@ const addTitle = async (idCode: string) => {
       method: 'POST',
       body: { country: activeCountry.value }
     });
+    showToast('Success', 'Title added successfully', 'success');
   } catch {
-    alert('Failed to add title');
+    showToast('Error', 'Failed to add title', 'error');
   } finally {
     isProcessing.value = null;
   }
@@ -283,8 +285,9 @@ const removeTitle = async (idCode: string, titleToRemove: string) => {
       method: 'POST',
       body: { country: activeCountry.value }
     });
+    showToast('Success', 'Title removed successfully', 'success');
   } catch {
-    alert('Failed to remove title');
+    showToast('Error', 'Failed to remove title', 'error');
   } finally {
     isProcessing.value = null;
   }
@@ -300,10 +303,14 @@ const runMigration = async () => {
       body: { country: activeCountry.value }
     });
     await refresh();
-    alert(res.success ? 'Migration completed successfully.' : 'Migration failed.');
+    if (res.success) {
+      showToast('Success', 'Migration completed successfully.', 'success');
+    } else {
+      showToast('Error', 'Migration failed.', 'error');
+    }
   } catch (e) {
     console.error(e);
-    alert('Migration failed.');
+    showToast('Error', 'Migration failed.', 'error');
   } finally {
     isMigrating.value = false;
   }

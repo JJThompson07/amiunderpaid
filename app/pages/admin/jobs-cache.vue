@@ -129,6 +129,7 @@ definePageMeta({
 });
 
 const adminFetch = useAdminFetch();
+const { showToast } = useSystemToast();
 
 // --- Cache Cleanup Logic ---
 const isCleaning = ref(false);
@@ -154,9 +155,10 @@ const runCleanup = async () => {
       }
     );
     cleanupStats.value = res.stats;
+    showToast('Success', 'Cache cleaned successfully', 'success');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to clean cache.';
-    alert(message);
+    showToast('Error', message, 'error');
   } finally {
     isCleaning.value = false;
   }
@@ -193,9 +195,10 @@ const approveMatch = async (suggestion: any) => {
     });
     // Remove it from the UI immediately to feel fast
     refreshSuggestions();
+    showToast('Success', 'Match approved successfully', 'success');
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to approve match.';
-    alert(message);
+    showToast('Error', message, 'error');
   }
 };
 
@@ -209,9 +212,10 @@ const rejectMatch = async (id: string) => {
       query: { id }
     });
     refreshSuggestions();
+    showToast('Success', 'Match rejected successfully', 'success');
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to reject match.';
-    alert(message);
+    showToast('Error', message, 'error');
   }
 };
 </script>

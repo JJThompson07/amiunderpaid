@@ -1,5 +1,4 @@
 import { doc, updateDoc } from 'firebase/firestore';
-import { useFirestore, useCurrentUser, useDocument } from 'vuefire';
 
 export const useUserProfile = () => {
   const db = useFirestore();

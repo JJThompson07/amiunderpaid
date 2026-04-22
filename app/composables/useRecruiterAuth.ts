@@ -1,4 +1,3 @@
-import { useFirebaseAuth, useFirebaseApp } from 'vuefire'; // <-- Changed here
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -13,6 +12,7 @@ export const useRecruiterAuth = () => {
   const firebaseApp = useFirebaseApp(); // Explicitly grab the Nuxt-initialized app
   const db = getFirestore(firebaseApp); // Bind Firestore to this exact app instance!
   const { t } = useI18n();
+  const { showToast } = useSystemToast();
 
   const loading = ref(false);
   const error = ref('');
@@ -160,7 +160,7 @@ export const useRecruiterAuth = () => {
       console.error('Failed to resend verification:', err);
       // Optional: Handle Firebase's "too-many-requests" error if they spam the button
       if (err.code === 'auth/too-many-requests') {
-        alert(t('auth.errors.wait_before_resend'));
+        showToast('Error', t('auth.errors.wait_before_resend'), 'error');
       }
       return false;
     }

@@ -1,4 +1,3 @@
-import { useFirebaseAuth } from 'vuefire';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 
 export const useAdminAuth = () => {

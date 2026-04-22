@@ -1,7 +1,6 @@
 // composables/useTerritoryClaims.ts
 import type { Ref } from 'vue';
 import { collection, query, where } from 'firebase/firestore';
-import { useFirestore, useCollection } from 'vuefire';
 
 export const useTerritoryClaims = (territoryIds: Ref<number[]>) => {
   const db = useFirestore();

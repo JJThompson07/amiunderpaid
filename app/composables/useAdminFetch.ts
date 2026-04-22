@@ -1,5 +1,3 @@
-import { useFirebaseAuth, useCurrentUser } from 'vuefire';
-
 export const useAdminFetch = () => {
   // 1. Grab context synchronously during component setup
   const { logout } = useAdminAuth();

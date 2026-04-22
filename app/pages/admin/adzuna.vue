@@ -128,6 +128,7 @@ const syncingCategories = ref(false);
 const categoryStatus = ref('');
 const storedCategories = ref<any[]>([]);
 const loadingStored = ref(false);
+const { showToast } = useSystemToast();
 
 const handleSyncCategories = async () => {
   if (!db) return;
@@ -199,8 +200,9 @@ const saveStoredCategories = async () => {
       batch.update(ref, { cache: cat.cache });
     });
     await batch.commit();
+    showToast('Success', 'Categories saved successfully', 'success');
   } catch {
-    alert('Failed to save categories');
+    showToast('Error', 'Failed to save categories', 'error');
   } finally {
     loadingStored.value = false;
   }

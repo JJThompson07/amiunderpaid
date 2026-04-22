@@ -83,6 +83,7 @@ definePageMeta({
 
 const adminFetch = useAdminFetch();
 const isProcessing = ref<string | null>(null);
+const { showToast } = useSystemToast();
 
 // --- Define AmITable Columns ---
 const tableColumns = [
@@ -117,9 +118,10 @@ const approveItem = async (item: Suggestion) => {
     });
     // Remove it from the local list instantly for snappy UX
     await refresh();
+    showToast('Success', 'Suggestion approved', 'success');
   } catch (error) {
     console.error('Failed to approve', error);
-    alert('Failed to approve suggestion.');
+    showToast('Error', 'Failed to approve suggestion.', 'error');
   } finally {
     isProcessing.value = null;
   }
@@ -134,9 +136,10 @@ const rejectItem = async (id: string) => {
       query: { suggestionId: id }
     });
     await refresh();
+    showToast('Success', 'Suggestion rejected', 'success');
   } catch (error) {
     console.error('Failed to reject', error);
-    alert('Failed to reject suggestion.');
+    showToast('Error', 'Failed to reject suggestion.', 'error');
   } finally {
     isProcessing.value = null;
   }
