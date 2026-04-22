@@ -40,6 +40,12 @@
       }
     }
   },
+  "forgot-password": {
+    "description": "Enter your account email address and we will send you a secure link to reset your password.",
+    "action": {
+      "send-link": "Send Reset Link"
+    }
+  },
   "form": {
     "new-password": "New Password",
     "save-password": "Save Password"

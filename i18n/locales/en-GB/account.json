@@ -41,6 +41,24 @@
       }
     }
   },
+  "forgot-password": {
+    "description": "Enter your account email address and we will send you a secure link to reset your password.",
+    "action": {
+      "send-link": "Send Reset Link"
+    },
+    "email-required": {
+      "title": "Email Required",
+      "message": "Please enter an email address to reset your password."
+    },
+    "reset-failed": {
+      "title": "Reset Failed",
+      "message": "Failed to send reset link. Please check the email and try again."
+    },
+    "success": {
+      "title": "Check your inbox",
+      "message": "We've sent a password reset link to {email}"
+    }
+  },
   "form": {
     "new-password": "New Password",
     "save-password": "Save Password"
