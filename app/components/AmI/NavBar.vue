@@ -139,6 +139,11 @@ const adminLinks = computed(() => [
       { to: '/admin/user-suggestions', label: t('navbar.user-suggestions') },
       { to: '/admin/search-logs', label: t('navbar.search-logs') }
     ]
+  },
+  {
+    label: t('navbar.group.users'),
+    mobileOnly: false,
+    children: [{ to: '/admin/recruiters', label: t('navbar.recruiters') }]
   }
 ]);
 
