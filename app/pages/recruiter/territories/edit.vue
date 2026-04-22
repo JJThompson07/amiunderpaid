@@ -77,9 +77,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRoute } from 'vue-router';
-
 definePageMeta({
   middleware: ['recruiters', 'recruiter-verified']
 });
@@ -88,7 +85,7 @@ const route = useRoute();
 const { userProfile } = useUserProfile();
 const { getTerritoryById } = useTerritories();
 const { categories: categoriesData } = useCategories();
-const firebaseAuth = useFirebaseAuth();
+const user = useCurrentUser();
 
 const loading = ref(true);
 const isSubmitting = ref(false);
@@ -131,7 +128,7 @@ const submitUpgrade = async () => {
 
   isSubmitting.value = true;
   try {
-    const token = await firebaseAuth?.currentUser?.getIdToken();
+    const token = await user.value?.getIdToken();
     const targetCurrency = userProfile.value?.billingCountry === 'USA' ? 'usd' : 'gbp';
 
     const response = await $fetch<{ url: string }>('/api/stripe/create-checkout', {

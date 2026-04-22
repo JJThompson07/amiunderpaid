@@ -36,10 +36,12 @@
           <AmIInputGeneric
             v-model="password"
             type="password"
-            :label="$t('login.common.password-label')"
-            :placeholder="$t('login.common.password-placeholder')"
+            :label="passwordLabel || $t('login.common.password-label')"
+            :placeholder="passwordPlaceholder || $t('login.common.password-placeholder')"
             :icon="KeyRound"
             @keyup.enter="handleSubmit" />
+
+          <slot />
 
           <div v-if="isLogin" class="flex justify-end -mt-3">
             <button
@@ -117,6 +119,8 @@ defineProps({
   signupSubtitle: { type: String, default: '' },
   emailLabel: { type: String, required: true },
   emailPlaceholder: { type: String, required: true },
+  passwordLabel: { type: String, default: '' },
+  passwordPlaceholder: { type: String, default: '' },
   toggleSignupText: { type: String, default: '' },
   toggleLoginText: { type: String, default: '' },
   footerText: { type: String, required: true },

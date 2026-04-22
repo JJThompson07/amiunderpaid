@@ -109,9 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
 import { TrendingUp, Save, RefreshCw } from 'lucide-vue-next';
-import { useFirestore } from 'vuefire';
 import { doc, writeBatch, collection, query, where, getDocs } from 'firebase/firestore';
 
 /**

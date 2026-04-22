@@ -11,7 +11,37 @@
           </p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center justify-end gap-3">
+          <div
+            class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
+            <span class="text-2xs font-black text-slate-400 uppercase tracking-widest">Today</span>
+            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+              >---</span
+            >
+            <div v-else class="flex flex-col items-end">
+              <span class="text-2xl font-black text-primary-500 leading-none mt-1">
+                {{ todayCount.toLocaleString() }}
+              </span>
+              <span class="text-xs text-slate-400 font-medium mt-1"> Searches </span>
+            </div>
+          </div>
+
+          <div
+            class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
+            <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
+              >Yesterday</span
+            >
+            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+              >---</span
+            >
+            <div v-else class="flex flex-col items-end">
+              <span class="text-2xl font-black text-primary-500 leading-none mt-1">
+                {{ yesterdayCount.toLocaleString() }}
+              </span>
+              <span class="text-xs text-slate-400 font-medium mt-1"> Searches </span>
+            </div>
+          </div>
+
           <div
             class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
@@ -151,7 +181,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
 import { Search } from 'lucide-vue-next';
 import type { SearchLog } from '../../../server/api/user/search-logs.get';
 
@@ -172,6 +201,8 @@ const tableColumns = [
 const { data, pending } = await useFetch<{
   success: boolean;
   totalCount: number;
+  todayCount: number;
+  yesterdayCount: number;
   oldestDate: string;
   averagePerDay: number;
   logs: SearchLog[];
@@ -188,6 +219,14 @@ const totalLifetimeSearches = computed(() => {
 
 const sinceDate = computed(() => {
   return data.value?.oldestDate || 'the beginning';
+});
+
+const todayCount = computed(() => {
+  return data.value?.todayCount || 0;
+});
+
+const yesterdayCount = computed(() => {
+  return data.value?.yesterdayCount || 0;
 });
 
 const averageDailySearches = computed(() => {

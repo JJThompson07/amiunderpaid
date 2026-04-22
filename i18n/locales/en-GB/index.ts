@@ -18,6 +18,7 @@ import recruiter from './recruiter.json';
 import mca from './mca.json';
 import account from './account.json';
 import toast from './toast.json';
+import auth from './auth.json';
 
 export default defineI18nLocale(async () => {
   return {
@@ -40,6 +41,7 @@ export default defineI18nLocale(async () => {
     recruiter,
     mca,
     account,
-    toast
+    toast,
+    auth
   };
 });

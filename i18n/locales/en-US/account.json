@@ -12,8 +12,9 @@
     "failure": {
       "title": "Verification Failed",
       "message": {
+        "invalid-link": "Invalid verification link. The code is missing or malformed.",
         "expired-action-code": "This verification link has expired.",
-        "invalid-action-code": "This link is invalid or has already been used.'",
+        "invalid-action-code": "This link is invalid or has already been used.",
         "user-disabled": "This user account has been disabled.",
         "default": "An unexpected error occurred while verifying your email."
       },
@@ -44,6 +45,18 @@
     "description": "Enter your account email address and we will send you a secure link to reset your password.",
     "action": {
       "send-link": "Send Reset Link"
+    },
+    "email-required": {
+      "title": "Email Required",
+      "message": "Please enter an email address to reset your password."
+    },
+    "reset-failed": {
+      "title": "Reset Failed",
+      "message": "Failed to send reset link. Please check the email and try again."
+    },
+    "success": {
+      "title": "Check your inbox",
+      "message": "We've sent a password reset link to {email}"
     }
   },
   "form": {

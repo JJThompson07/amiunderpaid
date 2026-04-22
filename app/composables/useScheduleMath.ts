@@ -1,5 +1,4 @@
 // app/composables/useScheduleMath.ts
-import { ref, computed, watch } from 'vue';
 import type { Territory } from '~/components/Territory/ScheduleMatrix.vue';
 
 type RowConfig = {

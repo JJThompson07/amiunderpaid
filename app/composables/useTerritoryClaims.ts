@@ -1,5 +1,4 @@
 // composables/useTerritoryClaims.ts
-import { computed } from 'vue';
 import type { Ref } from 'vue';
 import { collection, query, where } from 'firebase/firestore';
 import { useFirestore, useCollection } from 'vuefire';

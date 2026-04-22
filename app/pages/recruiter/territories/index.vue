@@ -176,8 +176,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-
 // IMPORT YOUR CONSTANTS
 import type { TerritoryListOption } from '../../../components/Territory/List.vue';
 
@@ -191,7 +189,7 @@ export type TerritoryOption = { label: string; value: number };
 
 const { t } = useI18n();
 
-const firebaseAuth = useFirebaseAuth();
+const user = useCurrentUser();
 const { ukTerritories, usaTerritories } = useTerritories();
 
 const countries = [
@@ -314,7 +312,7 @@ const submitSchedule = async () => {
   isSubmitting.value = true;
 
   try {
-    const token = await firebaseAuth?.currentUser?.getIdToken();
+    const token = await user.value?.getIdToken();
 
     // Determine the currency based on the user's billing country
     const targetCurrency = userProfile.value?.billingCountry === 'USA' ? 'usd' : 'gbp';

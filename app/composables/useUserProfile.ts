@@ -1,4 +1,3 @@
-import { computed } from 'vue';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useFirestore, useCurrentUser, useDocument } from 'vuefire';
 

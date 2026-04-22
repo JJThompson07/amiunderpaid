@@ -27,7 +27,7 @@
             bg-colour="bg-primary-600"
             animation-colour="bg-primary-500"
             @click="navigateTo('/recruiter/profile')">
-            My Profile
+            {{ $t('common.profile') }}
           </AmIButton>
           <AmIButton
             title="logout"
@@ -98,7 +98,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue';
 import { MapPin, Map } from 'lucide-vue-next'; // Mail icon removed since it's in the toast now
 
 definePageMeta({
@@ -108,15 +107,14 @@ definePageMeta({
 // 1. Composables
 const { logout } = useRecruiterAuth(); // resendVerificationEmail removed
 const { userProfile } = useUserProfile();
-const firebaseAuth = useFirebaseAuth();
+const user = useCurrentUser();
 
 // 2. Simple Verification State (Just for disabling buttons)
 const isEmailVerified = ref(false);
 
 watchEffect(() => {
-  if (firebaseAuth?.currentUser) {
-    isEmailVerified.value = firebaseAuth.currentUser.emailVerified;
-  }
+  // Now this will magically update the moment they verify!
+  isEmailVerified.value = user.value?.emailVerified || false;
 });
 
 // 3. Cancellation State
@@ -134,7 +132,7 @@ const executeCancel = async () => {
   isCancelling.value = true;
 
   try {
-    const token = await firebaseAuth?.currentUser?.getIdToken();
+    const token = await user.value?.getIdToken();
     await $fetch('/api/stripe/cancel-territory', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },

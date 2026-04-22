@@ -18,13 +18,28 @@ export default defineEventHandler(async () => {
   try {
     const collectionRef = db.collection('search_history');
 
-    const [countSnapshot, oldestSnapshot, latestSnapshot] = await Promise.all([
-      collectionRef.count().get(),
-      collectionRef.orderBy('timestamp', 'asc').limit(1).get(),
-      collectionRef.orderBy('timestamp', 'desc').limit(100).get()
-    ]);
+    // Get start boundaries for today and yesterday
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+
+    const [countSnapshot, oldestSnapshot, latestSnapshot, todaySnapshot, yesterdaySnapshot] =
+      await Promise.all([
+        collectionRef.count().get(),
+        collectionRef.orderBy('timestamp', 'asc').limit(1).get(),
+        collectionRef.orderBy('timestamp', 'desc').limit(100).get(),
+        // New queries for today and yesterday
+        collectionRef.where('timestamp', '>=', startOfToday).count().get(),
+        collectionRef
+          .where('timestamp', '>=', startOfYesterday)
+          .where('timestamp', '<', startOfToday)
+          .count()
+          .get()
+      ]);
 
     const totalCount = countSnapshot.data().count;
+    const todayCount = todaySnapshot.data().count;
+    const yesterdayCount = yesterdaySnapshot.data().count;
 
     let oldestDate = 'the beginning';
     let averagePerDay = 0;
@@ -71,8 +86,16 @@ export default defineEventHandler(async () => {
       };
     });
 
-    // 👈 Return averagePerDay to the frontend
-    return { success: true, totalCount, oldestDate, averagePerDay, logs };
+    // 👈 Return todayCount and yesterdayCount to the frontend
+    return {
+      success: true,
+      totalCount,
+      todayCount,
+      yesterdayCount,
+      oldestDate,
+      averagePerDay,
+      logs
+    };
   } catch (error) {
     throw createError({
       statusCode: 500,

@@ -1,5 +1,3 @@
-import { computed } from 'vue';
-
 export const useAnalytics = () => {
   const { gtag } = useGtag();
   const { $siteBrand } = useNuxtApp();

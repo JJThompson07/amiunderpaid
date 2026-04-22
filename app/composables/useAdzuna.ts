@@ -1,5 +1,3 @@
-import { computed } from 'vue';
-
 export type HistogramBucket = {
   value: number;
   count: number;
