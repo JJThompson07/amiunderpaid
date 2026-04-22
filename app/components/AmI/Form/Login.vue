@@ -41,6 +41,14 @@
             :icon="KeyRound"
             @keyup.enter="handleSubmit" />
 
+          <div v-if="isLogin" class="flex justify-end -mt-3">
+            <button
+              type="button"
+              class="text-xs font-bold text-slate-400 hover:text-primary-600 transition-colors"
+              @click="showResetModal = true">
+              {{ $t('login.common.forgot-password') }}
+            </button>
+          </div>
           <div
             v-if="error"
             class="text-[11px] font-bold text-red-600 bg-red-50 p-3 rounded-xl border border-red-100 flex items-center gap-2">
@@ -91,6 +99,7 @@
         </p>
       </div>
     </div>
+    <ModalForgotPassword v-model="showResetModal" :initial-email="email" />
   </div>
 </template>
 
@@ -117,9 +126,10 @@ defineProps({
 });
 
 const emit = defineEmits(['login', 'signup', 'clearError']);
-const email = ref('');
-const password = ref('');
-const isLogin = ref(true);
+const email = ref<string>('');
+const password = ref<string>('');
+const isLogin = ref<boolean>(true);
+const showResetModal = ref<boolean>(false);
 
 const toggleMode = () => {
   isLogin.value = !isLogin.value;

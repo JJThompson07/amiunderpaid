@@ -1,6 +1,12 @@
 import { ref } from 'vue';
 import { useFirebaseAuth, useFirebaseApp } from 'vuefire'; // <-- Changed here
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  sendPasswordResetEmail,
+  sendEmailVerification
+} from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore'; // <-- Added getFirestore
 import { useCookie } from '#imports';
 
@@ -72,6 +78,9 @@ export const useRecruiterAuth = () => {
       // Same fix as login: Wait for the session cookie to mint
       await new Promise((resolve) => setTimeout(resolve, 800));
 
+      // trigger email verification
+      await sendEmailVerification(userCredential.user);
+
       return true;
     } catch (e: any) {
       // Handle Sign-Up specific error codes
@@ -110,10 +119,60 @@ export const useRecruiterAuth = () => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    loading.value = true;
+    error.value = '';
+
+    if (!auth) {
+      error.value = 'Authentication service is unavailable.';
+      loading.value = false;
+      return false;
+    }
+
+    try {
+      // This sends the standard Firebase reset email
+      await sendPasswordResetEmail(auth, email);
+      return true;
+    } catch (err: any) {
+      console.error('Password reset error:', err);
+      // Map Firebase errors to user-friendly messages
+      if (err.code === 'auth/user-not-found') {
+        error.value = 'No account found with that email address.';
+      } else if (err.code === 'auth/invalid-email') {
+        error.value = 'Please enter a valid email address.';
+      } else {
+        error.value = 'Failed to send reset email. Please try again later.';
+      }
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const resendVerificationEmail = async () => {
+    if (!auth || !auth.currentUser) {
+      return false;
+    }
+
+    try {
+      await sendEmailVerification(auth.currentUser);
+      return true;
+    } catch (err: any) {
+      console.error('Failed to resend verification:', err);
+      // Optional: Handle Firebase's "too-many-requests" error if they spam the button
+      if (err.code === 'auth/too-many-requests') {
+        alert('Please wait a few minutes before requesting another email.');
+      }
+      return false;
+    }
+  };
+
   return {
     login,
     signup,
     logout,
+    resetPassword,
+    resendVerificationEmail,
     loading,
     error
   };

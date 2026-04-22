@@ -197,7 +197,7 @@ const averageDailySearches = computed(() => {
 // --- SEARCH & PAGINATION STATE ---
 const searchQuery = ref('');
 const currentPage = ref(1);
-const itemsPerPage = 15; // Set to whatever fits your screen best!
+const itemsPerPage = 20; // Set to whatever fits your screen best!
 
 // Reset to page 1 whenever the user types a new search
 watch(searchQuery, () => {

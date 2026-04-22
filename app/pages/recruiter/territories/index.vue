@@ -181,9 +181,9 @@ import { ref, computed, watch } from 'vue';
 // IMPORT YOUR CONSTANTS
 import type { TerritoryListOption } from '../../../components/Territory/List.vue';
 
-// definePageMeta({
-//   middleware: 'recruiters'
-// });
+definePageMeta({
+  middleware: ['recruiters', 'recruiter-verified']
+});
 
 export type CountryCode = 'UK' | 'USA';
 export type ViewType = 'list' | 'map';

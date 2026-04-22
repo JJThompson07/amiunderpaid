@@ -51,11 +51,13 @@
             <h2 class="text-xl font-bold text-slate-900">{{ $t('recruiter.territories.my') }}</h2>
           </div>
 
-          <NuxtLink
-            to="/recruiter/territories"
-            class="transition-all duration-300 ease-in-out bg-primary-500 text-white hover:bg-primary-400 py-2.5 px-5 rounded-xl font-bold text-sm shadow-sm hover:shadow-md text-center shrink-0 w-full sm:w-auto">
+          <AmIButton
+            title="Get Territories"
+            class="w-full sm:w-auto"
+            :disabled="!isEmailVerified"
+            @click="navigateTo('/recruiter/territories')">
             {{ $t('recruiter.territories.get') }}
-          </NuxtLink>
+          </AmIButton>
         </div>
 
         <div
@@ -68,7 +70,10 @@
           <p class="text-slate-500 text-sm mb-6 max-w-sm mx-auto">
             {{ $t('recruiter.territories.claim.leads') }}
           </p>
-          <AmIButton title="Claim Territory" @click="navigateTo('/recruiter/territories')">
+          <AmIButton
+            title="Claim Territory"
+            :disabled="!isEmailVerified"
+            @click="navigateTo('/recruiter/territories')">
             {{ $t('recruiter.territories.claim.first') }}
           </AmIButton>
         </div>
@@ -87,56 +92,60 @@
       v-model="showCancelModal"
       :is-cancelling="isCancelling"
       @confirm="executeCancel" />
+
+    <ToastEmailVerification />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { MapPin, Map } from 'lucide-vue-next';
+import { ref, watchEffect } from 'vue';
+import { MapPin, Map } from 'lucide-vue-next'; // Mail icon removed since it's in the toast now
 
 definePageMeta({
   middleware: 'recruiters'
 });
 
 // 1. Composables
-const { logout } = useRecruiterAuth();
+const { logout } = useRecruiterAuth(); // resendVerificationEmail removed
 const { userProfile } = useUserProfile();
 const firebaseAuth = useFirebaseAuth();
 
-// 2. Cancellation State
+// 2. Simple Verification State (Just for disabling buttons)
+const isEmailVerified = ref(false);
+
+watchEffect(() => {
+  if (firebaseAuth?.currentUser) {
+    isEmailVerified.value = firebaseAuth.currentUser.emailVerified;
+  }
+});
+
+// 3. Cancellation State
 const showCancelModal = ref(false);
 const territoryToCancel = ref<number | null>(null);
 const isCancelling = ref(false);
 
-// Step A: User clicks "Cancel" on a matrix row
 const promptCancel = (territoryId: number) => {
   territoryToCancel.value = territoryId;
   showCancelModal.value = true;
 };
 
-// Step B: User confirms inside the modal
 const executeCancel = async () => {
   if (!territoryToCancel.value) return;
-
   isCancelling.value = true;
 
   try {
     const token = await firebaseAuth?.currentUser?.getIdToken();
-
     await $fetch('/api/stripe/cancel-territory', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: { territoryId: territoryToCancel.value }
     });
 
-    // Remove it from the UI immediately
     if (userProfile.value?.activeTerritories) {
       userProfile.value.activeTerritories = userProfile.value.activeTerritories.filter(
         (t: any) => t.territoryId !== territoryToCancel.value
       );
     }
-
-    // Close the modal and reset state
     showCancelModal.value = false;
     territoryToCancel.value = null;
   } catch (error) {
@@ -150,7 +159,7 @@ const handleEdit = (territoryId: number) => {
   navigateTo(`/recruiter/territories/edit?id=${territoryId}`);
 };
 
-// 3. Auth
+// 4. Auth
 const handleLogout = async () => {
   await logout();
   await navigateTo('/recruiter/login');

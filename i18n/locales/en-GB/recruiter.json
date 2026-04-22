@@ -29,7 +29,7 @@
     "inbound": {
       "email": "Lead Routing Email",
       "email-helper": "Where should we send your candidate and client leads? (Leave blank to use your login email)",
-      "email-placeholder": "e.g. leads@youragency.com"
+      "email-placeholder": "e.g. leads@your-agency.com"
     }
   },
   "industries": {

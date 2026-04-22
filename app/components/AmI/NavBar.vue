@@ -100,7 +100,11 @@ defineEmits(['close']);
 const { t } = useI18n();
 const { isAdmin, isRecruiter, isRoleLoading } = useUserRole();
 
+const firebaseAuth = useFirebaseAuth();
+const isEmailVerified = ref<boolean>(false);
+
 const isMounted = ref(false);
+
 onMounted(() => {
   isMounted.value = true;
 });
@@ -138,15 +142,23 @@ const adminLinks = computed(() => [
 ]);
 
 // --- 2. RECRUITER LINKS ---
-const recruiterLinks = computed(() => [
-  { to: '/', label: t('navbar.home'), mobileOnly: true },
-  { to: '/recruiter/dashboard', label: t('navbar.dashboard'), mobileOnly: false },
-  {
-    to: '/recruiter/territories',
-    label: t('navbar.territories'),
-    mobileOnly: false
+const recruiterLinks = computed(() => {
+  const links = [
+    { to: '/', label: t('navbar.home'), mobileOnly: true },
+    { to: '/recruiter/dashboard', label: t('navbar.dashboard'), mobileOnly: false }
+  ];
+
+  // Only add the Territories link if they are fully verified
+  if (isEmailVerified.value) {
+    links.push({
+      to: '/recruiter/territories',
+      label: t('navbar.territories'),
+      mobileOnly: false
+    });
   }
-]);
+
+  return links;
+});
 
 // --- 3. ORDINARY USER GROUPS ---
 const navLinks = computed(() => [
@@ -178,5 +190,13 @@ const activeLinks = computed(() => {
   else if (isRecruiter.value) sourceArray = recruiterLinks.value;
 
   return sourceArray.filter((link) => !link.mobileOnly || safeIsMobile.value);
+});
+
+watchEffect(() => {
+  if (firebaseAuth?.currentUser) {
+    isEmailVerified.value = firebaseAuth.currentUser.emailVerified;
+  } else {
+    isEmailVerified.value = false;
+  }
 });
 </script>

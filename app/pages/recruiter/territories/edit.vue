@@ -81,7 +81,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 
 definePageMeta({
-  middleware: 'recruiters'
+  middleware: ['recruiters', 'recruiter-verified']
 });
 
 const route = useRoute();

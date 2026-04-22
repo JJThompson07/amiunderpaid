@@ -6,7 +6,8 @@
     "sign-in-btn": "Sign In",
     "sign-up-btn": "Create Account",
     "loading-verify": "Verifying...",
-    "loading-process": "Processing..."
+    "loading-process": "Processing...",
+    "forgot-password": "Forgot Password?"
   },
   "admin": {
     "title": "Admin Portal",
