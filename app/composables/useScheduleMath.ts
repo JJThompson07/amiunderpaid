@@ -93,9 +93,28 @@ export const useScheduleMath = (
 
   const getRowPricing = (band: number | undefined) => {
     const safeBand = band || 1;
-    if (!pricingData.value || !pricingData.value[billingCountry.value])
+    if (!pricingData.value || !pricingData.value[billingCountry.value]) {
       return { basic: 0, exclusive: 0 };
-    return pricingData.value[billingCountry.value][`band${safeBand}`] || { basic: 0, exclusive: 0 };
+    }
+
+    // 1. Get base prices from the platform settings
+    const basePrices = pricingData.value[billingCountry.value][`band${safeBand}`] || {
+      basic: 0,
+      exclusive: 0
+    };
+
+    // 2. Get recruiter-specific discounts from their profile
+    const basicDiscount = userProfile.value?.basicDiscount || 0;
+    const exclusiveDiscount = userProfile.value?.exclusiveDiscount || 0;
+
+    // 3. Apply percentage discounts
+    const discountedBasic = basePrices.basic * (1 - basicDiscount / 100);
+    const discountedExclusive = basePrices.exclusive * (1 - exclusiveDiscount / 100);
+
+    return {
+      basic: Math.max(0, discountedBasic),
+      exclusive: Math.max(0, discountedExclusive)
+    };
   };
 
   // NEW: Helper to check if a month is owned by someone else
@@ -233,7 +252,7 @@ export const useScheduleMath = (
     });
   };
 
-  watch([matrixRows, pricingData, () => props.takenMonths], emitUpdates, {
+  watch([matrixRows, pricingData, () => props.takenMonths, userProfile], emitUpdates, {
     immediate: true,
     deep: true
   });

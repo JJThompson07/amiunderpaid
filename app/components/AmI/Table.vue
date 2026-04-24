@@ -27,7 +27,8 @@
           v-for="(row, rowIndex) in data"
           v-else
           :key="rowIndex"
-          class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors last:border-b-0 group">
+          class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors last:border-b-0 group"
+          :class="rowClass ? rowClass(row, rowIndex) : ''">
           <td
             v-for="col in columns"
             :key="col.key"
@@ -73,6 +74,12 @@ defineProps({
   emptyMessage: {
     type: String,
     default: 'No data available.'
+  },
+  rowClass: {
+    type: Function as PropType<
+      (row: any, index: number) => string | string[] | Record<string, boolean>
+    >,
+    default: undefined
   }
 });
 </script>

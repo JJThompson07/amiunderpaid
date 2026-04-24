@@ -40,6 +40,7 @@
         </div>
       </header>
 
+      <!-- Territories section -->
       <div class="bg-white p-0 md:p-8 rounded-3xl shadow-xs border border-slate-200">
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-0 gap-4 mb-6">
@@ -51,13 +52,32 @@
             <h2 class="text-xl font-bold text-slate-900">{{ $t('recruiter.territories.my') }}</h2>
           </div>
 
-          <AmIButton
-            title="Get Territories"
-            class="w-full sm:w-auto"
-            :disabled="!isEmailVerified"
-            @click="navigateTo('/recruiter/territories')">
-            {{ $t('recruiter.territories.get') }}
-          </AmIButton>
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+            <div
+              v-if="
+                userProfile &&
+                (userProfile?.basicDiscount > 0 || userProfile?.exclusiveDiscount > 0)
+              "
+              class="flex items-center gap-2">
+              <span
+                v-if="userProfile.basicDiscount > 0"
+                class="text-2xs font-black text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg">
+                Basic: -{{ userProfile.basicDiscount }}%
+              </span>
+              <span
+                v-if="userProfile.exclusiveDiscount > 0"
+                class="text-2xs font-black text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg">
+                Excl: -{{ userProfile.exclusiveDiscount }}%
+              </span>
+            </div>
+            <AmIButton
+              title="Get Territories"
+              class="w-full sm:w-auto"
+              :disabled="!isEmailVerified"
+              @click="navigateTo('/recruiter/territories')">
+              {{ $t('recruiter.territories.get') }}
+            </AmIButton>
+          </div>
         </div>
 
         <div

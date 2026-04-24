@@ -50,13 +50,18 @@ export default defineEventHandler(async (event) => {
   const platformPricing = pricingDoc.data() || {};
   const currency = userData.billingCountry === 'USA' ? 'usd' : 'gbp';
   const countryPricing = platformPricing[userData.billingCountry || 'UK'];
+  const basicDiscount = userData.basicDiscount || 0;
 
   let newMonthlyTotal = 0;
   updatedTerritories.forEach((t: any) => {
     if (t.isBasic) {
       // If you don't have the band saved on the object, default to band 1
       const bandData = countryPricing[`band${t.band || 1}`];
-      newMonthlyTotal += bandData?.basic || 10;
+      let basicPrice = bandData?.basic || 10;
+      if (basicDiscount > 0) {
+        basicPrice = basicPrice * (1 - basicDiscount / 100);
+      }
+      newMonthlyTotal += Math.max(0, basicPrice);
     }
   });
 

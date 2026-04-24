@@ -2,7 +2,7 @@
   <div class="bg-slate-50 p-4 pt-24 min-h-screen">
     <SectionSharedBackdrop />
 
-    <div class="max-w-2xl mx-auto relative flex flex-col gap-6">
+    <div class="relative flex flex-col gap-6 max-w-4xl mx-auto">
       <header
         class="flex items-center justify-between gap-4 bg-white p-6 rounded-3xl shadow-md border border-slate-200">
         <div class="flex items-center gap-4">
@@ -18,7 +18,8 @@
         </div>
       </header>
 
-      <div class="bg-white p-6 md:p-8 rounded-3xl shadow-xs border border-slate-200">
+      <!-- Account Section -->
+      <div class="bg-white p-4 md:p-6 rounded-3xl shadow-xs border border-slate-200">
         <div class="flex items-center gap-3 mb-8">
           <div
             class="w-10 h-10 bg-secondary-50 rounded-xl flex items-center justify-center text-secondary-600">
@@ -41,6 +42,40 @@
               </p>
               <p class="font-medium text-slate-900 truncate">{{ userProfile.email }}</p>
             </div>
+          </div>
+
+          <div
+            v-if="userProfile.basicDiscount > 0 || userProfile.exclusiveDiscount > 0"
+            class="mt-4 bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex flex-col gap-2">
+            <p
+              class="text-2xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1.5">
+              <Tag class="w-3.5 h-3.5" />
+              {{ $t('recruiter.account.discounts.title', 'Active Partner Discounts') }}
+            </p>
+            <div class="flex flex-wrap gap-3 mt-1">
+              <span
+                v-if="userProfile.basicDiscount > 0"
+                class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-black bg-emerald-200/50 text-emerald-800">
+                {{ $t('recruiter.account.discounts.basic', 'Basic Tier') }}: -{{
+                  userProfile.basicDiscount
+                }}%
+              </span>
+              <span
+                v-if="userProfile.exclusiveDiscount > 0"
+                class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-black bg-emerald-200/50 text-emerald-800">
+                {{ $t('recruiter.account.discounts.exclusive', 'Exclusive Tier') }}: -{{
+                  userProfile.exclusiveDiscount
+                }}%
+              </span>
+            </div>
+            <p class="text-[11px] text-emerald-700 font-medium mt-1">
+              {{
+                $t(
+                  'recruiter.account.discounts.helper',
+                  'These discounts are automatically applied to your monthly invoices and new territory claims.'
+                )
+              }}
+            </p>
           </div>
 
           <hr class="border-slate-100 my-6" />
@@ -191,7 +226,7 @@
 </template>
 
 <script setup lang="ts">
-import { BriefcaseBusiness, CheckSquareIcon } from 'lucide-vue-next';
+import { BriefcaseBusiness, CheckSquareIcon, Tag } from 'lucide-vue-next';
 
 definePageMeta({
   middleware: 'recruiters'

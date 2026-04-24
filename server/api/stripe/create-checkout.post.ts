@@ -54,6 +54,14 @@ export default defineEventHandler(async (event) => {
   }
 
   // ==========================================
+  // 2.5 FETCH USER DISCOUNTS
+  // ==========================================
+  const userDoc = await db.collection('users').doc(userId).get();
+  const userData = userDoc.data() || {};
+  const basicDiscount = userData.basicDiscount || 0;
+  const exclusiveDiscount = userData.exclusiveDiscount || 0;
+
+  // ==========================================
   // 3. CALCULATE TOTALS (Based on Bands)
   // ==========================================
   const territories = body.territories || [];
@@ -72,8 +80,12 @@ export default defineEventHandler(async (event) => {
   // Loop through every item in the user's cart
   territories.forEach((t: any) => {
     const bandData = countryPricing[`band${t.band}`];
-    const basicPrice = bandData?.basic || 10;
-    const exclusivePrice = bandData?.exclusive || 50;
+    let basicPrice = bandData?.basic || 10;
+    let exclusivePrice = bandData?.exclusive || 50;
+
+    // Apply custom recruiter discounts
+    basicPrice = Math.max(0, basicPrice * (1 - basicDiscount / 100));
+    exclusivePrice = Math.max(0, exclusivePrice * (1 - exclusiveDiscount / 100));
 
     // 1. Add Basic Subscription Cost
     if (t.isBasic) {

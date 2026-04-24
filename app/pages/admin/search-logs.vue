@@ -44,7 +44,7 @@
 
           <div
             class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+            <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Daily Avg</span
             >
             <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
@@ -60,7 +60,7 @@
 
           <div
             class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+            <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Lifetime Searches</span
             >
             <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
@@ -97,7 +97,8 @@
       <div v-else class="flex flex-col gap-4">
         <AmITable
           :columns="tableColumns"
-          :data="paginatedLogs"
+          :data="colouredLogs"
+          :row-class="(row) => row.rowClass"
           max-height="h-125"
           empty-message="No search logs match your query.">
           <template #formattedDate="{ value }">
@@ -141,7 +142,7 @@
           </template>
 
           <template #brand="{ value }">
-            <span class="text-[10px] uppercase tracking-widest font-black text-slate-400">
+            <span class="text-2xs uppercase tracking-widest font-black text-slate-400">
               {{ value || 'Unknown' }}
             </span>
           </template>
@@ -197,6 +198,11 @@ const tableColumns = [
   { key: 'brand', label: 'Platform', class: 'w-32 text-right', cellClass: 'text-right' }
 ];
 
+// --- SEARCH & PAGINATION STATE ---
+const searchQuery = ref('');
+const currentPage = ref(1);
+const itemsPerPage = 50;
+
 // UPDATED: Now expecting totalCount from the backend
 const { data, pending } = await useFetch<{
   success: boolean;
@@ -206,7 +212,9 @@ const { data, pending } = await useFetch<{
   oldestDate: string;
   averagePerDay: number;
   logs: SearchLog[];
-}>('/api/user/search-logs');
+}>('/api/user/search-logs', {
+  query: { page: currentPage, limit: itemsPerPage }
+});
 
 const logs = computed(() => {
   return data.value?.logs || [];
@@ -233,11 +241,6 @@ const averageDailySearches = computed(() => {
   return data.value?.averagePerDay || 0;
 });
 
-// --- SEARCH & PAGINATION STATE ---
-const searchQuery = ref('');
-const currentPage = ref(1);
-const itemsPerPage = 20; // Set to whatever fits your screen best!
-
 // Reset to page 1 whenever the user types a new search
 watch(searchQuery, () => {
   currentPage.value = 1;
@@ -255,13 +258,27 @@ const filteredLogs = computed(() => {
   );
 });
 
-const totalPages = computed(() => {
-  return Math.ceil(filteredLogs.value.length / itemsPerPage) || 1;
+const colouredLogs = computed(() => {
+  let currentBg = 'bg-white';
+  let lastDate = '';
+
+  return filteredLogs.value.map((log: any, index: number) => {
+    if (index === 0) lastDate = log.dateKey;
+
+    if (log.dateKey && log.dateKey !== lastDate) {
+      currentBg = currentBg === 'bg-white' ? 'bg-slate-50' : 'bg-white';
+      lastDate = log.dateKey;
+    }
+
+    return {
+      ...log,
+      rowClass: currentBg,
+      class: currentBg
+    };
+  });
 });
 
-const paginatedLogs = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return filteredLogs.value.slice(start, end);
+const totalPages = computed(() => {
+  return Math.ceil(totalLifetimeSearches.value / itemsPerPage) || 1;
 });
 </script>

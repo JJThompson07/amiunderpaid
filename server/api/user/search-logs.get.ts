@@ -10,10 +10,15 @@ export interface SearchLog {
   contract: string | null;
   brand: string | null;
   formattedDate: string;
+  dateKey: string;
 }
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
   const db = getFirestore();
+  const query = getQuery(event);
+  const page = Number(query.page) || 1;
+  const limitCount = Number(query.limit) || 50;
+  const offsetCount = (page - 1) * limitCount;
 
   try {
     const collectionRef = db.collection('search_history');
@@ -27,7 +32,7 @@ export default defineEventHandler(async () => {
       await Promise.all([
         collectionRef.count().get(),
         collectionRef.orderBy('timestamp', 'asc').limit(1).get(),
-        collectionRef.orderBy('timestamp', 'desc').limit(100).get(),
+        collectionRef.orderBy('timestamp', 'desc').offset(offsetCount).limit(limitCount).get(),
         // New queries for today and yesterday
         collectionRef.where('timestamp', '>=', startOfToday).count().get(),
         collectionRef
@@ -66,6 +71,7 @@ export default defineEventHandler(async () => {
 
     const logs: SearchLog[] = latestSnapshot.docs.map((doc) => {
       const data = doc.data();
+      const dateObj = data.timestamp?.toDate ? data.timestamp.toDate() : null;
       return {
         id: doc.id,
         title: data.title || '',
@@ -75,14 +81,15 @@ export default defineEventHandler(async () => {
         schedule: data.schedule || null,
         contract: data.contract || null,
         brand: data.brand || null,
-        formattedDate: data.timestamp?.toDate
-          ? data.timestamp.toDate().toLocaleString('en-GB', {
+        formattedDate: dateObj
+          ? dateObj.toLocaleString('en-GB', {
               day: '2-digit',
               month: 'short',
               hour: '2-digit',
               minute: '2-digit'
             })
-          : 'Unknown'
+          : 'Unknown',
+        dateKey: dateObj ? dateObj.toLocaleDateString('en-GB') : 'Unknown'
       };
     });
 

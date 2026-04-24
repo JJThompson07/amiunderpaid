@@ -21,17 +21,30 @@
       </template>
 
       <template #target="{ row }">
-        <div class="flex items-center justify-between">
+        <div class="flex justify-between items-center gap-2">
           <div class="flex flex-col">
             <span class="font-bold text-slate-800 text-sm">{{ row.categoryLabel }}</span>
-            <span class="text-slate-500 text-xs flex items-center gap-1">
+            <span class="text-slate-500 text-xs flex items-center gap-1 mb-1.5">
               <MapPinIcon class="w-3 h-3" />
               {{ row.territory.name }}
             </span>
           </div>
-          <span class="text-2xs font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
-            Band {{ row.territory.band || 1 }}
-          </span>
+          <div class="flex flex-wrap gap-2 items-center">
+            <span
+              class="text-xs font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0 mt-0.5">
+              Band {{ row.territory.band || 1 }}
+            </span>
+            <div class="flex flex-col items-center gap-1.5 mt-0.5">
+              <span
+                class="text-3xs font-bold text-secondary-500 bg-secondary-100 px-1.5 py-0.5 rounded-md border border-secondary-200">
+                Basic: {{ currencySymbol }}{{ getRowPricing(row.territory.band).basic }}/mo
+              </span>
+              <span
+                class="text-3xs font-bold text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded-md border border-primary-100">
+                Excl: {{ currencySymbol }}{{ getRowPricing(row.territory.band).exclusive }}/mo
+              </span>
+            </div>
+          </div>
         </div>
       </template>
 

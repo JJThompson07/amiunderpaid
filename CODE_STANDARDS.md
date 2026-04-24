@@ -44,7 +44,7 @@ You are an AI assistant helping to build a dual-tenant, server-side rendered (SS
 
 ## 6. Internationalization (i18n)
 
-- **No Hardcoded Strings:** Absolutely no hardcoded English text in templates or scripts.
+- **No Hardcoded Strings:** Any text that is visual on the site should be done through the language files, unless it is within the Admin section (`~/pages/admin/`) where hardcoded strings are acceptable.
 - Always use the translation function `$t('key')` in templates, and `const { t } = useI18n()` inside `<script setup>`.
 - Keep translation keys organized hierarchically in JSON files located in `i18n/locales/`.
 

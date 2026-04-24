@@ -110,5 +110,28 @@
     "already-owned": "Already Owned",
     "downgrade": "Remove from Cart",
     "upgrade-tooltip": "Upgrade to Exclusive ({price})"
+  },
+  "leads": {
+    "title": "My Leads",
+    "subtitle": "Manage your inbound leads and Lead Contact Card settings.",
+    "tab-leads": "Leads",
+    "tab-settings": "Settings",
+    "table-title": "Inbound Leads",
+    "empty": "No leads found yet. Claim territories and set up your Lead Contact Card to get started.",
+    "settings-title": "Lead Contact Card Settings",
+    "general-settings": "General Settings",
+    "general-helper": "These details will be used as the default for your contact cards.",
+    "category-settings": "Industry-Specific Content",
+    "category-helper": "Override the general content message for specific industries. If left blank, the general content will be used.",
+    "no-categories": "You have not selected any covered industries in your profile.",
+    "fields": {
+      "logo": "Company Logo",
+      "upload-logo": "Upload Logo (.png, .jpg)",
+      "title": "Lead Contact Card Title",
+      "content": "Lead Contact Card Content",
+      "content-placeholder": "Why should candidates contact you...",
+      "category-placeholder": "Why should candidates contact you about {category}...",
+      "button-text": "Button Text"
+    }
   }
 }

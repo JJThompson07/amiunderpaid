@@ -151,7 +151,8 @@ const adminLinks = computed(() => [
 const recruiterLinks = computed(() => {
   const links = [
     { to: '/', label: t('navbar.home'), mobileOnly: true },
-    { to: '/recruiter/dashboard', label: t('navbar.dashboard'), mobileOnly: false }
+    { to: '/recruiter/dashboard', label: t('navbar.dashboard'), mobileOnly: false },
+    { to: '/recruiter/profile', label: t('navbar.profile'), mobileOnly: false }
   ];
 
   // Only add the Territories link if they are fully verified
@@ -159,6 +160,11 @@ const recruiterLinks = computed(() => {
     links.push({
       to: '/recruiter/territories',
       label: t('navbar.territories'),
+      mobileOnly: false
+    });
+    links.push({
+      to: '/recruiter/leads',
+      label: t('navbar.leads'),
       mobileOnly: false
     });
   }

@@ -38,10 +38,10 @@
               <span
                 v-for="cat in value.slice(0, 2)"
                 :key="cat"
-                class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 truncate max-w-[120px]">
+                class="inline-flex items-center px-2 py-0.5 rounded text-2xs font-bold bg-slate-100 text-slate-600 truncate max-w-[120px]">
                 {{ cat }}
               </span>
-              <span v-if="value.length > 2" class="text-[10px] font-bold text-slate-400">
+              <span v-if="value.length > 2" class="text-2xs font-bold text-slate-400">
                 +{{ value.length - 2 }}
               </span>
             </div>
@@ -82,12 +82,12 @@
             <div class="flex flex-col gap-1 items-end">
               <span
                 v-if="row.basicDiscount > 0"
-                class="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded">
+                class="text-2xs font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded">
                 Basic: -{{ row.basicDiscount }}%
               </span>
               <span
                 v-if="row.exclusiveDiscount > 0"
-                class="text-[10px] font-bold text-secondary-600 bg-secondary-50 px-2 py-0.5 rounded">
+                class="text-2xs font-bold text-secondary-600 bg-secondary-50 px-2 py-0.5 rounded">
                 Excl: -{{ row.exclusiveDiscount }}%
               </span>
               <span
@@ -134,16 +134,14 @@
               >Basic Tier Discount (%)</label
             >
             <AmIInputGeneric v-model="editBasic" type="number" placeholder="e.g. 10" />
-            <p class="text-[10px] text-slate-400 mt-1">
-              Applies to the recurring monthly base fee.
-            </p>
+            <p class="text-2xs text-slate-400 mt-1">Applies to the recurring monthly base fee.</p>
           </div>
           <div>
             <label class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2"
               >Exclusive Claim Discount (%)</label
             >
             <AmIInputGeneric v-model="editExclusive" type="number" placeholder="e.g. 15" />
-            <p class="text-[10px] text-slate-400 mt-1">Applies to upfront exclusive month locks.</p>
+            <p class="text-2xs text-slate-400 mt-1">Applies to upfront exclusive month locks.</p>
           </div>
         </div>
 

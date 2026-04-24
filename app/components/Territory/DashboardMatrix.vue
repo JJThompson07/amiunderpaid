@@ -20,13 +20,29 @@
       <template #header-actions><span class="sr-only">Actions</span></template>
 
       <template #target="{ row }">
-        <div class="flex flex-col">
-          <span class="font-bold text-slate-800 text-sm">{{
-            getCategoryLabel(row.categoryValue)
-          }}</span>
-          <div class="flex items-center gap-1.5 mt-0.5">
-            <MapPinIcon class="w-3.5 h-3.5 text-slate-400" />
-            <span class="text-slate-500 text-xs">{{ getTerritoryName(row.territoryId) }}</span>
+        <div class="flex justify-between items-center gap-2">
+          <div class="flex flex-col">
+            <span class="font-bold text-slate-800 text-sm">{{
+              getCategoryLabel(row.categoryValue)
+            }}</span>
+            <div class="flex items-center gap-1 mt-0.5 mb-1.5">
+              <MapPinIcon class="w-3 h-3 text-slate-400" />
+              <span class="text-slate-500 text-xs">{{ getTerritoryName(row.territoryId) }}</span>
+            </div>
+            <span
+              class="text-2xs font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0 w-max">
+              Band {{ getTerritoryBand(row.territoryId) }}
+            </span>
+          </div>
+          <div class="flex flex-col items-center gap-1 mt-0.5">
+            <span
+              class="text-2xs font-bold text-secondary-500 bg-secondary-100 px-1.5 py-0.5 rounded-md border border-secondary-200">
+              Basic: {{ currencySymbol }}{{ getRowPricing(row.territoryId).basic }}/mo
+            </span>
+            <span
+              class="text-2xs font-bold text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded-md border border-primary-100">
+              Excl: {{ currencySymbol }}{{ getRowPricing(row.territoryId).exclusive }}/mo
+            </span>
           </div>
         </div>
       </template>
@@ -136,6 +152,11 @@ const getTerritoryName = (id: number) => {
   return t ? t.name : `Region #${id}`;
 };
 
+const getTerritoryBand = (id: number) => {
+  const t = getTerritoryById(id);
+  return t ? t.band || 1 : 1;
+};
+
 const getCategoryLabel = (val: string) => {
   if (!categoriesData.value) return val;
   const found = categoriesData.value.find((c: any) => c.id === val || c.label === val);
@@ -152,22 +173,53 @@ const currencySymbol = computed(() => {
   return userProfile.value?.billingCountry === 'USA' ? '$' : '£';
 });
 
+const getRowPricing = (territoryId: number) => {
+  if (!pricingData.value || !userProfile.value) return { basic: '--', exclusive: '--' };
+
+  const band = getTerritoryBand(territoryId);
+  const billingCountry = userProfile.value.billingCountry || 'UK';
+  const countryPricing = pricingData.value[billingCountry];
+
+  if (!countryPricing) return { basic: '--', exclusive: '--' };
+
+  const bandKey = `band${band}`;
+  const bandData = countryPricing[bandKey];
+  if (!bandData) return { basic: '--', exclusive: '--' };
+
+  const basicDiscount = userProfile.value.basicDiscount || 0;
+  const exclusiveDiscount = userProfile.value.exclusiveDiscount || 0;
+
+  return {
+    basic: (bandData.basic * (1 - basicDiscount / 100)).toString(),
+    exclusive: (bandData.exclusive * (1 - exclusiveDiscount / 100)).toString()
+  };
+};
+
 const getCellPrice = (territoryId: number, isExcl: boolean) => {
-  if (!pricingData.value) return '--'; // Handle loading state gracefully
+  // 1. Guard against missing data
+  if (!pricingData.value || !userProfile.value) return '--';
 
   const t = getTerritoryById(territoryId);
   const band = t ? t.band : 1;
 
-  const billingCountry = userProfile.value?.billingCountry || 'UK';
+  const billingCountry = userProfile.value.billingCountry || 'UK';
   const countryPricing = pricingData.value[billingCountry];
 
   if (!countryPricing) return '--';
 
   const bandKey = `band${band}`;
   const bandData = countryPricing[bandKey];
+  if (!bandData) return '--';
 
-  // Return the exclusive price if it's an exclusive month, otherwise the basic price
-  return isExcl ? bandData?.exclusive || '--' : bandData?.basic || '--';
+  // 2. Get base price and the correct discount from the user's profile
+  const basePrice = isExcl ? bandData.exclusive || 0 : bandData.basic || 0;
+  const discountPercentage = isExcl
+    ? userProfile.value.exclusiveDiscount || 0
+    : userProfile.value.basicDiscount || 0;
+
+  // 3. Calculate and format the final price
+  const finalPrice = basePrice * (1 - discountPercentage / 100);
+  return finalPrice.toFixed(2);
 };
 
 // 6. Dynamic Column Config for AmITable
