@@ -121,9 +121,21 @@
     "settings-title": "Lead Contact Card Settings",
     "general-settings": "General Settings",
     "general-helper": "These details will be used as the default for your contact cards.",
+    "wildcard-helper": "Tip: Include {wildcard} in your title or content fields to automatically insert the candidate's searched location.",
+    "custom-colours": "Custom Colors",
+    "custom-colours-helper": "Personalize your header and button colors.",
     "category-settings": "Industry-Specific Content",
     "category-helper": "Override the general content message for specific industries. If left blank, the general content will be used.",
     "no-categories": "You have not selected any covered industries in your profile.",
+    "preview": {
+      "live": "Live Preview",
+      "live-helper": "See how your contact card looks to candidates.",
+      "modal-title": "Lead Contact Card Preview",
+      "select-category": "Previewing as candidate searching for:",
+      "general": "General / Default",
+      "default-title": "Talk to our hiring experts",
+      "default-content": "We would love to hear from you. Please leave your details below and one of our experts will be in touch."
+    },
     "fields": {
       "logo": "Company Logo",
       "upload-logo": "Upload Logo (.png, .jpg)",
@@ -131,7 +143,9 @@
       "content": "Lead Contact Card Content",
       "content-placeholder": "Why should candidates contact you...",
       "category-placeholder": "Why should candidates contact you about {category}...",
-      "button-text": "Button Text"
+      "button-text": "Button Text",
+      "brand-bg-color": "Background Color",
+      "brand-text-color": "Text Color"
     }
   }
 }
