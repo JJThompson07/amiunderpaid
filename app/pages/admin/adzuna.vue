@@ -109,9 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
 import { TrendingUp, Save, RefreshCw } from 'lucide-vue-next';
-import { useFirestore } from 'vuefire';
 import { doc, writeBatch, collection, query, where, getDocs } from 'firebase/firestore';
 
 /**
@@ -130,6 +128,7 @@ const syncingCategories = ref(false);
 const categoryStatus = ref('');
 const storedCategories = ref<any[]>([]);
 const loadingStored = ref(false);
+const { showToast } = useSystemToast();
 
 const handleSyncCategories = async () => {
   if (!db) return;
@@ -201,8 +200,9 @@ const saveStoredCategories = async () => {
       batch.update(ref, { cache: cat.cache });
     });
     await batch.commit();
+    showToast('Success', 'Categories saved successfully', 'success');
   } catch {
-    alert('Failed to save categories');
+    showToast('Error', 'Failed to save categories', 'error');
   } finally {
     loadingStored.value = false;
   }

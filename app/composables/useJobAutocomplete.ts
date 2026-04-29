@@ -1,5 +1,5 @@
 // app/composables/useJobAutocomplete.ts
-import { ref, type Ref } from 'vue';
+import type { Ref } from 'vue';
 import type { SearchClient } from 'algoliasearch';
 import type { AutocompleteOption } from '~/components/AmI/Input/Autocomplete.vue';
 

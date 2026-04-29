@@ -12,7 +12,7 @@
         {{ $t('login.common.back-to-search') }}
       </NuxtLink>
 
-      <div class="bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-2xl">
+      <div class="bg-white p-4 md:p-8 rounded-3xl border border-slate-200 shadow-2xl">
         <div class="mb-8 text-center">
           <div
             class="w-16 h-16 bg-secondary-50 rounded-2xl flex items-center justify-center text-primary-600 mx-auto mb-4 border border-secondary-100">
@@ -36,11 +36,21 @@
           <AmIInputGeneric
             v-model="password"
             type="password"
-            :label="$t('login.common.password-label')"
-            :placeholder="$t('login.common.password-placeholder')"
+            :label="passwordLabel || $t('login.common.password-label')"
+            :placeholder="passwordPlaceholder || $t('login.common.password-placeholder')"
             :icon="KeyRound"
             @keyup.enter="handleSubmit" />
 
+          <slot />
+
+          <div v-if="isLogin" class="flex justify-end -mt-3">
+            <button
+              type="button"
+              class="text-xs font-bold text-slate-400 hover:text-primary-600 transition-colors"
+              @click="showResetModal = true">
+              {{ $t('login.common.forgot-password') }}
+            </button>
+          </div>
           <div
             v-if="error"
             class="text-[11px] font-bold text-red-600 bg-red-50 p-3 rounded-xl border border-red-100 flex items-center gap-2">
@@ -91,6 +101,7 @@
         </p>
       </div>
     </div>
+    <ModalForgotPassword v-model="showResetModal" :initial-email="email" />
   </div>
 </template>
 
@@ -108,6 +119,8 @@ defineProps({
   signupSubtitle: { type: String, default: '' },
   emailLabel: { type: String, required: true },
   emailPlaceholder: { type: String, required: true },
+  passwordLabel: { type: String, default: '' },
+  passwordPlaceholder: { type: String, default: '' },
   toggleSignupText: { type: String, default: '' },
   toggleLoginText: { type: String, default: '' },
   footerText: { type: String, required: true },
@@ -117,9 +130,10 @@ defineProps({
 });
 
 const emit = defineEmits(['login', 'signup', 'clearError']);
-const email = ref('');
-const password = ref('');
-const isLogin = ref(true);
+const email = ref<string>('');
+const password = ref<string>('');
+const isLogin = ref<boolean>(true);
+const showResetModal = ref<boolean>(false);
 
 const toggleMode = () => {
   isLogin.value = !isLogin.value;

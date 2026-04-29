@@ -1,0 +1,66 @@
+{
+  "email-verification": {
+    "loading": "Verifying your email...",
+    "verified": {
+      "title": "Email Verified!",
+      "message": "Your account is now fully active. You can safely close this tab and return to your dashboard to claim your territories.",
+      "step": {
+        "1": "Close this window",
+        "2": "Click \"I've verified it\" on your dashboard"
+      }
+    },
+    "failure": {
+      "title": "Verification Failed",
+      "message": {
+        "invalid-link": "Invalid verification link. The code is missing or malformed.",
+        "expired-action-code": "This verification link has expired.",
+        "invalid-action-code": "This link is invalid or has already been used.",
+        "user-disabled": "This user account has been disabled.",
+        "default": "An unexpected error occurred while verifying your email."
+      },
+      "step": {
+        "1": "Close this window",
+        "2": "Return to your original dashboard tab",
+        "3": "Click \"Resend Email\" to get a new link"
+      }
+    }
+  },
+  "reset-password": {
+    "title": "Create New Password",
+    "helper": "Please enter a new password for your account.",
+    "error": {
+      "invalid": "Invalid or missing password reset code.",
+      "expired": "This reset link has expired or was already used. Please request a new one.",
+      "length": "Password must be at least 6 characters long.",
+      "default": "An unexpected error occurred while resetting your password. Please try again."
+    },
+    "success": {
+      "title": "Your password has been successfully reset!",
+      "action": {
+        "recruiter": "Return to Recruiter Login"
+      }
+    }
+  },
+  "forgot-password": {
+    "description": "Enter your account email address and we will send you a secure link to reset your password.",
+    "action": {
+      "send-link": "Send Reset Link"
+    },
+    "email-required": {
+      "title": "Email Required",
+      "message": "Please enter an email address to reset your password."
+    },
+    "reset-failed": {
+      "title": "Reset Failed",
+      "message": "Failed to send reset link. Please check the email and try again."
+    },
+    "success": {
+      "title": "Check your inbox",
+      "message": "We've sent a password reset link to {email}"
+    }
+  },
+  "form": {
+    "new-password": "New Password",
+    "save-password": "Save Password"
+  }
+}

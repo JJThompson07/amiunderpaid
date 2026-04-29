@@ -1,4 +1,3 @@
-import { ref, computed, watch } from 'vue';
 import { getRawDiffPercentage } from '~/helpers/utility';
 import type { SalaryBenchmark } from '~/composables/useMarketData';
 

@@ -19,17 +19,35 @@
   },
   "account": {
     "heading": "Agency Profile",
+    "page-title": "My Profile",
     "name": "Agency Name",
-    "status": {
-      "label": "Account Status",
-      "active": "Active",
-      "inactive": "Inactive"
+    "billing-currency": "Billing Currency",
+    "billing-helper": "Sets the currency used when claiming exclusive territories.",
+    "saving": "Saving",
+    "currency-uk": "United Kingdom (GBP £)",
+    "currency-usa": "United States (USD $)",
+    "inbound": {
+      "email": "Lead Routing Email",
+      "email-helper": "Where should we send your candidate and client leads? (Leave blank to use your login email)",
+      "email-placeholder": "e.g. leads@your-agency.com"
     }
   },
   "industries": {
-    "none": "No industries selected",
+    "heading": "Covered Industries",
+    "helper": "Select the industries your agency covers",
     "search": "Search Industries...",
-    "helper": "Select the industries your agency covers"
+    "none": "No industries selected",
+    "selected-count": "Selected"
+  },
+  "common": {
+    "email": "Email Address",
+    "clear": "Clear All",
+    "saved": {
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "success": "{items} saved successfully!"
+    },
+    "categories": "Categories"
   },
   "territories": {
     "get": "Get Territories",
@@ -40,24 +58,97 @@
     "count": "{count} territory | {count} territories",
     "list": "Territories List",
     "amiunderpaid": {
-      "claim": {
-        "header": "Claim Candidate Territories"
-      }
+      "claim": { "header": "Claim Candidate Territories" }
     },
     "benchmark": {
-      "claim": {
-        "header": "Claim Client Territories"
-      }
+      "claim": { "header": "Claim Client Territories" }
     },
     "claim": {
       "first": "Claim Your First Territory",
       "leads": "Claim an exclusive region to start receiving leads from that area",
-      "map": {
-        "description": "Use the map to select which region's you cover"
-      }
+      "map": { "description": "Use the map to select which region's you cover" },
+      "action": "Confirm & Save Schedule",
+      "step-1": "Step 1: Select Targets",
+      "step-2": "Step 2: Claim Your Schedule",
+      "step-2-helper": "Select the upcoming months you want to receive leads for.",
+      "back-to-selection": "Back to Selection",
+      "click-map": "Click regions on the map to begin.",
+      "target-regions": "Target Regions",
+      "target-industries": "Target Industries {country}",
+      "agency-profile-helper": "Showing industries from your Agency Profile.",
+      "configure-schedule": "Configure Schedule",
+      "processing": "Processing...",
+      "finalize": "Finalize Claims",
+      "clear-all": "Clear All",
+      "search-industries": "Search industries..."
+    },
+    "edit": {
+      "title": "Edit Schedule",
+      "subtitle": "Add exclusive months to your {name} plan.",
+      "loading": "Loading your schedule...",
+      "not-found": "Territory Not Found",
+      "not-found-helper": "We couldn't find this territory in your active plans.",
+      "return": "Return to Dashboard",
+      "upgrade-btn": "Proceed to Checkout"
     }
   },
   "schedule": {
-    "target-row": "Territory & Category"
+    "target-row": "Territory & Category",
+    "industry-region": "Industry & Region",
+    "basic-plan": "Basic Plan",
+    "ongoing": "Ongoing",
+    "owned": "Owned",
+    "taken": "Taken",
+    "in-cart": "In Cart",
+    "free": "Free",
+    "matrix-value": "7-Month Matrix Value:",
+    "empty-state": "Select \"Ongoing\" or specific months to build your schedule.",
+    "helper-basic": "* Ongoing Basic plans get the first month completely free.",
+    "helper-exclusive": "* Exclusive upgrades are secured today by paying the upgrade difference upfront. Your standard basic rate will be billed normally during the exclusive month.",
+    "next-month": "Next Month",
+    "due-today": "Due Today",
+    "already-owned": "Already Owned",
+    "downgrade": "Remove from Cart",
+    "upgrade-tooltip": "Upgrade to Exclusive ({price})"
+  },
+  "leads": {
+    "title": "My Leads",
+    "subtitle": "Manage your inbound leads and Lead Contact Card settings.",
+    "tab-leads": "Leads",
+    "tab-settings": "Settings",
+    "table-title": "Inbound Leads",
+    "empty": "No leads found yet. Claim territories and set up your Lead Contact Card to get started.",
+    "settings-title": "Lead Contact Card Settings",
+    "general-settings": "General Settings",
+    "general-helper": "These details will be used as the default for your contact cards.",
+    "wildcard-helper": "Tip: Include {wildcard} in your title or content fields to automatically insert the candidate's searched location.",
+    "exclusive-cta": "Exclusive CTA",
+    "exclusive-cta-helper": "Custom floating button content only visible on exclusive territories for improved user visual.",
+    "custom-colours": "Custom Colors",
+    "custom-colours-helper": "Personalize your header and button colors.",
+    "category-settings": "Industry-Specific Content",
+    "category-helper": "Override the general content message for specific industries. If left blank, the general content will be used.",
+    "no-categories": "You have not selected any covered industries in your profile.",
+    "preview": {
+      "live": "Live Preview",
+      "live-helper": "See how your contact card looks to candidates.",
+      "modal-title": "Lead Contact Card Preview",
+      "select-category": "Previewing as candidate searching for:",
+      "general": "General / Default",
+      "default-title": "Talk to our hiring experts",
+      "default-content": "We would love to hear from you. Please leave your details below and one of our experts will be in touch.",
+      "floating-button": "Floating Button Preview"
+    },
+    "fields": {
+      "logo": "Company Logo",
+      "upload-logo": "Upload Logo (.png, .jpg)",
+      "title": "Lead Contact Card Title",
+      "content": "Lead Contact Card Content",
+      "content-placeholder": "Why should candidates contact you...",
+      "category-placeholder": "Why should candidates contact you about {category}...",
+      "button-text": "Floating Button Text",
+      "brand-bg-color": "Background Color",
+      "brand-text-color": "Text Color"
+    }
   }
 }

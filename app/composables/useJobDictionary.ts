@@ -1,5 +1,4 @@
 import type { SearchClient } from 'algoliasearch';
-import { useRegion } from './useRegion'; // Assuming you use this to get currentCountry
 
 interface JobGroupHit {
   objectID: string;

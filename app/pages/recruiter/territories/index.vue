@@ -4,29 +4,34 @@
 
     <div class="max-w-6xl mx-auto relative flex flex-col gap-6">
       <header
-        class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-3xl shadow-md border border-slate-200">
+        class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-5 rounded-3xl shadow-md border border-slate-200">
         <div>
           <h1 class="text-3xl font-black text-slate-900">
-            {{ step === 1 ? $t('recruiter.territories.get') : 'Step 2: Claim Your Schedule' }}
+            {{
+              step === 1
+                ? $t('recruiter.territories.get')
+                : $t('recruiter.territories.claim.step-2')
+            }}
           </h1>
           <p class="text-slate-500 mt-1">
             {{
               step === 1
                 ? $t('recruiter.territories.claim.leads')
-                : 'Select the upcoming months you want to receive leads for.'
+                : $t('recruiter.territories.claim.step-2-helper')
             }}
           </p>
         </div>
-        <AmITabs v-if="step === 1" v-model="selectedCountry" :options="countries" round />
-        <button
-          v-else
-          class="text-sm font-bold text-slate-400 hover:text-primary-600 transition-colors flex items-center gap-2"
-          @click="step = 1">
-          &larr; Back to Selection
-        </button>
+        <div class="flex flex-wrap gap-4 items-center">
+          <AmITabs v-if="step === 1" v-model="selectedView" :options="views" round class="w-max" />
+          <AmITabs v-if="step === 1" v-model="selectedCountry" :options="countries" round />
+          <button
+            v-else
+            class="text-sm font-bold text-slate-400 hover:text-primary-600 transition-colors flex items-center gap-2"
+            @click="step = 1">
+            &larr; {{ $t('recruiter.territories.claim.back-to-selection') }}
+          </button>
+        </div>
       </header>
-
-      <AmITabs v-if="step === 1" v-model="selectedView" :options="views" round class="w-max" />
 
       <div
         v-if="step === 1"
@@ -36,14 +41,15 @@
             <TerritoryList
               :options="listOptions"
               :selected-options="selectedTerritories"
+              :claimed-ids="userClaimedIds"
               @territory-click="handleTerritoryClick" />
           </template>
           <div v-else class="map-view flex flex-col gap-6">
-            <div class="bg-white p-6 rounded-3xl shadow-xs border border-slate-200 mb-6">
+            <div class="bg-white p-5 rounded-3xl shadow-xs border border-slate-200">
               <TerritoryMap
                 :country="selectedCountry"
                 :territories="activeTerritories"
-                :claimed-ids="[]"
+                :claimed-ids="userClaimedIds"
                 :selected-ids="selectedTerritories.map((t) => t.id)"
                 @territory-clicked="handleTerritoryClick" />
             </div>
@@ -51,6 +57,7 @@
             <TerritoryNonContiguousRegions
               v-if="selectedCountry === 'USA'"
               :selected-territories="selectedTerritories"
+              :claimed-ids="userClaimedIds"
               @territory-clicked="handleTerritoryClick" />
           </div>
         </div>
@@ -58,25 +65,29 @@
         <div class="lg:col-span-1">
           <div class="bg-white p-6 rounded-3xl shadow-xs border border-slate-200 sticky top-8">
             <div class="flex justify-between items-center mb-6">
-              <h2 class="text-xl font-black text-slate-900">Step 1: Select Targets</h2>
+              <h2 class="text-xl font-black text-slate-900">
+                {{ $t('recruiter.territories.claim.step-1') }}
+              </h2>
             </div>
 
             <div
               v-if="selectedTerritories.length === 0"
               class="text-center py-12 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
-              <p class="text-slate-500 font-medium">Click regions on the map to begin.</p>
+              <p class="text-slate-500 font-medium">
+                {{ $t('recruiter.territories.claim.click-map') }}
+              </p>
             </div>
 
             <div v-else class="space-y-6">
               <div>
                 <div class="flex justify-between items-end mb-2">
-                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block"
-                    >Target Regions</label
-                  >
+                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                    {{ $t('recruiter.territories.claim.target-regions') }}
+                  </label>
                   <button
                     class="text-xs font-bold text-slate-400 hover:text-negative-500 transition-colors"
                     @click="selectedTerritories = []">
-                    Clear All
+                    {{ $t('recruiter.territories.claim.clear-all') }}
                   </button>
                 </div>
 
@@ -89,18 +100,22 @@
 
               <div class="flex flex-col gap-2">
                 <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">
-                  Target Industries {{ selectedCountry }}
+                  {{
+                    $t('recruiter.territories.claim.target-industries', {
+                      country: selectedCountry
+                    })
+                  }}
                 </label>
                 <p
                   v-if="userProfile?.coveredCategories?.length"
                   class="text-2xs text-slate-400 mt-2 font-medium">
-                  Showing industries from your Agency Profile.
+                  {{ $t('recruiter.territories.claim.agency-profile-helper') }}
                 </p>
 
                 <AmIInputSelect
                   v-model="selectedCategories"
                   :options="intelligentCategories"
-                  placeholder="Search industries..."
+                  :placeholder="$t('recruiter.territories.claim.search-industries')"
                   :loading="loadingCategories"
                   external-list />
 
@@ -121,7 +136,7 @@
                     : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                 ]"
                 @click="continueToSchedule">
-                Configure Schedule &rarr;
+                {{ $t('recruiter.territories.claim.configure-schedule') }} &rarr;
               </button>
             </div>
           </div>
@@ -133,18 +148,25 @@
           :territories="selectedTerritories"
           :categories="selectedCategories"
           :category-options="intelligentCategories"
+          :taken-months="globalTakenMonths"
           @update:selections="scheduleSelections = $event" />
 
         <div class="mt-6 flex justify-end">
           <AmIButton
-            title="Finalize Claims"
+            :title="$t('recruiter.territories.claim.finalize')"
             :disabled="scheduleSelections.length === 0 || isSubmitting"
             @click="submitSchedule">
             <div class="flex items-center gap-2 px-4 py-1">
               <span
                 v-if="isSubmitting"
                 class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-              <span>{{ isSubmitting ? 'Processing...' : 'Confirm & Save Schedule' }}</span>
+              <span>
+                {{
+                  isSubmitting
+                    ? $t('recruiter.territories.claim.processing')
+                    : $t('recruiter.territories.claim.action')
+                }}
+              </span>
             </div>
           </AmIButton>
         </div>
@@ -154,22 +176,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-
 // IMPORT YOUR CONSTANTS
-import { RECRUITER_TERRITORIES_UK } from '~~/utils/locations/uk';
-import { RECRUITER_TERRITORIES_USA } from '~~/utils/locations/usa';
-import type { TerritoryListOption } from '../../components/Territory/List.vue';
+import type { TerritoryListOption } from '../../../components/Territory/List.vue';
 
-// definePageMeta({
-//   middleware: 'recruiters'
-// });
+definePageMeta({
+  middleware: ['recruiters', 'recruiter-verified']
+});
 
 export type CountryCode = 'UK' | 'USA';
 export type ViewType = 'list' | 'map';
 export type TerritoryOption = { label: string; value: number };
 
 const { t } = useI18n();
+
+const user = useCurrentUser();
+const { ukTerritories, usaTerritories } = useTerritories();
 
 const countries = [
   { value: 'UK', label: t('common.uk') },
@@ -196,9 +217,21 @@ const step = ref<1 | 2>(1);
 const scheduleSelections = ref<any[]>([]);
 const isSubmitting = ref(false);
 
+const userClaimedIds = computed(() => {
+  if (!userProfile.value) return [];
+  const active = userProfile.value.activeTerritories || userProfile.value.claims || [];
+  return active.map((t: any) => t.territoryId || t.id);
+});
+
+// 1. Create a reactive array of all the territory IDs they clicked
+const selectedIds = computed(() => selectedTerritories.value.map((t) => t.id));
+
+// 2. Call the exact same composable!
+const { globalTakenMonths } = useTerritoryClaims(selectedIds);
+
 // 3. Map Data
 const activeTerritories = computed(() => {
-  return selectedCountry.value === 'UK' ? RECRUITER_TERRITORIES_UK : RECRUITER_TERRITORIES_USA;
+  return selectedCountry.value === 'UK' ? ukTerritories : usaTerritories;
 });
 
 const territoryOptions = computed<TerritoryOption[]>(() => {
@@ -209,8 +242,7 @@ const territoryOptions = computed<TerritoryOption[]>(() => {
 });
 
 const listOptions = computed<TerritoryListOption[]>(() => {
-  const list =
-    selectedCountry.value === 'UK' ? RECRUITER_TERRITORIES_UK : RECRUITER_TERRITORIES_USA;
+  const list = selectedCountry.value === 'UK' ? ukTerritories : usaTerritories;
 
   return list.map((t) => {
     return {
@@ -273,32 +305,61 @@ const continueToSchedule = () => {
 };
 
 // 8. Final Submission
+// 8. Final Submission & Payment Routing
 const submitSchedule = async () => {
   if (scheduleSelections.value.length === 0) return;
 
   isSubmitting.value = true;
 
   try {
-    // This is your final payload!
-    console.log('READY FOR BACKEND:', {
-      country: selectedCountry.value,
-      claims: scheduleSelections.value
+    const token = await user.value?.getIdToken();
+
+    // Determine the currency based on the user's billing country
+    const targetCurrency = userProfile.value?.billingCountry === 'USA' ? 'usd' : 'gbp';
+
+    // Call your Stripe endpoint, passing the detailed schedule matrix!
+    const response = await $fetch<{ url: string }>('/api/stripe/create-checkout', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: {
+        // We pass the matrix selections so the backend knows exactly
+        // which months are basic vs exclusive
+        territories: scheduleSelections.value,
+        currency: targetCurrency
+      }
     });
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Await your actual Firebase/API call here
-    // await claimTerritories(selectedCountry.value, scheduleSelections.value);
-
-    // Route them back to dashboard on success
-    await navigateTo('/recruiter/dashboard');
+    // Redirect the user to the Stripe hosted checkout page
+    if (response.url) {
+      window.location.href = response.url;
+    }
   } catch (error) {
-    console.error('Failed to save schedule', error);
+    console.error('Failed to initialize payment:', error);
+    alert('Something went wrong calculating the cart. Please try again.');
   } finally {
     isSubmitting.value = false;
   }
 };
+
+watch(
+  [() => globalTakenMonths.value, selectedTerritories, selectedCategories],
+  () => {
+    console.log('--- MATRIX LOCK DIAGNOSTICS ---');
+
+    // 1. What does the matrix expect the row name to be?
+    const expectedRowId =
+      selectedTerritories.value.length && selectedCategories.value.length
+        ? `${selectedTerritories.value[0].id}|${selectedCategories.value[0]}`
+        : 'Waiting for selection...';
+
+    console.log('📍 1. Matrix is looking for row:', expectedRowId);
+    console.log('🔒 2. Data returned from Firebase:', globalTakenMonths.value);
+    console.log('👤 3. User Profile Loaded?', !!userProfile.value);
+  },
+  { deep: true }
+);
 
 // Wipe cart when switching countries (Only happens in Step 1)
 watch(selectedCountry, () => {

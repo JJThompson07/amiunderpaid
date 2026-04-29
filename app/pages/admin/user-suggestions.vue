@@ -66,8 +66,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-
 interface Suggestion {
   id: string;
   search_term: string;
@@ -83,8 +81,9 @@ definePageMeta({
   middleware: 'admin'
 });
 
-const firebaseAuth = useFirebaseAuth();
+const adminFetch = useAdminFetch();
 const isProcessing = ref<string | null>(null);
+const { showToast } = useSystemToast();
 
 // --- Define AmITable Columns ---
 const tableColumns = [
@@ -107,12 +106,8 @@ const suggestions = computed<Suggestion[]>(() => {
 const approveItem = async (item: Suggestion) => {
   isProcessing.value = item.id;
   try {
-    const token = await firebaseAuth?.currentUser?.getIdToken();
-    await $fetch('/api/admin/suggestions/approve' as any, {
+    await adminFetch('/api/admin/suggestions/approve', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
       body: {
         suggestionId: item.id,
         searchTerm: item.search_term,
@@ -123,9 +118,10 @@ const approveItem = async (item: Suggestion) => {
     });
     // Remove it from the local list instantly for snappy UX
     await refresh();
+    showToast('Success', 'Suggestion approved', 'success');
   } catch (error) {
     console.error('Failed to approve', error);
-    alert('Failed to approve suggestion.');
+    showToast('Error', 'Failed to approve suggestion.', 'error');
   } finally {
     isProcessing.value = null;
   }
@@ -135,19 +131,15 @@ const approveItem = async (item: Suggestion) => {
 const rejectItem = async (id: string) => {
   isProcessing.value = id;
   try {
-    const token = await firebaseAuth?.currentUser?.getIdToken();
-
-    await $fetch('/api/admin/suggestions/reject' as any, {
+    await adminFetch('/api/admin/suggestions/reject', {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
       query: { suggestionId: id }
     });
     await refresh();
+    showToast('Success', 'Suggestion rejected', 'success');
   } catch (error) {
     console.error('Failed to reject', error);
-    alert('Failed to reject suggestion.');
+    showToast('Error', 'Failed to reject suggestion.', 'error');
   } finally {
     isProcessing.value = null;
   }

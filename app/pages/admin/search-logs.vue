@@ -6,15 +6,43 @@
       <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 class="text-2xl font-black text-slate-900">User Search Logs</h1>
-          <p class="text-slate-500 mt-1">
-            Live feed of the latest 100 searches across the platform.
-          </p>
+          <p class="text-slate-500 mt-1">Live feed of the latest searches across the platform.</p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center justify-end gap-3">
           <div
             class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+            <span class="text-2xs font-black text-slate-400 uppercase tracking-widest">Today</span>
+            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+              >---</span
+            >
+            <div v-else class="flex flex-col items-end">
+              <span class="text-2xl font-black text-primary-500 leading-none mt-1">
+                {{ todayCount.toLocaleString() }}
+              </span>
+              <span class="text-xs text-slate-400 font-medium mt-1"> Searches </span>
+            </div>
+          </div>
+
+          <div
+            class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
+            <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
+              >Yesterday</span
+            >
+            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+              >---</span
+            >
+            <div v-else class="flex flex-col items-end">
+              <span class="text-2xl font-black text-primary-500 leading-none mt-1">
+                {{ yesterdayCount.toLocaleString() }}
+              </span>
+              <span class="text-xs text-slate-400 font-medium mt-1"> Searches </span>
+            </div>
+          </div>
+
+          <div
+            class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
+            <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Daily Avg</span
             >
             <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
@@ -30,7 +58,7 @@
 
           <div
             class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+            <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Lifetime Searches</span
             >
             <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
@@ -54,7 +82,7 @@
             :icon="Search" />
         </div>
         <div class="text-sm font-bold text-slate-500">
-          Showing {{ filteredLogs.length }} searches
+          Showing {{ colouredLogs.length }} searches on this page
         </div>
       </div>
 
@@ -67,7 +95,8 @@
       <div v-else class="flex flex-col gap-4">
         <AmITable
           :columns="tableColumns"
-          :data="paginatedLogs"
+          :data="colouredLogs"
+          :row-class="(row) => row.rowClass"
           max-height="h-125"
           empty-message="No search logs match your query.">
           <template #formattedDate="{ value }">
@@ -111,7 +140,7 @@
           </template>
 
           <template #brand="{ value }">
-            <span class="text-[10px] uppercase tracking-widest font-black text-slate-400">
+            <span class="text-2xs uppercase tracking-widest font-black text-slate-400">
               {{ value || 'Unknown' }}
             </span>
           </template>
@@ -168,20 +197,34 @@ const tableColumns = [
   { key: 'brand', label: 'Platform', class: 'w-32 text-right', cellClass: 'text-right' }
 ];
 
-// UPDATED: Now expecting totalCount from the backend
+// --- SEARCH & PAGINATION STATE ---
+const searchQuery = ref('');
+const currentPage = ref(1);
+const itemsPerPage = 50;
+
+// The useFetch call now watches BOTH currentPage and searchQuery.
+// When either changes, it automatically re-fetches from the server!
 const { data, pending } = await useFetch<{
   success: boolean;
   totalCount: number;
+  todayCount: number;
+  yesterdayCount: number;
   oldestDate: string;
   averagePerDay: number;
   logs: SearchLog[];
-}>('/api/user/search-logs');
+}>('/api/user/search-logs', {
+  query: {
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchQuery // Passed directly to the server
+  },
+  watch: [currentPage, searchQuery]
+});
 
 const logs = computed(() => {
   return data.value?.logs || [];
 });
 
-// Computed property for the lifetime search count
 const totalLifetimeSearches = computed(() => {
   return data.value?.totalCount || 0;
 });
@@ -190,39 +233,46 @@ const sinceDate = computed(() => {
   return data.value?.oldestDate || 'the beginning';
 });
 
+const todayCount = computed(() => {
+  return data.value?.todayCount || 0;
+});
+
+const yesterdayCount = computed(() => {
+  return data.value?.yesterdayCount || 0;
+});
+
 const averageDailySearches = computed(() => {
   return data.value?.averagePerDay || 0;
 });
-
-// --- SEARCH & PAGINATION STATE ---
-const searchQuery = ref('');
-const currentPage = ref(1);
-const itemsPerPage = 15; // Set to whatever fits your screen best!
 
 // Reset to page 1 whenever the user types a new search
 watch(searchQuery, () => {
   currentPage.value = 1;
 });
 
-// --- COMPUTED LOGIC ---
-const filteredLogs = computed(() => {
-  if (!searchQuery.value) return logs.value;
+// We completely removed the client-side `filteredLogs` computed property.
+// Now we just map directly over `logs.value` (which is the exact data the server gave us back).
+const colouredLogs = computed(() => {
+  let currentBg = 'bg-white';
+  let lastDate = '';
 
-  const query = searchQuery.value.toLowerCase().trim();
-  return logs.value.filter(
-    (log: any) =>
-      (log.title && log.title.toLowerCase().includes(query)) ||
-      (log.location && log.location.toLowerCase().includes(query))
-  );
+  return logs.value.map((log: any, index: number) => {
+    if (index === 0) lastDate = log.dateKey;
+
+    if (log.dateKey && log.dateKey !== lastDate) {
+      currentBg = currentBg === 'bg-white' ? 'bg-slate-50' : 'bg-white';
+      lastDate = log.dateKey;
+    }
+
+    return {
+      ...log,
+      rowClass: currentBg,
+      class: currentBg
+    };
+  });
 });
 
 const totalPages = computed(() => {
-  return Math.ceil(filteredLogs.value.length / itemsPerPage) || 1;
-});
-
-const paginatedLogs = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return filteredLogs.value.slice(start, end);
+  return Math.ceil(totalLifetimeSearches.value / itemsPerPage) || 1;
 });
 </script>

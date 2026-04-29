@@ -102,7 +102,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
 import { PoundSterling, DollarSign, CheckCircle2 } from 'lucide-vue-next';
 
 definePageMeta({ middleware: 'admin' });

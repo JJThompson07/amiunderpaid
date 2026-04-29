@@ -1,20 +1,25 @@
-import { ref } from 'vue';
-import { useFirebaseAuth, useFirebaseApp } from 'vuefire'; // <-- Changed here
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  sendPasswordResetEmail,
+  sendEmailVerification
+} from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore'; // <-- Added getFirestore
-import { useCookie } from '#imports';
 
 export const useRecruiterAuth = () => {
   const auth = useFirebaseAuth();
   const firebaseApp = useFirebaseApp(); // Explicitly grab the Nuxt-initialized app
   const db = getFirestore(firebaseApp); // Bind Firestore to this exact app instance!
+  const { t } = useI18n();
+  const { showToast } = useSystemToast();
 
   const loading = ref(false);
   const error = ref('');
 
   const login = async (email: string, password: string): Promise<boolean> => {
     if (!auth) {
-      error.value = 'The authentication service is not ready. Please refresh.';
+      error.value = t('auth.errors.service_not_ready');
       return false;
     }
 
@@ -33,13 +38,13 @@ export const useRecruiterAuth = () => {
         case 'auth/invalid-credential':
         case 'auth/user-not-found':
         case 'auth/wrong-password':
-          error.value = 'The email or password entered is incorrect.';
+          error.value = t('auth.errors.invalid_credentials');
           break;
         case 'auth/too-many-requests':
-          error.value = 'Security lock: Too many failed attempts. Try again later.';
+          error.value = t('auth.errors.too_many_requests');
           break;
         default:
-          error.value = 'An unexpected error occurred during sign in.';
+          error.value = t('auth.errors.unexpected_signin_error');
       }
       return false;
     } finally {
@@ -49,7 +54,7 @@ export const useRecruiterAuth = () => {
 
   const signup = async (email: string, password: string): Promise<boolean> => {
     if (!auth) {
-      error.value = 'The authentication service is not ready. Please refresh.';
+      error.value = t('auth.errors.service_not_ready');
       return false;
     }
 
@@ -72,21 +77,24 @@ export const useRecruiterAuth = () => {
       // Same fix as login: Wait for the session cookie to mint
       await new Promise((resolve) => setTimeout(resolve, 800));
 
+      // trigger email verification
+      await sendEmailVerification(userCredential.user);
+
       return true;
     } catch (e: any) {
       // Handle Sign-Up specific error codes
       switch (e.code) {
         case 'auth/email-already-in-use':
-          error.value = 'An account with this email already exists. Try logging in instead.';
+          error.value = t('auth.errors.email_in_use');
           break;
         case 'auth/weak-password':
-          error.value = 'Your password must be at least 6 characters long.';
+          error.value = t('auth.errors.weak_password');
           break;
         case 'auth/invalid-email':
-          error.value = 'Please enter a valid email address.';
+          error.value = t('auth.errors.invalid_email');
           break;
         default:
-          error.value = 'An unexpected error occurred during account creation.';
+          error.value = t('auth.errors.unexpected_signup_error');
       }
       return false;
     } finally {
@@ -110,10 +118,60 @@ export const useRecruiterAuth = () => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    loading.value = true;
+    error.value = '';
+
+    if (!auth) {
+      error.value = t('auth.errors.service_not_ready');
+      loading.value = false;
+      return false;
+    }
+
+    try {
+      // This sends the standard Firebase reset email
+      await sendPasswordResetEmail(auth, email);
+      return true;
+    } catch (err: any) {
+      console.error('Password reset error:', err);
+      // Map Firebase errors to user-friendly messages
+      if (err.code === 'auth/user-not-found') {
+        error.value = t('auth.errors.user_not_found');
+      } else if (err.code === 'auth/invalid-email') {
+        error.value = t('auth.errors.invalid_email');
+      } else {
+        error.value = t('auth.errors.reset_failed');
+      }
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const resendVerificationEmail = async () => {
+    if (!auth || !auth.currentUser) {
+      return false;
+    }
+
+    try {
+      await sendEmailVerification(auth.currentUser);
+      return true;
+    } catch (err: any) {
+      console.error('Failed to resend verification:', err);
+      // Optional: Handle Firebase's "too-many-requests" error if they spam the button
+      if (err.code === 'auth/too-many-requests') {
+        showToast('Error', t('auth.errors.wait_before_resend'), 'error');
+      }
+      return false;
+    }
+  };
+
   return {
     login,
     signup,
     logout,
+    resetPassword,
+    resendVerificationEmail,
     loading,
     error
   };
