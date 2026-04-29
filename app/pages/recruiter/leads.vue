@@ -68,14 +68,9 @@
                     )
                   }}
                 </p>
-                <div class="mt-3 p-3 bg-indigo-50 border border-indigo-100 rounded-xl">
-                  <p class="text-xs text-indigo-800 font-medium leading-relaxed">
-                    {{
-                      $t(
-                        'recruiter.leads.wildcard-helper',
-                        { wildcard: '{location}' }
-                      )
-                    }}
+                <div class="mt-3 p-2 bg-indigo-50 border border-indigo-100 rounded-xl">
+                  <p class="text-2xs text-indigo-800 font-medium leading-relaxed">
+                    {{ $t('recruiter.leads.wildcard-helper', { wildcard: '{location}' }) }}
                   </p>
                 </div>
               </div>
@@ -89,6 +84,8 @@
               <AmIInputGeneric
                 v-model="form.title"
                 :label="$t('recruiter.leads.fields.title', 'Lead Contact Card Title')"
+                label-size="text-2xs"
+                label-colour="text-slate-400"
                 placeholder="e.g. Talk to our hiring experts" />
 
               <AmIInputTextarea
@@ -101,11 +98,6 @@
                   )
                 "
                 :rows="4" />
-
-              <AmIInputGeneric
-                v-model="form.buttonText"
-                :label="$t('recruiter.leads.fields.button-text', 'Button Text')"
-                placeholder="e.g. Contact Us" />
 
               <div class="pt-2 border-t border-slate-100">
                 <h3 class="text-sm font-bold text-slate-800">
@@ -131,9 +123,30 @@
               </div>
             </div>
 
-            <!-- Category Specific Column -->
+            <!-- Specific Column -->
             <div class="space-y-6">
               <div>
+                <h3 class="text-sm font-bold text-slate-800">
+                  {{ $t('recruiter.leads.exclusive-cta', 'Exclusive CTA') }}
+                </h3>
+                <p class="text-xs text-slate-500 mt-1">
+                  {{
+                    $t(
+                      'recruiter.leads.exclusive-cta-helper',
+                      'Custom floating button content only visible on exclusive territories for improved user visual.'
+                    )
+                  }}
+                </p>
+              </div>
+
+              <AmIInputGeneric
+                v-model="form.buttonText"
+                :label="$t('recruiter.leads.fields.button-text', 'Floating Button Text')"
+                label-size="text-2xs"
+                label-colour="text-slate-400"
+                placeholder="e.g. Contact Us" />
+
+              <div class="pt-2 border-t border-slate-100">
                 <h3 class="text-sm font-bold text-slate-800">
                   {{ $t('recruiter.leads.category-settings', 'Industry-Specific Content') }}
                 </h3>
@@ -197,15 +210,24 @@
                   single />
               </div>
 
-              <AmILeadContactCard
+              <AmICardLeadContact
                 :title="form.title"
                 :content="activePreviewContent"
-                :button-text="form.buttonText"
                 :logo-file="logoFile"
                 :brand-bg-colour="form.brandBgColour"
                 :brand-text-colour="form.brandTextColour"
-                :logo-url="userProfile?.leadWidget?.logoUrl"
+                :logo-url="contactSettings?.logoUrl"
                 :location="userProfile?.billingCountry === 'USA' ? 'New York' : 'London'" />
+
+              <div class="mt-8 flex flex-col items-center">
+                <span class="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+                  {{ $t('recruiter.leads.preview.floating-button', 'Floating Button Preview') }}
+                </span>
+                <AmILeadFloatingButton
+                  :text="form.buttonText"
+                  :bg-colour="form.brandBgColour"
+                  :text-colour="form.brandTextColour" />
+              </div>
             </div>
           </div>
         </div>
@@ -244,15 +266,24 @@
         </div>
 
         <div class="w-full max-w-md transition-all duration-300">
-          <AmILeadContactCard
+          <AmICardLeadContact
             :title="form.title"
             :content="activePreviewContent"
-            :button-text="form.buttonText"
             :brand-bg-colour="form.brandBgColour"
             :brand-text-colour="form.brandTextColour"
             :logo-file="logoFile"
-            :logo-url="userProfile?.leadWidget?.logoUrl"
+            :logo-url="contactSettings?.logoUrl"
             :location="userProfile?.billingCountry === 'USA' ? 'New York' : 'London'" />
+
+          <div class="mt-8 flex flex-col items-center">
+            <span class="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+              {{ $t('recruiter.leads.preview.floating-button', 'Floating Button Preview') }}
+            </span>
+            <AmILeadFloatingButton
+              :text="form.buttonText"
+              :bg-colour="form.brandBgColour"
+              :text-colour="form.brandTextColour" />
+          </div>
         </div>
       </div>
     </ModalGeneric>
@@ -260,10 +291,15 @@
 </template>
 
 <script setup lang="ts">
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+
 definePageMeta({ middleware: 'recruiters' });
 
 const { t } = useI18n();
-const { userProfile, updateProfile } = useUserProfile();
+const { userProfile } = useUserProfile();
+const { contactSettings } = useContactSettings();
+const user = useCurrentUser();
+const storage = useFirebaseStorage();
 const { showToast } = useSystemToast();
 
 const activeTab = ref('leads');
@@ -321,15 +357,15 @@ const activePreviewContent = computed(() => {
 
 // Load existing Lead Contact Card settings
 watch(
-  userProfile,
-  (newProfile) => {
-    if (newProfile?.leadWidget) {
-      form.title = newProfile.leadWidget.title || '';
-      form.content = newProfile.leadWidget.content || '';
-      form.buttonText = newProfile.leadWidget.buttonText || '';
-      form.brandBgColour = newProfile.leadWidget.brandBgColour || '#4f46e5';
-      form.brandTextColour = newProfile.leadWidget.brandTextColour || '#ffffff';
-      form.categoryContent = { ...(newProfile.leadWidget.categoryContent || {}) };
+  contactSettings,
+  (newSettings) => {
+    if (newSettings) {
+      form.title = newSettings.title || '';
+      form.content = newSettings.content || '';
+      form.buttonText = newSettings.buttonText || '';
+      form.brandBgColour = newSettings.brandBgColour || '#4f46e5';
+      form.brandTextColour = newSettings.brandTextColour || '#ffffff';
+      form.categoryContent = { ...(newSettings.categoryContent || {}) };
     }
   },
   { immediate: true }
@@ -347,19 +383,39 @@ const onLogoSelect = (e: Event) => {
 const saveSettings = async () => {
   isSaving.value = true;
   try {
-    // TODO: Upload logoFile.value to Firebase Storage if it exists
+    let uploadedLogoUrl = contactSettings.value?.logoUrl || '';
 
-    await updateProfile({
-      leadWidget: {
+    // 1. Upload logo to Firebase Storage if a new file was selected
+    if (logoFile.value && user.value) {
+      const fileRef = storageRef(
+        storage,
+        `recruiter_logos/${user.value.uid}/${logoFile.value.name}`
+      );
+      await uploadBytes(fileRef, logoFile.value);
+      uploadedLogoUrl = await getDownloadURL(fileRef);
+    }
+
+    const token = await user.value?.getIdToken();
+
+    // 2. Save settings to Nitro backend
+    await $fetch('/api/user/recruiter/contact-settings', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: {
         title: form.title,
         content: form.content,
         brandBgColour: form.brandBgColour,
         brandTextColour: form.brandTextColour,
         buttonText: form.buttonText,
-        categoryContent: form.categoryContent
+        categoryContent: form.categoryContent,
+        logoUrl: uploadedLogoUrl
       }
     });
     showToast('Success', 'Lead Contact Card settings saved successfully.', 'success');
+
+    // Clear the local file state so it switches to the live uploaded URL
+    logoFile.value = null;
+    logoFileName.value = '';
   } catch {
     showToast('Error', 'Failed to save Lead Contact Card settings.', 'error');
   } finally {

@@ -22,9 +22,9 @@
       </div>
     </div>
 
-    <div class="p-6 md:p-8 pt-2 md:pt-2 flex flex-col gap-6">
+    <div class="p-4 md:p-6 flex flex-col gap-6">
       <!-- Dynamic Content -->
-      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+      <div class="">
         <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">
           {{ displayContent }}
         </p>
@@ -47,7 +47,7 @@
           <button
             class="w-full py-3 px-4 rounded-xl font-bold transition-all shadow-sm hover:opacity-90"
             :style="brandStyle">
-            {{ buttonText || $t('common.submit', 'Submit') }}
+            {{ $t('common.submit', 'Submit') }}
           </button>
         </div>
       </form>
@@ -57,13 +57,13 @@
 
 <script setup lang="ts">
 import { BriefcaseBusiness } from 'lucide-vue-next';
+import type { PropType } from 'vue';
 
 const props = defineProps({
   title: { type: String, default: '' },
   content: { type: String, default: '' },
-  buttonText: { type: String, default: '' },
   logoUrl: { type: String, default: '' },
-  logoFile: { type: Object, default: null },
+  logoFile: { type: Object as PropType<object | null>, default: null },
   brandBgColour: { type: String, default: '' },
   brandTextColour: { type: String, default: '' },
   location: { type: String, default: 'their location' }
@@ -75,7 +75,7 @@ const { t } = useI18n();
 
 // Dynamically create a temporary local URL for the un-uploaded image file!
 const previewLogo = computed(() => {
-  if (props.logoFile instanceof File) {
+  if (import.meta.client && props.logoFile instanceof File) {
     return URL.createObjectURL(props.logoFile);
   }
   return props.logoUrl || '';

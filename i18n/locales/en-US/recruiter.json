@@ -122,6 +122,8 @@
     "general-settings": "General Settings",
     "general-helper": "These details will be used as the default for your contact cards.",
     "wildcard-helper": "Tip: Include {wildcard} in your title or content fields to automatically insert the candidate's searched location.",
+    "exclusive-cta": "Exclusive CTA",
+    "exclusive-cta-helper": "Custom floating button content only visible on exclusive territories for improved user visual.",
     "custom-colours": "Custom Colors",
     "custom-colours-helper": "Personalize your header and button colors.",
     "category-settings": "Industry-Specific Content",
@@ -134,7 +136,8 @@
       "select-category": "Previewing as candidate searching for:",
       "general": "General / Default",
       "default-title": "Talk to our hiring experts",
-      "default-content": "We would love to hear from you. Please leave your details below and one of our experts will be in touch."
+      "default-content": "We would love to hear from you. Please leave your details below and one of our experts will be in touch.",
+      "floating-button": "Floating Button Preview"
     },
     "fields": {
       "logo": "Company Logo",
@@ -143,7 +146,7 @@
       "content": "Lead Contact Card Content",
       "content-placeholder": "Why should candidates contact you...",
       "category-placeholder": "Why should candidates contact you about {category}...",
-      "button-text": "Button Text",
+      "button-text": "Floating Button Text",
       "brand-bg-color": "Background Color",
       "brand-text-color": "Text Color"
     }
