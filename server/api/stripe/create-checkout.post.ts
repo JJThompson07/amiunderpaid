@@ -2,6 +2,8 @@
 import Stripe from 'stripe';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { RECRUITER_TERRITORIES_UK } from '~~/utils/locations/uk';
+import { RECRUITER_TERRITORIES_USA } from '~~/utils/locations/usa';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -66,6 +68,9 @@ export default defineEventHandler(async (event) => {
   // ==========================================
   const territories = body.territories || [];
 
+  // Combine all territories to act as our server-side source of truth
+  const allTerritories = [...RECRUITER_TERRITORIES_UK, ...RECRUITER_TERRITORIES_USA];
+
   let monthlyTotal = 0;
   let upfrontTotal = 0;
   let basicCount = 0;
@@ -79,7 +84,11 @@ export default defineEventHandler(async (event) => {
 
   // Loop through every item in the user's cart
   territories.forEach((t: any) => {
-    const bandData = countryPricing[`band${t.band}`];
+    // SERVER-SIDE BAND LOOKUP: Don't trust the client payload for the band!
+    const foundTerritory = allTerritories.find((tt) => tt.id === t.territoryId);
+    const safeBand = foundTerritory ? foundTerritory.band || 1 : 1;
+
+    const bandData = countryPricing[`band${safeBand}`];
     let basicPrice = bandData?.basic || 10;
     let exclusivePrice = bandData?.exclusive || 50;
 

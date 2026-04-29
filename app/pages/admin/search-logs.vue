@@ -6,9 +6,7 @@
       <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 class="text-2xl font-black text-slate-900">User Search Logs</h1>
-          <p class="text-slate-500 mt-1">
-            Live feed of the latest 100 searches across the platform.
-          </p>
+          <p class="text-slate-500 mt-1">Live feed of the latest searches across the platform.</p>
         </div>
 
         <div class="flex flex-wrap items-center justify-end gap-3">
@@ -84,7 +82,7 @@
             :icon="Search" />
         </div>
         <div class="text-sm font-bold text-slate-500">
-          Showing {{ filteredLogs.length }} searches
+          Showing {{ colouredLogs.length }} searches on this page
         </div>
       </div>
 
@@ -182,6 +180,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, watch } from 'vue';
 import { Search } from 'lucide-vue-next';
 import type { SearchLog } from '../../../server/api/user/search-logs.get';
 
@@ -203,7 +202,8 @@ const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 50;
 
-// UPDATED: Now expecting totalCount from the backend
+// The useFetch call now watches BOTH currentPage and searchQuery.
+// When either changes, it automatically re-fetches from the server!
 const { data, pending } = await useFetch<{
   success: boolean;
   totalCount: number;
@@ -213,14 +213,18 @@ const { data, pending } = await useFetch<{
   averagePerDay: number;
   logs: SearchLog[];
 }>('/api/user/search-logs', {
-  query: { page: currentPage, limit: itemsPerPage }
+  query: {
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchQuery // Passed directly to the server
+  },
+  watch: [currentPage, searchQuery]
 });
 
 const logs = computed(() => {
   return data.value?.logs || [];
 });
 
-// Computed property for the lifetime search count
 const totalLifetimeSearches = computed(() => {
   return data.value?.totalCount || 0;
 });
@@ -246,23 +250,13 @@ watch(searchQuery, () => {
   currentPage.value = 1;
 });
 
-// --- COMPUTED LOGIC ---
-const filteredLogs = computed(() => {
-  if (!searchQuery.value) return logs.value;
-
-  const query = searchQuery.value.toLowerCase().trim();
-  return logs.value.filter(
-    (log: any) =>
-      (log.title && log.title.toLowerCase().includes(query)) ||
-      (log.location && log.location.toLowerCase().includes(query))
-  );
-});
-
+// We completely removed the client-side `filteredLogs` computed property.
+// Now we just map directly over `logs.value` (which is the exact data the server gave us back).
 const colouredLogs = computed(() => {
   let currentBg = 'bg-white';
   let lastDate = '';
 
-  return filteredLogs.value.map((log: any, index: number) => {
+  return logs.value.map((log: any, index: number) => {
     if (index === 0) lastDate = log.dateKey;
 
     if (log.dateKey && log.dateKey !== lastDate) {

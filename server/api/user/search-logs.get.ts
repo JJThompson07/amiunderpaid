@@ -1,3 +1,4 @@
+// server/api/user/search-logs.get.ts
 import { getFirestore } from 'firebase-admin/firestore';
 
 export interface SearchLog {
@@ -16,9 +17,12 @@ export interface SearchLog {
 export default defineEventHandler(async (event) => {
   const db = getFirestore();
   const query = getQuery(event);
+
+  // Pagination & Search params
   const page = Number(query.page) || 1;
   const limitCount = Number(query.limit) || 50;
   const offsetCount = (page - 1) * limitCount;
+  const searchTerm = query.search ? String(query.search).toLowerCase().trim() : '';
 
   try {
     const collectionRef = db.collection('search_history');
@@ -28,12 +32,25 @@ export default defineEventHandler(async (event) => {
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
 
+    // Determine the strategy for the logs fetch
+    let logsPromise;
+    if (searchTerm) {
+      // Hybrid Search: Fetch the last 1000 to filter in-memory since Firestore lacks full-text search
+      logsPromise = collectionRef.orderBy('timestamp', 'desc').limit(1000).get();
+    } else {
+      // Native Pagination: Fast and optimized
+      logsPromise = collectionRef
+        .orderBy('timestamp', 'desc')
+        .offset(offsetCount)
+        .limit(limitCount)
+        .get();
+    }
+
     const [countSnapshot, oldestSnapshot, latestSnapshot, todaySnapshot, yesterdaySnapshot] =
       await Promise.all([
         collectionRef.count().get(),
         collectionRef.orderBy('timestamp', 'asc').limit(1).get(),
-        collectionRef.orderBy('timestamp', 'desc').offset(offsetCount).limit(limitCount).get(),
-        // New queries for today and yesterday
+        logsPromise,
         collectionRef.where('timestamp', '>=', startOfToday).count().get(),
         collectionRef
           .where('timestamp', '>=', startOfYesterday)
@@ -42,7 +59,23 @@ export default defineEventHandler(async (event) => {
           .get()
       ]);
 
-    const totalCount = countSnapshot.data().count;
+    // Format raw data
+    let logsRaw = latestSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    let displayTotalCount = countSnapshot.data().count;
+
+    // Apply in-memory search filter if requested
+    if (searchTerm) {
+      const filtered = logsRaw.filter((log: any) => {
+        const titleMatch = log.title && log.title.toLowerCase().includes(searchTerm);
+        const locMatch = log.location && log.location.toLowerCase().includes(searchTerm);
+        return titleMatch || locMatch;
+      });
+
+      // Update the total count to reflect the search results, then slice for the current page
+      displayTotalCount = filtered.length;
+      logsRaw = filtered.slice(offsetCount, offsetCount + limitCount);
+    }
+
     const todayCount = todaySnapshot.data().count;
     const yesterdayCount = yesterdaySnapshot.data().count;
 
@@ -58,22 +91,23 @@ export default defineEventHandler(async (event) => {
           year: 'numeric'
         });
 
-        // 👈 NEW: Calculate the average searches per day
-        const now = Date.now();
+        // Calculate the average searches per day
+        const nowMs = Date.now();
         const oldestMs = oldestData.timestamp.toMillis();
-        const diffMs = now - oldestMs;
+        const diffMs = nowMs - oldestMs;
 
         // Convert ms to days (Math.max prevents dividing by 0 if it's the very first day)
         const daysElapsed = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-        averagePerDay = Math.round(totalCount / daysElapsed);
+        // Use the absolute total count (not the filtered one) for the lifetime average
+        averagePerDay = Math.round(countSnapshot.data().count / daysElapsed);
       }
     }
 
-    const logs: SearchLog[] = latestSnapshot.docs.map((doc) => {
-      const data = doc.data();
+    // Map to final frontend interface
+    const logs: SearchLog[] = logsRaw.map((data: any) => {
       const dateObj = data.timestamp?.toDate ? data.timestamp.toDate() : null;
       return {
-        id: doc.id,
+        id: data.id,
         title: data.title || '',
         country: data.country || '',
         location: data.location || null,
@@ -93,10 +127,9 @@ export default defineEventHandler(async (event) => {
       };
     });
 
-    // 👈 Return todayCount and yesterdayCount to the frontend
     return {
       success: true,
-      totalCount,
+      totalCount: displayTotalCount, // This correctly updates the pagination UI!
       todayCount,
       yesterdayCount,
       oldestDate,
