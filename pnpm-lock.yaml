@@ -35,6 +35,9 @@ importers:
       nuxt-vuefire:
         specifier: ^1.1.0
         version: 1.1.0(@firebase/app-types@0.9.3)(firebase-admin@13.6.1)(firebase@12.9.0)(magicast@0.5.2)(vuefire@3.2.2(consola@3.4.2)(firebase@12.9.0)(vue@3.5.28(typescript@5.9.3)))
+      stripe:
+        specifier: ^22.0.1
+        version: 22.0.1(@types/node@25.3.0)
       vue:
         specifier: ^3.5.28
         version: 3.5.28(typescript@5.9.3)
@@ -5408,6 +5411,15 @@ packages:
 
   strip-literal@3.1.0:
     resolution: {integrity: sha512-8r3mkIM/2+PpjHoOtiAW8Rg3jJLHaV7xPwG+YRGrv6FP0wwk/toTpATxWYOW0BKdWwl82VT2tFYi5DlROa0Mxg==}
+
+  stripe@22.0.1:
+    resolution: {integrity: sha512-Yw764pZ6s8Xu4CtUZdD5uWOkw6gc9xzO9OKylCuj1gMhMDLbyGbDtaPNNSFE4mB6njYSHESYIVbF1iIzUfAl2g==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
 
   strnum@2.1.2:
     resolution: {integrity: sha512-l63NF9y/cLROq/yqKXSLtcMeeyOfnSQlfMSlzFt/K73oIaD8DGaQWd7Z34X9GPiKqP5rbSh84Hl4bOlLcjiSrQ==}
@@ -12040,6 +12052,10 @@ snapshots:
   strip-literal@3.1.0:
     dependencies:
       js-tokens: 9.0.1
+
+  stripe@22.0.1(@types/node@25.3.0):
+    optionalDependencies:
+      '@types/node': 25.3.0
 
   strnum@2.1.2:
     optional: true

@@ -10,3 +10,5 @@
 - [ ] Adzuna Integration Update (Increased limit & high-paying jobs)
 - [ ] Historical trends
 - [ ] Fallback UI on Results Pages for unmapped/raw keyword searches
+- [] Wha are the recruiters signing up for
+- [] demo video

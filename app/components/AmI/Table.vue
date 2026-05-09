@@ -10,7 +10,9 @@
             :key="col.key"
             class="sticky top-0 z-10 p-4 bg-slate-50 font-bold text-slate-400 text-xs uppercase tracking-wider [box-shadow:inset_0_-1px_0_0_#cad5e2]"
             :class="[col.class]">
-            {{ col.label }}
+            <slot :name="`header-${col.key}`" v-bind="{ col }">
+              {{ col.label }}
+            </slot>
           </th>
         </tr>
       </thead>
@@ -25,7 +27,8 @@
           v-for="(row, rowIndex) in data"
           v-else
           :key="rowIndex"
-          class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors last:border-b-0">
+          class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors last:border-b-0 group"
+          :class="rowClass ? rowClass(row, rowIndex) : ''">
           <td
             v-for="col in columns"
             :key="col.key"
@@ -71,6 +74,12 @@ defineProps({
   emptyMessage: {
     type: String,
     default: 'No data available.'
+  },
+  rowClass: {
+    type: Function as PropType<
+      (row: any, index: number) => string | string[] | Record<string, boolean>
+    >,
+    default: undefined
   }
 });
 </script>

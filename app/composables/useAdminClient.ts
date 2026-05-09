@@ -1,5 +1,3 @@
-import { ref } from 'vue';
-
 export const useAdminClient = (log: (msg: string) => void) => {
   const loading = ref(false);
   const adminFetch = useAdminFetch();

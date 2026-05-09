@@ -160,10 +160,7 @@
 </template>
 
 <script setup lang="ts">
-// ** imports **
-import { ref, onMounted, watch } from 'vue';
 import { BookOpen, UploadCloud, CheckCircle2, Lock, LoaderCircle, X } from 'lucide-vue-next';
-import { useFirestore, useCurrentUser } from 'vuefire';
 import { doc, collection, query, where, getCountFromServer, getDoc } from 'firebase/firestore';
 
 interface JobTitleRecord {

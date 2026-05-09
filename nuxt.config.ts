@@ -9,6 +9,19 @@ if (!process.env.FIREBASE_API_KEY) {
   );
 }
 
+if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+  try {
+    const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString(
+      'utf-8'
+    );
+    // Parse and stringify to guarantee it is a single-line string
+    const singleLineJson = JSON.stringify(JSON.parse(decoded));
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = singleLineJson;
+  } catch (error) {
+    console.error('⚠️ Failed to decode FIREBASE_SERVICE_ACCOUNT_BASE64', error);
+  }
+}
+
 const isDev = process.env.NODE_ENV === 'development';
 const DAY_IN_S = 86400;
 
@@ -124,17 +137,15 @@ export default defineNuxtConfig({
     adzunaAppKey: process.env.ADZUNA_APP_KEY,
     firebaseServiceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
 
-    vuefire: {
-      options: {
-        serviceAccount: process.env.FIREBASE_SERVICE_ACCOUNT
-      }
-    },
-
     public: {
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
       adminAccessKey: process.env.NUXT_ADMIN_ACCESS_KEY,
-      gtagId: 'G-EZQYZSSRW1'
-    }
+      gtagId: 'G-EZQYZSSRW1',
+      stripePublicKey: process.env.NUXT_PUBLIC_STRIPE_KEY
+    },
+
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET
   },
 
   // ** 6. Vite / Tailwind **
