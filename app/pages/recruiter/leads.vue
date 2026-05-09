@@ -68,10 +68,44 @@
                     )
                   }}
                 </p>
-                <div class="mt-3 p-2 bg-indigo-50 border border-indigo-100 rounded-xl">
-                  <p class="text-2xs text-indigo-800 font-medium leading-relaxed">
-                    {{ $t('recruiter.leads.wildcard-helper', { wildcard: '{location}' }) }}
-                  </p>
+                <div
+                  class="mt-3 bg-indigo-50 border border-indigo-100 rounded-xl overflow-hidden transition-all duration-300">
+                  <button
+                    class="w-full flex items-center justify-between p-3 text-left focus:outline-none hover:bg-indigo-100/50 transition-colors"
+                    @click="showWildcards = !showWildcards">
+                    <span class="text-xs text-indigo-900 font-bold">
+                      {{
+                        $t(
+                          'recruiter.leads.wildcards.title',
+                          'Available Wildcards (Use in any text field):'
+                        )
+                      }}
+                    </span>
+                    <ChevronDown
+                      class="w-4 h-4 text-indigo-500 transition-transform duration-300 shrink-0"
+                      :class="{ 'rotate-180': showWildcards }" />
+                  </button>
+                  <div v-show="showWildcards" class="px-3 pb-3 pt-1 border-t border-indigo-100/50">
+                    <ul class="text-2xs text-indigo-800 font-medium space-y-1.5 list-disc pl-4">
+                      <li>
+                        <strong class="font-bold text-indigo-900">{location}</strong> &mdash;
+                        {{ $t('recruiter.leads.wildcards.location', 'The searched region.') }}
+                      </li>
+                      <li>
+                        <strong class="font-bold text-indigo-900">{agency}</strong> &mdash;
+                        {{ $t('recruiter.leads.wildcards.agency', 'Your agency name.') }}
+                      </li>
+                      <li>
+                        <strong class="font-bold text-indigo-900">{incentive}</strong> &mdash;
+                        {{
+                          $t(
+                            'recruiter.leads.wildcards.incentive',
+                            "Displays 'roles' or 'candidates' depending on the search tool."
+                          )
+                        }}
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
 
@@ -127,24 +161,37 @@
             <div class="space-y-6">
               <div>
                 <h3 class="text-sm font-bold text-slate-800">
-                  {{ $t('recruiter.leads.exclusive-cta', 'Exclusive CTA') }}
+                  {{ $t('recruiter.leads.custom-cta', 'Custom CTA') }}
                 </h3>
                 <p class="text-xs text-slate-500 mt-1">
                   {{
                     $t(
-                      'recruiter.leads.exclusive-cta-helper',
-                      'Custom floating button content only visible on exclusive territories for improved user visual.'
+                      'recruiter.leads.custom-cta-helper',
+                      'Custom button text to entice users to view your Lead contact card.'
                     )
                   }}
                 </p>
               </div>
 
-              <AmIInputGeneric
-                v-model="form.buttonText"
-                :label="$t('recruiter.leads.fields.button-text', 'Floating Button Text')"
-                label-size="text-2xs"
-                label-colour="text-slate-400"
-                placeholder="e.g. Contact Us" />
+              <div class="space-y-1">
+                <AmIInputGeneric
+                  v-model="form.buttonText"
+                  :label="$t('recruiter.leads.fields.button-text', 'CTA Button Text')"
+                  label-size="text-2xs"
+                  label-colour="text-slate-400"
+                  placeholder="e.g. Contact {agency}" />
+                <p v-if="buttonTextError" class="text-xs text-negative-600 font-medium px-1">
+                  {{ buttonTextError }}
+                </p>
+                <p v-else class="text-2xs text-slate-400 px-1">
+                  {{
+                    $t(
+                      'recruiter.leads.fields.button-text-helper',
+                      'Must include the {agency} wildcard. Defaults to "Contact {agency}" if left blank.'
+                    )
+                  }}
+                </p>
+              </div>
 
               <div class="pt-2 border-t border-slate-100">
                 <h3 class="text-sm font-bold text-slate-800">
@@ -217,14 +264,16 @@
                 :brand-bg-colour="form.brandBgColour"
                 :brand-text-colour="form.brandTextColour"
                 :logo-url="contactSettings?.logoUrl"
+                :agency-name="userProfile?.agency_name"
+                :button-text="form.buttonText"
                 :location="userProfile?.billingCountry === 'USA' ? 'New York' : 'London'" />
 
               <div class="mt-8 flex flex-col items-center">
                 <span class="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-                  {{ $t('recruiter.leads.preview.floating-button', 'Floating Button Preview') }}
+                  {{ $t('recruiter.leads.preview.floating-button', 'CTA Button Preview') }}
                 </span>
                 <AmILeadFloatingButton
-                  :text="form.buttonText"
+                  :text="previewButtonText"
                   :bg-colour="form.brandBgColour"
                   :text-colour="form.brandTextColour" />
               </div>
@@ -249,11 +298,14 @@
     </div>
 
     <!-- PREVIEW MODAL -->
-    <ModalGeneric
-      v-model="showPreviewModal"
-      :title="$t('recruiter.leads.preview.modal-title', 'Lead Contact Card Preview')">
-      <div class="p-6 bg-slate-100/50 min-h-[50vh] flex flex-col items-center py-10 md:py-12">
-        <div v-if="userProfile?.coveredCategories?.length > 0" class="w-full max-w-md mb-8">
+    <div
+      v-if="showPreviewModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+      @click.self="showPreviewModal = false">
+      <div class="w-full max-w-md animate-in zoom-in-95 duration-200 flex flex-col">
+        <div
+          v-if="userProfile?.coveredCategories?.length > 0"
+          class="w-full mb-4 bg-white p-4 rounded-2xl shadow-lg">
           <label class="text-2xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
             {{
               $t(
@@ -265,7 +317,7 @@
           <AmIInputSelect v-model="previewCategory" :options="previewCategoryOptions" single />
         </div>
 
-        <div class="w-full max-w-md transition-all duration-300">
+        <div class="w-full transition-all duration-300">
           <AmICardLeadContact
             :title="form.title"
             :content="activePreviewContent"
@@ -273,24 +325,29 @@
             :brand-text-colour="form.brandTextColour"
             :logo-file="logoFile"
             :logo-url="contactSettings?.logoUrl"
-            :location="userProfile?.billingCountry === 'USA' ? 'New York' : 'London'" />
+            :agency-name="userProfile?.agency_name"
+            :button-text="form.buttonText"
+            :location="userProfile?.billingCountry === 'USA' ? 'New York' : 'London'"
+            show-close
+            @close="showPreviewModal = false" />
 
-          <div class="mt-8 flex flex-col items-center">
+          <div class="mt-4 flex flex-col items-center bg-white p-4 rounded-2xl shadow-lg">
             <span class="text-2xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-              {{ $t('recruiter.leads.preview.floating-button', 'Floating Button Preview') }}
+              {{ $t('recruiter.leads.preview.floating-button', 'CTA Button Preview') }}
             </span>
             <AmILeadFloatingButton
-              :text="form.buttonText"
+              :text="previewButtonText"
               :bg-colour="form.brandBgColour"
               :text-colour="form.brandTextColour" />
           </div>
         </div>
       </div>
-    </ModalGeneric>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ChevronDown } from 'lucide-vue-next';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 definePageMeta({ middleware: 'recruiters' });
@@ -303,6 +360,7 @@ const storage = useFirebaseStorage();
 const { showToast } = useSystemToast();
 
 const activeTab = ref('leads');
+const showWildcards = ref(false);
 const tabOptions = [
   { label: t('recruiter.leads.tab-leads', 'Leads'), value: 'leads' },
   { label: t('recruiter.leads.tab-settings', 'Settings'), value: 'settings' }
@@ -331,6 +389,16 @@ const form = reactive({
   categoryContent: {} as Record<string, string>
 });
 
+const buttonTextError = computed(() => {
+  if (form.buttonText && !/{agency}/i.test(form.buttonText)) {
+    return t(
+      'recruiter.leads.fields.button-text-error',
+      'CTA button text must include the {agency} wildcard.'
+    );
+  }
+  return '';
+});
+
 // --- Preview State ---
 const showPreviewModal = ref(false);
 const previewCategory = ref<string[]>(['default']);
@@ -353,6 +421,16 @@ const activePreviewContent = computed(() => {
     return form.categoryContent[cat];
   }
   return form.content;
+});
+
+const previewButtonText = computed(() => {
+  const base = form.buttonText || 'Contact {agency}';
+  const agency = userProfile.value?.agency_name || 'our agency';
+  const location = userProfile.value?.billingCountry === 'USA' ? 'New York' : 'London';
+  return base
+    .replace(/{location}/gi, location)
+    .replace(/{agency}/gi, agency)
+    .replace(/{incentive}/gi, 'roles/candidates');
 });
 
 // Load existing Lead Contact Card settings
@@ -381,6 +459,11 @@ const onLogoSelect = (e: Event) => {
 };
 
 const saveSettings = async () => {
+  if (buttonTextError.value) {
+    showToast('Error', buttonTextError.value, 'error');
+    return;
+  }
+
   isSaving.value = true;
   try {
     let uploadedLogoUrl = contactSettings.value?.logoUrl || '';
@@ -397,6 +480,8 @@ const saveSettings = async () => {
 
     const token = await user.value?.getIdToken();
 
+    const finalButtonText = form.buttonText.trim() ? form.buttonText : 'Contact {agency}';
+
     // 2. Save settings to Nitro backend
     await $fetch('/api/user/recruiter/contact-settings', {
       method: 'POST',
@@ -406,7 +491,7 @@ const saveSettings = async () => {
         content: form.content,
         brandBgColour: form.brandBgColour,
         brandTextColour: form.brandTextColour,
-        buttonText: form.buttonText,
+        buttonText: finalButtonText,
         categoryContent: form.categoryContent,
         logoUrl: uploadedLogoUrl
       }

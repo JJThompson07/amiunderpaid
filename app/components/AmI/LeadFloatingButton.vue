@@ -1,6 +1,6 @@
 <template>
   <button
-    class="px-6 py-3 rounded-2xl font-bold shadow-lg transition-transform hover:scale-110 flex items-center gap-2 z-50"
+    class="px-4 py-3 rounded-2xl font-bold shadow-lg transition-transform hover:scale-110 flex items-center gap-2 z-50 text-xs md:text-sm lg:text-base"
     :style="{ backgroundColor: bgColour || '#4f46e5', color: textColour || '#ffffff' }"
     @click="$emit('click')">
     <slot>{{ text || 'Contact Us' }}</slot>

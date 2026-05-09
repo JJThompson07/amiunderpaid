@@ -47,6 +47,7 @@ export default defineEventHandler(async (event) => {
       email: data.email,
       agencyName: data.agency_name || 'N/A',
       categories: data.coveredCategories || [],
+      activeTerritories,
       territoriesCount: activeTerritories.length,
       verified: authMap.get(doc.id) || false,
       monthlyInvoice: monthlyTotal,

@@ -1,11 +1,14 @@
+import { useFirebaseAuth, useCurrentUser } from 'vuefire';
+
 export const useAdminFetch = () => {
-  // 1. Grab context synchronously during component setup
   const { logout } = useAdminAuth();
   const auth = useFirebaseAuth();
   const user = useCurrentUser();
 
-  // 2. Return the actual fetch function to be used in click handlers
-  return async <T>(request: string, opts?: any): Promise<T> => {
+  return async <T = unknown>(
+    request: Parameters<typeof $fetch>[0],
+    opts?: Parameters<typeof $fetch>[1]
+  ): Promise<T> => {
     let token = '';
 
     if (auth) {
@@ -15,18 +18,19 @@ export const useAdminFetch = () => {
       }
     }
 
-    const options = {
-      ...opts,
-      headers: {
-        ...opts?.headers,
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      }
-    };
-
     try {
-      return await $fetch<T>(request, options);
+      // 👇 The Fix: Explicitly cast the final response as unknown, then T
+      const response = await $fetch(request, {
+        ...opts,
+        headers: {
+          ...opts?.headers,
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      } as any);
+
+      return response as unknown as T;
     } catch (error: any) {
-      if (error.response?.status === 401) {
+      if (error.response?.status === 401 || error.statusCode === 401) {
         console.warn('Session expired. Forcing client logout...');
         await logout();
         navigateTo({

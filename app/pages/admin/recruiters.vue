@@ -47,11 +47,41 @@
             </div>
           </template>
 
-          <template #territories="{ value }">
-            <span
-              class="inline-flex items-center justify-center bg-indigo-50 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full">
-              {{ value }}
-            </span>
+          <template #activeTerritories="{ value }">
+            <div v-if="!value || value.length === 0" class="text-xs text-slate-400 italic">
+              None
+            </div>
+            <div v-else class="flex flex-col gap-1.5 py-1">
+              <div
+                v-for="(t, idx) in value"
+                :key="idx"
+                class="bg-slate-50 border border-slate-100 rounded-md p-2 flex flex-col gap-1.5">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-bold text-slate-800">
+                    {{ getTerritoryName(t.territoryId) }}
+                    <span class="text-slate-500 font-medium ml-1">({{ t.categoryValue }})</span>
+                  </span>
+                  <div class="flex gap-2">
+                    <span
+                      v-if="t.isBasic"
+                      class="shrink-0 text-2xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 rounded flex items-center justify-center w-4.5 h-4.5"
+                      title="Basic">
+                      <CheckSquare class="w-3 h-3" />
+                    </span>
+                    <div
+                      v-if="t.exclusiveMonths && t.exclusiveMonths.length > 0"
+                      class="flex flex-wrap gap-1">
+                      <span
+                        v-for="month in t.exclusiveMonths"
+                        :key="month"
+                        class="text-2xs font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">
+                        {{ month }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </template>
 
           <template #status="{ row }">
@@ -159,22 +189,28 @@
 </template>
 
 <script setup lang="ts">
-import { CheckCircle2, XCircle, Tag, X } from 'lucide-vue-next';
+import { CheckCircle2, XCircle, Tag, X, CheckSquare } from 'lucide-vue-next';
 
 definePageMeta({ middleware: 'admin' });
 
 const adminFetch = useAdminFetch();
 const { showToast } = useSystemToast();
 
+const { getTerritoryById } = useTerritories();
+const getTerritoryName = (id: number) => {
+  const t = getTerritoryById(id);
+  return t ? t.name : `Region #${id}`;
+};
+
 // Table Setup
 const tableColumns = [
-  { key: 'agency', label: 'Agency / Email', class: 'w-1/4' },
-  { key: 'categories', label: 'Industries' },
-  { key: 'territories', label: 'Territories', class: 'w-24 text-center', cellClass: 'text-center' },
+  { key: 'agency', label: 'Agency / Email', class: 'w-1/5' },
+  { key: 'categories', label: 'Industries', class: 'w-32' },
+  { key: 'activeTerritories', label: 'Active Territories', class: 'w-1/3' },
   { key: 'status', label: 'Status', class: 'w-24 text-center', cellClass: 'text-center' },
-  { key: 'invoice', label: 'Monthly Base', class: 'w-32 text-right', cellClass: 'text-right' },
-  { key: 'discounts', label: 'Discounts', class: 'w-32 text-right', cellClass: 'text-right' },
-  { key: 'actions', label: '', class: 'w-16 text-right', cellClass: 'text-right' }
+  { key: 'invoice', label: 'Monthly Base', class: 'w-28 text-right', cellClass: 'text-right' },
+  { key: 'discounts', label: 'Discounts', class: 'w-28 text-right', cellClass: 'text-right' },
+  { key: 'actions', label: '', class: 'w-12 text-right', cellClass: 'text-right' }
 ];
 
 // Data Fetching

@@ -1,15 +1,16 @@
 <template>
   <div class="carousel-wrapper relative w-full group">
-    <!-- Carousel Track (Where slot items are injected) -->
+    <!-- Carousel Track -->
     <div
       ref="trackRef"
-      class="carousel-track flex w-full overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar"
+      class="carousel-track grid grid-flow-col w-full overflow-x-auto py-4 px-2 gap-4 snap-x snap-mandatory hide-scrollbar -mx-2"
+      :style="{ gridAutoColumns: cardWidth }"
       @scroll="checkScroll">
       <slot />
     </div>
 
     <!-- Navigation Buttons (Bottom) -->
-    <div class="flex items-center justify-between gap-4 px-2">
+    <div v-show="isScrollable" class="flex items-center justify-between gap-4 px-2 mt-2">
       <AmIButton
         :disabled="!canScrollLeft"
         aria-label="Scroll left"
@@ -22,7 +23,7 @@
       <AmIButton
         :disabled="!canScrollRight"
         aria-label="Scroll right"
-        class="hover:scale-105 transition-all duration-500 ease-in-out"
+        class="hover:scale-105 transition-all duration-500 ease-in-out px-2!"
         equal-padding
         @click="scrollByAmount(1)">
         <ChevronRight class="w-6 h-6" />
@@ -32,47 +33,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 
-const trackRef = ref<HTMLElement | null>(null);
-const canScrollLeft = ref(false);
-const canScrollRight = ref(true);
-
-// Checks the current scroll position to show/hide navigation arrows
-const checkScroll = () => {
-  if (!trackRef.value) return;
-
-  const { scrollLeft, scrollWidth, clientWidth } = trackRef.value;
-
-  canScrollLeft.value = scrollLeft > 0;
-  // Using Math.ceil to prevent rounding errors on high-DPI screens
-  canScrollRight.value = Math.ceil(scrollLeft + clientWidth) < scrollWidth;
-};
-
-// Scrolls the carousel track programmatically
-const scrollByAmount = (direction: 1 | -1) => {
-  if (!trackRef.value) return;
-
-  // Scrolls by 80% of the visible container width to keep a little context
-  const scrollAmount = trackRef.value.clientWidth * 0.8;
-
-  trackRef.value.scrollBy({
-    left: scrollAmount * direction,
-    behavior: 'smooth'
-  });
-};
-
-// Attach event listeners for window resizing to re-evaluate scroll bounds
-onMounted(() => {
-  // Give DOM a tick to render before initial check
-  setTimeout(checkScroll, 50);
-  window.addEventListener('resize', checkScroll);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', checkScroll);
-});
+const {
+  trackRef,
+  canScrollLeft,
+  canScrollRight,
+  isScrollable,
+  cardWidth,
+  checkScroll,
+  scrollByAmount
+} = useCarousel();
 </script>
 
 <style scoped>
@@ -85,13 +56,13 @@ onUnmounted(() => {
   display: none; /* Chrome, Safari and Opera */
 }
 
-/* Targets immediate children inside the slot. 
+/* 
+  Targets immediate children inside the slot. 
   Ensures whatever you put in the slot snaps into place correctly 
   and doesn't shrink.
 */
 .carousel-track > :deep(*) {
-  scroll-snap-align: start;
-  flex: 0 0 auto;
+  scroll-snap-align: center; /* Changed to center for better mobile feel */
 }
 
 /* Simple fade transition for arrows */
