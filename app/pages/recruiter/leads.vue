@@ -21,7 +21,6 @@
         <AmITabs v-model="activeTab" :options="tabOptions" round />
       </header>
 
-      <!-- TAB: LEADS TABLE -->
       <div
         v-if="activeTab === 'leads'"
         class="bg-white p-6 md:p-8 rounded-3xl shadow-xs border border-slate-200 animate-in fade-in duration-300">
@@ -30,7 +29,15 @@
             {{ $t('recruiter.leads.table-title', 'Inbound Leads') }}
           </h2>
         </div>
+
+        <div v-if="leadsPending" class="text-slate-500 font-medium flex items-center gap-2 py-4">
+          <span
+            class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full"></span>
+          Loading leads...
+        </div>
+
         <AmITable
+          v-else
           :columns="tableColumns"
           :data="leadsData"
           :empty-message="
@@ -41,7 +48,6 @@
           " />
       </div>
 
-      <!-- TAB: WIDGET SETTINGS -->
       <div
         v-else-if="activeTab === 'settings'"
         class="bg-white p-6 md:p-8 rounded-3xl shadow-xs border border-slate-200 animate-in fade-in duration-300 w-full">
@@ -52,9 +58,7 @@
         </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 lg:gap-12">
-          <!-- Form Section -->
           <div class="xl:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- General Settings Column -->
             <div class="space-y-6">
               <div>
                 <h3 class="text-sm font-bold text-slate-800">
@@ -157,7 +161,6 @@
               </div>
             </div>
 
-            <!-- Specific Column -->
             <div class="space-y-6">
               <div>
                 <h3 class="text-sm font-bold text-slate-800">
@@ -233,7 +236,6 @@
             </div>
           </div>
 
-          <!-- Desktop Live Preview Panel -->
           <div class="hidden xl:block relative">
             <div class="sticky top-28 space-y-6">
               <div>
@@ -297,7 +299,6 @@
       </div>
     </div>
 
-    <!-- PREVIEW MODAL -->
     <div
       v-if="showPreviewModal"
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -347,8 +348,11 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, reactive, watch } from 'vue';
 import { ChevronDown } from 'lucide-vue-next';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+import { useFirestore, useCollection, useCurrentUser } from 'vuefire';
 
 definePageMeta({ middleware: 'recruiters' });
 
@@ -357,6 +361,7 @@ const { userProfile } = useUserProfile();
 const { contactSettings } = useContactSettings();
 const user = useCurrentUser();
 const storage = useFirebaseStorage();
+const db = useFirestore();
 const { showToast } = useSystemToast();
 
 const activeTab = ref('leads');
@@ -366,6 +371,20 @@ const tabOptions = [
   { label: t('recruiter.leads.tab-settings', 'Settings'), value: 'settings' }
 ];
 
+// --- REAL-TIME LEADS QUERY ---
+const leadsQuery = computed(() => {
+  if (!user.value || import.meta.server) return null;
+  // NOTE: If you haven't yet, Firestore might ask you to create a composite index for this query.
+  // Check your browser console when you visit this page; Firebase provides a direct link to create it!
+  return query(
+    collection(db, 'leads'),
+    where('recruiterId', '==', user.value.uid),
+    orderBy('createdAt', 'desc')
+  );
+});
+
+const { data: rawLeadsData, pending: leadsPending } = useCollection(leadsQuery);
+
 // Table Config
 const tableColumns = [
   { key: 'date', label: 'Date', class: 'w-32' },
@@ -373,7 +392,23 @@ const tableColumns = [
   { key: 'role', label: 'Role Searched' },
   { key: 'location', label: 'Location' }
 ];
-const leadsData = ref<any[]>([]); // Will hook up to Firestore later!
+
+// Map the raw Firestore data to match your table columns
+const leadsData = computed(() => {
+  if (!rawLeadsData.value) return [];
+
+  return rawLeadsData.value.map((lead) => ({
+    date: new Date(lead.createdAt).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }),
+    name: lead.candidateName,
+    role: lead.searchedRole,
+    location: lead.location,
+    email: lead.candidateEmail // Not currently in your columns, but useful if you add an "expand row" feature
+  }));
+});
 
 // Form State
 const isSaving = ref(false);

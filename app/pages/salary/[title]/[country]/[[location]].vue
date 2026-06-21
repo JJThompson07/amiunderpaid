@@ -217,6 +217,8 @@
           :agency-name="selectedRecruiter.agencyName"
           :button-text="selectedRecruiter.buttonText"
           :location="location || country"
+          :recruiter-id="selectedRecruiter.recruiterId"
+          :searched-role="searchTitle"
           show-close
           @close="showRecruiterModal = false" />
       </div>

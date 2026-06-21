@@ -176,6 +176,8 @@
           :agency-name="selectedRecruiter.agencyName"
           :button-text="selectedRecruiter.buttonText"
           :location="location || country"
+          :recruiter-id="selectedRecruiter.recruiterId"
+          :searched-role="searchTitle"
           show-close
           @close="showRecruiterModal = false" />
       </div>
@@ -256,11 +258,7 @@ const recruiterSectionTitle = computed(() => {
   if (recruiterCards.value?.[0]?.isExclusive) {
     const cat = adzunaCategory.value || 'your industry';
     const loc = location.value || country.value || 'your region';
-    return t(
-      'recruiter.search-results.exclusive-subtitle',
-      'Improve your market alignment and speak to a specialist for {category} in {location}',
-      { category: cat, location: loc }
-    );
+    return t('recruiter.search-results.exclusive-subtitle', { category: cat, location: loc });
   }
   return t('recruiter.search-results.basic-subtitle', 'Speak to an expert to improve your MCA');
 });
