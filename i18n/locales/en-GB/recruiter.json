@@ -154,6 +154,10 @@
       "button-text": "CTA Button Text",
       "brand-bg-color": "Background Colour",
       "brand-text-color": "Text Colour"
+    },
+    "toast": {
+      "copy-success-title": "Success",
+      "copy-success-message": "Email copied to clipboard"
     }
   },
   "search-results": {

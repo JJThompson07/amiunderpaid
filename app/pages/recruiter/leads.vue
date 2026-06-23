@@ -45,7 +45,18 @@
               'recruiter.leads.empty',
               'No leads found yet. Claim territories and set up your Lead Contact Card to get started.'
             )
-          " />
+          ">
+          <template #email="{ value }">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-medium text-slate-700">{{ value }}</span>
+              <button
+                class="p-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-indigo-600 transition-colors shrink-0"
+                @click="copyToClipboard(value)">
+                <Copy class="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </template>
+        </AmITable>
       </div>
 
       <div
@@ -349,7 +360,7 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive, watch } from 'vue';
-import { ChevronDown } from 'lucide-vue-next';
+import { ChevronDown, Copy } from 'lucide-vue-next';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useFirestore, useCollection, useCurrentUser } from 'vuefire';
@@ -389,6 +400,7 @@ const { data: rawLeadsData, pending: leadsPending } = useCollection(leadsQuery);
 const tableColumns = [
   { key: 'date', label: 'Date', class: 'w-32' },
   { key: 'name', label: 'Candidate Name' },
+  { key: 'email', label: 'Email Address' },
   { key: 'role', label: 'Role Searched' },
   { key: 'location', label: 'Location' }
 ];
@@ -540,6 +552,19 @@ const saveSettings = async () => {
     showToast('Error', 'Failed to save Lead Contact Card settings.', 'error');
   } finally {
     isSaving.value = false;
+  }
+};
+
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast(
+      t('recruiter.leads.toast.copy-success-title', 'Success'),
+      t('recruiter.leads.toast.copy-success-message', 'Email copied to clipboard'),
+      'success'
+    );
+  } catch (err) {
+    console.error('Failed to copy text:', err);
   }
 };
 </script>

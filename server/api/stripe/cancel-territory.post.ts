@@ -47,7 +47,25 @@ export default defineEventHandler(async (event) => {
   // 3. RECALCULATE THE NEW MONTHLY TOTAL
   // We must fetch pricing to know exactly how much to charge them now
   const pricingDoc = await db.collection('platform_settings').doc('pricing').get();
-  const platformPricing = pricingDoc.data() || {};
+
+  const DEFAULT_PRICING: Record<string, any> = {
+    UK: {
+      band1: { basic: 50, exclusive: 250 },
+      band2: { basic: 30, exclusive: 150 },
+      band3: { basic: 20, exclusive: 100 },
+      band4: { basic: 10, exclusive: 50 },
+      band5: { basic: 5, exclusive: 25 }
+    },
+    USA: {
+      band1: { basic: 60, exclusive: 300 },
+      band2: { basic: 40, exclusive: 200 },
+      band3: { basic: 25, exclusive: 125 },
+      band4: { basic: 15, exclusive: 75 },
+      band5: { basic: 10, exclusive: 50 }
+    }
+  };
+
+  const platformPricing = pricingDoc.exists ? (pricingDoc.data() || {}) : DEFAULT_PRICING;
   const currency = userData.billingCountry === 'USA' ? 'usd' : 'gbp';
   const countryPricing = platformPricing[userData.billingCountry || 'UK'];
   const basicDiscount = userData.basicDiscount || 0;

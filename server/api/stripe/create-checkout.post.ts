@@ -39,12 +39,24 @@ export default defineEventHandler(async (event) => {
   const db = getFirestore();
   const pricingDoc = await db.collection('platform_settings').doc('pricing').get();
 
-  if (!pricingDoc.exists) {
-    console.error('Pricing document missing in Firestore!');
-    return createError({ statusCode: 500, message: 'Pricing configuration not found.' });
-  }
+  const DEFAULT_PRICING: Record<string, any> = {
+    UK: {
+      band1: { basic: 50, exclusive: 250 },
+      band2: { basic: 30, exclusive: 150 },
+      band3: { basic: 20, exclusive: 100 },
+      band4: { basic: 10, exclusive: 50 },
+      band5: { basic: 5, exclusive: 25 }
+    },
+    USA: {
+      band1: { basic: 60, exclusive: 300 },
+      band2: { basic: 40, exclusive: 200 },
+      band3: { basic: 25, exclusive: 125 },
+      band4: { basic: 15, exclusive: 75 },
+      band5: { basic: 10, exclusive: 50 }
+    }
+  };
 
-  const platformPricing = pricingDoc.data() || {};
+  const platformPricing = pricingDoc.exists ? (pricingDoc.data() || {}) : DEFAULT_PRICING;
 
   // Use the exact keys your admin panel saves ('UK' or 'USA')
   const countryKey = currency === 'usd' ? 'USA' : 'UK';
