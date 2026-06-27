@@ -1,6 +1,7 @@
 ## Context
 
 Recruiters view candidate leads in `app/pages/recruiter/leads.vue`. Inbound leads are written successfully by the Nitro backend to the `leads` collection, but are not loading on the front-end table. This issue points to:
+
 1. **Firestore Security Rules**: The client side must be allowed to read from `leads` if authenticated as the recruiter.
 2. **Firestore Composite Indexes**: The query requires a composite index on `(recruiterId, createdAt DESC)`.
 3. **Data Mapping in leads.vue**: Verification that the computed `leadsData` fields align with `tableColumns` configuration.
@@ -8,17 +9,21 @@ Recruiters view candidate leads in `app/pages/recruiter/leads.vue`. Inbound lead
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Define correct Firestore security rules for the `leads` collection.
 - Define the composite index inside `firestore.indexes.json`.
 - Audit and confirm the data mapping in `app/pages/recruiter/leads.vue`.
 
 **Non-Goals:**
+
 - Modifying the fields written by the Nitro backend submission endpoint.
 
 ## Decisions
 
 ### Decision 1: Create/Update `firestore.rules`
+
 We will specify read permission for recruiters on the `leads` collection based on matching auth UIDs:
+
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -32,7 +37,9 @@ service cloud.firestore {
 ```
 
 ### Decision 2: Create/Update `firestore.indexes.json`
+
 We will define the index configuration:
+
 ```json
 {
   "indexes": [

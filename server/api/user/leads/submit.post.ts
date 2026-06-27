@@ -12,18 +12,12 @@ export default defineEventHandler(async (event) => {
   const db = getFirestore();
 
   try {
-    // 1. Fetch the Recruiter's routing preferences
-    const recruiterSettingsDoc = await db
-      .collection('recruiter_contact_settings')
-      .doc(recruiterId)
-      .get();
     const recruiterUserDoc = await db.collection('users').doc(recruiterId).get();
 
     if (!recruiterUserDoc.exists) {
       throw createError({ statusCode: 404, message: 'Recruiter not found' });
     }
 
-    const recruiterSettings = recruiterSettingsDoc.data() || {};
     const recruiterUser = recruiterUserDoc.data() || {};
 
     // Prioritize the inboundEmail setting, fallback to their account login email

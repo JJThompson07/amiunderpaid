@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
     }
   };
 
-  const platformPricing = pricingDoc.exists ? (pricingDoc.data() || {}) : DEFAULT_PRICING;
+  const platformPricing = pricingDoc.exists ? pricingDoc.data() || {} : DEFAULT_PRICING;
 
   // Use the exact keys your admin panel saves ('UK' or 'USA')
   const countryKey = currency === 'usd' ? 'USA' : 'UK';

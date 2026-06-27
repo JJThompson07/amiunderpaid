@@ -5,17 +5,21 @@ Recruiters track candidate lead listings in the dashboard leads view `app/pages/
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Include `email` column key under `tableColumns` in `leads.vue`.
 - Create a slot template for `#email` containing the copy icon button.
 - Integrate the clipboard copy function triggering localized system toasts.
 
 **Non-Goals:**
+
 - Supporting clipboard fallback methods for very old legacy browsers lacking `navigator.clipboard`.
 
 ## Decisions
 
 ### Decision 1: Table column updates
+
 We will append the new column key:
+
 ```typescript
 const tableColumns = [
   { key: 'date', label: 'Date', class: 'w-32' },
@@ -27,7 +31,9 @@ const tableColumns = [
 ```
 
 ### Decision 2: Cell rendering and copy logic
+
 We will render a custom template slot in `<AmITable>` and include the Copy icon:
+
 ```html
 <template #email="{ value }">
   <div class="flex items-center gap-2">
@@ -40,7 +46,9 @@ We will render a custom template slot in `<AmITable>` and include the Copy icon:
   </div>
 </template>
 ```
+
 We will implement the copy method using `useSystemToast` triggers:
+
 ```typescript
 import { Copy } from 'lucide-vue-next';
 
@@ -59,6 +67,8 @@ const copyToClipboard = async (email: string) => {
 ```
 
 ### Decision 3: Translation entries
+
 We will insert localized messages in `recruiter.json` locales files:
-* `recruiter.leads.toast.copy-success-title`: `"Success"`
-* `recruiter.leads.toast.copy-success-message`: `"Email copied to clipboard"`
+
+- `recruiter.leads.toast.copy-success-title`: `"Success"`
+- `recruiter.leads.toast.copy-success-message`: `"Email copied to clipboard"`

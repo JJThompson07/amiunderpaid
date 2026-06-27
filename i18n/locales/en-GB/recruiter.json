@@ -164,5 +164,47 @@
     "action-title": "Take action now",
     "exclusive-subtitle": "Improve your market alignment and speak to a specialist for {category} in {location}",
     "basic-subtitle": "Speak to an expert to improve your MCA"
+  },
+  "requestAccess": {
+    "title": "Request Partner Access",
+    "description": "Submit your agency details below. Our administrative team will review your application and send an invite email with login credentials upon approval.",
+    "agencyNameLabel": "Agency Name",
+    "agencyNamePlaceholder": "e.g. Acme Recruitment Ltd",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "e.g. partner@acme.com",
+    "submitBtn": "Submit Request",
+    "submittingBtn": "Submitting...",
+    "cancelBtn": "Cancel",
+    "errors": {
+      "missingFields": "Please provide both your agency name and email address.",
+      "invalidEmail": "Please enter a valid email address.",
+      "submitFailed": "There was an error submitting your request. Please try again."
+    },
+    "success": {
+      "title": "Request Submitted",
+      "message": "Your access request has been sent successfully."
+    }
+  },
+  "passwordChange": {
+    "title": "Change Password",
+    "currentPasswordLabel": "Current Password",
+    "currentPasswordPlaceholder": "Enter current password",
+    "newPasswordLabel": "New Password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmPasswordLabel": "Confirm New Password",
+    "confirmPasswordPlaceholder": "Confirm new password",
+    "submitBtn": "Update Password",
+    "submittingBtn": "Updating...",
+    "success": {
+      "title": "Password Updated",
+      "message": "Your password has been changed successfully."
+    },
+    "errors": {
+      "missingFields": "Please fill in all password fields.",
+      "mismatch": "New passwords do not match.",
+      "tooShort": "New password must be at least 6 characters long.",
+      "wrongPassword": "The current password you entered is incorrect. Please try again.",
+      "generic": "Failed to update password. Please try again."
+    }
   }
 }

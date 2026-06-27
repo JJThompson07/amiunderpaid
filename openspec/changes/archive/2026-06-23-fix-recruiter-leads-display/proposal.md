@@ -11,9 +11,11 @@ Although candidate leads are successfully submitted and saved in the Firestore `
 ## Capabilities
 
 ### New Capabilities
+
 - `recruiter-leads-display`: Read and display Firestore lead documents in real time on the recruiter dashboard leads table.
 
 ### Modified Capabilities
+
 <!-- No requirement changes to existing specs -->
 
 ## Impact

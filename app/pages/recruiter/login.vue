@@ -14,12 +14,22 @@
         :toggle-signup-text="$t('login.recruiter.toggle-to-signup')"
         :toggle-login-text="$t('login.recruiter.toggle-to-login')"
         :footer-text="$t('login.recruiter.footer-text')"
-        :allow-signup="true"
+        :allow-signup="false"
         :loading="loading"
         :error="localError || error"
         @login="handleLogin"
         @signup="handleSignup"
-        @clear-error="clearError" />
+        @clear-error="clearError">
+        <template #footer-action>
+          <button
+            type="button"
+            class="text-sm font-bold text-primary-600 hover:text-primary-700 transition-colors"
+            @click="showRequestModal = true">
+            Request Access
+          </button>
+        </template>
+      </AmIFormLogin>
+      <ModalRequestAccess v-model="showRequestModal" />
     </div>
 
     <div
@@ -76,6 +86,7 @@ const SiteTitle = computed<string>(() => {
 });
 
 const localError = ref('');
+const showRequestModal = ref(false);
 
 const benefits = computed(() => [
   {

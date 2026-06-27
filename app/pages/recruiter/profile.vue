@@ -221,12 +221,81 @@
           </div>
         </div>
       </div>
+
+      <!-- Change Password Section -->
+      <div class="bg-white p-4 md:p-6 rounded-3xl shadow-xs border border-slate-200">
+        <div class="flex items-center gap-3 mb-8">
+          <div
+            class="w-10 h-10 bg-secondary-50 rounded-xl flex items-center justify-center text-secondary-600">
+            <LockIcon class="w-5 h-5" />
+          </div>
+          <h2 class="text-xl font-bold text-slate-900">{{ $t('passwordChange.title') }}</h2>
+        </div>
+
+        <form class="space-y-4" @submit.prevent="submitPasswordChange">
+          <div class="grid md:grid-cols-3 gap-4">
+            <AmIInputGeneric
+              v-model="currentPassword"
+              type="password"
+              :label="$t('passwordChange.currentPasswordLabel')"
+              :placeholder="$t('passwordChange.currentPasswordPlaceholder')"
+              :icon="KeyRound" />
+
+            <AmIInputGeneric
+              v-model="newPassword"
+              type="password"
+              :label="$t('passwordChange.newPasswordLabel')"
+              :placeholder="$t('passwordChange.newPasswordPlaceholder')"
+              :icon="KeyRound" />
+
+            <AmIInputGeneric
+              v-model="confirmPassword"
+              type="password"
+              :label="$t('passwordChange.confirmPasswordLabel')"
+              :placeholder="$t('passwordChange.confirmPasswordPlaceholder')"
+              :icon="KeyRound" />
+          </div>
+
+          <div class="mt-6 flex items-center justify-between pt-6 border-t border-slate-100">
+            <p v-if="passwordError" class="text-xs font-bold text-red-600">
+              {{ passwordError }}
+            </p>
+            <p
+              v-else-if="passwordSuccess"
+              class="text-xs font-bold text-positive-600 animate-pulse flex gap-1 items-center">
+              <CheckSquareIcon class="h-4 w-4" />
+              {{ $t('passwordChange.success.message') }}
+            </p>
+            <p v-else></p>
+
+            <button
+              type="submit"
+              :disabled="updatingPassword"
+              :class="[
+                'px-6 py-3 rounded-xl font-bold transition-all text-sm flex items-center gap-2',
+                updatingPassword
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-primary-600 text-white hover:bg-primary-700 shadow-sm hover:shadow-md cursor-pointer'
+              ]">
+              <span
+                v-if="updatingPassword"
+                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              {{
+                updatingPassword
+                  ? $t('passwordChange.submittingBtn')
+                  : $t('passwordChange.submitBtn')
+              }}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { BriefcaseBusiness, CheckSquareIcon, Tag } from 'lucide-vue-next';
+import { BriefcaseBusiness, CheckSquareIcon, Tag, LockIcon, KeyRound } from 'lucide-vue-next';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 
 definePageMeta({
   middleware: 'recruiters'
@@ -235,6 +304,76 @@ definePageMeta({
 const { userProfile, updateProfile } = useUserProfile();
 const { categories: categoriesData, loadingCategories } = useCategories();
 const { t } = useI18n();
+const { showToast } = useSystemToast();
+const user = useCurrentUser();
+const auth = useFirebaseAuth();
+
+// Password Change State
+const currentPassword = ref('');
+const newPassword = ref('');
+const confirmPassword = ref('');
+const updatingPassword = ref(false);
+const passwordError = ref('');
+const passwordSuccess = ref(false);
+
+const submitPasswordChange = async () => {
+  passwordError.value = '';
+  passwordSuccess.value = false;
+
+  if (!currentPassword.value || !newPassword.value || !confirmPassword.value) {
+    passwordError.value = t('passwordChange.errors.missingFields');
+    return;
+  }
+
+  if (newPassword.value !== confirmPassword.value) {
+    passwordError.value = t('passwordChange.errors.mismatch');
+    return;
+  }
+
+  if (newPassword.value.length < 6) {
+    passwordError.value = t('passwordChange.errors.tooShort');
+    return;
+  }
+
+  if (!auth || !user.value) {
+    passwordError.value = t('auth.errors.service_not_ready');
+    return;
+  }
+
+  updatingPassword.value = true;
+
+  try {
+    // 1. Re-authenticate
+    const credential = EmailAuthProvider.credential(user.value.email || '', currentPassword.value);
+    await reauthenticateWithCredential(user.value, credential);
+
+    // 2. Update password
+    await updatePassword(user.value, newPassword.value);
+
+    // 3. Clear requiresPasswordChange in Firestore
+    await updateProfile({ requiresPasswordChange: false });
+
+    // 4. Reset states
+    currentPassword.value = '';
+    newPassword.value = '';
+    confirmPassword.value = '';
+    passwordSuccess.value = true;
+    showToast(t('passwordChange.success.title'), t('passwordChange.success.message'), 'success');
+
+    setTimeout(() => {
+      passwordSuccess.value = false;
+    }, 4000);
+  } catch (err: any) {
+    console.error('🔥 Error updating password:', err);
+    if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+      passwordError.value = t('passwordChange.errors.wrongPassword');
+    } else {
+      passwordError.value = t('passwordChange.errors.generic');
+    }
+  } finally {
+    updatingPassword.value = false;
+  }
+};
 
 const selectedCategories = ref<string[]>([]);
 const isSaving = ref(false);

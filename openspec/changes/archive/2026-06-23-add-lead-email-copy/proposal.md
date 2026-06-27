@@ -13,7 +13,9 @@ Currently, candidate email addresses are mapped in the leads backend data but ar
 ## Capabilities
 
 ### New Capabilities
+
 - `recruiter-leads-email-display`: Display candidate email address and support clipboard copy actions with interactive feedback inside the recruiter leads dashboard.
 
 ### Modified Capabilities
+
 <!-- No requirement changes to existing specs -->

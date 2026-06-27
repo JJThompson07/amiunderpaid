@@ -59,7 +59,22 @@
       </template>
 
       <template v-else>
+        <AmIButton
+          v-if="link.action === 'logout'"
+          bg-colour="bg-slate-500"
+          animation-colour="bg-slate-400"
+          :class="[
+            'cursor-pointer font-bold',
+            safeIsMobile
+              ? 'w-full text-sm'
+              : 'md:absolute md:right-8 md:top-1/2 md:-translate-y-1/2 text-xs whitespace-nowrap'
+          ]"
+          title="Log Out"
+          @click="handleLogoutClick">
+          {{ $t('common.logout') }}
+        </AmIButton>
         <NuxtLink
+          v-else
           :to="link.to"
           active-class="text-primary-600 font-bold border-b-2 border-primary-600"
           :class="[
@@ -89,6 +104,14 @@
 import { computed, ref, onMounted } from 'vue';
 import { useCurrentUser } from 'vuefire';
 
+interface NavLink {
+  to?: string;
+  label: string;
+  mobileOnly?: boolean;
+  action?: string;
+  children?: { to: string; label: string }[];
+}
+
 const props = defineProps({
   isMobile: {
     type: Boolean,
@@ -96,10 +119,16 @@ const props = defineProps({
   }
 });
 
-defineEmits(['close']);
+const emit = defineEmits(['close']);
 
 const { t } = useI18n();
 const { isAdmin, isRecruiter, isRoleLoading } = useUserRole();
+const { logout } = useRecruiterAuth();
+
+const handleLogoutClick = async () => {
+  emit('close');
+  await logout();
+};
 
 const user = useCurrentUser();
 const isEmailVerified = ref<boolean>(false);
@@ -112,7 +141,7 @@ onMounted(() => {
 const safeIsMobile = computed(() => isMounted.value && props.isMobile);
 
 // --- 1. ADMIN GROUPS ---
-const adminLinks = computed(() => [
+const adminLinks = computed<NavLink[]>(() => [
   { to: '/', label: t('navbar.home'), mobileOnly: true },
   {
     label: t('navbar.group.data-api'),
@@ -148,8 +177,8 @@ const adminLinks = computed(() => [
 ]);
 
 // --- 2. RECRUITER LINKS ---
-const recruiterLinks = computed(() => {
-  const links = [
+const recruiterLinks = computed<NavLink[]>(() => {
+  const links: NavLink[] = [
     { to: '/', label: t('navbar.home'), mobileOnly: true },
     { to: '/recruiter/dashboard', label: t('navbar.dashboard'), mobileOnly: false },
     { to: '/recruiter/profile', label: t('navbar.profile'), mobileOnly: false }
@@ -169,11 +198,18 @@ const recruiterLinks = computed(() => {
     });
   }
 
+  links.push({
+    to: '#',
+    label: t('navbar.logout'),
+    mobileOnly: false,
+    action: 'logout'
+  });
+
   return links;
 });
 
 // --- 3. ORDINARY USER GROUPS ---
-const navLinks = computed(() => [
+const navLinks = computed<NavLink[]>(() => [
   { to: '/', label: t('navbar.home'), mobileOnly: false },
   { to: '/about', label: t('navbar.about'), mobileOnly: false },
   {
@@ -194,10 +230,10 @@ const navLinks = computed(() => [
 
 // --- 4. UNIFIED LOGIC ---
 // This automatically picks the correct array based on the user's role and filters out mobile-only items on desktop
-const activeLinks = computed(() => {
+const activeLinks = computed<NavLink[]>(() => {
   if (isRoleLoading.value) return [];
 
-  let sourceArray = navLinks.value;
+  let sourceArray: NavLink[] = navLinks.value;
   if (isAdmin.value) sourceArray = adminLinks.value;
   else if (isRecruiter.value) sourceArray = recruiterLinks.value;
 

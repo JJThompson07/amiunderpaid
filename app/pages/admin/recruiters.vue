@@ -86,13 +86,23 @@
 
           <template #status="{ row }">
             <div class="flex items-center justify-center gap-1">
-              <CheckCircle2 v-if="row.verified" class="w-4 h-4 text-emerald-500" />
-              <XCircle v-else class="w-4 h-4 text-slate-300" />
-              <span
-                class="text-xs font-bold"
-                :class="row.verified ? 'text-emerald-700' : 'text-slate-400'">
-                {{ row.verified ? 'Verified' : 'Pending' }}
-              </span>
+              <template v-if="row.status === 'requested'">
+                <HelpCircle class="w-4 h-4 text-amber-500 animate-pulse" />
+                <span class="text-xs font-bold text-amber-700">Requested</span>
+              </template>
+              <template v-else-if="row.status === 'rejected'">
+                <XCircle class="w-4 h-4 text-red-500" />
+                <span class="text-xs font-bold text-red-700">Rejected</span>
+              </template>
+              <template v-else>
+                <CheckCircle2 v-if="row.verified" class="w-4 h-4 text-emerald-500" />
+                <XCircle v-else class="w-4 h-4 text-slate-300" />
+                <span
+                  class="text-xs font-bold"
+                  :class="row.verified ? 'text-emerald-700' : 'text-slate-400'">
+                  {{ row.verified ? 'Verified' : 'Pending' }}
+                </span>
+              </template>
             </div>
           </template>
 
@@ -129,12 +139,35 @@
           </template>
 
           <template #actions="{ row }">
-            <button
-              class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-              title="Edit Discounts"
-              @click="openDiscountModal(row)">
-              <Tag class="w-4 h-4" />
-            </button>
+            <div class="flex items-center justify-end gap-1">
+              <template v-if="row.status === 'requested'">
+                <button
+                  class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                  title="Accept Access Request"
+                  :disabled="actioningIds.has(row.id)"
+                  @click="acceptRequest(row)">
+                  <Check class="w-4 h-4" />
+                </button>
+                <button
+                  class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                  title="Reject Access Request"
+                  :disabled="actioningIds.has(row.id)"
+                  @click="rejectRequest(row)">
+                  <X class="w-4 h-4" />
+                </button>
+              </template>
+              <template v-else-if="row.status === 'rejected'">
+                <span class="text-xs text-slate-300 italic">No Actions</span>
+              </template>
+              <template v-else>
+                <button
+                  class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors cursor-pointer"
+                  title="Edit Discounts"
+                  @click="openDiscountModal(row)">
+                  <Tag class="w-4 h-4" />
+                </button>
+              </template>
+            </div>
           </template>
         </AmITable>
       </div>
@@ -189,12 +222,86 @@
 </template>
 
 <script setup lang="ts">
-import { CheckCircle2, XCircle, Tag, X, CheckSquare } from 'lucide-vue-next';
+import { CheckCircle2, XCircle, Tag, X, CheckSquare, Check, HelpCircle } from 'lucide-vue-next';
 
 definePageMeta({ middleware: 'admin' });
 
 const adminFetch = useAdminFetch();
 const { showToast } = useSystemToast();
+
+const actioningIds = ref(new Set<string>());
+
+const acceptRequest = async (row: any) => {
+  if (actioningIds.value.has(row.id)) return;
+
+  if (
+    !confirm(
+      `Are you sure you want to accept the access request for ${row.agencyName} (${row.email})?`
+    )
+  ) {
+    return;
+  }
+
+  actioningIds.value.add(row.id);
+  try {
+    const res = await adminFetch<{ success: boolean; message?: string }>(
+      '/api/admin/recruiters/accept',
+      {
+        method: 'POST',
+        body: { uid: row.id }
+      }
+    );
+    if (res?.success) {
+      showToast(
+        'Accepted',
+        'Recruiter access request approved successfully. Invitation email sent.',
+        'success'
+      );
+      await refresh();
+    } else {
+      showToast('Error', res?.message || 'Failed to accept recruiter.', 'error');
+    }
+  } catch (err: any) {
+    const msg = err.data?.message || 'An error occurred while approving the request.';
+    showToast('Error', msg, 'error');
+  } finally {
+    actioningIds.value.delete(row.id);
+  }
+};
+
+const rejectRequest = async (row: any) => {
+  if (actioningIds.value.has(row.id)) return;
+
+  if (
+    !confirm(
+      `Are you sure you want to reject the access request for ${row.agencyName} (${row.email})?`
+    )
+  ) {
+    return;
+  }
+
+  actioningIds.value.add(row.id);
+  try {
+    const res = await adminFetch<{ success: boolean; message?: string }>(
+      '/api/admin/recruiters/reject',
+      {
+        method: 'POST',
+        body: { uid: row.id }
+      }
+    );
+    if (res?.success) {
+      showToast('Rejected', 'Recruiter access request rejected.', 'success');
+      await refresh();
+    } else {
+      showToast('Error', res?.message || 'Failed to reject recruiter.', 'error');
+    }
+  } catch (err: any) {
+    const msg = err.data?.message || 'An error occurred while rejecting the request.';
+    showToast('Error', msg, 'error');
+  } finally {
+    actioningIds.value.delete(row.id);
+  }
+};
 
 const { getTerritoryById } = useTerritories();
 const getTerritoryName = (id: number) => {

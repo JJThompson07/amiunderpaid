@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
     }
   };
 
-  const platformPricing = pricingDoc.exists ? (pricingDoc.data() || {}) : DEFAULT_PRICING;
+  const platformPricing = pricingDoc.exists ? pricingDoc.data() || {} : DEFAULT_PRICING;
   const currency = userData.billingCountry === 'USA' ? 'usd' : 'gbp';
   const countryPricing = platformPricing[userData.billingCountry || 'UK'];
   const basicDiscount = userData.basicDiscount || 0;

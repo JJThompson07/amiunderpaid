@@ -95,6 +95,9 @@
             {{ isLogin ? toggleSignupText : toggleLoginText }}
           </button>
         </div>
+        <div v-else class="mt-8 text-center">
+          <slot name="footer-action" />
+        </div>
 
         <p class="mt-8 text-center text-2xs text-slate-400 uppercase tracking-widest font-bold">
           {{ footerText }}

@@ -1,22 +1,27 @@
 ## Context
 
 When deploying the `stripe` branch to production:
+
 1. **Logo Uploads**: Requires the declaration of `storage.rules` to allow client-side upload requests to `/recruiter_logos/{userId}/*` while blocking unauthorized writes.
 2. **Pricing Reliability**: If `platform_settings/pricing` doesn't exist, checkouts fail. We will implement fallback values in `create-checkout.post.ts` and `cancel-territory.post.ts` matching the UI's default configuration.
 
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Define `storage.rules` in the workspace root.
 - Implement fallback pricing configurations in the backend endpoints to prevent runtime crashes.
 
 **Non-Goals:**
+
 - Altering the calculation band calculations (must still lookup matching bands).
 
 ## Decisions
 
 ### Decision 1: Create `storage.rules`
+
 We will configure read/write permissions for logos:
+
 ```javascript
 rules_version = '2';
 service firebase.storage {
@@ -30,7 +35,9 @@ service firebase.storage {
 ```
 
 ### Decision 2: Pricing Fallback logic in Checkout and Cancellation Endpoints
+
 We will define the default pricing banding inside a helper structure. If the Firestore document does not exist, the code will load this pricing data fallback instead:
+
 ```typescript
 const DEFAULT_PRICING = {
   UK: {
@@ -49,9 +56,11 @@ const DEFAULT_PRICING = {
   }
 };
 ```
+
 And resolve using:
+
 ```typescript
-const platformPricing = pricingDoc.exists ? (pricingDoc.data() || {}) : DEFAULT_PRICING;
+const platformPricing = pricingDoc.exists ? pricingDoc.data() || {} : DEFAULT_PRICING;
 ```
 
 ## Risks / Trade-offs

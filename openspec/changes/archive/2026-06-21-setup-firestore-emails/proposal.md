@@ -11,7 +11,9 @@ Currently, the Nitro backend writes lead email payloads to the Firestore `mail` 
 ## Capabilities
 
 ### New Capabilities
+
 - `firestore-emails-setup`: Configure and enable Firebase Trigger Email extension to send notifications to recruiters and candidates when new leads are submitted.
 
 ### Modified Capabilities
+
 <!-- No requirement changes to existing specs -->

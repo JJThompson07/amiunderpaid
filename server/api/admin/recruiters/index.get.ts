@@ -14,7 +14,11 @@ export default defineEventHandler(async (event) => {
   const pricing = pricingDoc.data() || {};
 
   // Batch fetch users in chunks of 100 to get email verification statuses safely
-  const uids = usersSnap.docs.map((doc) => ({ uid: doc.id }));
+  const recruitersToFetch = usersSnap.docs.filter((doc) => {
+    const status = doc.data().status;
+    return status !== 'requested' && status !== 'rejected';
+  });
+  const uids = recruitersToFetch.map((doc) => ({ uid: doc.id }));
   const authUsers: any[] = [];
 
   for (let i = 0; i < uids.length; i += 100) {
@@ -29,6 +33,7 @@ export default defineEventHandler(async (event) => {
     const activeTerritories = data.activeTerritories || [];
     const billingCountry = data.billingCountry || 'UK';
     const countryPricing = pricing[billingCountry] || {};
+    const status = data.status || 'active'; // Default to active for legacy recruiters
 
     let monthlyTotal = 0;
     activeTerritories.forEach((t: any) => {
@@ -49,7 +54,8 @@ export default defineEventHandler(async (event) => {
       categories: data.coveredCategories || [],
       activeTerritories,
       territoriesCount: activeTerritories.length,
-      verified: authMap.get(doc.id) || false,
+      verified: status === 'active' ? authMap.get(doc.id) || false : false,
+      status,
       monthlyInvoice: monthlyTotal,
       billingCountry,
       basicDiscount: data.basicDiscount || 0,

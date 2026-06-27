@@ -1,6 +1,7 @@
 ## Why
 
 When deploying to production:
+
 1. **Firebase Storage Permissions**: Recruiter logo uploads will fail on the client side unless a `storage.rules` file is created and deployed to the Firebase project, as writes are denied by default.
 2. **Dynamic Checkout Pricing Reliability**: Currently, both `create-checkout.post.ts` and `cancel-territory.post.ts` crash with a 500 error if the Firestore document `platform_settings/pricing` is missing. Having fallback pricing defaults prevents checkout disruptions in fresh environments.
 
@@ -12,8 +13,10 @@ When deploying to production:
 ## Capabilities
 
 ### New Capabilities
+
 - `storage-security-rules`: Configure Firebase Storage rules to secure logo uploads while allowing public read access.
 - `stripe-pricing-fallback`: Apply backend pricing fallbacks in checkout and cancellation routes to prevent runtime database failures.
 
 ### Modified Capabilities
+
 <!-- No requirement changes to existing specs -->

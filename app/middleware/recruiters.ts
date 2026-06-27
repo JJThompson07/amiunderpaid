@@ -16,10 +16,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const db = getFirestore(useFirebaseApp());
   const userDocSnap = await getDoc(doc(db, 'users', user.uid));
 
-  const role = userDocSnap.data()?.role;
+  const userData = userDocSnap.data();
+  const role = userData?.role;
 
   // Allow both recruiters AND admins to view the Recruiter dashboard/matrix
   if (!userDocSnap.exists() || (role !== 'recruiter' && role !== 'admin')) {
     return navigateTo('/recruiter/login');
+  }
+
+  // 4. FORCED PASSWORD CHANGE check
+  if (userData?.requiresPasswordChange && to.path !== '/recruiter/profile') {
+    return navigateTo('/recruiter/profile');
   }
 });
