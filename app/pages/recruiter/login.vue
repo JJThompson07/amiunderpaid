@@ -18,7 +18,6 @@
         :loading="loading"
         :error="localError || error"
         @login="handleLogin"
-        @signup="handleSignup"
         @clear-error="clearError">
         <template #footer-action>
           <button
@@ -74,7 +73,7 @@ definePageMeta({
   layout: 'login-layout'
 });
 
-const { login, signup, loading, error } = useRecruiterAuth();
+const { login, loading, error } = useRecruiterAuth();
 const { t } = useI18n();
 
 const { $siteBrand } = useNuxtApp();
@@ -138,21 +137,6 @@ const handleLogin = async (credentials: any) => {
 
   if (success) {
     await navigateTo('/recruiter/dashboard');
-  }
-};
-
-const handleSignup = async (credentials: any) => {
-  clearError();
-
-  if (!credentials.email || !credentials.password) {
-    localError.value = 'Please provide both your email and password.';
-    return;
-  }
-
-  const success = await signup(credentials.email, credentials.password);
-
-  if (success) {
-    await navigateTo('/recruiter/onboarding');
   }
 };
 </script>

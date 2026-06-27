@@ -141,7 +141,8 @@ export default defineNuxtConfig({
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
       adminAccessKey: process.env.NUXT_ADMIN_ACCESS_KEY,
       gtagId: 'G-EZQYZSSRW1',
-      stripePublicKey: process.env.NUXT_PUBLIC_STRIPE_KEY
+      stripePublicKey: process.env.NUXT_PUBLIC_STRIPE_KEY,
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://amiunderpaid.co.uk'
     },
 
     stripeSecretKey: process.env.STRIPE_SECRET_KEY,

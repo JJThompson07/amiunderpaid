@@ -47,9 +47,12 @@ export const useTerritoryClaims = (territoryIds: Ref<number[]>) => {
     return locks;
   });
 
+  const claimsLimitExceeded = computed(() => (territoryIds.value?.length ?? 0) > 10);
+
   return {
     globalTakenMonths,
     loadingClaims,
-    claimsData
+    claimsData,
+    claimsLimitExceeded
   };
 };

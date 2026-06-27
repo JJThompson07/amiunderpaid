@@ -1,16 +1,12 @@
 import {
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
   sendEmailVerification
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore'; // <-- Added getFirestore
 
 export const useRecruiterAuth = () => {
   const auth = useFirebaseAuth();
-  const firebaseApp = useFirebaseApp(); // Explicitly grab the Nuxt-initialized app
-  const db = getFirestore(firebaseApp); // Bind Firestore to this exact app instance!
   const { t } = useI18n();
   const { showToast } = useSystemToast();
 
@@ -45,56 +41,6 @@ export const useRecruiterAuth = () => {
           break;
         default:
           error.value = t('auth.errors.unexpected_signin_error');
-      }
-      return false;
-    } finally {
-      loading.value = false;
-    }
-  };
-
-  const signup = async (email: string, password: string): Promise<boolean> => {
-    if (!auth) {
-      error.value = t('auth.errors.service_not_ready');
-      return false;
-    }
-
-    loading.value = true;
-    error.value = '';
-
-    try {
-      // 1. Create the user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // 2. IMMEDIATELY create their database record with the role 'recruiter'
-      await setDoc(doc(db, 'users', user.uid), {
-        email: user.email,
-        role: 'recruiter', // Identify them!
-        created_at: new Date().toISOString(),
-        onboarding_complete: false // Flag to force them to pick a territory next
-      });
-
-      // Same fix as login: Wait for the session cookie to mint
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // trigger email verification
-      await sendEmailVerification(userCredential.user);
-
-      return true;
-    } catch (e: any) {
-      // Handle Sign-Up specific error codes
-      switch (e.code) {
-        case 'auth/email-already-in-use':
-          error.value = t('auth.errors.email_in_use');
-          break;
-        case 'auth/weak-password':
-          error.value = t('auth.errors.weak_password');
-          break;
-        case 'auth/invalid-email':
-          error.value = t('auth.errors.invalid_email');
-          break;
-        default:
-          error.value = t('auth.errors.unexpected_signup_error');
       }
       return false;
     } finally {
@@ -168,7 +114,6 @@ export const useRecruiterAuth = () => {
 
   return {
     login,
-    signup,
     logout,
     resetPassword,
     resendVerificationEmail,

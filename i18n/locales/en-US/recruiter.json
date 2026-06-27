@@ -80,7 +80,8 @@
       "processing": "Processing...",
       "finalize": "Finalize Claims",
       "clear-all": "Clear All",
-      "search-industries": "Search industries..."
+      "search-industries": "Search industries...",
+      "limit-warning": "You have selected more than 10 territories. Exclusive month availability data may be incomplete for territories beyond the first 10."
     },
     "edit": {
       "title": "Edit Schedule",

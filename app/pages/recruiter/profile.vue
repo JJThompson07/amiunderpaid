@@ -462,7 +462,7 @@ const saveProfileCategories = async () => {
       showSuccess.value = false;
     }, 3000);
   } catch {
-    alert('Failed to save categories. Please try again.');
+    showToast('Error', 'Failed to save. Please try again.', 'error');
   } finally {
     isSaving.value = false;
   }

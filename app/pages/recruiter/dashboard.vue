@@ -159,11 +159,8 @@ const executeCancel = async () => {
       body: { territoryId: territoryToCancel.value }
     });
 
-    if (userProfile.value?.activeTerritories) {
-      userProfile.value.activeTerritories = userProfile.value.activeTerritories.filter(
-        (t: any) => t.territoryId !== territoryToCancel.value
-      );
-    }
+    // Do NOT mutate userProfile.value.activeTerritories here — the real-time
+    // useDocument listener will update the UI automatically when Firestore writes.
     showCancelModal.value = false;
     territoryToCancel.value = null;
   } catch (error) {

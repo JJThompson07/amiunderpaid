@@ -144,6 +144,15 @@
       </div>
 
       <div v-else-if="step === 2" class="animate-in fade-in slide-in-from-right-4 duration-500">
+        <div
+          v-if="claimsLimitExceeded"
+          class="mb-4 flex items-start gap-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl px-4 py-3">
+          <span class="text-amber-500 text-lg leading-none mt-0.5">⚠</span>
+          <p class="text-sm font-medium">
+            {{ $t('recruiter.territories.claim.limit-warning') }}
+          </p>
+        </div>
+
         <TerritoryScheduleMatrix
           :territories="selectedTerritories"
           :categories="selectedCategories"
@@ -188,6 +197,7 @@ export type ViewType = 'list' | 'map';
 export type TerritoryOption = { label: string; value: number };
 
 const { t } = useI18n();
+const { showToast } = useSystemToast();
 
 const user = useCurrentUser();
 const { ukTerritories, usaTerritories } = useTerritories();
@@ -227,7 +237,7 @@ const userClaimedIds = computed(() => {
 const selectedIds = computed(() => selectedTerritories.value.map((t) => t.id));
 
 // 2. Call the exact same composable!
-const { globalTakenMonths } = useTerritoryClaims(selectedIds);
+const { globalTakenMonths, claimsLimitExceeded } = useTerritoryClaims(selectedIds);
 
 // 3. Map Data
 const activeTerritories = computed(() => {
@@ -337,7 +347,7 @@ const submitSchedule = async () => {
     }
   } catch (error) {
     console.error('Failed to initialize payment:', error);
-    alert('Something went wrong calculating the cart. Please try again.');
+    showToast('Error', 'Something went wrong calculating the cart. Please try again.', 'error');
   } finally {
     isSubmitting.value = false;
   }

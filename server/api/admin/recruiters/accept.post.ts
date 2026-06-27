@@ -49,6 +49,10 @@ export default defineEventHandler(async (event) => {
     });
 
     // 4. Queue the confirmation email to the recruiter
+    const config = useRuntimeConfig();
+    const siteUrl = (config.public as any).siteUrl || 'https://amiunderpaid.co.uk';
+    const loginUrl = `${siteUrl}/recruiter/login`;
+
     await db.collection('mail').add({
       to: data.email,
       message: {
@@ -61,11 +65,11 @@ export default defineEventHandler(async (event) => {
           <p><strong>Temporary Password:</strong> <code>${tempPassword}</code></p>
           <br/>
           <p>Please note that you will be required to change your password immediately upon your first login.</p>
-          <p><a href="https://amiunderpaid.co.uk/recruiter/login">Click here to log in</a></p>
+          <p><a href="${loginUrl}">Click here to log in</a></p>
           <br/>
           <p>Best regards,<br/>The Platform Team</p>
         `,
-        text: `Your request for partner access has been approved!\n\nHi ${data.agency_name || 'there'},\n\nAn account has been created for you. You can log in using your email address and the temporary one-time password below:\n\nLogin Email: ${data.email}\nTemporary Password: ${tempPassword}\n\nPlease note that you will be required to change your password immediately upon your first login.\n\nLog in here: https://amiunderpaid.co.uk/recruiter/login\n\nBest regards,\nThe Platform Team`
+        text: `Your request for partner access has been approved!\n\nHi ${data.agency_name || 'there'},\n\nAn account has been created for you. You can log in using your email address and the temporary one-time password below:\n\nLogin Email: ${data.email}\nTemporary Password: ${tempPassword}\n\nPlease note that you will be required to change your password immediately upon your first login.\n\nLog in here: ${loginUrl}\n\nBest regards,\nThe Platform Team`
       }
     });
 

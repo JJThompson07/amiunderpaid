@@ -1,7 +1,7 @@
 // server/api/stripe/cancel-territory.post.ts
 import Stripe from 'stripe';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -117,11 +117,55 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // 5. SAVE THE NEW ARRAY TO FIREBASE
-  await userRef.update({
+  // 5. IDENTIFY REMOVED EXCLUSIVE MONTHS for the cancelled territory
+  const cancelledTerritory = currentTerritories.find(
+    (t: any) => t.territoryId === territoryIdToCancel
+  );
+  const removedExclusiveMonths: string[] = cancelledTerritory?.exclusiveMonths || [];
+
+  // 6. ATOMIC BATCH: update user doc + clean up territory_claims
+  const batch = db.batch();
+
+  // 6a. Write the updated territories to the user doc
+  batch.update(userRef, {
     activeTerritories: updatedTerritories,
     updatedAt: new Date().toISOString()
   });
+
+  // 6b. Remove this user's exclusive month locks from territory_claims atomically
+  if (removedExclusiveMonths.length > 0) {
+    const claimDocId = `${territoryIdToCancel}_${cancelledTerritory?.categoryValue}`;
+    const claimRef = db.collection('territory_claims').doc(claimDocId);
+    const claimSnap = await claimRef.get();
+
+    if (claimSnap.exists) {
+      const claimData = claimSnap.data() || {};
+      const takenMonths: Record<string, string> = claimData.takenExclusiveMonths || {};
+
+      // Count how many months remain after removing this user's months
+      const remainingMonths = Object.entries(takenMonths).filter(
+        ([month, ownerId]) => ownerId !== userId || !removedExclusiveMonths.includes(month)
+      );
+
+      if (remainingMonths.length === 0) {
+        // No months left — delete the entire claim document
+        batch.delete(claimRef);
+      } else {
+        // Surgically remove only this user's cancelled months
+        const deletions: Record<string, ReturnType<typeof FieldValue.delete>> = {};
+        for (const month of removedExclusiveMonths) {
+          if (takenMonths[month] === userId) {
+            deletions[`takenExclusiveMonths.${month}`] = FieldValue.delete();
+          }
+        }
+        if (Object.keys(deletions).length > 0) {
+          batch.update(claimRef, deletions);
+        }
+      }
+    }
+  }
+
+  await batch.commit();
 
   return { success: true, newTotal: newMonthlyTotal };
 });
