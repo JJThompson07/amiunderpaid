@@ -62,5 +62,27 @@
   "form": {
     "new-password": "New Password",
     "save-password": "Save Password"
+  },
+  "passwordChange": {
+    "title": "Change Password",
+    "currentPasswordLabel": "Current Password",
+    "currentPasswordPlaceholder": "Enter current password",
+    "newPasswordLabel": "New Password",
+    "newPasswordPlaceholder": "Enter new password",
+    "confirmPasswordLabel": "Confirm New Password",
+    "confirmPasswordPlaceholder": "Confirm new password",
+    "submitBtn": "Update Password",
+    "submittingBtn": "Updating...",
+    "success": {
+      "title": "Password Updated",
+      "message": "Your password has been changed successfully."
+    },
+    "errors": {
+      "missingFields": "Please fill in all password fields.",
+      "mismatch": "New passwords do not match.",
+      "tooShort": "New password must be at least 6 characters long.",
+      "wrongPassword": "The current password you entered is incorrect. Please try again.",
+      "generic": "Failed to update password. Please try again."
+    }
   }
 }

@@ -74,7 +74,7 @@ definePageMeta({
 });
 
 const route = useRoute();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const actionCode = ref('');
 const newPassword = ref('');
 const error = ref('');

@@ -1,8 +1,11 @@
 # adzuna-taxonomy-sync Specification
 
 ## Purpose
+
 TBD - created by archiving change adzuna-taxonomy-sync. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Adzuna API Location Adapter
 
 The location adapter map in `server/constants/locations.ts` SHALL use strings that are verified against the actual Adzuna API taxonomy responses, not guessed values.
@@ -16,4 +19,3 @@ The location adapter map in `server/constants/locations.ts` SHALL use strings th
 
 - **WHEN** any slug in `ADZUNA_LOCATION_MAP` is looked up
 - **THEN** the corresponding value SHALL match exactly one of the region strings returned by the Adzuna geodata endpoint for `location0=UK`.
-

@@ -229,31 +229,35 @@
             class="w-10 h-10 bg-secondary-50 rounded-xl flex items-center justify-center text-secondary-600">
             <LockIcon class="w-5 h-5" />
           </div>
-          <h2 class="text-xl font-bold text-slate-900">{{ $t('passwordChange.title') }}</h2>
+          <h2 class="text-xl font-bold text-slate-900">{{ $t('account.passwordChange.title') }}</h2>
         </div>
 
         <form class="space-y-4" @submit.prevent="submitPasswordChange">
-          <div class="grid md:grid-cols-3 gap-4">
+          <div class="flex flex-col gap-6 max-w-xl">
             <AmIInputGeneric
               v-model="currentPassword"
               type="password"
-              :label="$t('passwordChange.currentPasswordLabel')"
-              :placeholder="$t('passwordChange.currentPasswordPlaceholder')"
+              :label="$t('account.passwordChange.currentPasswordLabel')"
+              :placeholder="$t('account.passwordChange.currentPasswordPlaceholder')"
               :icon="KeyRound" />
 
-            <AmIInputGeneric
-              v-model="newPassword"
-              type="password"
-              :label="$t('passwordChange.newPasswordLabel')"
-              :placeholder="$t('passwordChange.newPasswordPlaceholder')"
-              :icon="KeyRound" />
+            <hr class="border-slate-100" />
 
-            <AmIInputGeneric
-              v-model="confirmPassword"
-              type="password"
-              :label="$t('passwordChange.confirmPasswordLabel')"
-              :placeholder="$t('passwordChange.confirmPasswordPlaceholder')"
-              :icon="KeyRound" />
+            <div class="flex flex-col gap-4">
+              <AmIInputGeneric
+                v-model="newPassword"
+                type="password"
+                :label="$t('account.passwordChange.newPasswordLabel')"
+                :placeholder="$t('account.passwordChange.newPasswordPlaceholder')"
+                :icon="KeyRound" />
+
+              <AmIInputGeneric
+                v-model="confirmPassword"
+                type="password"
+                :label="$t('account.passwordChange.confirmPasswordLabel')"
+                :placeholder="$t('account.passwordChange.confirmPasswordPlaceholder')"
+                :icon="KeyRound" />
+            </div>
           </div>
 
           <div class="mt-6 flex items-center justify-between pt-6 border-t border-slate-100">
@@ -264,7 +268,7 @@
               v-else-if="passwordSuccess"
               class="text-xs font-bold text-positive-600 animate-pulse flex gap-1 items-center">
               <CheckSquareIcon class="h-4 w-4" />
-              {{ $t('passwordChange.success.message') }}
+              {{ $t('account.passwordChange.success.message') }}
             </p>
             <p v-else></p>
 
@@ -282,8 +286,8 @@
                 class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
               {{
                 updatingPassword
-                  ? $t('passwordChange.submittingBtn')
-                  : $t('passwordChange.submitBtn')
+                  ? $t('account.passwordChange.submittingBtn')
+                  : $t('account.passwordChange.submitBtn')
               }}
             </button>
           </div>
@@ -303,7 +307,7 @@ definePageMeta({
 
 const { userProfile, updateProfile } = useUserProfile();
 const { categories: categoriesData, loadingCategories } = useCategories();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { showToast } = useSystemToast();
 const user = useCurrentUser();
 const auth = useFirebaseAuth();
@@ -321,28 +325,29 @@ const submitPasswordChange = async () => {
   passwordSuccess.value = false;
 
   if (!currentPassword.value || !newPassword.value || !confirmPassword.value) {
-    passwordError.value = t('passwordChange.errors.missingFields');
+    passwordError.value = t('account.passwordChange.errors.missingFields');
     return;
   }
 
   if (newPassword.value !== confirmPassword.value) {
-    passwordError.value = t('passwordChange.errors.mismatch');
+    passwordError.value = t('account.passwordChange.errors.mismatch');
     return;
   }
 
   if (newPassword.value.length < 6) {
-    passwordError.value = t('passwordChange.errors.tooShort');
+    passwordError.value = t('account.passwordChange.errors.tooShort');
     return;
   }
-
-  if (!auth || !user.value) {
-    passwordError.value = t('auth.errors.service_not_ready');
-    return;
-  }
-
-  updatingPassword.value = true;
 
   try {
+    updatingPassword.value = true;
+    passwordError.value = '';
+
+    if (!auth || !user.value) {
+      passwordError.value = t('auth.errors.service_not_ready');
+      return;
+    }
+
     // 1. Re-authenticate
     const credential = EmailAuthProvider.credential(user.value.email || '', currentPassword.value);
     await reauthenticateWithCredential(user.value, credential);
@@ -357,18 +362,24 @@ const submitPasswordChange = async () => {
     currentPassword.value = '';
     newPassword.value = '';
     confirmPassword.value = '';
+
+    // 4. Show success
     passwordSuccess.value = true;
-    showToast(t('passwordChange.success.title'), t('passwordChange.success.message'), 'success');
+    showToast(
+      t('account.passwordChange.success.title'),
+      t('account.passwordChange.success.message'),
+      'success'
+    );
 
     setTimeout(() => {
       passwordSuccess.value = false;
-    }, 4000);
+    }, 3000);
   } catch (err: any) {
     console.error('🔥 Error updating password:', err);
     if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-      passwordError.value = t('passwordChange.errors.wrongPassword');
+      passwordError.value = t('account.passwordChange.errors.wrongPassword');
     } else {
-      passwordError.value = t('passwordChange.errors.generic');
+      passwordError.value = t('account.passwordChange.errors.generic');
     }
   } finally {
     updatingPassword.value = false;

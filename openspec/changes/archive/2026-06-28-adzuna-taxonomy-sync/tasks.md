@@ -28,9 +28,9 @@ Yorkshire And The Humber
 
 ### Corrections Made
 
-| Slug | Old (guessed) | New (verified) |
-|------|---------------|----------------|
-| `east` | `East of England` | `Eastern England` |
+| Slug                       | Old (guessed)              | New (verified)             |
+| -------------------------- | -------------------------- | -------------------------- |
+| `east`                     | `East of England`          | `Eastern England`          |
 | `yorkshire-and-the-humber` | `Yorkshire and The Humber` | `Yorkshire And The Humber` |
 
 All other 10 values were already correct.
