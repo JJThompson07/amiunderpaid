@@ -3,7 +3,9 @@
 ## Purpose
 
 TBD - created by archiving change restrict-recruiter-onboarding. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Recruiter access request submission
 
 The system SHALL provide a public-facing "Request Access" form on the recruiter login page that captures the candidate agency name and email.
@@ -66,4 +68,3 @@ The approval email sent by `accept.post.ts` SHALL use a configurable base URL ra
 
 - **WHEN** an admin approves a recruiter and the server's `NUXT_PUBLIC_SITE_URL` runtime config is `https://www.benchmarkmyrole.com`
 - **THEN** the approval email login link SHALL point to `https://www.benchmarkmyrole.com/recruiter/login`
-

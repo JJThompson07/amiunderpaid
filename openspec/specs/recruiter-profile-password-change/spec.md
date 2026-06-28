@@ -3,7 +3,9 @@
 ## Purpose
 
 TBD - created by archiving change restrict-recruiter-onboarding. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Profile password update form
 
 The recruiter profile page SHALL include a "Change Password" form requiring the recruiter to enter their current password, their new password, and a confirmation of their new password.
@@ -39,4 +41,3 @@ The recruiter navigation menu SHALL include a "Log Out" item on all pages. On de
 
 - **WHEN** a recruiter clicks the "Log Out" button in the desktop or mobile navigation menu
 - **THEN** the system SHALL end their session, clear cookies, and redirect them to the recruiter login page
-

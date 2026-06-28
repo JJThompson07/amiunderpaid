@@ -1,4 +1,5 @@
 import { FieldValue } from 'firebase-admin/firestore';
+import { ADZUNA_LOCATION_MAP } from '../../constants/locations';
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -117,7 +118,14 @@ export default defineEventHandler(async (event) => {
 
   if (locationStr.trim() !== '') {
     // 1. Strip out anything after a comma (e.g., "Manchester, Greater Manchester" -> "Manchester")
-    const cleanLocation = locationStr.split(',')[0]!.trim();
+    let cleanLocation = locationStr.split(',')[0]!.trim();
+
+    // Adapter Pattern: Map our internal UI slugs to Adzuna's expected strings
+    const slug = cleanLocation.toLowerCase().replace(/\s+/g, '-');
+    if (ADZUNA_LOCATION_MAP[slug]) {
+      cleanLocation = ADZUNA_LOCATION_MAP[slug];
+    }
+
     params.where = cleanLocation;
 
     // 2. Add a default search radius (e.g., 20 miles) to prevent Adzuna from returning 0 jobs

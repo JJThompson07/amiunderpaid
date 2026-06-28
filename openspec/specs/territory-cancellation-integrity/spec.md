@@ -1,8 +1,11 @@
 # territory-cancellation-integrity Specification
 
 ## Purpose
+
 TBD - created by archiving change codebase-sanity-check. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: territory_claims locks released on cancellation
 
 When a recruiter cancels a territory, the system SHALL atomically remove the cancelled user's exclusive month entries from the `territory_claims` Firestore document in the same server-side operation that updates the user's `activeTerritories` array.
@@ -61,4 +64,3 @@ The `signup()` function in `useRecruiterAuth.ts` SHALL NOT be callable from any 
 
 - **WHEN** a user navigates to any route that previously rendered a signup form using `signup()`
 - **THEN** the route SHALL either not exist or redirect to the Request Access flow
-

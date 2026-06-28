@@ -1,0 +1,4 @@
+schema: spec-driven
+title: Adzuna Adapter Pattern
+description: Implements an adapter pattern on the server to translate our UI's URL-friendly location slugs into the official string values required by the Adzuna API, keeping our UI routing clean.
+status: pending
