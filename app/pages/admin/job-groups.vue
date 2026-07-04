@@ -167,7 +167,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, watch } from 'vue';
 import { Search } from 'lucide-vue-next';
 
 definePageMeta({ middleware: 'admin' });
@@ -178,12 +177,13 @@ interface JobGroup {
   titles: string[];
 }
 
-const firebaseAuth = useFirebaseAuth();
+const adminFetch = useAdminFetch();
 
 const activeCountry = ref<'UK' | 'USA'>('UK');
 const isProcessing = ref<string | null>(null);
 const isMigrating = ref(false);
 const newInputs = reactive<Record<string, string>>({});
+const { showToast } = useSystemToast();
 
 // --- UI STATE ---
 const expandedRows = reactive<Record<string, boolean>>({});
@@ -246,28 +246,22 @@ const addTitle = async (idCode: string) => {
 
   isProcessing.value = idCode;
   try {
-    const token = await firebaseAuth?.currentUser?.getIdToken();
     // 1. Save to Firestore
-    await $fetch('/api/admin/job-groups/title', {
+    await adminFetch('/api/admin/job-groups/title', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
       body: { country: activeCountry.value, idCode, newTitle }
     });
     newInputs[idCode] = '';
     await refresh();
 
     // 2. SILENT ALGOLIA SYNC
-    await $fetch('/api/admin/job-groups/migrate', {
+    await adminFetch('/api/admin/job-groups/migrate', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
       body: { country: activeCountry.value }
     });
+    showToast('Success', 'Title added successfully', 'success');
   } catch {
-    alert('Failed to add title');
+    showToast('Error', 'Failed to add title', 'error');
   } finally {
     isProcessing.value = null;
   }
@@ -279,27 +273,21 @@ const removeTitle = async (idCode: string, titleToRemove: string) => {
 
   isProcessing.value = idCode;
   try {
-    const token = await firebaseAuth?.currentUser?.getIdToken();
     // 1. Remove from Firestore
-    await $fetch('/api/admin/job-groups/title', {
+    await adminFetch('/api/admin/job-groups/title', {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
       body: { country: activeCountry.value, idCode, titleToRemove }
     });
     await refresh();
 
     // 2. SILENT ALGOLIA SYNC
-    await $fetch('/api/admin/job-groups/migrate', {
+    await adminFetch('/api/admin/job-groups/migrate', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
       body: { country: activeCountry.value }
     });
+    showToast('Success', 'Title removed successfully', 'success');
   } catch {
-    alert('Failed to remove title');
+    showToast('Error', 'Failed to remove title', 'error');
   } finally {
     isProcessing.value = null;
   }
@@ -310,19 +298,19 @@ const runMigration = async () => {
   if (!confirm(`Are you sure you want to migrate ${activeCountry.value} data?`)) return;
   isMigrating.value = true;
   try {
-    const token = await firebaseAuth?.currentUser?.getIdToken();
-    const res = await $fetch('/api/admin/job-groups/migrate', {
+    const res = await adminFetch<{ success: boolean }>('/api/admin/job-groups/migrate', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
       body: { country: activeCountry.value }
     });
     await refresh();
-    alert(res.success ? 'Migration completed successfully.' : 'Migration failed.');
+    if (res.success) {
+      showToast('Success', 'Migration completed successfully.', 'success');
+    } else {
+      showToast('Error', 'Migration failed.', 'error');
+    }
   } catch (e) {
     console.error(e);
-    alert('Migration failed.');
+    showToast('Error', 'Migration failed.', 'error');
   } finally {
     isMigrating.value = false;
   }

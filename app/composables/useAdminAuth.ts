@@ -1,17 +1,21 @@
-import { ref } from 'vue';
-import { useFirebaseAuth } from 'vuefire';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-// Import useCookie from Nuxt to manually manage the stale cookie
-import { useCookie } from '#imports';
 
 export const useAdminAuth = () => {
   const auth = useFirebaseAuth();
   const loading = ref(false);
   const error = ref('');
+  const { t } = useI18n();
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, accessKey: string): Promise<boolean> => {
+    const config = useRuntimeConfig();
+
+    if (accessKey !== config.public.adminAccessKey) {
+      error.value = t('auth.errors.invalid_access_key');
+      return false;
+    }
+
     if (!auth) {
-      error.value = 'The authentication service is not ready. Please refresh.';
+      error.value = t('auth.errors.service_not_ready');
       return false;
     }
 
@@ -31,13 +35,13 @@ export const useAdminAuth = () => {
         case 'auth/invalid-credential':
         case 'auth/user-not-found':
         case 'auth/wrong-password':
-          error.value = 'The email or password entered is incorrect.';
+          error.value = t('auth.errors.invalid_credentials');
           break;
         case 'auth/too-many-requests':
-          error.value = 'Security lock: Too many failed attempts. Try again later.';
+          error.value = t('auth.errors.too_many_requests');
           break;
         default:
-          error.value = 'An unexpected error occurred during sign in.';
+          error.value = t('auth.errors.unexpected_signin_error');
       }
       return false;
     } finally {

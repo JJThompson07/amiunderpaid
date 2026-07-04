@@ -1,6 +1,3 @@
-import { computed } from 'vue';
-import { useI18n, useRequestURL } from '#imports';
-
 export const useRegion = () => {
   const { locale } = useI18n();
   const url = useRequestURL();

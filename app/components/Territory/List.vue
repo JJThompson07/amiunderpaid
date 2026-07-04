@@ -6,7 +6,7 @@
       <div
         v-for="group in groupedOptions"
         :key="group.group"
-        class="flex flex-col gap-2 rounded-lg shadow-xs overflow-hidden"
+        class="flex flex-col gap-2 rounded-lg shadow-sm overflow-hidden"
         :class="[groupBgColour]">
         <button
           class="flex items-center justify-between w-full text-left font-semibold text-slate-800 hover:text-primary-600 transition-colors p-2 cursor-pointer"
@@ -43,19 +43,25 @@
           <div
             v-for="option in group.options"
             :key="option.id"
-            class="flex items-center justify-between p-2.5 rounded-lg shadow-xs group cursor-pointer transition-all duration-300 ease-in-out w-auto"
+            class="flex items-center justify-between p-2.5 rounded-lg shadow-sm group transition-all duration-300 ease-in-out w-auto select-none"
             :class="[
-              isSelected(option.id)
-                ? [selectedBgColour, selectedBorderColour, selectedTextColour]
-                : [bgColour, borderColour, textColour],
-              hoverColour
+              isClaimed(option.id)
+                ? 'bg-positive-100 border-positive-400 text-positive-900 cursor-not-allowed opacity-80'
+                : isSelected(option.id)
+                  ? [selectedBgColour, selectedBorderColour, selectedTextColour, 'cursor-pointer']
+                  : [bgColour, borderColour, textColour, hoverColour, 'cursor-pointer']
             ]"
-            @click="$emit('territory-click', option)">
+            @click="!isClaimed(option.id) && $emit('territory-click', option)">
             <div class="flex items-center gap-2 overflow-hidden">
               <span class="font-semibold text-xs truncate">
                 {{ option.name }}
               </span>
             </div>
+            <span
+              v-if="isClaimed(option.id)"
+              class="text-3xs uppercase font-black tracking-wider bg-positive-100/80 px-1.5 rounded text-positive-800 shrink-0">
+              Owned
+            </span>
           </div>
         </div>
       </div>
@@ -89,7 +95,7 @@ const props = defineProps({
   },
   bgColour: {
     type: String,
-    default: 'bg-slate-50'
+    default: 'bg-white'
   },
   textColour: {
     type: String,
@@ -122,6 +128,10 @@ const props = defineProps({
   groupBgColour: {
     type: String,
     default: 'bg-slate-100'
+  },
+  claimedIds: {
+    type: Array as PropType<number[]>,
+    default: () => []
   }
 });
 
@@ -149,6 +159,10 @@ const groupedOptions = computed(() => {
 const selectedIdsSet = computed(() => {
   return new Set(props.selectedOptions.map((s) => s.id));
 });
+
+const claimedIdsSet = computed(() => new Set(props.claimedIds));
+
+const isClaimed = (id: number) => claimedIdsSet.value.has(id);
 
 const toggleGroup = (groupName: string) => {
   if (openGroups.value.has(groupName)) {

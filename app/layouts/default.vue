@@ -70,6 +70,11 @@
     </footer>
 
     <SectionSharedCookieBanner />
+    <ToastNotification
+      v-model="toastState.isOpen"
+      :title="toastState.title"
+      :message="toastState.message"
+      :type="toastState.type" />
   </div>
 </template>
 
@@ -81,6 +86,7 @@ const { locale } = useI18n();
 
 const { $siteBrand } = useNuxtApp();
 const route = useRoute();
+const { toastState } = useSystemToast();
 
 const { isMobile: viewportIsMobile } = useViewport();
 

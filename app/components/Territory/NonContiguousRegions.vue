@@ -7,19 +7,24 @@
       <button
         v-for="state in NON_CONTIGUOUS_TERRITORIES_USA"
         :key="state.id"
+        :disabled="claimedIds.includes(state.id)"
         :class="[
           'p-4 rounded-2xl border transition-all flex items-center gap-4 text-left group',
-          selectedTerritories.some((t) => t.name === state.name)
-            ? 'bg-primary-50 border-primary-200 text-primary-700 shadow-inner'
-            : 'bg-white border-slate-200 text-slate-700 hover:border-primary-300 hover:shadow-md'
+          claimedIds.includes(state.id)
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800 opacity-80 cursor-not-allowed'
+            : selectedTerritories.some((t) => t.name === state.name)
+              ? 'bg-primary-50 border-primary-200 text-primary-700 shadow-inner'
+              : 'bg-white border-slate-200 text-slate-700 hover:border-primary-300 hover:shadow-md cursor-pointer'
         ]"
-        @click="$emit('territory-clicked', state)">
+        @click="handleRegionClick(state)">
         <div
           :class="[
             'w-20 h-20 shrink-0 transition-colors',
-            selectedTerritories.some((t) => t.name === state.name)
-              ? 'text-primary-500'
-              : 'text-slate-400 group-hover:text-primary-500'
+            claimedIds.includes(state.id)
+              ? 'text-emerald-500'
+              : selectedTerritories.some((t) => t.name === state.name)
+                ? 'text-primary-500'
+                : 'text-slate-400 group-hover:text-primary-500'
           ]">
           <div
             class="w-full h-full bg-current"
@@ -34,10 +39,16 @@
               maskPosition: 'center'
             }"></div>
         </div>
+
         <div class="flex-1">
           <span class="font-bold block text-lg">{{ state.name }}</span>
           <span
-            v-if="selectedTerritories.some((t) => t.name === state.name)"
+            v-if="claimedIds.includes(state.id)"
+            class="text-xs font-bold text-emerald-600 uppercase tracking-wide">
+            Owned
+          </span>
+          <span
+            v-else-if="selectedTerritories.some((t) => t.name === state.name)"
             class="text-xs font-bold text-primary-600 uppercase tracking-wide">
             {{ $t('common.selected') }}
           </span>
@@ -49,15 +60,33 @@
 
 <script setup lang="ts">
 import { NON_CONTIGUOUS_TERRITORIES_USA } from '../../../utils/locations/usa';
+import type { PropType } from 'vue';
 
-defineProps({
+const props = defineProps({
   selectedTerritories: {
     type: Array as PropType<any[]>,
     required: true
+  },
+  claimedIds: {
+    type: Array as PropType<number[]>,
+    default: () => []
   }
 });
 
-defineEmits(['territory-clicked']);
-</script>
+const emit = defineEmits(['territory-clicked']);
 
-<style scoped></style>
+// 1. Bring in our global master list helper
+const { getTerritoryById } = useTerritories();
+
+// 2. Create a smarter click handler
+const handleRegionClick = (state: any) => {
+  // Double-check they don't already own it
+  if (props.claimedIds.includes(state.id)) return;
+
+  // Grab the FULL territory object from the master list (which has the 'band'!)
+  const fullTerritory = getTerritoryById(state.id);
+
+  // Emit the rich object back to the parent cart
+  emit('territory-clicked', fullTerritory || state);
+};
+</script>

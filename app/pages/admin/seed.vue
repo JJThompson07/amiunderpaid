@@ -233,10 +233,7 @@
 </template>
 
 <script setup lang="ts">
-// ** imports **
-import { ref, onMounted, watch } from 'vue';
 import { Database, UploadCloud, CheckCircle2, Lock, LoaderCircle, X } from 'lucide-vue-next';
-import { useFirestore, useCurrentUser } from 'vuefire';
 import { collection, query, where, getCountFromServer } from 'firebase/firestore';
 import type { SalaryRecord } from '../../../utils/seedData';
 

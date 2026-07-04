@@ -122,7 +122,6 @@
 
 <script setup lang="ts">
 import { DatabaseZap, Trash2, RefreshCcw, Users, Check, X, CheckCircle2 } from 'lucide-vue-next';
-import { ref, computed } from 'vue';
 
 // Protect this route with your admin middleware
 definePageMeta({
@@ -130,7 +129,7 @@ definePageMeta({
 });
 
 const adminFetch = useAdminFetch();
-const firebaseAuth = useFirebaseAuth();
+const { showToast } = useSystemToast();
 
 // --- Cache Cleanup Logic ---
 const isCleaning = ref(false);
@@ -148,16 +147,18 @@ const runCleanup = async () => {
   cleanupStats.value = null;
 
   try {
-    const token = await firebaseAuth?.currentUser?.getIdToken();
     // 1. Updated to useAdminFetch
-    const res: any = await adminFetch('/api/admin/clean-cache', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const res = await adminFetch<{ stats: { deletedJobs: number; deletedDistributions: number } }>(
+      '/api/admin/clean-cache',
+      {
+        method: 'POST'
+      }
+    );
     cleanupStats.value = res.stats;
+    showToast('Success', 'Cache cleaned successfully', 'success');
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to clean cache.';
-    alert(message);
+    showToast('Error', message, 'error');
   } finally {
     isCleaning.value = false;
   }
@@ -179,13 +180,9 @@ const suggestions = computed(() => suggestionsData.value?.suggestions || []);
 
 const approveMatch = async (suggestion: any) => {
   try {
-    const token = await firebaseAuth?.currentUser?.getIdToken();
     // 3. Updated to useAdminFetch
     await adminFetch('/api/admin/suggestions/approve', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
       body: {
         suggestionId: suggestion.id,
         title: suggestion.title,
@@ -198,9 +195,10 @@ const approveMatch = async (suggestion: any) => {
     });
     // Remove it from the UI immediately to feel fast
     refreshSuggestions();
+    showToast('Success', 'Match approved successfully', 'success');
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to approve match.';
-    alert(message);
+    showToast('Error', message, 'error');
   }
 };
 
@@ -208,19 +206,16 @@ const rejectMatch = async (id: string) => {
   if (!confirm('Are you sure you want to reject and delete this suggestion?')) return;
 
   try {
-    const token = await firebaseAuth?.currentUser?.getIdToken();
     // 4. Updated to useAdminFetch
     await adminFetch('/api/admin/suggestions/reject', {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
       query: { id }
     });
     refreshSuggestions();
+    showToast('Success', 'Match rejected successfully', 'success');
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to reject match.';
-    alert(message);
+    showToast('Error', message, 'error');
   }
 };
 </script>

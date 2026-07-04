@@ -1,8 +1,11 @@
 <template>
   <div class="ami-input relative w-full group">
-    <label v-if="label" class="ml-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+    <label
+      v-if="label"
+      class="ml-1 font-bold uppercase tracking-wider"
+      :class="[labelSize, labelColour]">
       {{ label }}
-      <span v-if="optional" class="text-slate-400 text-2xs uppercase"
+      <span v-if="optional" class="text-slate-400 text-3xs uppercase"
         >({{ $t('common.optional') }})</span
       >
     </label>
@@ -56,6 +59,14 @@ const props = defineProps({
   label: {
     type: String,
     default: ''
+  },
+  labelSize: {
+    type: String,
+    default: 'text-xs'
+  },
+  labelColour: {
+    type: String,
+    default: 'text-slate-500'
   },
   prefix: {
     type: String,

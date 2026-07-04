@@ -1,0 +1,17 @@
+{
+  "verify-email": {
+    "title": "Please verify your email",
+    "message": "You must verify your email address before you can claim exclusive territories. Please check your inbox (and spam folder) for the verification link.",
+    "action": {
+      "resend": "Resend Verification Email",
+      "already-done": "I've Verified It",
+      "sent": "Verification email sent! Please check your inbox and spam folder.",
+      "error": "Email not verified yet. Please check your inbox or resend the email."
+    }
+  },
+  "type": {
+    "success": "Success",
+    "error": "Error",
+    "info": "Info"
+  }
+}

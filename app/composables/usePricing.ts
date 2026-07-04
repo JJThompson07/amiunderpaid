@@ -1,5 +1,4 @@
 import { doc, setDoc } from 'firebase/firestore';
-import { useFirestore, useDocument } from 'vuefire';
 
 export const usePricing = () => {
   const db = useFirestore();

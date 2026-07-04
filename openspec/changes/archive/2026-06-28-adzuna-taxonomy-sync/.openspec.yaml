@@ -1,0 +1,4 @@
+schema: spec-driven
+title: Adzuna Taxonomy Sync
+description: Discover the exact location region names returned by the Adzuna geodata API and update our constants/locations.ts adapter map to use verified, API-compliant strings.
+status: pending

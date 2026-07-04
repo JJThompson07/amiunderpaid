@@ -1,6 +1,9 @@
 <template>
   <div ref="containerRef" class="ami-input-select relative w-full group">
-    <label v-if="label" class="ml-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+    <label
+      v-if="label"
+      class="ml-1 font-bold uppercase tracking-wider"
+      :class="[labelSize, labelColour]">
       {{ label }}
       <span v-if="optional" class="text-slate-400 text-2xs uppercase">
         ({{ $t('common.optional') }})
@@ -152,6 +155,14 @@ const props = defineProps({
   single: { type: Boolean, default: false },
   placeholder: { type: String, default: '' },
   label: { type: String, default: '' },
+  labelSize: {
+    type: String,
+    default: 'text-xs'
+  },
+  labelColour: {
+    type: String,
+    default: 'text-slate-500'
+  },
   helper: { type: String, default: '' },
   icon: { type: [Object, Function] as PropType<Component>, default: null },
   disabled: { type: Boolean, default: false },

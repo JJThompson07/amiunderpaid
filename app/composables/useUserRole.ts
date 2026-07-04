@@ -1,6 +1,4 @@
 import { doc, getDoc } from 'firebase/firestore';
-// Adjust your imports based on how you initialize Firebase/Vuefire
-import { useCurrentUser, useFirestore } from 'vuefire';
 
 export const useUserRole = () => {
   const user = useCurrentUser();
