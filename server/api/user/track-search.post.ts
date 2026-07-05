@@ -7,6 +7,7 @@ interface TrackSearchBody {
   schedule?: string | null;
   contract?: string | null;
   brand?: string | null;
+  id?: string;
 }
 
 export default defineEventHandler(async (event) => {
@@ -19,7 +20,7 @@ export default defineEventHandler(async (event) => {
       return { success: false, error: 'Missing required fields' };
     }
 
-    await db.collection('search_history').add({
+    const docData = {
       title: body.title.toLowerCase().trim(),
       country: body.country.toUpperCase(),
       location: body.location ? body.location.toLowerCase().trim() : null,
@@ -28,7 +29,13 @@ export default defineEventHandler(async (event) => {
       contract: body.contract ? body.contract.toLowerCase().trim() : null,
       brand: body.brand ? String(body.brand) : null,
       timestamp: FieldValue.serverTimestamp()
-    });
+    };
+
+    if (body.id) {
+      await db.collection('search_history').doc(body.id).set(docData);
+    } else {
+      await db.collection('search_history').add(docData);
+    }
 
     return { success: true };
   } catch {

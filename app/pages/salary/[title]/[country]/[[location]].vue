@@ -243,7 +243,7 @@
 
 <script setup lang="ts">
 import { FileUser, Info } from 'lucide-vue-next';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 
 const { $siteBrand } = useNuxtApp();
 const route = useRoute();
@@ -337,6 +337,31 @@ onMounted(() => {
     );
   }
 });
+
+// Enrich the search log with post-search metrics once data arrives
+const currentSearchId = useState<string>('currentSearchId');
+const { updateSearchLog } = useUserLogging();
+
+watch(
+  [pending, adzunaLoading],
+  () => {
+    if (pending.value || adzunaLoading.value) return;
+    if (!currentSearchId.value) return;
+
+    const hasData = hasGovernmentData.value || hasJobsData.value;
+
+    updateSearchLog(currentSearchId.value, {
+      mcaScore: McaScore.value?.label || undefined,
+      marketAverage: meanSalary.value || undefined,
+      governmentAverage: marketAverage.value || undefined,
+      searchSuccess: hasData
+    });
+
+    // Clear to prevent duplicate triggers on re-renders
+    currentSearchId.value = '';
+  },
+  { immediate: true }
+);
 
 // ** SEO **
 const url = useRequestURL();
