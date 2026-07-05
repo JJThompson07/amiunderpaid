@@ -3,9 +3,9 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 interface UpdateSearchBody {
   id: string;
-  mcaScore?: string;
-  marketAverage?: number;
-  governmentAverage?: number;
+  mcaScore?: number | null;
+  marketAverage?: number | null;
+  governmentAverage?: number | null;
   searchSuccess?: boolean;
 }
 
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     if (body.searchSuccess !== undefined) updateData.searchSuccess = body.searchSuccess;
 
     if (Object.keys(updateData).length > 0) {
-      await db.collection('search_history').doc(body.id).update(updateData);
+      await db.collection('search_history').doc(body.id).set(updateData, { merge: true });
     }
 
     return { success: true };

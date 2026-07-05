@@ -351,9 +351,9 @@ watch(
     const hasData = hasGovernmentData.value || hasJobsData.value;
 
     updateSearchLog(currentSearchId.value, {
-      mcaScore: McaScore.value?.label || undefined,
-      marketAverage: meanSalary.value || undefined,
-      governmentAverage: marketAverage.value || undefined,
+      mcaScore: typeof McaScore.value?.score === 'number' ? McaScore.value.score : null,
+      marketAverage: typeof meanSalary.value === 'number' ? meanSalary.value : null,
+      governmentAverage: typeof marketAverage.value === 'number' ? marketAverage.value : null,
       searchSuccess: hasData
     });
 

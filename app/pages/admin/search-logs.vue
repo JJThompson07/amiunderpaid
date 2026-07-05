@@ -165,12 +165,13 @@
             <span
               class="text-xs font-bold"
               :class="{
-                'text-emerald-600': value === 'Market Leader' || value === 'Strong',
-                'text-amber-600': value === 'Fair',
-                'text-rose-600': value === 'Review',
-                'text-slate-400': !value
+                'text-emerald-600': typeof value === 'number' ? value >= 60 : value === 'Market Leader' || value === 'Strong',
+                'text-amber-600': typeof value === 'number' ? value >= 40 && value < 60 : value === 'Fair',
+                'text-rose-600': typeof value === 'number' ? value < 40 : value === 'Review',
+                'text-slate-400': !value && value !== 0
               }">
-              {{ value || '-' }}
+              <span v-if="typeof value === 'number'">{{ value }}/100</span>
+              <span v-else>{{ value || '-' }}</span>
             </span>
           </template>
 
@@ -248,31 +249,12 @@ const tableColumns = [
   { key: 'brand', label: 'Platform', class: 'w-28 text-right', cellClass: 'text-right' }
 ];
 
-// --- BACKFILL STATE ---
-const backfillLoading = ref(false);
-const backfillResult = ref<{ processed: number; updated: number; skipped: number; failed: number } | null>(null);
-
-const runBackfill = async () => {
-  backfillLoading.value = true;
-  backfillResult.value = null;
-  try {
-    const result = await $fetch<any>('/api/admin/backfill-searches', { method: 'POST' });
-    backfillResult.value = result;
-  } catch (e) {
-    console.error('Backfill failed:', e);
-  } finally {
-    backfillLoading.value = false;
-  }
-};
-
 // --- SEARCH & PAGINATION STATE ---
 const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 50;
 
-// The useFetch call now watches BOTH currentPage and searchQuery.
-// When either changes, it automatically re-fetches from the server!
-const { data, pending } = await useFetch<{
+const { data, pending, refresh } = await useFetch<{
   success: boolean;
   totalCount: number;
   todayCount: number;
@@ -288,6 +270,25 @@ const { data, pending } = await useFetch<{
   },
   watch: [currentPage, searchQuery]
 });
+
+// --- BACKFILL STATE ---
+const backfillLoading = ref(false);
+const backfillResult = ref<{ processed: number; updated: number; skipped: number; failed: number } | null>(null);
+
+const runBackfill = async () => {
+  backfillLoading.value = true;
+  backfillResult.value = null;
+  try {
+    const result = await $fetch<any>('/api/admin/backfill-searches', { method: 'POST' });
+    backfillResult.value = result;
+    // Refresh the table data to show newly enriched logs
+    await refresh();
+  } catch (e) {
+    console.error('Backfill failed:', e);
+  } finally {
+    backfillLoading.value = false;
+  }
+};
 
 const logs = computed(() => {
   return data.value?.logs || [];

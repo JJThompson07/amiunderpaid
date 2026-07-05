@@ -1,7 +1,7 @@
-// server/api/admin/backfill-searches.post.ts
 import { getFirestore } from 'firebase-admin/firestore';
+import { generateCacheKey } from '../../utils/adzuna';
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (_event) => {
   const db = getFirestore();
 
   try {
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     snapshot.docs.forEach((doc) => allDocs.set(doc.id, doc));
     snapshotMissing.docs.forEach((doc) => {
       const data = doc.data();
-      if (data.mcaScore === undefined && data.mcaScore !== null && !data.historical_fetched_MCA) {
+      if (data.mcaScore === undefined && data.mcaScore !== null && (!data.historical_fetched_MCA || data.marketAverage == null)) {
         allDocs.set(doc.id, doc);
       }
     });
@@ -32,19 +32,27 @@ export default defineEventHandler(async (event) => {
     let updated = 0;
     let skipped = 0;
     let failed = 0;
+    const skipReasons: Record<string, number> = {
+      alreadyBackfilled: 0,
+      hasMcaScore: 0,
+      missingTitle: 0
+    };
+    const failReasons: string[] = [];
 
     for (const [docId, doc] of allDocs) {
       const data = doc.data();
 
-      // Skip if already backfilled
-      if (data.historical_fetched_MCA === true) {
+      // Skip if already backfilled successfully
+      if (data.historical_fetched_MCA === true && data.marketAverage != null) {
         skipped++;
+        skipReasons.alreadyBackfilled++;
         continue;
       }
 
       // Skip if already has mcaScore populated (from live enrichment)
-      if (data.mcaScore && data.mcaScore !== null) {
+      if (data.mcaScore !== undefined && data.mcaScore !== null) {
         skipped++;
+        skipReasons.hasMcaScore++;
         continue;
       }
 
@@ -53,54 +61,122 @@ export default defineEventHandler(async (event) => {
       const location = data.location || '';
       const userSalary = data.salary || 0;
 
-      if (!title || !userSalary) {
+      if (!title) {
         skipped++;
+        skipReasons.missingTitle++;
         continue;
       }
 
       try {
-        // 2. Look up cached Adzuna data
         const countryCode = country === 'USA' || country === 'US' ? 'us' : 'gb';
-        const cacheKey = generateCacheKey(title, location, countryCode);
-        const cacheDoc = await db.collection('adzuna_distribution_cache').doc(cacheKey).get();
+        
+        let locationStr = location.toLowerCase().trim();
+        const countryAliases =
+          countryCode === 'us'
+            ? ['us', 'usa', 'united states', 'america']
+            : ['uk', 'gb', 'united kingdom', 'britain'];
 
-        let marketAverage: number | null = null;
-
-        if (cacheDoc.exists) {
-          const cacheData = cacheDoc.data();
-          marketAverage = cacheData?.data?.mean || null;
+        if (countryAliases.includes(locationStr)) {
+          locationStr = '';
         }
 
-        // 3. Calculate a simple MCA verdict based on available data
-        let mcaScore: string | null = null;
+        const baseCacheKey = generateCacheKey(title, locationStr, countryCode);
+        
+        // Fetch Histogram Cache
+        const histCacheDoc = await db.collection('adzuna_distribution_cache').doc(baseCacheKey).get();
+        const histData = histCacheDoc.exists ? histCacheDoc.data()?.data?.histogram || {} : {};
 
-        if (marketAverage && userSalary) {
-          const diffPercent = ((userSalary - marketAverage) / marketAverage) * 100;
+        // Fetch Jobs Cache (default 5 results)
+        const jobType = data.schedule === 'part-time' ? 'part-time' : 'full-time';
+        const contractType = data.contract === 'contract' ? 'contract' : 'permanent';
+        const jobsCacheKey = `${baseCacheKey}-${jobType}-${contractType}-5`;
+        const jobsCacheDoc = await db.collection('adzuna_jobs_cache').doc(jobsCacheKey).get();
+        
+        let marketAverage: number | null = null;
+        let jobsCount = 0;
+        let govIdCode: string | null = null;
 
-          if (diffPercent >= 15) {
-            mcaScore = 'Market Leader';
-          } else if (diffPercent >= 0) {
-            mcaScore = 'Strong';
-          } else if (diffPercent >= -10) {
-            mcaScore = 'Fair';
-          } else {
-            mcaScore = 'Review';
+        if (jobsCacheDoc.exists) {
+          const jData = jobsCacheDoc.data();
+          const results = jData?.data?.results || [];
+          jobsCount = jData?.data?.count || 0;
+          govIdCode = jData?.gov_id_code || null;
+          
+          if (results.length > 0) {
+            marketAverage = results.reduce((acc: number, curr: any) => acc + (curr.salary_max || 0), 0) / results.length;
           }
         }
 
-        // 4. Write the enriched data back to the search history document
+        // Fetch Government Data
+        let microData = null;
+        if (govIdCode) {
+          const microSnap = await db.collection('adzuna_category').doc(govIdCode).get();
+          if (microSnap.exists) microData = microSnap.data();
+        }
+
+        const macroCol = countryCode === 'us' ? 'usa_national_baseline' : 'national_baseline';
+        const macroSnap = await db.collection(macroCol).doc('latest').get();
+        const macroData = macroSnap.exists ? macroSnap.data() : null;
+
+        let governmentAverage: number | null = null;
+        if (microData) {
+          governmentAverage = microData.microNationalData?.mean || microData.microNationalData?.p50 || null;
+        }
+
+        let mcaScore: number | null = null;
+
+        // Calculate Real Score
+        if (macroData && userSalary > 0) {
+          const hasMicro = !!microData?.microNationalData;
+          const hasLive = jobsCount > 0;
+
+          if (hasMicro || hasLive) {
+            if (countryCode === 'gb') {
+              const res = calculateUKBenchmarkScore(
+                userSalary,
+                macroData.macroNationalData,
+                microData?.microNationalData || null,
+                microData?.officialGroupTitle || '',
+                null,
+                macroData.regionalMedianAllRoles,
+                macroData.nationalMedianAllRoles,
+                histData,
+                jobsCount,
+                marketAverage || 0
+              );
+              mcaScore = res.score;
+            } else {
+              const res = calculateUSABenchmarkScore(
+                userSalary,
+                macroData.macroNationalData,
+                null, // regional macro
+                microData?.microNationalData || null,
+                null, // regional micro
+                macroData.regionalMedianAllRoles,
+                macroData.nationalMedianAllRoles,
+                histData,
+                jobsCount,
+                marketAverage || 0
+              );
+              mcaScore = res.score;
+            }
+          }
+        }
+
         const updatePayload: Record<string, any> = {
           historical_fetched_MCA: true,
-          searchSuccess: marketAverage !== null
+          searchSuccess: marketAverage !== null || governmentAverage !== null
         };
 
-        if (mcaScore) updatePayload.mcaScore = mcaScore;
-        if (marketAverage) updatePayload.marketAverage = marketAverage;
+        if (mcaScore !== null) updatePayload.mcaScore = mcaScore;
+        if (marketAverage !== null) updatePayload.marketAverage = marketAverage;
+        if (governmentAverage !== null) updatePayload.governmentAverage = governmentAverage;
 
-        await db.collection('search_history').doc(docId).update(updatePayload);
+        await db.collection('search_history').doc(docId).set(updatePayload, { merge: true });
         updated++;
-      } catch {
+      } catch (err: any) {
         failed++;
+        failReasons.push(err.message || 'Unknown error');
       }
     }
 
@@ -109,7 +185,9 @@ export default defineEventHandler(async (event) => {
       processed: allDocs.size,
       updated,
       skipped,
-      failed
+      failed,
+      skipReasons,
+      failReasons
     };
   } catch (error) {
     throw createError({

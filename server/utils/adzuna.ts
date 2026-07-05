@@ -23,8 +23,10 @@ export const generateCacheKey = (title: string, location: string, country: strin
     .trim()
     .replace(/[^a-z0-9+#.]+/g, '-');
   const l = location
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9+#.]+/g, '-');
+    ? location
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9+#.]+/g, '-')
+    : '';
   return `${country}-${l}-${t}`;
 };

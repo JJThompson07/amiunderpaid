@@ -48,9 +48,9 @@ export const useUserLogging = () => {
   const updateSearchLog = (
     searchId: string,
     data: {
-      mcaScore?: string;
-      marketAverage?: number;
-      governmentAverage?: number;
+      mcaScore?: number | null;
+      marketAverage?: number | null;
+      governmentAverage?: number | null;
       searchSuccess?: boolean;
     }
   ) => {
