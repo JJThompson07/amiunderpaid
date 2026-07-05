@@ -32,7 +32,7 @@ export default defineEventHandler(async (_event) => {
     let updated = 0;
     let skipped = 0;
     let failed = 0;
-    const skipReasons: Record<string, number> = {
+    const skipReasons = {
       alreadyBackfilled: 0,
       hasMcaScore: 0,
       missingTitle: 0

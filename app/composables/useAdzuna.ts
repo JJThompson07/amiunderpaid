@@ -1,7 +1,4 @@
-export type HistogramBucket = {
-  value: number;
-  count: number;
-};
+
 
 export type HistogramData = {
   [salary: number]: number;

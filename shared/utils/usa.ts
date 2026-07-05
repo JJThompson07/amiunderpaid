@@ -1,3 +1,5 @@
+// utils/engineScoring/usa.ts
+import type { PercentileData, HistogramBucket, BenchmarkResult } from './types';
 import {
   WEIGHTS,
   LIVE_CONFIDENCE_THRESHOLDS,
@@ -7,11 +9,11 @@ import {
   calculateConfidenceScore
 } from './math';
 
-export const calculateUKBenchmarkScore = (
+export const calculateUSABenchmarkScore = (
   userSalary: number,
   macroNationalData: PercentileData,
+  macroRegionalData: PercentileData | null,
   microNationalData: PercentileData | null,
-  microNationalOfficialTitle: string | null,
   microRegionalData: PercentileData | null,
   regionalMedianAllRoles: number | null,
   nationalMedianAllRoles: number | null,
@@ -23,8 +25,10 @@ export const calculateUKBenchmarkScore = (
   const modifier = calculateRegionalModifier(regionalMedianAllRoles, nationalMedianAllRoles);
   const normalizedSalary = userSalary / modifier;
 
-  // MACRO: Always national
-  const macroPercentile = calculatePercentile(userSalary, macroNationalData);
+  // MACRO: Use Regional (State) if available, otherwise National normalized
+  const macroPercentile = macroRegionalData
+    ? calculatePercentile(userSalary, macroRegionalData)
+    : calculatePercentile(normalizedSalary, macroNationalData);
 
   // LIVE: Real-time Adzuna data
   const livePercentile = calculateLivePercentile(
@@ -44,17 +48,17 @@ export const calculateUKBenchmarkScore = (
   // 2. DYNAMIC WEIGHT SELECTION ⚖️
   const activeWeights =
     totalLiveJobs >= LIVE_CONFIDENCE_THRESHOLDS.HIGH
-      ? WEIGHTS.UK.HIGH_CONFIDENCE
+      ? WEIGHTS.USA.HIGH_CONFIDENCE
       : totalLiveJobs <= LIVE_CONFIDENCE_THRESHOLDS.LOW
-        ? WEIGHTS.UK.LOW_CONFIDENCE
-        : WEIGHTS.UK.TARGET;
+        ? WEIGHTS.USA.LOW_CONFIDENCE
+        : WEIGHTS.USA.TARGET;
 
   // 3. FINAL SCORE COMPUTATION
   let finalScore: number;
 
   if (livePercentile !== null) {
     if (microPercentile !== null) {
-      // ✅ Scenario A: We have all data (Perfect match)
+      // ✅ Scenario A: We have all data (Micro is present)
       finalScore =
         macroPercentile * activeWeights.MACRO +
         microPercentile * activeWeights.MICRO +
@@ -79,7 +83,7 @@ export const calculateUKBenchmarkScore = (
 
   const confidenceScore = calculateConfidenceScore(
     totalLiveJobs,
-    microNationalData !== null && microNationalOfficialTitle !== 'All', // We have micro data and it's regional (not just national)
+    microRegionalData !== null, // We have micro data and it's regional (not just national)
     microPercentile !== null,
     livePercentile !== null
   );

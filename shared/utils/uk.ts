@@ -1,3 +1,4 @@
+import type { PercentileData, HistogramBucket, BenchmarkResult } from './types';
 import {
   WEIGHTS,
   LIVE_CONFIDENCE_THRESHOLDS,

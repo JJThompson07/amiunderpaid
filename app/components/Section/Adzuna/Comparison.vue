@@ -58,7 +58,8 @@
 
 <script setup lang="ts">
 import { computed, type PropType } from 'vue';
-import type { HistogramBucket } from '~/composables/useAdzuna';
+import type { HistogramData } from '~/composables/useAdzuna';
+import type { HistogramBucket } from '../../../../shared/utils/types';
 import { getRawDiffPercentage } from '~/helpers/utility';
 import { TrendingUp } from 'lucide-vue-next';
 

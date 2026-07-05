@@ -1,3 +1,5 @@
+import type { PercentileData, HistogramBucket } from './types';
+
 // ==========================================
 // 🧮 SHARED MATH CONSTANTS
 // ==========================================
