@@ -6,6 +6,9 @@ interface UpdateSearchBody {
   mcaScore?: number | null;
   marketAverage?: number | null;
   governmentAverage?: number | null;
+  microPercentile?: number | null;
+  macroPercentile?: number | null;
+  livePercentile?: number | null;
   searchSuccess?: boolean;
 }
 
@@ -24,6 +27,9 @@ export default defineEventHandler(async (event) => {
     if (body.mcaScore !== undefined) updateData.mcaScore = body.mcaScore;
     if (body.marketAverage !== undefined) updateData.marketAverage = body.marketAverage;
     if (body.governmentAverage !== undefined) updateData.governmentAverage = body.governmentAverage;
+    if (body.microPercentile !== undefined) updateData.microPercentile = body.microPercentile;
+    if (body.macroPercentile !== undefined) updateData.macroPercentile = body.macroPercentile;
+    if (body.livePercentile !== undefined) updateData.livePercentile = body.livePercentile;
     if (body.searchSuccess !== undefined) updateData.searchSuccess = body.searchSuccess;
 
     if (Object.keys(updateData).length > 0) {

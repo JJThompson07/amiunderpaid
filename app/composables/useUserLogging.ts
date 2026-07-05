@@ -51,6 +51,9 @@ export const useUserLogging = () => {
       mcaScore?: number | null;
       marketAverage?: number | null;
       governmentAverage?: number | null;
+      microPercentile?: number | null;
+      macroPercentile?: number | null;
+      livePercentile?: number | null;
       searchSuccess?: boolean;
     }
   ) => {

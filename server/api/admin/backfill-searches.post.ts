@@ -124,6 +124,9 @@ export default defineEventHandler(async (_event) => {
         }
 
         let mcaScore: number | null = null;
+        let microPercentile: number | null = null;
+        let macroPercentile: number | null = null;
+        let livePercentile: number | null = null;
 
         // Calculate Real Score
         if (macroData && userSalary > 0) {
@@ -145,6 +148,9 @@ export default defineEventHandler(async (_event) => {
                 marketAverage || 0
               );
               mcaScore = res.score;
+              microPercentile = res.breakdown.microPercentile;
+              macroPercentile = res.breakdown.macroPercentile;
+              livePercentile = res.breakdown.livePercentile;
             } else {
               const res = calculateUSABenchmarkScore(
                 userSalary,
@@ -159,6 +165,9 @@ export default defineEventHandler(async (_event) => {
                 marketAverage || 0
               );
               mcaScore = res.score;
+              microPercentile = res.breakdown.microPercentile;
+              macroPercentile = res.breakdown.macroPercentile;
+              livePercentile = res.breakdown.livePercentile;
             }
           }
         }
@@ -171,6 +180,9 @@ export default defineEventHandler(async (_event) => {
         if (mcaScore !== null) updatePayload.mcaScore = mcaScore;
         if (marketAverage !== null) updatePayload.marketAverage = marketAverage;
         if (governmentAverage !== null) updatePayload.governmentAverage = governmentAverage;
+        if (microPercentile !== null) updatePayload.microPercentile = microPercentile;
+        if (macroPercentile !== null) updatePayload.macroPercentile = macroPercentile;
+        if (livePercentile !== null) updatePayload.livePercentile = livePercentile;
 
         await db.collection('search_history').doc(docId).set(updatePayload, { merge: true });
         updated++;
