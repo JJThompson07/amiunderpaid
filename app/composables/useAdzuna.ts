@@ -48,7 +48,8 @@ export const useAdzuna = () => {
   const distributionData = useState<any>('adzuna_distribution', () => null);
   const jobsData = useState<any>('adzuna_jobs', () => null);
   const categories = useState<any[]>('adzuna_categories', () => []);
-  const loading = useState<boolean>('adzuna_loading', () => false);
+  const activeRequests = useState<number>('adzuna_loading_count', () => 0);
+  const loading = computed(() => activeRequests.value > 0);
   const cachedGovIdCode = useState<string | undefined>('adzuna_cached_gov_id', () => undefined);
 
   const meanSalary = computed<number>(() => jobsData.value?.mean || 0);
@@ -94,7 +95,7 @@ export const useAdzuna = () => {
     jobType: string = 'full-time',
     contractType: string = 'permanent'
   ) => {
-    loading.value = true;
+    activeRequests.value++;
     cachedGovIdCode.value = undefined;
 
     // Wipe the underlying distribution state so computed properties reset!
@@ -129,7 +130,7 @@ export const useAdzuna = () => {
     } catch {
       jobsData.value = null;
     } finally {
-      loading.value = false;
+      activeRequests.value = Math.max(0, activeRequests.value - 1);
     }
   };
 
@@ -140,7 +141,7 @@ export const useAdzuna = () => {
     jobType: string = 'full-time',
     contractType: string = 'permanent'
   ) => {
-    loading.value = true;
+    activeRequests.value++;
 
     try {
       const rawData: any = await $fetch('/api/adzuna/salary', {
@@ -157,7 +158,7 @@ export const useAdzuna = () => {
     } catch {
       distributionData.value = null;
     } finally {
-      loading.value = false;
+      activeRequests.value = Math.max(0, activeRequests.value - 1);
     }
   };
 

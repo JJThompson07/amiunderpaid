@@ -59,3 +59,10 @@ You are an AI assistant helping to build a dual-tenant, server-side rendered (SS
   const decodedToken = await getAuth().verifyIdToken(token);
   const userId = decodedToken.uid;
   ```
+
+## 8. Unit Testing
+
+- **Framework:** Vitest
+- **Requirement:** Unit tests are strictly required for all new core utilities (`~/utils/`) and composables (`~/composables/`).
+- **Execution:** All changes MUST pass the test suite (`pnpm vitest run`) before being committed or archived.
+- **Location:** Tests should be located in a `tests/` directory adjacent to the file being tested (e.g., `~/utils/engineScoring/tests/math.spec.ts`).

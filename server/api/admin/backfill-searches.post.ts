@@ -89,7 +89,7 @@ export default defineEventHandler(async (_event) => {
         // Fetch Jobs Cache (default 5 results)
         const jobType = data.schedule === 'part-time' ? 'part-time' : 'full-time';
         const contractType = data.contract === 'contract' ? 'contract' : 'permanent';
-        const jobsCacheKey = `${baseCacheKey}-${jobType}-${contractType}-5`;
+        const jobsCacheKey = `${baseCacheKey}-${jobType}-${contractType}-10`;
         const jobsCacheDoc = await db.collection('adzuna_jobs_cache').doc(jobsCacheKey).get();
         
         let marketAverage: number | null = null;
@@ -174,8 +174,11 @@ export default defineEventHandler(async (_event) => {
 
         const updatePayload: Record<string, any> = {
           historical_fetched_MCA: true,
-          searchSuccess: marketAverage !== null || governmentAverage !== null
         };
+
+        if (marketAverage !== null || governmentAverage !== null) {
+          updatePayload.searchSuccess = true;
+        }
 
         if (mcaScore !== null) updatePayload.mcaScore = mcaScore;
         if (marketAverage !== null) updatePayload.marketAverage = marketAverage;
