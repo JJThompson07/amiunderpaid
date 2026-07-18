@@ -343,7 +343,7 @@ const currentSearchId = useState<string>('currentSearchId');
 const { updateSearchLog } = useUserLogging();
 
 watch(
-  [pending, adzunaLoading],
+  [pending, adzunaLoading, currentSearchId],
   () => {
     if (pending.value || adzunaLoading.value) return;
     if (!currentSearchId.value) return;

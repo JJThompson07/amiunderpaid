@@ -1,7 +1,15 @@
 import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import { generateCacheKey } from '../../utils/adzuna';
+import { calculateUKBenchmarkScore } from '../../../shared/utils/uk';
+import { calculateUSABenchmarkScore } from '../../../shared/utils/usa';
 
-export default defineEventHandler(async (_event) => {
+export default defineEventHandler(async (event) => {
+  const authHeader = getRequestHeader(event, 'authorization');
+  if (!authHeader?.startsWith('Bearer ')) return createError({ statusCode: 401 });
+  const token = authHeader.split('Bearer ')[1]!;
+  await getAuth().verifyIdToken(token);
+
   const db = getFirestore();
 
   try {
