@@ -34,7 +34,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   imports: {
-    dirs: ['utils/engineScoring/**']
+    dirs: ['shared/utils/**']
   },
 
   // ** 1. ENABLE SERVER-SIDE RENDERING **

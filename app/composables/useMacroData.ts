@@ -1,5 +1,5 @@
 import type { SearchClient } from 'algoliasearch';
-import type { PercentileData } from '../utils/engineScoring/types';
+import type { PercentileData } from '../../shared/utils/types';
 
 export const useMacroData = () => {
   const { $algolia } = useNuxtApp();

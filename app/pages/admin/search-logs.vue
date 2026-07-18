@@ -7,6 +7,25 @@
         <div>
           <h1 class="text-2xl font-black text-slate-900">User Search Logs</h1>
           <p class="text-slate-500 mt-1">Live feed of the latest searches across the platform.</p>
+          <button
+            class="mt-3 px-4 py-2 text-xs font-bold rounded-lg transition-colors"
+            :class="
+              backfillLoading
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-amber-500 text-white hover:bg-amber-600'
+            "
+            :disabled="backfillLoading"
+            @click="runBackfill">
+            <span v-if="backfillLoading" class="flex items-center gap-2">
+              <span
+                class="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
+              Backfilling...
+            </span>
+            <span v-else>⏪ Backfill Historical</span>
+          </button>
+          <span v-if="backfillResult" class="ml-3 text-xs text-slate-500">
+            Updated {{ backfillResult.updated }} / {{ backfillResult.processed }} records
+          </span>
         </div>
 
         <div class="flex flex-wrap items-center justify-end gap-3">
@@ -144,6 +163,42 @@
               {{ value || 'Unknown' }}
             </span>
           </template>
+
+          <template #mcaScore="{ value }">
+            <span
+              class="text-xs font-bold"
+              :class="{
+                'text-emerald-600':
+                  typeof value === 'number'
+                    ? value >= 60
+                    : value === 'Market Leader' || value === 'Strong',
+                'text-amber-600':
+                  typeof value === 'number' ? value >= 40 && value < 60 : value === 'Fair',
+                'text-rose-600': typeof value === 'number' ? value < 40 : value === 'Review',
+                'text-slate-400': !value && value !== 0
+              }">
+              <span v-if="typeof value === 'number'">{{ value }}/100</span>
+              <span v-else>{{ value || '-' }}</span>
+            </span>
+          </template>
+
+          <template #marketAverage="{ value }">
+            <span class="text-xs font-mono text-slate-600">
+              {{ value ? value.toLocaleString() : '-' }}
+            </span>
+          </template>
+
+          <template #governmentAverage="{ value }">
+            <span class="text-xs font-mono text-slate-600">
+              {{ value ? value.toLocaleString() : '-' }}
+            </span>
+          </template>
+
+          <template #searchSuccess="{ value }">
+            <span v-if="value === true" class="text-emerald-500 text-xs font-bold">✓</span>
+            <span v-else-if="value === false" class="text-rose-400 text-xs font-bold">✗</span>
+            <span v-else class="text-slate-300 text-xs">-</span>
+          </template>
         </AmITable>
 
         <div
@@ -187,14 +242,28 @@ import type { SearchLog } from '../../../server/api/user/search-logs.get';
 definePageMeta({ middleware: 'admin' });
 
 const tableColumns = [
-  { key: 'formattedDate', label: 'Date / Time', class: 'w-40' },
-  { key: 'title', label: 'Search Query', class: 'w-1/4' },
+  { key: 'formattedDate', label: 'Date / Time', class: 'w-36' },
+  { key: 'title', label: 'Search Query', class: 'w-1/5' },
   { key: 'location', label: 'Location' },
-  { key: 'salary', label: 'Salary Target' },
-  { key: 'schedule', label: 'Hrs', class: 'w-16 text-center', cellClass: 'text-center' },
-  { key: 'contract', label: 'Type', class: 'w-16 text-center', cellClass: 'text-center' },
-  { key: 'country', label: 'Region', class: 'w-24 text-center', cellClass: 'text-center' },
-  { key: 'brand', label: 'Platform', class: 'w-32 text-right', cellClass: 'text-right' }
+  { key: 'salary', label: 'Salary', class: 'w-20' },
+  { key: 'mcaScore', label: 'MCA', class: 'w-24 text-center', cellClass: 'text-center' },
+  {
+    key: 'marketAverage',
+    label: 'Market Avg',
+    class: 'w-24 text-center',
+    cellClass: 'text-center'
+  },
+  {
+    key: 'governmentAverage',
+    label: 'Gov Avg',
+    class: 'w-24 text-center',
+    cellClass: 'text-center'
+  },
+  { key: 'searchSuccess', label: '✓', class: 'w-10 text-center', cellClass: 'text-center' },
+  { key: 'schedule', label: 'Hrs', class: 'w-12 text-center', cellClass: 'text-center' },
+  { key: 'contract', label: 'Type', class: 'w-12 text-center', cellClass: 'text-center' },
+  { key: 'country', label: 'Region', class: 'w-20 text-center', cellClass: 'text-center' },
+  { key: 'brand', label: 'Platform', class: 'w-28 text-right', cellClass: 'text-right' }
 ];
 
 // --- SEARCH & PAGINATION STATE ---
@@ -202,9 +271,7 @@ const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 50;
 
-// The useFetch call now watches BOTH currentPage and searchQuery.
-// When either changes, it automatically re-fetches from the server!
-const { data, pending } = await useFetch<{
+const { data, pending, refresh } = await useFetch<{
   success: boolean;
   totalCount: number;
   todayCount: number;
@@ -220,6 +287,30 @@ const { data, pending } = await useFetch<{
   },
   watch: [currentPage, searchQuery]
 });
+
+// --- BACKFILL STATE ---
+const backfillLoading = ref(false);
+const backfillResult = ref<{
+  processed: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+} | null>(null);
+
+const runBackfill = async () => {
+  backfillLoading.value = true;
+  backfillResult.value = null;
+  try {
+    const result = await $fetch<any>('/api/admin/backfill-searches', { method: 'POST' });
+    backfillResult.value = result;
+    // Refresh the table data to show newly enriched logs
+    await refresh();
+  } catch (e) {
+    console.error('Backfill failed:', e);
+  } finally {
+    backfillLoading.value = false;
+  }
+};
 
 const logs = computed(() => {
   return data.value?.logs || [];

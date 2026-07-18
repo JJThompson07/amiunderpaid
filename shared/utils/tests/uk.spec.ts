@@ -31,7 +31,8 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       50000,
       40000,
       mockBuckets,
-      200
+      200,
+      40000
     );
     // Should use WEIGHTS.UK.HIGH_CONFIDENCE logic
     expect(result.score).toBeGreaterThan(0);
@@ -49,7 +50,8 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       null,
       null,
       mockBuckets,
-      10
+      10,
+      40000
     );
     // Should use WEIGHTS.UK.LOW_CONFIDENCE logic
     expect(result.score).toBeGreaterThan(0);
@@ -65,7 +67,8 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       null,
       null,
       mockBuckets,
-      100
+      100,
+      40000
     );
     // Without Micro data, it rebalances. It should NOT return the generic 50 as actual weight.
     expect(result.breakdown.microPercentile).toBe(null); // UI Fallback is null
@@ -82,6 +85,7 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       null,
       null,
       [],
+      0,
       0
     );
     // Live Percentile should be null, scoring uses NO_LIVE_DATA weights
@@ -99,6 +103,7 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       null,
       null,
       [],
+      0,
       0
     );
     // Only has Macro data. Score should equal the Macro Percentile.

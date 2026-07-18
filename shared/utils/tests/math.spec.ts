@@ -66,7 +66,7 @@ describe('Math Engine: calculateLivePercentile', () => {
     // 50,000 is exactly halfway through the 40k bucket (which goes to 60k and has 40 jobs).
     // It should add all 10 jobs from the 20k bucket, and HALF (20) of the jobs from the 40k bucket.
     // Total jobs below = 30. Percentile = 30.
-    expect(calculateLivePercentile(50000, mockBuckets, 100)).toBe(30);
+    expect(calculateLivePercentile(50000, mockBuckets, 100, 64000)).toBe(30);
   });
 
   it('Scenario 2: Extrapolates smoothly INSIDE the terminal bucket (+)', () => {
@@ -74,19 +74,19 @@ describe('Math Engine: calculateLivePercentile', () => {
     // 100,000 is exactly halfway between 80k and 120k.
     // Jobs below 80k = 80. The 80k+ bucket has 20 jobs. We add half of them (10).
     // Total jobs below = 90. Percentile = 90.
-    expect(calculateLivePercentile(100000, mockBuckets, 100)).toBe(90);
+    expect(calculateLivePercentile(100000, mockBuckets, 100, 64000)).toBe(90);
   });
 
   it('Scenario 3: Caps safely for massive outliers above the terminal ceiling', () => {
     // Ceiling is 120k. At 150k, it should include all 100 jobs and hit the 99 cap.
-    expect(calculateLivePercentile(150000, mockBuckets, 100)).toBe(99);
+    expect(calculateLivePercentile(150000, mockBuckets, 100, 64000)).toBe(99);
   });
 
   it('Scenario 4: Handles salaries below the absolute lowest bucket', () => {
-    expect(calculateLivePercentile(10000, mockBuckets, 100)).toBe(1); // Min cap
+    expect(calculateLivePercentile(10000, mockBuckets, 100, 64000)).toBe(1); // Min cap
   });
 
   it('Scenario 5: Returns null if no live jobs or buckets exist', () => {
-    expect(calculateLivePercentile(50000, [], 0)).toBe(null);
+    expect(calculateLivePercentile(50000, [], 0, 0)).toBe(null);
   });
 });

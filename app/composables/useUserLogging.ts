@@ -9,11 +9,13 @@ export const useUserLogging = () => {
     salary: string,
     schedule: string = 'full-time',
     contract: string = 'permanent'
-  ) => {
+  ): string => {
     if (import.meta.dev) {
       // do not log dev searches
-      return;
+      return '';
     }
+
+    const searchId = crypto.randomUUID();
 
     if (import.meta.client) {
       // We use the native browser 'fetch' API here instead of $fetch
@@ -25,6 +27,7 @@ export const useUserLogging = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          id: searchId,
           title,
           country,
           location,
@@ -38,6 +41,30 @@ export const useUserLogging = () => {
         // Silently fail if they are completely offline
       });
     }
+
+    return searchId;
+  };
+
+  const updateSearchLog = (
+    searchId: string,
+    data: {
+      mcaScore?: number | null;
+      marketAverage?: number | null;
+      governmentAverage?: number | null;
+      microPercentile?: number | null;
+      macroPercentile?: number | null;
+      livePercentile?: number | null;
+      searchSuccess?: boolean;
+    }
+  ) => {
+    if (import.meta.dev || !import.meta.client || !searchId) return;
+
+    fetch('/api/user/update-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: searchId, ...data }),
+      keepalive: true
+    }).catch(() => {});
   };
 
   // You can easily add more logging functions here later!
@@ -45,6 +72,7 @@ export const useUserLogging = () => {
   // e.g., const logError = (errorMsg: string) => { ... }
 
   return {
-    logSearch
+    logSearch,
+    updateSearchLog
   };
 };

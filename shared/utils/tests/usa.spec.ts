@@ -31,7 +31,8 @@ describe('USA Engine: calculateUSABenchmarkScore', () => {
       null,
       null,
       mockBuckets,
-      100
+      100,
+      80000
     );
 
     // 90k is exactly P50 in mockStateData. If it used National, it would be higher.
@@ -50,7 +51,8 @@ describe('USA Engine: calculateUSABenchmarkScore', () => {
       100000,
       80000,
       mockBuckets,
-      100
+      100,
+      80000
     );
 
     expect(resultWithNational.breakdown.modifier).toBe(1.25);
@@ -67,7 +69,8 @@ describe('USA Engine: calculateUSABenchmarkScore', () => {
       null,
       null,
       mockBuckets,
-      100
+      100,
+      80000
     );
     // Should complete math without throwing errors and return null for microPercentile since no location data is available
     expect(result.breakdown.microPercentile).toBe(null); // UI Fallback is null since no micro data
@@ -84,6 +87,7 @@ describe('USA Engine: calculateUSABenchmarkScore', () => {
       null,
       null,
       [],
+      0,
       0
     );
     expect(result.breakdown.livePercentile).toBeNull();

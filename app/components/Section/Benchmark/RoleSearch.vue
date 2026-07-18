@@ -316,7 +316,7 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
     contract.value
   );
 
-  logSearch(
+  const searchId = logSearch(
     finalTitle.trim(),
     country.value,
     location.value,
@@ -324,6 +324,7 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
     schedule.value,
     contract.value
   );
+  useState('currentSearchId').value = searchId;
 
   // Check if we are staying on the same base path
   const isSamePath = route.path === path;

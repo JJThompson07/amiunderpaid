@@ -199,7 +199,7 @@
 <script setup lang="ts">
 // ** imports **
 import { Info } from 'lucide-vue-next';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 
 const { $siteBrand } = useNuxtApp();
 const route = useRoute();
@@ -292,6 +292,37 @@ onMounted(() => {
     );
   }
 });
+
+// Enrich the search log with post-search metrics once data arrives
+const currentSearchId = useState<string>('currentSearchId');
+const { updateSearchLog } = useUserLogging();
+
+watch(
+  [pending, adzunaLoading, currentSearchId],
+  () => {
+    if (pending.value || adzunaLoading.value) return;
+    if (!currentSearchId.value) return;
+
+    const hasData = hasGovernmentData.value || hasJobsData.value;
+
+    updateSearchLog(currentSearchId.value, {
+      mcaScore: typeof McaScore.value?.score === 'number' ? McaScore.value.score : null,
+      marketAverage: typeof meanSalary.value === 'number' ? meanSalary.value : null,
+      governmentAverage: typeof marketAverage.value === 'number' ? marketAverage.value : null,
+      microPercentile:
+        typeof McaScore.value?.microPercentile === 'number' ? McaScore.value.microPercentile : null,
+      macroPercentile:
+        typeof McaScore.value?.macroPercentile === 'number' ? McaScore.value.macroPercentile : null,
+      livePercentile:
+        typeof McaScore.value?.livePercentile === 'number' ? McaScore.value.livePercentile : null,
+      searchSuccess: hasData
+    });
+
+    // Clear to prevent duplicate triggers on re-renders
+    currentSearchId.value = '';
+  },
+  { immediate: true }
+);
 
 // ** SEO **
 const url = useRequestURL();

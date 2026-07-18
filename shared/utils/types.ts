@@ -16,9 +16,13 @@ export interface ScoreBreakdown {
   livePercentile: number | null;
 }
 
-// The final object returned to your Vue components
 export interface BenchmarkResult {
   score: number;
   confidenceScore: number; // 0-10 scale indicating confidence based on data availability
   breakdown: ScoreBreakdown;
 }
+
+export type HistogramBucket = {
+  value: number;
+  count: number;
+};

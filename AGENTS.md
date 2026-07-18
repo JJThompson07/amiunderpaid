@@ -41,7 +41,8 @@ When instructed to validate:
 
 1. Map the acceptance criteria from the spec to the implemented code.
 2. Run standard local verification commands using pnpm (e.g., `pnpm nuxi typecheck` or standard build steps) to ensure the build is not broken.
-3. Report any gaps between the initial specification and the current execution.
+3. Run the project's unit test suite using `pnpm vitest run` and ensure ALL tests pass before proceeding.
+4. Report any gaps between the initial specification and the current execution.
 
 ### Phase 4: Archive
 

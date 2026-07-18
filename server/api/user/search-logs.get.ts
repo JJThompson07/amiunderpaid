@@ -12,6 +12,11 @@ export interface SearchLog {
   brand: string | null;
   formattedDate: string;
   dateKey: string;
+  mcaScore: string | null;
+  marketAverage: number | null;
+  governmentAverage: number | null;
+  searchSuccess: boolean | null;
+  historicalFetchedMCA: boolean | null;
 }
 
 export default defineEventHandler(async (event) => {
@@ -123,7 +128,12 @@ export default defineEventHandler(async (event) => {
               minute: '2-digit'
             })
           : 'Unknown',
-        dateKey: dateObj ? dateObj.toLocaleDateString('en-GB') : 'Unknown'
+        dateKey: dateObj ? dateObj.toLocaleDateString('en-GB') : 'Unknown',
+        mcaScore: data.mcaScore || null,
+        marketAverage: data.marketAverage || null,
+        governmentAverage: data.governmentAverage || null,
+        searchSuccess: data.searchSuccess ?? null,
+        historicalFetchedMCA: data.historical_fetched_MCA ?? null
       };
     });
 
