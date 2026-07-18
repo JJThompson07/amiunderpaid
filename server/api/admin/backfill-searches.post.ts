@@ -5,29 +5,26 @@ export default defineEventHandler(async (_event) => {
   const db = getFirestore();
 
   try {
-    // 1. Fetch all search_history docs that have NOT been enriched yet
-    const snapshot = await db
-      .collection('search_history')
-      .where('mcaScore', '==', null)
-      .limit(200)
-      .get();
-
-    // Also fetch docs where mcaScore field doesn't exist at all
+    // Since we cannot query for missing fields in Firestore, and limit(50) only checks the newest,
+    // we need to scan backwards through time and find up to 50 docs that need processing.
     const snapshotMissing = await db
       .collection('search_history')
       .orderBy('timestamp', 'desc')
-      .limit(500)
+      .limit(1000)
       .get();
 
-    // Merge: only process docs that genuinely lack mcaScore
     const allDocs = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
-    snapshot.docs.forEach((doc) => allDocs.set(doc.id, doc));
-    snapshotMissing.docs.forEach((doc) => {
+    let foundCount = 0;
+
+    for (const doc of snapshotMissing.docs) {
+      if (foundCount >= 50) break;
       const data = doc.data();
-      if (data.mcaScore === undefined && data.mcaScore !== null && (!data.historical_fetched_MCA || data.marketAverage == null)) {
+      const needsV2 = !data.historical_fetched_MCA_v2;
+      if (needsV2 && (data.mcaScore === undefined || data.mcaScore === null || data.governmentAverage === undefined || data.governmentAverage === null)) {
         allDocs.set(doc.id, doc);
+        foundCount++;
       }
-    });
+    }
 
     let updated = 0;
     let skipped = 0;
@@ -107,20 +104,112 @@ export default defineEventHandler(async (_event) => {
           }
         }
 
-        // Fetch Government Data
         let microData = null;
+        let formattedMicroData = null;
+        const queryCountry = countryCode === 'us' ? 'USA' : 'UK';
+        
+        let microSnap: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData> | null = null;
+        
         if (govIdCode) {
-          const microSnap = await db.collection('adzuna_category').doc(govIdCode).get();
-          if (microSnap.exists) microData = microSnap.data();
+          microSnap = await db
+            .collection('salary_benchmarks')
+            .where('id_code', '==', govIdCode)
+            .where('country', '==', queryCountry)
+            .limit(1)
+            .get();
+        } else {
+          // Fallback to text match in Firestore
+          const cleanTitle = title.toLowerCase().trim().replace(/"/g, '\\"');
+          
+          if (queryCountry === 'UK') {
+            // UK uses SOC codes mapped in job_titles
+            const jobTitleSnap = await db
+              .collection('job_titles')
+              .where('searchTitle', '==', cleanTitle)
+              .where('country', '==', 'UK')
+              .limit(1)
+              .get();
+              
+            if (!jobTitleSnap.empty) {
+              const soc = jobTitleSnap.docs[0]?.data()?.soc;
+              if (soc) {
+                microSnap = await db
+                  .collection('salary_benchmarks')
+                  .where('id_code', '==', soc)
+                  .where('country', '==', 'UK')
+                  .limit(1)
+                  .get();
+              }
+            }
+          } else {
+            // US uses direct title match in salary_benchmarks
+            microSnap = await db
+              .collection('salary_benchmarks')
+              .where('searchTitle', '==', cleanTitle)
+              .where('country', '==', 'USA')
+              .limit(1)
+              .get();
+          }
+        }
+          
+        if (microSnap && !microSnap.empty) {
+          microData = microSnap.docs[0]?.data();
+          if (microData) {
+            formattedMicroData = {
+              mean: microData.avg_salary || microData.salary || 0,
+              p10: microData.salary_10_pt || null,
+              p25: microData.salary_25_pt || null,
+              p50: microData.salary || 0,
+              p75: microData.salary_75_pt || null,
+              p90: microData.salary_90_pt || null
+            };
+          }
         }
 
-        const macroCol = countryCode === 'us' ? 'usa_national_baseline' : 'national_baseline';
-        const macroSnap = await db.collection(macroCol).doc('latest').get();
-        const macroData = macroSnap.exists ? macroSnap.data() : null;
+        let macroData = null;
+        if (countryCode === 'us') {
+          const usMacroSnap = await db.collection('salary_benchmarks').where('id_code', '==', '00-0000').where('country', '==', 'USA').limit(1).get();
+          if (!usMacroSnap.empty) {
+            const hit = usMacroSnap.docs[0]?.data();
+            if (hit) {
+              macroData = {
+                macroNationalData: {
+                  mean: hit.avg_salary || hit.salary || 0,
+                  p10: hit.salary_10_pt || null,
+                  p25: hit.salary_25_pt || null,
+                  p50: hit.salary || 0,
+                  p75: hit.salary_75_pt || null,
+                  p90: hit.salary_90_pt || null
+                },
+                nationalMedianAllRoles: hit.salary || 0,
+                regionalMedianAllRoles: hit.salary || 0 
+              };
+            }
+          }
+        } else {
+          const ukMacroSnap = await db.collection('salary_benchmarks').where('searchTitle', '==', 'all employees').where('country', '==', 'UK').where('searchLocation', 'in', ['uk', 'united kingdom']).limit(1).get();
+          if (!ukMacroSnap.empty) {
+            const hit = ukMacroSnap.docs[0]?.data();
+            if (hit) {
+              macroData = {
+                macroNationalData: {
+                  mean: hit.avg_salary || hit.salary || 0,
+                  p10: hit.salary_10_pt || null,
+                  p25: hit.salary_25_pt || null,
+                  p50: hit.salary || 0,
+                  p75: hit.salary_75_pt || null,
+                  p90: hit.salary_90_pt || null
+                },
+                nationalMedianAllRoles: hit.salary || 0,
+                regionalMedianAllRoles: hit.salary || 0
+              };
+            }
+          }
+        }
 
         let governmentAverage: number | null = null;
         if (microData) {
-          governmentAverage = microData.microNationalData?.mean || microData.microNationalData?.p50 || null;
+          governmentAverage = microData.avg_salary || microData.salary || null;
         }
 
         let mcaScore: number | null = null;
@@ -130,7 +219,7 @@ export default defineEventHandler(async (_event) => {
 
         // Calculate Real Score
         if (macroData && userSalary > 0) {
-          const hasMicro = !!microData?.microNationalData;
+          const hasMicro = !!formattedMicroData;
           const hasLive = jobsCount > 0;
 
           if (hasMicro || hasLive) {
@@ -138,8 +227,8 @@ export default defineEventHandler(async (_event) => {
               const res = calculateUKBenchmarkScore(
                 userSalary,
                 macroData.macroNationalData,
-                microData?.microNationalData || null,
-                microData?.officialGroupTitle || '',
+                formattedMicroData,
+                microData?.title || '',
                 null,
                 macroData.regionalMedianAllRoles,
                 macroData.nationalMedianAllRoles,
@@ -156,7 +245,7 @@ export default defineEventHandler(async (_event) => {
                 userSalary,
                 macroData.macroNationalData,
                 null, // regional macro
-                microData?.microNationalData || null,
+                formattedMicroData,
                 null, // regional micro
                 macroData.regionalMedianAllRoles,
                 macroData.nationalMedianAllRoles,
@@ -174,15 +263,17 @@ export default defineEventHandler(async (_event) => {
 
         const updatePayload: Record<string, any> = {
           historical_fetched_MCA: true,
+          historical_fetched_MCA_v2: true,
         };
 
         if (marketAverage !== null || governmentAverage !== null) {
           updatePayload.searchSuccess = true;
         }
 
-        if (mcaScore !== null) updatePayload.mcaScore = mcaScore;
-        if (marketAverage !== null) updatePayload.marketAverage = marketAverage;
-        if (governmentAverage !== null) updatePayload.governmentAverage = governmentAverage;
+        updatePayload.mcaScore = mcaScore;
+        updatePayload.marketAverage = marketAverage;
+        updatePayload.governmentAverage = governmentAverage;
+
         if (microPercentile !== null) updatePayload.microPercentile = microPercentile;
         if (macroPercentile !== null) updatePayload.macroPercentile = macroPercentile;
         if (livePercentile !== null) updatePayload.livePercentile = livePercentile;
