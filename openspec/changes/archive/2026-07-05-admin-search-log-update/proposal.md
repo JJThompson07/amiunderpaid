@@ -1,6 +1,6 @@
 ## Why
 
-The admin search logs table currently only captures the initial parameters of a user's search. It does not display the results of that search, specifically the `MCA_score`, `market_average`, and `government_average`. By capturing and displaying these data points, administrators can gain deeper insight into the exact market data and verdicts that users are seeing, rather than just knowing what keywords they searched for. 
+The admin search logs table currently only captures the initial parameters of a user's search. It does not display the results of that search, specifically the `MCA_score`, `market_average`, and `government_average`. By capturing and displaying these data points, administrators can gain deeper insight into the exact market data and verdicts that users are seeing, rather than just knowing what keywords they searched for.
 
 Because these averages are calculated after the initial search is submitted (during the data fetching phase on the results page), we need to introduce a mechanism to update the original search log record with these values once they become available.
 
@@ -17,9 +17,11 @@ Because these averages are calculated after the initial search is submitted (dur
 ## Capabilities
 
 ### New Capabilities
+
 - `admin-search-log-metrics`: Capturing and displaying post-search metrics (MCA score, market average, government average) in the admin search logs.
 
 ### Modified Capabilities
+
 - (None existing)
 
 ## Impact

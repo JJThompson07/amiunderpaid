@@ -11,9 +11,11 @@ To ensure the reliability and maintainability of the application, we need to imp
 ## Capabilities
 
 ### New Capabilities
+
 - `unit-testing-framework`: Establishing the baseline unit tests for core utilities and composables using Vitest, and integrating test execution into the agent's validation workflow.
 
 ### Modified Capabilities
+
 - (None)
 
 ## Impact

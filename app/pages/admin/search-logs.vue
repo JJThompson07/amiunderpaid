@@ -9,13 +9,16 @@
           <p class="text-slate-500 mt-1">Live feed of the latest searches across the platform.</p>
           <button
             class="mt-3 px-4 py-2 text-xs font-bold rounded-lg transition-colors"
-            :class="backfillLoading
-              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-              : 'bg-amber-500 text-white hover:bg-amber-600'"
+            :class="
+              backfillLoading
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-amber-500 text-white hover:bg-amber-600'
+            "
             :disabled="backfillLoading"
             @click="runBackfill">
             <span v-if="backfillLoading" class="flex items-center gap-2">
-              <span class="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
+              <span
+                class="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
               Backfilling...
             </span>
             <span v-else>⏪ Backfill Historical</span>
@@ -165,8 +168,12 @@
             <span
               class="text-xs font-bold"
               :class="{
-                'text-emerald-600': typeof value === 'number' ? value >= 60 : value === 'Market Leader' || value === 'Strong',
-                'text-amber-600': typeof value === 'number' ? value >= 40 && value < 60 : value === 'Fair',
+                'text-emerald-600':
+                  typeof value === 'number'
+                    ? value >= 60
+                    : value === 'Market Leader' || value === 'Strong',
+                'text-amber-600':
+                  typeof value === 'number' ? value >= 40 && value < 60 : value === 'Fair',
                 'text-rose-600': typeof value === 'number' ? value < 40 : value === 'Review',
                 'text-slate-400': !value && value !== 0
               }">
@@ -240,8 +247,18 @@ const tableColumns = [
   { key: 'location', label: 'Location' },
   { key: 'salary', label: 'Salary', class: 'w-20' },
   { key: 'mcaScore', label: 'MCA', class: 'w-24 text-center', cellClass: 'text-center' },
-  { key: 'marketAverage', label: 'Market Avg', class: 'w-24 text-center', cellClass: 'text-center' },
-  { key: 'governmentAverage', label: 'Gov Avg', class: 'w-24 text-center', cellClass: 'text-center' },
+  {
+    key: 'marketAverage',
+    label: 'Market Avg',
+    class: 'w-24 text-center',
+    cellClass: 'text-center'
+  },
+  {
+    key: 'governmentAverage',
+    label: 'Gov Avg',
+    class: 'w-24 text-center',
+    cellClass: 'text-center'
+  },
   { key: 'searchSuccess', label: '✓', class: 'w-10 text-center', cellClass: 'text-center' },
   { key: 'schedule', label: 'Hrs', class: 'w-12 text-center', cellClass: 'text-center' },
   { key: 'contract', label: 'Type', class: 'w-12 text-center', cellClass: 'text-center' },
@@ -273,7 +290,12 @@ const { data, pending, refresh } = await useFetch<{
 
 // --- BACKFILL STATE ---
 const backfillLoading = ref(false);
-const backfillResult = ref<{ processed: number; updated: number; skipped: number; failed: number } | null>(null);
+const backfillResult = ref<{
+  processed: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+} | null>(null);
 
 const runBackfill = async () => {
   backfillLoading.value = true;

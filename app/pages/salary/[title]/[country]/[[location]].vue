@@ -354,9 +354,12 @@ watch(
       mcaScore: typeof McaScore.value?.score === 'number' ? McaScore.value.score : null,
       marketAverage: typeof meanSalary.value === 'number' ? meanSalary.value : null,
       governmentAverage: typeof marketAverage.value === 'number' ? marketAverage.value : null,
-      microPercentile: typeof McaScore.value?.microPercentile === 'number' ? McaScore.value.microPercentile : null,
-      macroPercentile: typeof McaScore.value?.macroPercentile === 'number' ? McaScore.value.macroPercentile : null,
-      livePercentile: typeof McaScore.value?.livePercentile === 'number' ? McaScore.value.livePercentile : null,
+      microPercentile:
+        typeof McaScore.value?.microPercentile === 'number' ? McaScore.value.microPercentile : null,
+      macroPercentile:
+        typeof McaScore.value?.macroPercentile === 'number' ? McaScore.value.macroPercentile : null,
+      livePercentile:
+        typeof McaScore.value?.livePercentile === 'number' ? McaScore.value.livePercentile : null,
       searchSuccess: hasData
     });
 

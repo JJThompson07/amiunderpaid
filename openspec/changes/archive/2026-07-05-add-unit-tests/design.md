@@ -1,15 +1,17 @@
 ## Context
 
-The repository has Vitest installed, but testing is not strictly enforced in the development workflow, and many core utilities and composables lack coverage. Given that autonomous agents (like Antigravity) are frequently contributing to the codebase, we need a robust, automated way to verify that changes do not break existing functionality. 
+The repository has Vitest installed, but testing is not strictly enforced in the development workflow, and many core utilities and composables lack coverage. Given that autonomous agents (like Antigravity) are frequently contributing to the codebase, we need a robust, automated way to verify that changes do not break existing functionality.
 
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Implement foundational unit tests for existing core utilities (`app/utils/`) and composables (`app/composables/`).
 - Update `CODE_STANDARDS.md` to formally require unit tests for new utility or composable functions.
 - Update `AGENTS.md` to require the agent to run the unit tests (`pnpm vitest run` or equivalent) as part of the validation phase before archiving any OpenSpec change.
 
 **Non-Goals:**
+
 - Achieving 100% test coverage across the entire Nuxt application immediately.
 - Implementing end-to-end (E2E) testing with Cypress or Playwright.
 - Writing tests for Vue UI components (this proposal focuses on logic/utilities for now).

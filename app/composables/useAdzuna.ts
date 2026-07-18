@@ -1,5 +1,3 @@
-
-
 export type HistogramData = {
   [salary: number]: number;
 };

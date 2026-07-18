@@ -28,7 +28,13 @@ export default defineEventHandler(async (event) => {
       if (foundCount >= 50) break;
       const data = doc.data();
       const needsV2 = !data.historical_fetched_MCA_v2;
-      if (needsV2 && (data.mcaScore === undefined || data.mcaScore === null || data.governmentAverage === undefined || data.governmentAverage === null)) {
+      if (
+        needsV2 &&
+        (data.mcaScore === undefined ||
+          data.mcaScore === null ||
+          data.governmentAverage === undefined ||
+          data.governmentAverage === null)
+      ) {
         allDocs.set(doc.id, doc);
         foundCount++;
       }
@@ -74,7 +80,7 @@ export default defineEventHandler(async (event) => {
 
       try {
         const countryCode = country === 'USA' || country === 'US' ? 'us' : 'gb';
-        
+
         let locationStr = location.toLowerCase().trim();
         const countryAliases =
           countryCode === 'us'
@@ -86,9 +92,12 @@ export default defineEventHandler(async (event) => {
         }
 
         const baseCacheKey = generateCacheKey(title, locationStr, countryCode);
-        
+
         // Fetch Histogram Cache
-        const histCacheDoc = await db.collection('adzuna_distribution_cache').doc(baseCacheKey).get();
+        const histCacheDoc = await db
+          .collection('adzuna_distribution_cache')
+          .doc(baseCacheKey)
+          .get();
         const histData = histCacheDoc.exists ? histCacheDoc.data()?.data?.histogram || {} : {};
 
         // Fetch Jobs Cache (default 5 results)
@@ -96,7 +105,7 @@ export default defineEventHandler(async (event) => {
         const contractType = data.contract === 'contract' ? 'contract' : 'permanent';
         const jobsCacheKey = `${baseCacheKey}-${jobType}-${contractType}-10`;
         const jobsCacheDoc = await db.collection('adzuna_jobs_cache').doc(jobsCacheKey).get();
-        
+
         let marketAverage: number | null = null;
         let jobsCount = 0;
         let govIdCode: string | null = null;
@@ -106,18 +115,21 @@ export default defineEventHandler(async (event) => {
           const results = jData?.data?.results || [];
           jobsCount = jData?.data?.count || 0;
           govIdCode = jData?.gov_id_code || null;
-          
+
           if (results.length > 0) {
-            marketAverage = results.reduce((acc: number, curr: any) => acc + (curr.salary_max || 0), 0) / results.length;
+            marketAverage =
+              results.reduce((acc: number, curr: any) => acc + (curr.salary_max || 0), 0) /
+              results.length;
           }
         }
 
         let microData = null;
         let formattedMicroData = null;
         const queryCountry = countryCode === 'us' ? 'USA' : 'UK';
-        
-        let microSnap: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData> | null = null;
-        
+
+        let microSnap: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData> | null =
+          null;
+
         if (govIdCode) {
           microSnap = await db
             .collection('salary_benchmarks')
@@ -128,7 +140,7 @@ export default defineEventHandler(async (event) => {
         } else {
           // Fallback to text match in Firestore
           const cleanTitle = title.toLowerCase().trim().replace(/"/g, '\\"');
-          
+
           if (queryCountry === 'UK') {
             // UK uses SOC codes mapped in job_titles
             const jobTitleSnap = await db
@@ -137,7 +149,7 @@ export default defineEventHandler(async (event) => {
               .where('country', '==', 'UK')
               .limit(1)
               .get();
-              
+
             if (!jobTitleSnap.empty) {
               const soc = jobTitleSnap.docs[0]?.data()?.soc;
               if (soc) {
@@ -159,7 +171,7 @@ export default defineEventHandler(async (event) => {
               .get();
           }
         }
-          
+
         if (microSnap && !microSnap.empty) {
           microData = microSnap.docs[0]?.data();
           if (microData) {
@@ -176,7 +188,12 @@ export default defineEventHandler(async (event) => {
 
         let macroData = null;
         if (countryCode === 'us') {
-          const usMacroSnap = await db.collection('salary_benchmarks').where('id_code', '==', '00-0000').where('country', '==', 'USA').limit(1).get();
+          const usMacroSnap = await db
+            .collection('salary_benchmarks')
+            .where('id_code', '==', '00-0000')
+            .where('country', '==', 'USA')
+            .limit(1)
+            .get();
           if (!usMacroSnap.empty) {
             const hit = usMacroSnap.docs[0]?.data();
             if (hit) {
@@ -190,12 +207,18 @@ export default defineEventHandler(async (event) => {
                   p90: hit.salary_90_pt || null
                 },
                 nationalMedianAllRoles: hit.salary || 0,
-                regionalMedianAllRoles: hit.salary || 0 
+                regionalMedianAllRoles: hit.salary || 0
               };
             }
           }
         } else {
-          const ukMacroSnap = await db.collection('salary_benchmarks').where('searchTitle', '==', 'all employees').where('country', '==', 'UK').where('searchLocation', 'in', ['uk', 'united kingdom']).limit(1).get();
+          const ukMacroSnap = await db
+            .collection('salary_benchmarks')
+            .where('searchTitle', '==', 'all employees')
+            .where('country', '==', 'UK')
+            .where('searchLocation', 'in', ['uk', 'united kingdom'])
+            .limit(1)
+            .get();
           if (!ukMacroSnap.empty) {
             const hit = ukMacroSnap.docs[0]?.data();
             if (hit) {
@@ -271,7 +294,7 @@ export default defineEventHandler(async (event) => {
 
         const updatePayload: Record<string, any> = {
           historical_fetched_MCA: true,
-          historical_fetched_MCA_v2: true,
+          historical_fetched_MCA_v2: true
         };
 
         if (marketAverage !== null || governmentAverage !== null) {

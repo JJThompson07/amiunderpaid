@@ -69,7 +69,6 @@
 <script setup lang="ts">
 import { ref, type PropType } from 'vue';
 import { getPercentage } from '~/helpers/utility';
-import type { HistogramData } from '~/composables/useAdzuna';
 import type { HistogramBucket } from '../../../../shared/utils/types';
 import { XCircle } from 'lucide-vue-next';
 

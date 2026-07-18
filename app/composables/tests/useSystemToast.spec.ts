@@ -46,13 +46,13 @@ describe('useSystemToast composable', () => {
   it('closeToast sets isOpen to false without clearing message', () => {
     const { toastState, showToast, closeToast } = useSystemToast();
     showToast('Error', 'Something went wrong', 'error');
-    
+
     // State is open
     expect(toastState.value.isOpen).toBe(true);
-    
+
     // Close it
     closeToast();
-    
+
     expect(toastState.value.isOpen).toBe(false);
     // Title and message should still be there for out-animations
     expect(toastState.value.title).toBe('Error');
