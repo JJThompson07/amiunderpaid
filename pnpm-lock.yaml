@@ -51,6 +51,9 @@ importers:
         specifier: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
         version: https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
     devDependencies:
+      '@intlify/utils':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@nuxt/eslint':
         specifier: ^0.7.6
         version: 0.7.6(@typescript-eslint/utils@8.65.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(@vue/compiler-sfc@3.5.40)(eslint@9.39.5(jiti@2.7.0))(magicast@0.5.4)(typescript@5.9.3)(vite@8.2.0(@types/node@26.1.2)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
@@ -1517,6 +1520,10 @@ packages:
   '@intlify/utils@0.13.0':
     resolution: {integrity: sha512-8i3uRdAxCGzuHwfmHcVjeLQBtysQB2aXl/ojoagDut5/gY5lvWCQ2+cnl2TiqE/fXj/D8EhWG/SLKA7qz4a3QA==}
     engines: {node: '>= 18'}
+
+  '@intlify/utils@1.0.1':
+    resolution: {integrity: sha512-1ErRU0yOK0f6aZnIg4I5/O6BqWYf9r3uA5KNEkwvmCi9TCPgtOmiz1EwcAijl8UYB60Rkgcc7pErfoFGEZoyeQ==}
+    engines: {node: '>= 20'}
 
   '@intlify/vue-i18n-extensions@8.0.0':
     resolution: {integrity: sha512-w0+70CvTmuqbskWfzeYhn0IXxllr6mU+IeM2MU0M+j9OW64jkrvqY+pYFWrUnIIC9bEdij3NICruicwd5EgUuQ==}
@@ -8400,6 +8407,8 @@ snapshots:
       - typescript
 
   '@intlify/utils@0.13.0': {}
+
+  '@intlify/utils@1.0.1': {}
 
   '@intlify/vue-i18n-extensions@8.0.0(@intlify/shared@11.4.8)(@vue/compiler-dom@3.5.40)(vue-i18n@11.4.8(vue@3.5.40(typescript@5.9.3)))(vue@3.5.40(typescript@5.9.3))':
     dependencies:
