@@ -50,3 +50,7 @@ When a change is fully verified and approved:
 
 1. Prefer executing `pnpm dlx @fission-ai/openspec archive <change-name> --yes` if the OpenSpec CLI is active.
 2. Otherwise, move the change folder into `openspec/archive/` and update `openspec/specs/` to reflect the newly implemented source of truth.
+
+## 3. Commits
+
+- **Gitmojis Required:** You MUST always use gitmojis in commit messages. The gitmoji should be at the very beginning of the commit message, optionally followed by the conventional commit type (e.g., `🐛 fix: ...`, `✨ feat: ...`, `🚀 build: ...`, `♻️ refactor: ...`, `📝 docs: ...`).
