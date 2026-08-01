@@ -34,8 +34,8 @@
       <!-- 1. MCA Score -->
       <div class="w-full">
         <SectionScoreMca
-          v-if="McaScore && userSalary"
-          :verdict="McaScore"
+          v-if="mcaScore && userSalary"
+          :verdict="mcaScore"
           :user-salary="userSalary"
           :currency-symbol="currencySymbol"
           :matched-title="matchedTitle"
@@ -225,7 +225,7 @@ const {
   adzunaCategory,
   hasGovernmentData,
   hasJobsData,
-  McaScore,
+  mcaScore,
   diffPercent,
   isUnderpaid,
   marketAverage,
@@ -310,15 +310,15 @@ watch(
     const hasData = hasGovernmentData.value || hasJobsData.value;
 
     updateSearchLog(currentSearchId.value, {
-      mcaScore: typeof McaScore.value?.score === 'number' ? McaScore.value.score : null,
+      mcaScore: typeof mcaScore.value?.score === 'number' ? mcaScore.value.score : null,
       marketAverage: typeof meanSalary.value === 'number' ? meanSalary.value : null,
       governmentAverage: typeof marketAverage.value === 'number' ? marketAverage.value : null,
       microPercentile:
-        typeof McaScore.value?.microPercentile === 'number' ? McaScore.value.microPercentile : null,
+        typeof mcaScore.value?.microPercentile === 'number' ? mcaScore.value.microPercentile : null,
       macroPercentile:
-        typeof McaScore.value?.macroPercentile === 'number' ? McaScore.value.macroPercentile : null,
+        typeof mcaScore.value?.macroPercentile === 'number' ? mcaScore.value.macroPercentile : null,
       livePercentile:
-        typeof McaScore.value?.livePercentile === 'number' ? McaScore.value.livePercentile : null,
+        typeof mcaScore.value?.livePercentile === 'number' ? mcaScore.value.livePercentile : null,
       searchSuccess: hasData
     });
 

@@ -156,7 +156,7 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
     () => adzuna.jobsData.value?.results?.[0]?.category?.label
   );
 
-  const McaScore = computed(() => {
+  const mcaScore = computed(() => {
     if (!pageData.value?.macro?.macroNationalData) {
       return null;
     }
@@ -309,7 +309,7 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
     // Computeds
     hasGovernmentData,
     hasJobsData: adzuna.hasJobsData,
-    McaScore,
+    mcaScore,
     diffPercent,
     isUnderpaid,
     marketAverage,

@@ -32,9 +32,7 @@
 
           <template #categories="{ value }">
             <div class="flex flex-wrap gap-1">
-              <span
-v-if="!value || value.length === 0"
-class="text-xs text-slate-400 italic"
+              <span v-if="!value || value.length === 0" class="text-xs text-slate-400 italic"
                 >None</span
               >
               <span

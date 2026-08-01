@@ -12,7 +12,10 @@
           @click="openMenu = false">
           <div
             class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none rounded-xl bg-slate-100/50">
-            <img :src="`/${$siteBrand}-logo.png`" class="h-12 w-12" :alt="$siteBrand" />
+            <img
+              :src="`/${String($siteBrand)}-logo.png`"
+              class="h-12 w-12"
+              :alt="String($siteBrand)" />
           </div>
         </NuxtLink>
 
@@ -161,10 +164,10 @@ useHead({
       ...i18nLinks,
       // ✨ 4. Force the absolute, correct Canonical URL using our bulletproof baseUrl
       { rel: 'canonical', href: `${baseUrl}${cleanPath || '/'}` },
-      { rel: 'icon', type: 'image/x-icon', href: `/${$siteBrand}-favicon.ico` }
-    ];
+      { rel: 'icon', type: 'image/x-icon', href: `/${String($siteBrand)}-favicon.ico` }
+    ] as any;
   }),
-  meta: computed(() => [...(i18nHead.value.meta || [])])
+  meta: computed(() => [...(i18nHead.value.meta || [])] as any)
 });
 </script>
 
