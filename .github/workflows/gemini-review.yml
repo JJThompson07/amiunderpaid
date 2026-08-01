@@ -13,19 +13,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      
+
       - name: Gemini Code Review
         uses: sshnaidm/gemini-code-review-action@v2
+        continue-on-error: true
         with:
           gemini-key: ${{ secrets.GEMINI_API_KEY }}
           # Optional: You can change the model here (e.g., gemini-2.5-flash or gemini-2.5-pro)
           model: gemini-2.5-pro
           prompt: |
             You are an expert Senior Software Engineer and Code Reviewer. Review the provided git diff and provide a comprehensive evaluation of the pull request.
-            
+
             Please score the PR out of 10 for each of the following areas:
             - **Readability**: Is the code easy to read and understand?
             - **Performance**: Are there any performance bottlenecks or inefficiencies?
@@ -35,9 +36,9 @@ jobs:
             - **Testing**: Are there sufficient and appropriate tests (e.g., adjacent unit tests)?
             - **Documentation**: Are complex logic and new additions well-commented?
             - **Functionality**: Does the code appear to achieve its intended purpose securely and robustly?
-            
+
             After your analysis and actionable feedback, provide:
             1. An **Overall Score** (out of 10).
             2. A **Recommended Action** for the repository maintainer (e.g., "Approve / Merge", "Changes Requested", or "Comment Only").
-            
+
             Make sure to highlight any critical issues, security vulnerabilities, or anti-patterns. Format your response cleanly using Markdown.
