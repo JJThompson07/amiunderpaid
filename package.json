@@ -33,7 +33,7 @@
     "nuxt": "^4.5.1",
     "nuxt-gtag": "4.1.0",
     "nuxt-vuefire": "^1.1.2",
-    "stripe": "^22.4.0",
+    "stripe": "^22.0.1",
     "vue": "^3.5.40",
     "vue-router": "^4.6.4",
     "vuefire": "^3.2.3",
@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^0.7.6",
-    "@nuxtjs/i18n": "^10.6.0",
+    "@nuxtjs/i18n": "^10.2.3",
     "@tailwindcss/vite": "^4.3.3",
     "@types/estree": "^1.0.9",
     "@types/json-schema": "^7.0.15",

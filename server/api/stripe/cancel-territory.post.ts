@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
 
   const stripe = new Stripe(config.stripeSecretKey, {
-    apiVersion: '2026-07-29.dahlia'
+    apiVersion: '2026-03-25.dahlia'
   });
 
   // 1. VERIFY USER

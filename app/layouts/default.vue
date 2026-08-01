@@ -164,10 +164,10 @@ useHead({
       ...i18nLinks,
       // ✨ 4. Force the absolute, correct Canonical URL using our bulletproof baseUrl
       { rel: 'canonical', href: `${baseUrl}${cleanPath || '/'}` },
-      { rel: 'icon', type: 'image/x-icon', href: `/${$siteBrand}-favicon.ico` }
-    ];
+      { rel: 'icon', type: 'image/x-icon', href: `/${String($siteBrand)}-favicon.ico` }
+    ] as any;
   }),
-  meta: computed(() => [...(i18nHead.value.meta || [])])
+  meta: computed(() => [...(i18nHead.value.meta || [])] as any)
 });
 </script>
 
