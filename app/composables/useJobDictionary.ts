@@ -41,10 +41,7 @@ export type JobMatchError = {
 
 // 3. Create the Union using your types
 export type JobDictionaryResult =
-  | JobMatchExact
-  | JobMatchAmbiguous
-  | JobMatchUnmapped
-  | JobMatchError;
+  JobMatchExact | JobMatchAmbiguous | JobMatchUnmapped | JobMatchError;
 
 export const useJobDictionary = (): {
   resolveJobId: (searchTerm: string) => Promise<JobDictionaryResult>;

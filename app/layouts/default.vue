@@ -12,7 +12,10 @@
           @click="openMenu = false">
           <div
             class="flex items-center gap-1 text-xl font-bold tracking-tight text-primary-600 select-none rounded-xl bg-slate-100/50">
-            <img :src="`/${$siteBrand}-logo.png`" class="h-12 w-12" :alt="$siteBrand" />
+            <img
+              :src="`/${String($siteBrand)}-logo.png`"
+              class="h-12 w-12"
+              :alt="String($siteBrand)" />
           </div>
         </NuxtLink>
 

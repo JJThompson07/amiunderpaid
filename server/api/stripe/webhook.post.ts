@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   // 1. Initialize config and Stripe
   const config = useRuntimeConfig();
   const stripe = new Stripe(config.stripeSecretKey, {
-    apiVersion: '2026-03-25.dahlia'
+    apiVersion: '2026-07-29.dahlia'
   });
 
   // 2. CRITICAL: Get the raw string body, NOT the parsed JSON!
