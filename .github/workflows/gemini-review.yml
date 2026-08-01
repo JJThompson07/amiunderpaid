@@ -23,7 +23,7 @@ jobs:
         with:
           gemini-key: ${{ secrets.GEMINI_API_KEY }}
           # Optional: You can change the model here (e.g., gemini-2.5-flash or gemini-2.5-pro)
-          model: gemini-2.5-pro
+          model: gemini-2.5-flash
           prompt: |
             You are an expert Senior Software Engineer and Code Reviewer. Review the provided git diff and provide a comprehensive evaluation of the pull request.
 
