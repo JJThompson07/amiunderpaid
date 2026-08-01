@@ -39,25 +39,40 @@ const TEST_EXEMPT_FILES = ['app/app.vue', 'app/error.vue'];
 const newFiles = new Set<string>();
 try {
   // 1. Local Development (uncommitted/staged/untracked files)
-  const headDiff = execSync('git diff --name-only --diff-filter=A HEAD', { encoding: 'utf8', stdio: 'pipe' });
-  const cachedDiff = execSync('git diff --name-only --diff-filter=A --cached', { encoding: 'utf8', stdio: 'pipe' });
-  const untracked = execSync('git ls-files --others --exclude-standard', { encoding: 'utf8', stdio: 'pipe' });
-  
+  const headDiff = execSync('git diff --name-only --diff-filter=A HEAD', {
+    encoding: 'utf8',
+    stdio: 'pipe'
+  });
+  const cachedDiff = execSync('git diff --name-only --diff-filter=A --cached', {
+    encoding: 'utf8',
+    stdio: 'pipe'
+  });
+  const untracked = execSync('git ls-files --others --exclude-standard', {
+    encoding: 'utf8',
+    stdio: 'pipe'
+  });
+
   // 2. CI/PR Environments (files committed in the branch vs main)
   let branchDiff = '';
   try {
-    branchDiff = execSync('git diff --name-only --diff-filter=A origin/main...HEAD', { encoding: 'utf8', stdio: 'pipe' });
+    branchDiff = execSync('git diff --name-only --diff-filter=A origin/main...HEAD', {
+      encoding: 'utf8',
+      stdio: 'pipe'
+    });
   } catch {
     try {
-      branchDiff = execSync('git diff --name-only --diff-filter=A main...HEAD', { encoding: 'utf8', stdio: 'pipe' });
+      branchDiff = execSync('git diff --name-only --diff-filter=A main...HEAD', {
+        encoding: 'utf8',
+        stdio: 'pipe'
+      });
     } catch {
       // Ignore if main/origin/main doesn't exist or isn't fetched
     }
   }
 
   [
-    ...headDiff.split('\n'), 
-    ...cachedDiff.split('\n'), 
+    ...headDiff.split('\n'),
+    ...cachedDiff.split('\n'),
     ...untracked.split('\n'),
     ...branchDiff.split('\n')
   ]
