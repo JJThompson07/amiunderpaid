@@ -31,7 +31,7 @@
 
 <script setup lang="ts">
 import { AlertCircle, Search } from 'lucide-vue-next';
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { SearchClient } from 'algoliasearch';
 
 const props = defineProps<{

@@ -92,7 +92,7 @@
           <div class="flex items-center gap-2 px-4 py-1">
             <span
               v-if="isSaving"
-              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             <span>{{ isSaving ? 'Saving...' : 'Publish Changes' }}</span>
           </div>
         </AmIButton>
@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { PoundSterling, DollarSign, CheckCircle2 } from 'lucide-vue-next';
+import { CheckCircle2, DollarSign, PoundSterling } from 'lucide-vue-next';
 
 definePageMeta({ middleware: 'admin' });
 
@@ -147,8 +147,12 @@ watch(
   pricingData,
   (newData) => {
     if (newData) {
-      if (newData.UK) form.value.UK = objectToArray(newData.UK);
-      if (newData.USA) form.value.USA = objectToArray(newData.USA);
+      if (newData.UK) {
+        form.value.UK = objectToArray(newData.UK);
+      }
+      if (newData.USA) {
+        form.value.USA = objectToArray(newData.USA);
+      }
     }
   },
   { immediate: true, deep: true }

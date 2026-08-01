@@ -124,7 +124,9 @@ const showHistogram = ref<boolean>(false);
 const hasData = computed<boolean>(() => props.buckets && props.buckets.length > 0);
 
 const diffPercent = computed(() => {
-  if (props.averageSalary === 0) return 0;
+  if (props.averageSalary === 0) {
+    return 0;
+  }
   return getRawDiffPercentage(props.currentSalary, props.averageSalary);
 });
 

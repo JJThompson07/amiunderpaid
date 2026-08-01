@@ -71,7 +71,7 @@
 
 <script setup lang="ts">
 import { ChevronDownIcon } from 'lucide-vue-next';
-import { computed, ref, type PropType } from 'vue';
+import { computed, type PropType, ref } from 'vue';
 
 export type TerritoryListOption = {
   name: string;

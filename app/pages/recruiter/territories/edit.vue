@@ -60,7 +60,7 @@
             <div class="flex items-center gap-2 px-4 py-1">
               <span
                 v-if="isSubmitting"
-                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               <span>
                 {{
                   isSubmitting
@@ -96,20 +96,26 @@ const territoryId = computed(() => Number(route.query.id));
 
 // 2. Find the owned territory in the user's profile
 const ownedTerritory = computed(() => {
-  if (!userProfile.value) return null;
+  if (!userProfile.value) {
+    return null;
+  }
   const active = userProfile.value.activeTerritories || userProfile.value.claims || [];
   return active.find((t: any) => t.territoryId === territoryId.value) || null;
 });
 
 // 3. Get the full territory details (for the name and band)
 const fullTerritory = computed(() => {
-  if (!ownedTerritory.value) return null;
+  if (!ownedTerritory.value) {
+    return null;
+  }
   return getTerritoryById(territoryId.value);
 });
 
 // 4. Format the industry label nicely
 const categoryLabel = computed(() => {
-  if (!ownedTerritory.value || !categoriesData.value) return '';
+  if (!ownedTerritory.value || !categoriesData.value) {
+    return '';
+  }
   const val = ownedTerritory.value.categoryValue;
   const found = categoriesData.value.find((c: any) => c.id === val || c.label === val);
   return found ? found.label || found.id : val;
@@ -124,7 +130,9 @@ const { globalTakenMonths } = useTerritoryClaims(territoryIdsForQuery);
 
 // 6. Checkout handler
 const submitUpgrade = async () => {
-  if (scheduleSelections.value.length === 0) return;
+  if (scheduleSelections.value.length === 0) {
+    return;
+  }
 
   isSubmitting.value = true;
   try {
@@ -141,7 +149,9 @@ const submitUpgrade = async () => {
       }
     });
 
-    if (response.url) window.location.href = response.url;
+    if (response.url) {
+      window.location.href = response.url;
+    }
   } catch (error) {
     console.error('Failed to initialize payment:', error);
     alert('Something went wrong. Please try again.');

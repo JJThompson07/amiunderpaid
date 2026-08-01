@@ -27,10 +27,10 @@
 </template>
 
 <script setup lang="ts">
-export interface TabOption {
+export type TabOption = {
   label: string;
   value: string | number;
-}
+};
 
 const props = defineProps({
   modelValue: {

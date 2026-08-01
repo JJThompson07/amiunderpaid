@@ -85,7 +85,7 @@
 
         <div v-if="loading" class="absolute right-10 top-1/2 -translate-y-1/2 z-10">
           <div
-            class="w-4 h-4 border-2 border-slate-200 border-t-primary-500 rounded-full animate-spin"></div>
+            class="w-4 h-4 border-2 border-slate-200 border-t-primary-500 rounded-full animate-spin" />
         </div>
       </div>
 
@@ -133,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 import { onClickOutside, useFocus } from '@vueuse/core';
 import type { Component, PropType } from 'vue';
 import { X } from 'lucide-vue-next';
@@ -191,7 +191,9 @@ const getLabelForValue = (val: string) => {
 
 // Computed
 const filteredOptions = computed(() => {
-  if (!searchQuery.value) return props.options;
+  if (!searchQuery.value) {
+    return props.options;
+  }
   const search = searchQuery.value.toLowerCase();
   return props.options.filter((opt) => opt.label.toLowerCase().includes(search));
 });
@@ -204,7 +206,9 @@ const showPlaceholder = computed(() => {
 
 // Methods
 const onFocusContainer = () => {
-  if (props.disabled) return;
+  if (props.disabled) {
+    return;
+  }
   isOpen.value = true;
   focused.value = true; // Automatically handles the DOM focus
 };
@@ -244,11 +248,17 @@ const clearAll = () => {
 
 // Keyboard Navigation
 const navigateOptions = (direction: number) => {
-  if (!isOpen.value || filteredOptions.value.length === 0) return;
+  if (!isOpen.value || filteredOptions.value.length === 0) {
+    return;
+  }
   const max = filteredOptions.value.length - 1;
   let next = activeIndex.value + direction;
-  if (next > max) next = 0;
-  if (next < 0) next = max;
+  if (next > max) {
+    next = 0;
+  }
+  if (next < 0) {
+    next = max;
+  }
   activeIndex.value = next;
 };
 

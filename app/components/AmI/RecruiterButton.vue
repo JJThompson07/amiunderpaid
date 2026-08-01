@@ -51,7 +51,9 @@ const props = defineProps({
 const route = useRoute();
 
 const replaceWildcards = (text: string) => {
-  if (!text) return '';
+  if (!text) {
+    return '';
+  }
   const incentive = route.path.includes('/benchmark') ? 'candidates' : 'roles';
 
   return text

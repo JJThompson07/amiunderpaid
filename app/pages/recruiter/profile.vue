@@ -108,7 +108,7 @@
                   >{{ $t('recruiter.account.saving') }}</span
                 >
                 <span
-                  class="w-2.5 h-2.5 border border-slate-200 border-t-primary-500 rounded-full animate-spin"></span>
+                  class="w-2.5 h-2.5 border border-slate-200 border-t-primary-500 rounded-full animate-spin" />
               </div>
             </div>
 
@@ -168,7 +168,7 @@
                   :key="catValue"
                   class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-xs group">
                   <div class="flex items-center gap-2 overflow-hidden">
-                    <div class="w-2 h-2 rounded-full bg-primary-500 shrink-0"></div>
+                    <div class="w-2 h-2 rounded-full bg-primary-500 shrink-0" />
                     <span class="font-bold text-slate-700 text-sm truncate">
                       {{ getCategoryLabel(catValue) }}
                     </span>
@@ -201,7 +201,7 @@
                 <CheckSquareIcon class="h-4 w-4" />
                 {{ $t('common.saved.success', { items: $t('common.categories') }) }}
               </p>
-              <p v-else></p>
+              <p v-else />
 
               <button
                 :disabled="isSaving"
@@ -214,7 +214,7 @@
                 @click="saveProfileCategories">
                 <span
                   v-if="isSaving"
-                  class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 {{ isSaving ? $t('common.saved.saving') : $t('common.saved.save') }}
               </button>
             </div>
@@ -270,7 +270,7 @@
               <CheckSquareIcon class="h-4 w-4" />
               {{ $t('account.passwordChange.success.message') }}
             </p>
-            <p v-else></p>
+            <p v-else />
 
             <button
               type="submit"
@@ -283,7 +283,7 @@
               ]">
               <span
                 v-if="updatingPassword"
-                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               {{
                 updatingPassword
                   ? $t('account.passwordChange.submittingBtn')
@@ -298,7 +298,7 @@
 </template>
 
 <script setup lang="ts">
-import { BriefcaseBusiness, CheckSquareIcon, Tag, LockIcon, KeyRound } from 'lucide-vue-next';
+import { BriefcaseBusiness, CheckSquareIcon, KeyRound, LockIcon, Tag } from 'lucide-vue-next';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 
 definePageMeta({
@@ -400,7 +400,9 @@ const currencyOptions = [
 ];
 
 const formattedCategories = computed(() => {
-  if (!categoriesData.value) return [];
+  if (!categoriesData.value) {
+    return [];
+  }
 
   const uniqueCategories = new Map();
 

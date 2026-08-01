@@ -64,7 +64,9 @@ const props = defineProps<{
 
 // Safe percentage for the progress bar relative to the Low-High range
 const averagePosition = computed(() => {
-  if (props.marketHigh <= props.marketLow) return 50; // Avoid division by zero
+  if (props.marketHigh <= props.marketLow) {
+    return 50;
+  } // Avoid division by zero
   const range = props.marketHigh - props.marketLow;
   const offset = props.marketAverage - props.marketLow;
   return Math.min(Math.max((offset / range) * 100, 0), 100);
@@ -74,7 +76,9 @@ const salaryPosition = computed<number>(() => {
   const high = props.marketHigh;
   const low = props.marketLow;
   const range = high - low;
-  if (range <= 0) return 50;
+  if (range <= 0) {
+    return 50;
+  }
 
   const offset = props.userSalary - low;
   const pct = (offset / range) * 100;

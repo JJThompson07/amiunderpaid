@@ -1,5 +1,5 @@
 import { FieldValue } from 'firebase-admin/firestore';
-interface TrackSearchBody {
+type TrackSearchBody = {
   title: string;
   country: string;
   location?: string | null;
@@ -8,7 +8,7 @@ interface TrackSearchBody {
   contract?: string | null;
   brand?: string | null;
   id?: string;
-}
+};
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<TrackSearchBody>(event);

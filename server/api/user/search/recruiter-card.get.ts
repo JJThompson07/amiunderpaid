@@ -71,7 +71,9 @@ export default defineEventHandler(async (event) => {
       if (!settings) {
         const snap = await db.collection('recruiter_contact_settings').doc(owner.uid).get();
 
-        if (snap.exists) settings = snap.data();
+        if (snap.exists) {
+          settings = snap.data();
+        }
       }
 
       // 3. Fallback to snake_case or base data

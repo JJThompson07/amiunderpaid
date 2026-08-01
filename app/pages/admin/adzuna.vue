@@ -109,8 +109,8 @@
 </template>
 
 <script setup lang="ts">
-import { TrendingUp, Save, RefreshCw } from 'lucide-vue-next';
-import { doc, writeBatch, collection, query, where, getDocs } from 'firebase/firestore';
+import { RefreshCw, Save, TrendingUp } from 'lucide-vue-next';
+import { collection, doc, getDocs, query, where, writeBatch } from 'firebase/firestore';
 
 /**
  * PAGE METADATA
@@ -131,7 +131,9 @@ const loadingStored = ref(false);
 const { showToast } = useSystemToast();
 
 const handleSyncCategories = async () => {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   syncingCategories.value = true;
   categoryStatus.value = `Fetching ${targetCountry.value} categories...`;
 
@@ -169,7 +171,9 @@ const handleSyncCategories = async () => {
 };
 
 const fetchStoredCategories = async () => {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   loadingStored.value = true;
   try {
     const q = query(
@@ -191,7 +195,9 @@ const fetchStoredCategories = async () => {
 };
 
 const saveStoredCategories = async () => {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   loadingStored.value = true;
   try {
     const batch = writeBatch(db);

@@ -1,5 +1,5 @@
 // tests/uk.spec.ts
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { calculateUKBenchmarkScore } from '../uk';
 
 describe('UK Engine: calculateUKBenchmarkScore', () => {

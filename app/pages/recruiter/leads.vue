@@ -32,7 +32,7 @@
 
         <div v-if="leadsPending" class="text-slate-500 font-medium flex items-center gap-2 py-4">
           <span
-            class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full"></span>
+            class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full" />
           Loading leads...
         </div>
 
@@ -359,11 +359,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { ChevronDown, Copy } from 'lucide-vue-next';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, query, where, orderBy } from 'firebase/firestore';
-import { useFirestore, useCollection, useCurrentUser } from 'vuefire';
+import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
+import { collection, orderBy, query, where } from 'firebase/firestore';
+import { useCollection, useCurrentUser, useFirestore } from 'vuefire';
 
 definePageMeta({ middleware: 'recruiters' });
 
@@ -384,7 +384,9 @@ const tabOptions = [
 
 // --- REAL-TIME LEADS QUERY ---
 const leadsQuery = computed(() => {
-  if (!user.value || import.meta.server) return null;
+  if (!user.value || import.meta.server) {
+    return null;
+  }
   // NOTE: If you haven't yet, Firestore might ask you to create a composite index for this query.
   // Check your browser console when you visit this page; Firebase provides a direct link to create it!
   return query(
@@ -407,7 +409,9 @@ const tableColumns = [
 
 // Map the raw Firestore data to match your table columns
 const leadsData = computed(() => {
-  if (!rawLeadsData.value) return [];
+  if (!rawLeadsData.value) {
+    return [];
+  }
 
   return rawLeadsData.value.map((lead) => ({
     date: new Date(lead.createdAt).toLocaleDateString('en-GB', {

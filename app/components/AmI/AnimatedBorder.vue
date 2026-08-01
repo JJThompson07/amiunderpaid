@@ -16,7 +16,7 @@
             `hovered-${index}`,
             loading || hoveredElement ? animationColour : 'bg-transparent'
           ].join(' ')
-        "></span>
+        " />
     </div>
   </div>
 </template>

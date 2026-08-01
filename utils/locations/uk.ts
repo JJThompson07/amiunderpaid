@@ -1,23 +1,23 @@
-import { TERRITORY_BAND_MAP, JobBand } from '../bands/uk';
-export interface ONSLocation {
+import { JobBand, TERRITORY_BAND_MAP } from '../bands/uk';
+export type ONSLocation = {
   id: number;
   name: string;
   gov_name: string;
-}
+};
 
-export interface ONSMatch {
+export type ONSMatch = {
   id: number;
   name: string;
-}
+};
 
-export interface Territory {
+export type Territory = {
   id: number;
   name: string;
   country: string;
   region: ONSMatch;
   ons_matches: ONSMatch[];
   band: JobBand;
-}
+};
 
 export const ONS_LOCATIONS: ONSLocation[] = [
   { id: 1, gov_name: 'England', name: 'England' },

@@ -3,7 +3,9 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
   const authHeader = getRequestHeader(event, 'authorization');
-  if (!authHeader?.startsWith('Bearer ')) return createError({ statusCode: 401 });
+  if (!authHeader?.startsWith('Bearer ')) {
+    return createError({ statusCode: 401 });
+  }
   const token = authHeader.split('Bearer ')[1];
   await getAuth().verifyIdToken(token || '');
 

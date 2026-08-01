@@ -33,7 +33,7 @@
             :sponsored="card.sponsored">
             <template #body>
               <!-- eslint-disable-next-line vue/no-v-html -->
-              <span v-html="card.bodyHtml"></span>
+              <span v-html="card.bodyHtml" />
             </template>
             <template #cta>
               <!-- Link CTA -->
@@ -85,9 +85,9 @@
 
 <script setup lang="ts">
 // imports
-import { Copy, CheckCircle2, TrendingUp, FileText, Mail, Binoculars } from 'lucide-vue-next';
+import { Binoculars, CheckCircle2, Copy, FileText, Mail, TrendingUp } from 'lucide-vue-next';
 import { AmICardAction, LazyAmICardAction } from '#components';
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 // ** type definitions **
 
 // ** props **

@@ -83,7 +83,7 @@
         <div
           v-if="!(userProfile?.activeTerritories?.length || userProfile?.claims?.length)"
           class="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-300 mt-4 p-4">
-          <Map class="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <map class="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 class="text-slate-700 font-bold mb-1">
             {{ $t('recruiter.territories.none') }}
           </h3>
@@ -118,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { MapPin, Map } from 'lucide-vue-next'; // Mail icon removed since it's in the toast now
+import { Map, MapPin } from 'lucide-vue-next'; // Mail icon removed since it's in the toast now
 
 definePageMeta({
   middleware: 'recruiters'
@@ -148,7 +148,9 @@ const promptCancel = (territoryId: number) => {
 };
 
 const executeCancel = async () => {
-  if (!territoryToCancel.value) return;
+  if (!territoryToCancel.value) {
+    return;
+  }
   isCancelling.value = true;
 
   try {

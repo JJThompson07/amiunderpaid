@@ -175,7 +175,7 @@
           >
           <span
             v-if="loading || parsing"
-            class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+            class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
         </div>
         <div
           ref="consoleRef"
@@ -233,8 +233,8 @@
 </template>
 
 <script setup lang="ts">
-import { Database, UploadCloud, CheckCircle2, Lock, LoaderCircle, X } from 'lucide-vue-next';
-import { collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { CheckCircle2, Database, LoaderCircle, Lock, UploadCloud, X } from 'lucide-vue-next';
+import { collection, getCountFromServer, query, where } from 'firebase/firestore';
 import type { SalaryRecord } from '../../../utils/seedData';
 
 /**
@@ -269,7 +269,9 @@ const existingData = ref<
 // ** methods **
 
 const fetchSummary = async () => {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   const countries = ['UK', 'USA'];
   const periods = ['year'];
 
@@ -342,7 +344,9 @@ const onFileSelect = (e: Event) => {
 };
 
 const deleteRecords = async (country: string, year: number, period: string, scope: string) => {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   if (
     !confirm(
       `Are you sure you want to delete ALL ${scope} records for ${country} ${year} (${period})? This cannot be undone.`
@@ -377,7 +381,9 @@ const deleteRecords = async (country: string, year: number, period: string, scop
 
 const handleParse = async () => {
   // 1. Validation checks
-  if (!selectedFile.value) return;
+  if (!selectedFile.value) {
+    return;
+  }
 
   parsing.value = true;
   log(`Initiating upload: ${targetCountry.value} (${targetScope.value}) data...`);
@@ -420,7 +426,9 @@ const handleParse = async () => {
 
 const seedToFirestore = async () => {
   // 1. Pre-flight check
-  if (loading.value || parsedData.value.length === 0 || !db) return;
+  if (loading.value || parsedData.value.length === 0 || !db) {
+    return;
+  }
 
   loading.value = true;
   log('Starting Firestore Batch Sync...');

@@ -5,7 +5,9 @@
       class="ml-1 font-bold uppercase tracking-wider"
       :class="[labelSize, labelColour]">
       {{ label }}
-      <span v-if="optional" class="text-slate-400 text-3xs uppercase"
+      <span
+v-if="optional"
+class="text-slate-400 text-3xs uppercase"
         >({{ $t('common.optional') }})</span
       >
     </label>
@@ -42,10 +44,10 @@
 <script setup lang="ts">
 import type { Component, PropType } from 'vue';
 
-export interface SelectOption {
+export type SelectOption = {
   label: string;
   value: string | number;
-}
+};
 
 const props = defineProps({
   modelValue: {

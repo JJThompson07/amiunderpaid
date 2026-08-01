@@ -217,12 +217,12 @@
 import { computed } from 'vue';
 import type { PropType } from 'vue';
 import {
-  MapPinIcon,
-  PlusIcon,
-  CrownIcon,
   CheckCircle2Icon,
   CircleIcon,
-  LockIcon
+  CrownIcon,
+  LockIcon,
+  MapPinIcon,
+  PlusIcon
 } from 'lucide-vue-next';
 
 export type Territory = { id: number; name: string; band?: number };

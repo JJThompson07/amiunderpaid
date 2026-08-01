@@ -29,7 +29,9 @@ export default defineEventHandler(async (event) => {
       const idCode = data.id_code;
       const groupName = data.title || 'Unknown Group'; // The 'title' acts as the Group Name
 
-      if (!idCode) return;
+      if (!idCode) {
+        return;
+      }
 
       // Because benchmarks have multiple locations, we only need to initialize the group once!
       if (!groupedData[idCode]) {
@@ -51,7 +53,9 @@ export default defineEventHandler(async (event) => {
         const idCode = data.soc; // UK Synonyms use 'soc' instead of 'id_code'!
         const title = (data.title || '').toLowerCase().trim();
 
-        if (!idCode || !title) return;
+        if (!idCode || !title) {
+          return;
+        }
 
         // If this SOC code exists in our benchmarks, add the title to the Set!
         if (groupedData[idCode]) {

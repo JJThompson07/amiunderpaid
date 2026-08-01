@@ -87,7 +87,7 @@
 
 <script setup lang="ts">
 // ** imports **
-import { Building2, Search, Users, Flag } from 'lucide-vue-next';
+import { Building2, Flag, Search, Users } from 'lucide-vue-next';
 const { $siteBrand } = useNuxtApp();
 const { locale, t } = useI18n();
 useSeoMeta({

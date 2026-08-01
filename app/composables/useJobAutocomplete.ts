@@ -22,7 +22,9 @@ export const useJobAutocomplete = (
     hits.forEach((hit: any) => {
       const cleanGroup = hit.group ? hit.group.replace(/\s*\(.*\)$/, '') : '';
       const label = cleanGroup ? `${hit.title} (${cleanGroup})` : hit.title;
-      if (hit.soc) labelToIdMap.value[label] = hit.soc;
+      if (hit.soc) {
+        labelToIdMap.value[label] = hit.soc;
+      }
       results.add(label);
     });
 
@@ -44,7 +46,9 @@ export const useJobAutocomplete = (
 
     hits.forEach((hit: any) => {
       const id = hit.id_code || hit.objectID;
-      if (id) labelToIdMap.value[hit.title] = id;
+      if (id) {
+        labelToIdMap.value[hit.title] = id;
+      }
       results.add(hit.title);
     });
 

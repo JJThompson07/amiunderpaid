@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { MenuIcon, XIcon } from 'lucide-vue-next';
 const { isAdmin } = useUserRole();
 const { locale } = useI18n();
@@ -122,7 +122,9 @@ useHead({
 
     // ✨ 2. Build a rock-solid SSR base URL (No more localhost leaks!)
     const getBaseUrl = () => {
-      if (import.meta.dev) return 'http://localhost:3000';
+      if (import.meta.dev) {
+        return 'http://localhost:3000';
+      }
       if ($siteBrand === 'amiunderpaid') {
         return locale.value === 'en-GB'
           ? 'https://www.amiunderpaid.co.uk'

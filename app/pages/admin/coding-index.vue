@@ -116,7 +116,7 @@
           >
           <span
             v-if="loading || parsing"
-            class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+            class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
         </div>
         <div
           ref="consoleRef"
@@ -160,14 +160,14 @@
 </template>
 
 <script setup lang="ts">
-import { BookOpen, UploadCloud, CheckCircle2, Lock, LoaderCircle, X } from 'lucide-vue-next';
-import { doc, collection, query, where, getCountFromServer, getDoc } from 'firebase/firestore';
+import { BookOpen, CheckCircle2, LoaderCircle, Lock, UploadCloud, X } from 'lucide-vue-next';
+import { collection, doc, getCountFromServer, getDoc, query, where } from 'firebase/firestore';
 
-interface JobTitleRecord {
+type JobTitleRecord = {
   title: string;
   soc: string;
   group: string;
-}
+};
 
 /**
  * PAGE METADATA
@@ -196,7 +196,9 @@ const existingData = ref<{ country: string; count: number }[]>([]);
 // ** methods **
 
 const fetchSummary = async () => {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   const countries = ['UK', 'USA'];
   const results: { country: string; count: number }[] = [];
 
@@ -224,7 +226,9 @@ const onFileSelect = (e: Event) => {
 };
 
 const deleteRecords = async (country: string) => {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   if (
     !confirm(
       `Are you sure you want to delete ALL job title mappings for ${country}? This cannot be undone.`
@@ -255,7 +259,9 @@ const deleteRecords = async (country: string) => {
 };
 
 const handleParse = async () => {
-  if (!selectedFile.value) return;
+  if (!selectedFile.value) {
+    return;
+  }
 
   parsing.value = true;
   log(`Initiating upload...`);
@@ -291,7 +297,9 @@ const handleParse = async () => {
 };
 
 const seedToFirestore = async () => {
-  if (loading.value || parsedData.value.length === 0 || !db) return;
+  if (loading.value || parsedData.value.length === 0 || !db) {
+    return;
+  }
 
   // Helper to generate consistent IDs
   const getRecordId = (record: JobTitleRecord) => {

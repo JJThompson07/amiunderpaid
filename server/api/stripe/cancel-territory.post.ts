@@ -1,7 +1,7 @@
 // server/api/stripe/cancel-territory.post.ts
 import Stripe from 'stripe';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -14,8 +14,9 @@ export default defineEventHandler(async (event) => {
 
   // 1. VERIFY USER
   const authHeader = getRequestHeader(event, 'authorization');
-  if (!authHeader?.startsWith('Bearer '))
+  if (!authHeader?.startsWith('Bearer ')) {
     return createError({ statusCode: 401, message: 'Unauthorized' });
+  }
 
   const token = authHeader.split('Bearer ')[1];
   const decodedToken = await getAuth().verifyIdToken(token || '');
@@ -26,7 +27,9 @@ export default defineEventHandler(async (event) => {
   const userDoc = await userRef.get();
   const userData = userDoc.data();
 
-  if (!userData) return createError({ statusCode: 404, message: 'User not found' });
+  if (!userData) {
+    return createError({ statusCode: 404, message: 'User not found' });
+  }
 
   const currentTerritories = userData.activeTerritories || [];
   const stripeSubId = userData.stripeSubscriptionId;

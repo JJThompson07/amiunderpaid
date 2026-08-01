@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { CheckCircle2, AlertTriangle, Info, X } from 'lucide-vue-next';
+import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-vue-next';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

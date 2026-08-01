@@ -21,7 +21,10 @@
             <div
               v-if="userSalary"
               class="flex flex-col items-end gap-1 text-sm text-right relative">
-              <AmIChip v-bind="comparisonChipAttributes" text-size="text-sm" compact
+              <AmIChip
+v-bind="comparisonChipAttributes"
+text-size="text-sm"
+compact
                 >{{ salaryMaxComparison }}%</AmIChip
               >
               <span
@@ -139,7 +142,9 @@ const hasRange = computed<boolean>(() => {
 });
 
 const salaryMaxComparison = computed<number>(() => {
-  if (!props.userSalary) return 0;
+  if (!props.userSalary) {
+    return 0;
+  }
 
   if ($siteBrand === 'benchmarkmyrole') {
     return getRawUncappedDiffPercentage(props.userSalary, props.salaryMax);

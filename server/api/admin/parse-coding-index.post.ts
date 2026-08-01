@@ -1,16 +1,18 @@
-import { readMultipartFormData, createError } from 'h3';
+import { createError, readMultipartFormData } from 'h3';
 import * as XLSX from 'xlsx';
 
-interface JobTitleRecord {
+type JobTitleRecord = {
   title: string;
   soc: string;
   group: string;
-}
+};
 
 export default defineEventHandler(async (event) => {
   try {
     const body = await readMultipartFormData(event);
-    if (!body) throw createError({ statusCode: 400, message: 'No body' });
+    if (!body) {
+      throw createError({ statusCode: 400, message: 'No body' });
+    }
 
     const file = body.find((item) => item.name === 'file');
     if (!file || !file.data) {
@@ -81,7 +83,9 @@ export default defineEventHandler(async (event) => {
     // 2. Extract Data
     for (let i = headerRowIndex + 1; i < rawData.length; i++) {
       const row = rawData[i];
-      if (!row) continue;
+      if (!row) {
+        continue;
+      }
 
       const title = row[titleIdx]?.toString().trim();
       const soc = row[socIdx]?.toString().trim();

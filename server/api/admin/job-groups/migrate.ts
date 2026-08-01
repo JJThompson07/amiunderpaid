@@ -6,7 +6,9 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     const country = body?.country;
 
-    if (!country) throw new Error('Country is missing from request body');
+    if (!country) {
+      throw new Error('Country is missing from request body');
+    }
 
     // 1. ENVIRONMENT CHECK
     const appId = process.env.ALGOLIA_APPLICATION_ID;

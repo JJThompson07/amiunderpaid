@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed top-0 left-0 w-full h-125 bg-linear-to-b z-0" :class="[bgFrom, bgTo]"></div>
+  <div class="fixed top-0 left-0 w-full h-125 bg-linear-to-b z-0" :class="[bgFrom, bgTo]" />
 </template>
 
 <script setup lang="ts">

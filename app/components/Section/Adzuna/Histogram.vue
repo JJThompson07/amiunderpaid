@@ -43,7 +43,7 @@
               </div>
               <!-- Arrow -->
               <div
-                class="w-2 h-2 bg-slate-800 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2"></div>
+                class="w-2 h-2 bg-slate-800 rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2" />
             </div>
           </div>
         </div>
@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type PropType } from 'vue';
+import { type PropType, ref } from 'vue';
 import { getPercentage } from '~/helpers/utility';
 import type { HistogramBucket } from '../../../../shared/utils/types';
 import { XCircle } from 'lucide-vue-next';

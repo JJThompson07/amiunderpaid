@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { DatabaseZap, Trash2, RefreshCcw, Users, Check, X, CheckCircle2 } from 'lucide-vue-next';
+import { Check, CheckCircle2, DatabaseZap, RefreshCcw, Trash2, Users, X } from 'lucide-vue-next';
 
 // Protect this route with your admin middleware
 definePageMeta({
@@ -140,8 +140,9 @@ const runCleanup = async () => {
     !confirm(
       'Are you sure you want to run the cache cleanup? This will delete all expired entries.'
     )
-  )
+  ) {
     return;
+  }
 
   isCleaning.value = true;
   cleanupStats.value = null;
@@ -203,7 +204,9 @@ const approveMatch = async (suggestion: any) => {
 };
 
 const rejectMatch = async (id: string) => {
-  if (!confirm('Are you sure you want to reject and delete this suggestion?')) return;
+  if (!confirm('Are you sure you want to reject and delete this suggestion?')) {
+    return;
+  }
 
   try {
     // 4. Updated to useAdminFetch

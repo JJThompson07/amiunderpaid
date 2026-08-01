@@ -33,7 +33,7 @@
           <div class="flex items-center gap-2">
             <span
               v-if="resetLoading"
-              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             <span>{{ $t('account.forgot-password.action.send-link') }}</span>
           </div>
         </AmIButton>

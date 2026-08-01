@@ -114,7 +114,7 @@
 
 <script setup lang="ts">
 // ** imports **
-import { Database, UserSearch, BarChart3 } from 'lucide-vue-next';
+import { BarChart3, Database, UserSearch } from 'lucide-vue-next';
 
 const { $siteBrand } = useNuxtApp();
 const { t } = useI18n();

@@ -14,7 +14,7 @@
 
       <div v-if="pending" class="text-slate-500 font-medium flex items-center gap-2">
         <span
-          class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full"></span>
+          class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full" />
         Loading recruiters...
       </div>
 
@@ -32,7 +32,9 @@
 
           <template #categories="{ value }">
             <div class="flex flex-wrap gap-1">
-              <span v-if="!value || value.length === 0" class="text-xs text-slate-400 italic"
+              <span
+v-if="!value || value.length === 0"
+class="text-xs text-slate-400 italic"
                 >None</span
               >
               <span
@@ -222,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import { CheckCircle2, XCircle, Tag, X, CheckSquare, Check, HelpCircle } from 'lucide-vue-next';
+import { Check, CheckCircle2, CheckSquare, HelpCircle, Tag, X, XCircle } from 'lucide-vue-next';
 
 definePageMeta({ middleware: 'admin' });
 
@@ -232,7 +234,9 @@ const { showToast } = useSystemToast();
 const actioningIds = ref(new Set<string>());
 
 const acceptRequest = async (row: any) => {
-  if (actioningIds.value.has(row.id)) return;
+  if (actioningIds.value.has(row.id)) {
+    return;
+  }
 
   if (
     !confirm(
@@ -270,7 +274,9 @@ const acceptRequest = async (row: any) => {
 };
 
 const rejectRequest = async (row: any) => {
-  if (actioningIds.value.has(row.id)) return;
+  if (actioningIds.value.has(row.id)) {
+    return;
+  }
 
   if (
     !confirm(
@@ -344,7 +350,9 @@ const openDiscountModal = (recruiter: any) => {
 };
 
 const saveDiscount = async () => {
-  if (!selectedRecruiter.value) return;
+  if (!selectedRecruiter.value) {
+    return;
+  }
   isSaving.value = true;
 
   try {

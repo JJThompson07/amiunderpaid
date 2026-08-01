@@ -101,16 +101,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useCurrentUser } from 'vuefire';
 
-interface NavLink {
+type NavLink = {
   to?: string;
   label: string;
   mobileOnly?: boolean;
   action?: string;
   children?: { to: string; label: string }[];
-}
+};
 
 const props = defineProps({
   isMobile: {
@@ -231,11 +231,16 @@ const navLinks = computed<NavLink[]>(() => [
 // --- 4. UNIFIED LOGIC ---
 // This automatically picks the correct array based on the user's role and filters out mobile-only items on desktop
 const activeLinks = computed<NavLink[]>(() => {
-  if (isRoleLoading.value) return [];
+  if (isRoleLoading.value) {
+    return [];
+  }
 
   let sourceArray: NavLink[] = navLinks.value;
-  if (isAdmin.value) sourceArray = adminLinks.value;
-  else if (isRecruiter.value) sourceArray = recruiterLinks.value;
+  if (isAdmin.value) {
+    sourceArray = adminLinks.value;
+  } else if (isRecruiter.value) {
+    sourceArray = recruiterLinks.value;
+  }
 
   return sourceArray.filter((link) => !link.mobileOnly || safeIsMobile.value);
 });

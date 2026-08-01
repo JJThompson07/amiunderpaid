@@ -8,7 +8,7 @@
       class="flex items-center justify-between p-2.5 border rounded-lg shadow-xs group"
       :class="[bgColour, borderColour]">
       <div class="flex items-center gap-2 overflow-hidden">
-        <div class="w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0"></div>
+        <div class="w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0" />
         <span class="font-bold text-xs truncate" :class="[textColour]">
           {{ option.label }}
         </span>

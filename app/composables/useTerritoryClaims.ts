@@ -8,7 +8,9 @@ export const useTerritoryClaims = (territoryIds: Ref<number[]>) => {
 
   // 1. Build the query based on the array of selected IDs
   const claimsQuery = computed(() => {
-    if (!territoryIds.value || territoryIds.value.length === 0) return null;
+    if (!territoryIds.value || territoryIds.value.length === 0) {
+      return null;
+    }
 
     // Safety limit: Firestore 'in' queries max out at 10 items.
     const safeIds = territoryIds.value.slice(0, 10);
@@ -21,7 +23,9 @@ export const useTerritoryClaims = (territoryIds: Ref<number[]>) => {
 
   // 3. Format the data for the Matrix
   const globalTakenMonths = computed(() => {
-    if (!claimsData.value || !userProfile.value) return {};
+    if (!claimsData.value || !userProfile.value) {
+      return {};
+    }
 
     const locks: Record<string, string[]> = {};
 

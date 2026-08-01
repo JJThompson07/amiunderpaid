@@ -6,7 +6,9 @@ import { calculateUSABenchmarkScore } from '../../../shared/utils/usa';
 
 export default defineEventHandler(async (event) => {
   const authHeader = getRequestHeader(event, 'authorization');
-  if (!authHeader?.startsWith('Bearer ')) return createError({ statusCode: 401 });
+  if (!authHeader?.startsWith('Bearer ')) {
+    return createError({ statusCode: 401 });
+  }
   const token = authHeader.split('Bearer ')[1]!;
   await getAuth().verifyIdToken(token);
 
@@ -25,7 +27,9 @@ export default defineEventHandler(async (event) => {
     let foundCount = 0;
 
     for (const doc of snapshotMissing.docs) {
-      if (foundCount >= 50) break;
+      if (foundCount >= 50) {
+        break;
+      }
       const data = doc.data();
       const needsV2 = !data.historical_fetched_MCA_v2;
       if (
@@ -305,9 +309,15 @@ export default defineEventHandler(async (event) => {
         updatePayload.marketAverage = marketAverage;
         updatePayload.governmentAverage = governmentAverage;
 
-        if (microPercentile !== null) updatePayload.microPercentile = microPercentile;
-        if (macroPercentile !== null) updatePayload.macroPercentile = macroPercentile;
-        if (livePercentile !== null) updatePayload.livePercentile = livePercentile;
+        if (microPercentile !== null) {
+          updatePayload.microPercentile = microPercentile;
+        }
+        if (macroPercentile !== null) {
+          updatePayload.macroPercentile = macroPercentile;
+        }
+        if (livePercentile !== null) {
+          updatePayload.livePercentile = livePercentile;
+        }
 
         await db.collection('search_history').doc(docId).set(updatePayload, { merge: true });
         updated++;

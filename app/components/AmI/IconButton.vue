@@ -8,8 +8,7 @@
     <span
       v-if="loading"
       class="w-4 h-4 border-2 rounded-full animate-spin block"
-      :class="spinnerColour">
-    </span>
+      :class="spinnerColour" />
 
     <slot v-else />
   </button>

@@ -1,4 +1,4 @@
-import { useFirebaseAuth, useCurrentUser } from 'vuefire';
+import { useCurrentUser, useFirebaseAuth } from 'vuefire';
 
 export const useAdminFetch = () => {
   const { logout } = useAdminAuth();

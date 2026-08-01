@@ -107,7 +107,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { PropType } from 'vue';
-import { MapPinIcon, CrownIcon, CheckSquareIcon, TrashIcon, PencilIcon } from 'lucide-vue-next';
+import { CheckSquareIcon, CrownIcon, MapPinIcon, PencilIcon, TrashIcon } from 'lucide-vue-next';
 
 defineProps({
   territories: {
@@ -158,7 +158,9 @@ const getTerritoryBand = (id: number) => {
 };
 
 const getCategoryLabel = (val: string) => {
-  if (!categoriesData.value) return val;
+  if (!categoriesData.value) {
+    return val;
+  }
   const found = categoriesData.value.find((c: any) => c.id === val || c.label === val);
   return found ? found.label || found.id : val;
 };
@@ -174,17 +176,23 @@ const currencySymbol = computed(() => {
 });
 
 const getRowPricing = (territoryId: number) => {
-  if (!pricingData.value || !userProfile.value) return { basic: '--', exclusive: '--' };
+  if (!pricingData.value || !userProfile.value) {
+    return { basic: '--', exclusive: '--' };
+  }
 
   const band = getTerritoryBand(territoryId);
   const billingCountry = userProfile.value.billingCountry || 'UK';
   const countryPricing = pricingData.value[billingCountry];
 
-  if (!countryPricing) return { basic: '--', exclusive: '--' };
+  if (!countryPricing) {
+    return { basic: '--', exclusive: '--' };
+  }
 
   const bandKey = `band${band}`;
   const bandData = countryPricing[bandKey];
-  if (!bandData) return { basic: '--', exclusive: '--' };
+  if (!bandData) {
+    return { basic: '--', exclusive: '--' };
+  }
 
   const basicDiscount = userProfile.value.basicDiscount || 0;
   const exclusiveDiscount = userProfile.value.exclusiveDiscount || 0;
@@ -197,7 +205,9 @@ const getRowPricing = (territoryId: number) => {
 
 const getCellPrice = (territoryId: number, isExcl: boolean) => {
   // 1. Guard against missing data
-  if (!pricingData.value || !userProfile.value) return '--';
+  if (!pricingData.value || !userProfile.value) {
+    return '--';
+  }
 
   const t = getTerritoryById(territoryId);
   const band = t ? t.band : 1;
@@ -205,11 +215,15 @@ const getCellPrice = (territoryId: number, isExcl: boolean) => {
   const billingCountry = userProfile.value.billingCountry || 'UK';
   const countryPricing = pricingData.value[billingCountry];
 
-  if (!countryPricing) return '--';
+  if (!countryPricing) {
+    return '--';
+  }
 
   const bandKey = `band${band}`;
   const bandData = countryPricing[bandKey];
-  if (!bandData) return '--';
+  if (!bandData) {
+    return '--';
+  }
 
   // 2. Get base price and the correct discount from the user's profile
   const basePrice = isExcl ? bandData.exclusive || 0 : bandData.basic || 0;

@@ -2,7 +2,7 @@
   <div
     class="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
     <div
-      class="absolute top-0 left-0 w-full h-100 bg-linear-to-b from-secondary-900 to-slate-50 z-0"></div>
+      class="absolute top-0 left-0 w-full h-100 bg-linear-to-b from-secondary-900 to-slate-50 z-0" />
 
     <div
       class="relative z-10 w-full max-w-md bg-white p-8 md:p-10 rounded-3xl border border-slate-200 shadow-2xl">
@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Building2 } from 'lucide-vue-next';
-import { updateDoc, doc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { useCurrentUser, useFirestore } from 'vuefire';
 
 // Protect this route with your recruiters middleware

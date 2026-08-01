@@ -168,7 +168,7 @@
             <div class="flex items-center gap-2 px-4 py-1">
               <span
                 v-if="isSubmitting"
-                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               <span>
                 {{
                   isSubmitting
@@ -228,7 +228,9 @@ const scheduleSelections = ref<any[]>([]);
 const isSubmitting = ref(false);
 
 const userClaimedIds = computed(() => {
-  if (!userProfile.value) return [];
+  if (!userProfile.value) {
+    return [];
+  }
   const active = userProfile.value.activeTerritories || userProfile.value.claims || [];
   return active.map((t: any) => t.territoryId || t.id);
 });
@@ -265,7 +267,9 @@ const listOptions = computed<TerritoryListOption[]>(() => {
 
 // 4. Intelligent Category Dropdown Logic
 const intelligentCategories = computed(() => {
-  if (!categoriesData.value) return [];
+  if (!categoriesData.value) {
+    return [];
+  }
 
   const countrySpecificCategories = categoriesData.value.filter(
     (cat: any) => cat.country === selectedCountry.value.toUpperCase()
@@ -310,14 +314,18 @@ const removeCategoryFromList = (val: string) => {
 
 // 7. Proceed to Step 2 (The Matrix)
 const continueToSchedule = () => {
-  if (!isReadyForSchedule.value) return;
+  if (!isReadyForSchedule.value) {
+    return;
+  }
   step.value = 2; // Transition the UI
 };
 
 // 8. Final Submission
 // 8. Final Submission & Payment Routing
 const submitSchedule = async () => {
-  if (scheduleSelections.value.length === 0) return;
+  if (scheduleSelections.value.length === 0) {
+    return;
+  }
 
   isSubmitting.value = true;
 

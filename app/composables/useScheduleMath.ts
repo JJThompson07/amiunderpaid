@@ -52,7 +52,9 @@ export const useScheduleMath = (
   });
 
   const getOwnedTerritory = (territoryId: number, categoryValue: string) => {
-    if (!userProfile.value) return null;
+    if (!userProfile.value) {
+      return null;
+    }
     const active = userProfile.value.activeTerritories || userProfile.value.claims || [];
     return (
       active.find((t: any) => t.territoryId === territoryId && t.categoryValue === categoryValue) ||
@@ -120,13 +122,17 @@ export const useScheduleMath = (
   // NEW: Helper to check if a month is owned by someone else
   const isMonthTaken = (rowId: string, monthStr: string) => {
     // 1. Safety check: Are there any locks at all?
-    if (!props.takenMonths) return false;
+    if (!props.takenMonths) {
+      return false;
+    }
 
     // 2. Get the array of locked months for this specific territory/category row
     const lockedMonthsForThisRow = props.takenMonths[rowId];
 
     // 3. If the row isn't in the database, or the month isn't in the array, it's free!
-    if (!lockedMonthsForThisRow) return false;
+    if (!lockedMonthsForThisRow) {
+      return false;
+    }
 
     // 4. Return true if someone else owns this month
     return lockedMonthsForThisRow.includes(monthStr);
@@ -139,7 +145,9 @@ export const useScheduleMath = (
     band: number | undefined
   ) => {
     const config = rowConfigs.value.get(rowId);
-    if (!config) return null;
+    if (!config) {
+      return null;
+    }
     const prices = getRowPricing(band);
 
     const upgradeCost = config.isBasic ? prices.exclusive - prices.basic : prices.exclusive;
@@ -192,7 +200,9 @@ export const useScheduleMath = (
 
     for (const row of matrixRows.value) {
       const config = rowConfigs.value.get(row.id);
-      if (!config) continue;
+      if (!config) {
+        continue;
+      }
 
       const prices = getRowPricing(row.territory.band);
 
@@ -226,7 +236,9 @@ export const useScheduleMath = (
         });
 
         calcMatrixTotal += rowTotalCost;
-        if (config.isBasic) calcNextMonth += prices.basic;
+        if (config.isBasic) {
+          calcNextMonth += prices.basic;
+        }
 
         payload.push({
           territoryId: row.territory.id,

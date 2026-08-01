@@ -1,14 +1,14 @@
 <template>
   <div
     class="relative w-full h-125 md:h-150 bg-linear-to-t from-secondary-50 to-slate-50 rounded-3xl border border-slate-200 overflow-hidden">
-    <div ref="mapContainer" class="w-full h-full"></div>
+    <div ref="mapContainer" class="w-full h-full" />
 
     <div
       v-if="loading"
       class="absolute inset-0 flex items-center justify-center bg-slate-50/80 backdrop-blur-sm z-10">
       <div class="flex flex-col items-center gap-3">
         <div
-          class="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+          class="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
         <AmILoader :message="$t('common.loading-item', { item: country })" />
       </div>
     </div>
@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, shallowRef } from 'vue';
+import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import * as echarts from 'echarts';
 import type { CountryCode } from '../../pages/recruiter/territories/index.vue';
 
@@ -52,13 +52,17 @@ const territoryLookup = computed(() => {
 });
 
 const getThemeColor = (cssVar: string, fallback: string) => {
-  if (!import.meta.client) return fallback;
+  if (!import.meta.client) {
+    return fallback;
+  }
   const val = getComputedStyle(document.body).getPropertyValue(cssVar).trim();
   return val || fallback;
 };
 
 const normalizeName = (name: string) => {
-  if (!name) return '';
+  if (!name) {
+    return '';
+  }
   return name
     .replace(/, City of/gi, '')
     .replace(/City of /gi, '')
@@ -70,7 +74,9 @@ const normalizeName = (name: string) => {
 };
 
 const loadAndDrawMap = async () => {
-  if (!mapContainer.value) return;
+  if (!mapContainer.value) {
+    return;
+  }
   loading.value = true; // Lock the shield!
 
   try {
@@ -101,7 +107,9 @@ const loadAndDrawMap = async () => {
 
       if (matchedTerritory) {
         // BLOCK CLICK IF ALREADY CLAIMED!
-        if (props.claimedIds.includes(matchedTerritory.id)) return;
+        if (props.claimedIds.includes(matchedTerritory.id)) {
+          return;
+        }
 
         emit('territory-clicked', matchedTerritory);
       } else {
@@ -120,7 +128,9 @@ const loadAndDrawMap = async () => {
 
 const updateMapData = () => {
   // RACE CONDITION SHIELD
-  if (!chart.value || loading.value) return;
+  if (!chart.value || loading.value) {
+    return;
+  }
 
   const mapData: any[] = [];
 
@@ -136,14 +146,18 @@ const updateMapData = () => {
 
   // 1. Grab the raw GeoJSON memory that ECharts is using
   const mapObj = echarts.getMap(props.country);
-  if (!mapObj || !mapObj.geoJSON) return;
+  if (!mapObj || !mapObj.geoJSON) {
+    return;
+  }
 
   const nameProp = props.country === 'UK' ? 'ctyua18nm' : 'name';
 
   // 2. Loop through every single polygon on the actual map
   mapObj.geoJSON.features.forEach((feature: any) => {
     const rawGeoName = feature.properties[nameProp];
-    if (!rawGeoName) return;
+    if (!rawGeoName) {
+      return;
+    }
 
     // Normalize the map's name using your updated function
     const normalizedGeoName = normalizeName(rawGeoName);
@@ -199,7 +213,9 @@ const updateMapData = () => {
         trigger: 'item',
         formatter: (params: any) => {
           // Hide tooltip for greyed out areas
-          if (!params.data) return undefined;
+          if (!params.data) {
+            return undefined;
+          }
           return params.name;
         }
       },
@@ -246,7 +262,9 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  if (chart.value) chart.value.dispose();
+  if (chart.value) {
+    chart.value.dispose();
+  }
   window.removeEventListener('resize', () => chart.value?.resize());
 });
 </script>

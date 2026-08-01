@@ -17,7 +17,7 @@
       <div
         class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 border-white shadow-md pointer-events-none transition-all duration-1000 ease-out"
         :class="circleClass"
-        :style="circleStyle"></div>
+        :style="circleStyle" />
     </div>
 
     <p v-if="description" class="text-2xs sm:text-xs text-slate-500 font-medium mt-2 leading-tight">
@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, type PropType } from 'vue';
+import { computed, onMounted, type PropType, ref } from 'vue';
 
 export type AmIChartRangeBreakdown = {
   colour: string; // e.g., 'bg-blue-500' (Tailwind class) OR '#3b82f6' (Hex code)
@@ -57,16 +57,24 @@ const clampedPercentile = computed(() => {
 // 1. Handles pre-defined Tailwind CSS classes
 const circleClass = computed<string>(() => {
   if (props.mca) {
-    if (props.percentile >= 80) return 'bg-positive-500';
-    if (props.percentile >= 60) return 'bg-neutral-500';
-    if (props.percentile >= 40) return 'bg-warning-500';
+    if (props.percentile >= 80) {
+      return 'bg-positive-500';
+    }
+    if (props.percentile >= 60) {
+      return 'bg-neutral-500';
+    }
+    if (props.percentile >= 40) {
+      return 'bg-warning-500';
+    }
     return 'bg-negative-500';
   }
 
   if (props.breakdown.length > 0) {
     const match = getBreakdownMatch();
     // If the color provided is a tailwind class (starts with 'bg-'), return it here
-    if (match && match.colour.startsWith('bg-')) return match.colour;
+    if (match && match.colour.startsWith('bg-')) {
+      return match.colour;
+    }
   }
 
   // Default fallback if no valid conditions are met

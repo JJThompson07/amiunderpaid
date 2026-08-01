@@ -14,9 +14,9 @@
       <!-- Dynamic Sections Loop -->
       <div v-for="section in sections" :key="section.id">
         <h3 class="text-lg sm:text-2xl font-bold text-slate-900 mb-4 flex items-center gap-3">
-          <span class="w-8 h-1 bg-primary-400 rounded-full"></span>
+          <span class="w-8 h-1 bg-primary-400 rounded-full" />
           {{ t(`faq.questions.section.${section.id}.title`) }}
-          <span class="flex-1 h-1 bg-primary-400 rounded-full"></span>
+          <span class="flex-1 h-1 bg-primary-400 rounded-full" />
         </h3>
         <dl class="flex flex-col gap-4">
           <div
@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ChevronDown } from 'lucide-vue-next';
 import faqJson from '../../../../i18n/locales/en-GB/faq.json';

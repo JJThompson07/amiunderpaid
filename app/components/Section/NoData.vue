@@ -72,8 +72,8 @@
 </template>
 
 <script setup lang="ts">
-import { SearchX, Search } from 'lucide-vue-next';
-import { ref, computed } from 'vue';
+import { Search, SearchX } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import type { SearchClient } from 'algoliasearch';
 
 const { $siteBrand } = useNuxtApp();

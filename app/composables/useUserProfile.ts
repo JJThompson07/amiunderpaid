@@ -10,7 +10,9 @@ export const useUserProfile = () => {
 
   // 2. Reusable update method
   const updateProfile = async (data: Record<string, any>) => {
-    if (!user.value) throw new Error('User is not authenticated.');
+    if (!user.value) {
+      throw new Error('User is not authenticated.');
+    }
 
     const ref = doc(db, 'users', user.value.uid);
     await updateDoc(ref, {

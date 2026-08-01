@@ -243,7 +243,7 @@
 
 <script setup lang="ts">
 import { FileUser, Info } from 'lucide-vue-next';
-import { ref, computed, onMounted, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 const { $siteBrand } = useNuxtApp();
 const route = useRoute();
@@ -345,8 +345,12 @@ const { updateSearchLog } = useUserLogging();
 watch(
   [pending, adzunaLoading, currentSearchId],
   () => {
-    if (pending.value || adzunaLoading.value) return;
-    if (!currentSearchId.value) return;
+    if (pending.value || adzunaLoading.value) {
+      return;
+    }
+    if (!currentSearchId.value) {
+      return;
+    }
 
     const hasData = hasGovernmentData.value || hasJobsData.value;
 

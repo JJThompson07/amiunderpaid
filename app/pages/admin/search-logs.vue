@@ -18,7 +18,7 @@
             @click="runBackfill">
             <span v-if="backfillLoading" class="flex items-center gap-2">
               <span
-                class="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
+                class="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
               Backfilling...
             </span>
             <span v-else>⏪ Backfill Historical</span>
@@ -32,7 +32,9 @@
           <div
             class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
             <span class="text-2xs font-black text-slate-400 uppercase tracking-widest">Today</span>
-            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+            <span
+v-if="pending"
+class="text-2xl font-black text-slate-300 animate-pulse mt-1"
               >---</span
             >
             <div v-else class="flex flex-col items-end">
@@ -48,7 +50,9 @@
             <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Yesterday</span
             >
-            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+            <span
+v-if="pending"
+class="text-2xl font-black text-slate-300 animate-pulse mt-1"
               >---</span
             >
             <div v-else class="flex flex-col items-end">
@@ -64,7 +68,9 @@
             <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Daily Avg</span
             >
-            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+            <span
+v-if="pending"
+class="text-2xl font-black text-slate-300 animate-pulse mt-1"
               >---</span
             >
             <div v-else class="flex flex-col items-end">
@@ -80,7 +86,9 @@
             <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Lifetime Searches</span
             >
-            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+            <span
+v-if="pending"
+class="text-2xl font-black text-slate-300 animate-pulse mt-1"
               >---</span
             >
             <div v-else class="flex flex-col items-end">
@@ -107,7 +115,7 @@
 
       <div v-if="pending" class="text-slate-500 font-medium flex items-center gap-2">
         <span
-          class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full"></span>
+          class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full" />
         Loading history...
       </div>
 
@@ -235,7 +243,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Search } from 'lucide-vue-next';
 import type { SearchLog } from '../../../server/api/user/search-logs.get';
 
@@ -348,7 +356,9 @@ const colouredLogs = computed(() => {
   let lastDate = '';
 
   return logs.value.map((log: any, index: number) => {
-    if (index === 0) lastDate = log.dateKey;
+    if (index === 0) {
+      lastDate = log.dateKey;
+    }
 
     if (log.dateKey && log.dateKey !== lastDate) {
       currentBg = currentBg === 'bg-white' ? 'bg-slate-50' : 'bg-white';

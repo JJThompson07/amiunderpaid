@@ -1,7 +1,7 @@
 // server/api/user/search-logs.get.ts
 import { getFirestore } from 'firebase-admin/firestore';
 
-export interface SearchLog {
+export type SearchLog = {
   id: string;
   title: string;
   country: string;
@@ -17,7 +17,7 @@ export interface SearchLog {
   governmentAverage: number | null;
   searchSuccess: boolean | null;
   historicalFetchedMCA: boolean | null;
-}
+};
 
 export default defineEventHandler(async (event) => {
   const db = getFirestore();

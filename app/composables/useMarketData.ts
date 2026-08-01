@@ -1,6 +1,6 @@
 import type { SearchClient } from 'algoliasearch';
 
-export interface SalaryBenchmark {
+export type SalaryBenchmark = {
   title: string;
   location?: string;
   country?: string;
@@ -13,15 +13,15 @@ export interface SalaryBenchmark {
   id_code?: string;
   soc?: string; // Added for UK job_titles dictionary
   group?: string; // Added for UK job_titles dictionary
-}
+};
 
-export interface ResolvedJobIdentity {
+export type ResolvedJobIdentity = {
   title: string;
   id_code?: string; // The master ID we ultimately pass to the data engines
   soc?: string; // UK-specific dictionary ID
   group?: string; // UK-specific job category (e.g., "Software Engineering")
   objectID?: string; // Default Algolia ID
-}
+};
 
 export const useMarketData = () => {
   const { $algolia } = useNuxtApp();
