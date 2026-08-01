@@ -38,16 +38,34 @@ const TEST_EXEMPT_FILES = ['app/app.vue', 'app/error.vue'];
 
 const newFiles = new Set<string>();
 try {
+  // 1. Local Development (uncommitted/staged/untracked files)
   const headDiff = execSync('git diff --name-only --diff-filter=A HEAD', { encoding: 'utf8', stdio: 'pipe' });
   const cachedDiff = execSync('git diff --name-only --diff-filter=A --cached', { encoding: 'utf8', stdio: 'pipe' });
   const untracked = execSync('git ls-files --others --exclude-standard', { encoding: 'utf8', stdio: 'pipe' });
   
-  [...headDiff.split('\n'), ...cachedDiff.split('\n'), ...untracked.split('\n')]
+  // 2. CI/PR Environments (files committed in the branch vs main)
+  let branchDiff = '';
+  try {
+    branchDiff = execSync('git diff --name-only --diff-filter=A origin/main...HEAD', { encoding: 'utf8', stdio: 'pipe' });
+  } catch {
+    try {
+      branchDiff = execSync('git diff --name-only --diff-filter=A main...HEAD', { encoding: 'utf8', stdio: 'pipe' });
+    } catch {
+      // Ignore if main/origin/main doesn't exist or isn't fetched
+    }
+  }
+
+  [
+    ...headDiff.split('\n'), 
+    ...cachedDiff.split('\n'), 
+    ...untracked.split('\n'),
+    ...branchDiff.split('\n')
+  ]
     .map((s) => s.trim())
     .filter(Boolean)
     .forEach((f) => newFiles.add(f));
 } catch (e) {
-  // Gracefully handle git errors (e.g. shallow clone, no HEAD)
+  // Gracefully handle general git errors (e.g. shallow clone, no HEAD)
 }
 
 for (const file of gitFiles()) {

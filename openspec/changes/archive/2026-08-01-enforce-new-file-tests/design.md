@@ -14,9 +14,9 @@ See proposal.md for motivation. Our structure linter currently warns when tests 
 ## Decisions
 
 **Detecting New Files via Git**
-- **Decision**: We will execute `git diff --name-only --diff-filter=A HEAD` and `git diff --name-only --diff-filter=A --cached` via Node's `child_process.execSync` to get the list of newly added files (both committed in the current branch diffing against main, or staged/unstaged).
+- **Decision**: We will execute `git diff --name-only --diff-filter=A HEAD` (uncommitted), `git diff --name-only --diff-filter=A --cached` (staged), and `git ls-files --others` (untracked) to catch new files during local development. Crucially, to catch new files in a CI/CD environment where the files are already committed to the PR branch, we will also execute `git diff --name-only --diff-filter=A origin/main...HEAD` (falling back to `main...HEAD`).
 - **Alternative**: We could maintain a hardcoded whitelist of legacy files, but that is difficult to maintain and clutters configuration.
-- **Rationale**: `git diff` dynamically and accurately identifies new files without maintenance overhead.
+- **Rationale**: Combining local uncommitted `diff` strategies with a base-branch `diff` strategy ensures the rule is perfectly enforced both locally and in CI pipelines without maintenance overhead.
 
 ## Risks / Trade-offs
 
