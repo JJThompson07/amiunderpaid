@@ -2,7 +2,7 @@ name: Gemini PR Review
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   review:
+    if: contains(github.event.pull_request.body, '- [x] 🤖 Request Gemini Code Review')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
