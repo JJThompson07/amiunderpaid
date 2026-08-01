@@ -2,6 +2,9 @@
   "name": "amiunderpaid",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "build": "nuxt build",
     "build:dev": "nuxt build --dotenv .env",
