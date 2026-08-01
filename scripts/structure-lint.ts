@@ -36,6 +36,20 @@ const stem = (file: string): string => basename(file).replace(/\.(vue|ts)$/, '')
 const TEST_EXEMPT_DIRS = ['server', 'app/plugins', 'app/middleware'];
 const TEST_EXEMPT_FILES = ['app/app.vue', 'app/error.vue'];
 
+const newFiles = new Set<string>();
+try {
+  const headDiff = execSync('git diff --name-only --diff-filter=A HEAD', { encoding: 'utf8', stdio: 'pipe' });
+  const cachedDiff = execSync('git diff --name-only --diff-filter=A --cached', { encoding: 'utf8', stdio: 'pipe' });
+  const untracked = execSync('git ls-files --others --exclude-standard', { encoding: 'utf8', stdio: 'pipe' });
+  
+  [...headDiff.split('\n'), ...cachedDiff.split('\n'), ...untracked.split('\n')]
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .forEach((f) => newFiles.add(f));
+} catch (e) {
+  // Gracefully handle git errors (e.g. shallow clone, no HEAD)
+}
+
 for (const file of gitFiles()) {
   const base = basename(file);
 
@@ -92,8 +106,12 @@ for (const file of gitFiles()) {
   if (eligibleForTest) {
     const spec = join(dirname(file), 'tests', `${stem(file)}.spec.ts`);
     if (!existsSync(spec)) {
-      // Temporarily write as a warning instead of failing the gate for pre-existing files
-      process.stdout.write(`  ⚠ [unitTests] ${file} is missing an adjacent unit test\n`);
+      if (newFiles.has(file)) {
+        fail('unitTests', file, 'missing adjacent unit test for newly added file');
+      } else {
+        // Temporarily write as a warning instead of failing the gate for pre-existing files
+        process.stdout.write(`  ⚠ [unitTests] ${file} is missing an adjacent unit test (legacy)\n`);
+      }
     }
   }
 }
