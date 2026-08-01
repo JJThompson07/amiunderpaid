@@ -6,8 +6,8 @@
       <div class="mb-6 flex justify-center">
         <div
           class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
-          <database v-if="!user" class="w-8 h-8" />
-          <lock v-else class="w-8 h-8 text-emerald-500" />
+          <Database v-if="!user" class="w-8 h-8" />
+          <Lock v-else class="w-8 h-8 text-emerald-500" />
         </div>
       </div>
 
@@ -56,7 +56,7 @@
                 class="ml-1 p-0.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete this dataset"
                 @click="deleteRecords(record.country, record.year, record.period, record.scope)">
-                <x class="w-3 h-3" />
+                <X class="w-3 h-3" />
               </button>
             </div>
           </div>
@@ -153,7 +153,7 @@
           </label>
           <label
             class="flex flex-col items-center px-4 py-8 bg-slate-50 text-indigo-600 rounded-2xl border-2 border-dashed border-slate-200 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all group">
-            <upload-cloud
+            <UploadCloud
               class="w-10 h-10 mb-2 text-slate-300 group-hover:text-indigo-400 transition-colors" />
             <span
               class="text-xs font-bold uppercase tracking-wide text-slate-500 group-hover:text-indigo-600">
@@ -201,7 +201,7 @@
             title="Sync Records"
             @click="seedToFirestore">
             <div class="flex items-center gap-2">
-              <check-circle2 class="w-4 h-4" />
+              <CheckCircle2 class="w-4 h-4" />
               <span>Sync {{ parsedData.length }} Records</span>
             </div>
           </AmIButton>
@@ -222,7 +222,7 @@
             title="Parse Spreadsheet"
             @click="handleParse">
             <div class="flex items-center justify-center gap-2">
-              <loader-circle v-if="parsing" class="w-4 h-4 animate-spin" />
+              <LoaderCircle v-if="parsing" class="w-4 h-4 animate-spin" />
               <span v-else>Parse Spreadsheet</span>
             </div>
           </AmIButton>

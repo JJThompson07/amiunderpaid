@@ -8,7 +8,7 @@
       <NuxtLink
         to="/"
         class="inline-flex items-center gap-2 mb-6 text-sm font-semibold transition-colors text-slate-300 hover:text-white">
-        <arrow-left class="w-4 h-4" />
+        <ArrowLeft class="w-4 h-4" />
         {{ $t('login.common.back-to-search') }}
       </NuxtLink>
 

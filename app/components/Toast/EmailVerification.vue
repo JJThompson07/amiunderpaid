@@ -8,7 +8,7 @@
       <div class="flex items-start gap-4">
         <div
           class="w-12 h-12 rounded-2xl bg-warning-100 flex items-center justify-center shrink-0 border border-warning-200/50">
-          <mail class="w-6 h-6 text-warning-600" />
+          <Mail class="w-6 h-6 text-warning-600" />
         </div>
         <div>
           <h3 class="text-base font-bold text-warning-900">{{ $t('toast.verify-email.title') }}</h3>

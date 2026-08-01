@@ -32,7 +32,9 @@
 
           <template #categories="{ value }">
             <div class="flex flex-wrap gap-1">
-              <span v-if="!value || value.length === 0" class="text-xs text-slate-400 italic"
+              <span
+v-if="!value || value.length === 0"
+class="text-xs text-slate-400 italic"
                 >None</span
               >
               <span
@@ -66,7 +68,7 @@
                       v-if="t.isBasic"
                       class="shrink-0 text-2xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 rounded flex items-center justify-center w-4.5 h-4.5"
                       title="Basic">
-                      <check-square class="w-3 h-3" />
+                      <CheckSquare class="w-3 h-3" />
                     </span>
                     <div
                       v-if="t.exclusiveMonths && t.exclusiveMonths.length > 0"
@@ -87,16 +89,16 @@
           <template #status="{ row }">
             <div class="flex items-center justify-center gap-1">
               <template v-if="row.status === 'requested'">
-                <help-circle class="w-4 h-4 text-amber-500 animate-pulse" />
+                <HelpCircle class="w-4 h-4 text-amber-500 animate-pulse" />
                 <span class="text-xs font-bold text-amber-700">Requested</span>
               </template>
               <template v-else-if="row.status === 'rejected'">
-                <x-circle class="w-4 h-4 text-red-500" />
+                <XCircle class="w-4 h-4 text-red-500" />
                 <span class="text-xs font-bold text-red-700">Rejected</span>
               </template>
               <template v-else>
-                <check-circle2 v-if="row.verified" class="w-4 h-4 text-emerald-500" />
-                <x-circle v-else class="w-4 h-4 text-slate-300" />
+                <CheckCircle2 v-if="row.verified" class="w-4 h-4 text-emerald-500" />
+                <XCircle v-else class="w-4 h-4 text-slate-300" />
                 <span
                   class="text-xs font-bold"
                   :class="row.verified ? 'text-emerald-700' : 'text-slate-400'">
@@ -146,14 +148,14 @@
                   title="Accept Access Request"
                   :disabled="actioningIds.has(row.id)"
                   @click="acceptRequest(row)">
-                  <check class="w-4 h-4" />
+                  <Check class="w-4 h-4" />
                 </button>
                 <button
                   class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                   title="Reject Access Request"
                   :disabled="actioningIds.has(row.id)"
                   @click="rejectRequest(row)">
-                  <x class="w-4 h-4" />
+                  <X class="w-4 h-4" />
                 </button>
               </template>
               <template v-else-if="row.status === 'rejected'">
@@ -164,7 +166,7 @@
                   class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors cursor-pointer"
                   title="Edit Discounts"
                   @click="openDiscountModal(row)">
-                  <tag class="w-4 h-4" />
+                  <Tag class="w-4 h-4" />
                 </button>
               </template>
             </div>
@@ -182,7 +184,7 @@
         <div class="flex justify-between items-start mb-2">
           <h3 class="text-xl font-black text-slate-900">Manage Discounts</h3>
           <button class="text-slate-400 hover:text-slate-600" @click="showModal = false">
-            <x class="w-5 h-5" />
+            <X class="w-5 h-5" />
           </button>
         </div>
         <p class="text-sm text-slate-500 mb-6">

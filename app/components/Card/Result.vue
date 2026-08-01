@@ -33,7 +33,7 @@
           >{{ currencySymbol }}{{ userSalary.toLocaleString() }}</span
         >
       </div>
-      <arrow-left-right-icon class="w-8 h-8 text-slate-300" />
+      <ArrowLeftRightIcon class="w-8 h-8 text-slate-300" />
       <div class="flex flex-col text-end flex-1">
         <span class="text-xs text-slate-500">{{ $t('card.result.market-average') }}</span>
         <span class="font-black text-xl lg:text-3xl"

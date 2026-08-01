@@ -17,7 +17,7 @@
         <div
           v-else
           class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-          <briefcase-business class="w-6 h-6 text-slate-300" />
+          <BriefcaseBusiness class="w-6 h-6 text-slate-300" />
         </div>
         <div class="flex-1 min-w-0">
           <h4 class="font-black text-slate-900 text-sm truncate">

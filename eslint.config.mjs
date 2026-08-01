@@ -29,7 +29,7 @@ export default withNuxt(
       'vue/attribute-hyphenation': ['error', 'always'],
       'vue/component-name-in-template-casing': [
         'error',
-        'kebab-case',
+        'PascalCase',
         { registeredComponentsOnly: true }
       ],
       'vue/require-explicit-emits': 'error',

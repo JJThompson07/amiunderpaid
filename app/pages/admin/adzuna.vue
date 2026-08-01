@@ -6,7 +6,7 @@
       <div class="mb-6 flex justify-center">
         <div
           class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
-          <trending-up class="w-8 h-8" />
+          <TrendingUp class="w-8 h-8" />
         </div>
       </div>
 
@@ -63,13 +63,13 @@
               :disabled="loadingStored"
               class="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
               @click="saveStoredCategories">
-              <save class="w-3 h-3" />
+              <Save class="w-3 h-3" />
               <span>Save List</span>
             </button>
             <button
               class="text-slate-400 hover:text-indigo-600 p-1.5"
               @click="fetchStoredCategories">
-              <refresh-cw class="w-4 h-4" :class="{ 'animate-spin': loadingStored }" />
+              <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loadingStored }" />
             </button>
           </div>
         </div>

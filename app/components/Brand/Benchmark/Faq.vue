@@ -32,7 +32,7 @@
                   {{ t(`faq.benchmark.questions.section.${section.id}.${key}.question`) }}
                 </span>
                 <span class="ml-6 flex items-center shrink-0">
-                  <chevron-down
+                  <ChevronDown
                     class="w-5 h-5 text-slate-400 transition-transform duration-300"
                     :class="
                       openItems.has(`${section.id}-${key}`) ? '-rotate-180 text-primary-500' : ''

@@ -17,7 +17,7 @@
         class="hover:scale-105 transition-all duration-500 ease-in-out px-2!"
         equal-padding
         @click="scrollByAmount(-1)">
-        <chevron-left class="w-6 h-6" />
+        <ChevronLeft class="w-6 h-6" />
       </AmIButton>
 
       <AmIButton
@@ -26,7 +26,7 @@
         class="hover:scale-105 transition-all duration-500 ease-in-out px-2!"
         equal-padding
         @click="scrollByAmount(1)">
-        <chevron-right class="w-6 h-6" />
+        <ChevronRight class="w-6 h-6" />
       </AmIButton>
     </div>
   </div>

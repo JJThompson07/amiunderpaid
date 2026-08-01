@@ -7,11 +7,14 @@
         target="_self"
         class="relative cursor-pointer decoration-0 px-4 py-2 flex flex-row gap-1 items-center text-xs bg-primary-500 text-white hover:bg-primary-400 rounded-lg overflow-hidden transition-all duration-700 ease-in-out font-bold">
         {{ $t('search.ami.switch-site') }}
-        <arrow-right-icon class="w-4 h-4" />
+        <ArrowRightIcon class="w-4 h-4" />
       </a>
       <div class="flex flex-1 justify-end">
-        <AmIButton v-if="!showCalc" title="Salary converter" @click="showCalc = true"
-          ><calculator-icon class="w-5 h-5 text-slate-50"
+        <AmIButton
+v-if="!showCalc"
+title="Salary converter"
+@click="showCalc = true"
+          ><CalculatorIcon class="w-5 h-5 text-slate-50"
         /></AmIButton>
 
         <LazyModalSalaryConverter

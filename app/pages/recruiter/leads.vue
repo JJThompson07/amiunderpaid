@@ -52,7 +52,7 @@
               <button
                 class="p-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-indigo-600 transition-colors shrink-0"
                 @click="copyToClipboard(value)">
-                <copy class="w-3.5 h-3.5" />
+                <Copy class="w-3.5 h-3.5" />
               </button>
             </div>
           </template>
@@ -96,7 +96,7 @@
                         )
                       }}
                     </span>
-                    <chevron-down
+                    <ChevronDown
                       class="w-4 h-4 text-indigo-500 transition-transform duration-300 shrink-0"
                       :class="{ 'rotate-180': showWildcards }" />
                   </button>

@@ -30,7 +30,7 @@
                   $t('recruiter.territories.selected', { count: groupItemsSelected(group.options) })
                 }}
               </AmIChip>
-              <chevron-down-icon
+              <ChevronDownIcon
                 class="w-4 h-4 text-slate-900 transition-transform duration-200 ease-in-out"
                 :class="{ 'rotate-180': openGroups.has(group.group) }" />
             </span>

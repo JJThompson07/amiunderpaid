@@ -17,7 +17,7 @@
         class="text-slate-400 hover:text-negative-500 p-1 rounded hover:bg-negative-50 transition-colors shrink-0"
         title="Remove"
         @click="$emit('remove', option.value)">
-        <x-icon class="h-3.5 w-3.5" />
+        <XIcon class="h-3.5 w-3.5" />
       </button>
     </div>
   </div>

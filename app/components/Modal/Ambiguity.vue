@@ -29,7 +29,7 @@
             </div>
           </div>
           <div class="opacity-0 group-hover:opacity-100 transition-opacity text-primary-600">
-            <arrow-right class="w-5 h-5" />
+            <ArrowRight class="w-5 h-5" />
           </div>
         </button>
       </div>

@@ -9,7 +9,7 @@
       <div class="text-center mb-8">
         <div
           class="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-600 mx-auto mb-4 border border-primary-100">
-          <building2 class="w-8 h-8" />
+          <Building2 class="w-8 h-8" />
         </div>
         <h1 class="text-2xl font-black text-slate-900">{{ $t('recruiter.onboarding.title') }}</h1>
         <p class="text-slate-500 text-sm mt-2">

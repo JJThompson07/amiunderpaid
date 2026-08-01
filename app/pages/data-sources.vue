@@ -20,7 +20,7 @@
           </div>
           <div
             class="w-10 h-10 flex items-center justify-center rounded-lg bg-secondary-50 text-secondary-600 mb-4">
-            <search class="w-6 h-6" />
+            <Search class="w-6 h-6" />
           </div>
           <h3 class="text-lg font-bold text-slate-900">{{ $t('data-sources.adzuna.heading') }}</h3>
           <p class="mt-2 text-sm text-slate-500">
@@ -32,7 +32,7 @@
         <div class="p-6 bg-white border border-slate-200 shadow-sm rounded-2xl">
           <div
             class="w-10 h-10 flex items-center justify-center rounded-lg bg-secondary-50 text-primary-600 mb-4">
-            <building2 class="w-6 h-6" />
+            <Building2 class="w-6 h-6" />
           </div>
           <h3 class="text-lg font-bold text-slate-900">{{ $t('data-sources.ons.heading') }}</h3>
           <p class="mt-2 text-sm text-slate-500">
@@ -44,7 +44,7 @@
         <div class="p-6 bg-white border border-slate-200 shadow-sm rounded-2xl">
           <div
             class="w-10 h-10 flex items-center justify-center rounded-lg bg-secondary-50 text-secondary-600 mb-4">
-            <flag class="w-6 h-6" />
+            <Flag class="w-6 h-6" />
           </div>
           <h3 class="text-lg font-bold text-slate-900">{{ $t('data-sources.bls.heading') }}</h3>
           <p class="mt-2 text-sm text-slate-500">
@@ -57,7 +57,7 @@
           class="p-6 bg-slate-50 border border-slate-200 border-dashed shadow-none rounded-2xl opacity-75">
           <div
             class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-200 text-slate-500 mb-4">
-            <users class="w-6 h-6" />
+            <Users class="w-6 h-6" />
           </div>
           <h3 class="text-lg font-bold text-slate-700">{{ $t('data-sources.crowd.heading') }}</h3>
           <p class="mt-2 text-sm text-slate-500">

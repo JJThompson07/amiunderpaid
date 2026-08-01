@@ -7,7 +7,7 @@
         <div class="flex flex-row gap-1 justify-between items-center w-full text-slate-500">
           <span class="text-2xs flex-1 line-clamp-1">{{ company }}</span>
           <span class="text-2xs flex gap-1 items-center line-clamp-1"
-            ><map-pin-icon class="w-3 h-3" />{{ location }}</span
+            ><MapPinIcon class="w-3 h-3" />{{ location }}</span
           >
         </div>
       </div>
@@ -21,7 +21,10 @@
             <div
               v-if="userSalary"
               class="flex flex-col items-end gap-1 text-sm text-right relative">
-              <AmIChip v-bind="comparisonChipAttributes" text-size="text-sm" compact
+              <AmIChip
+v-bind="comparisonChipAttributes"
+text-size="text-sm"
+compact
                 >{{ salaryMaxComparison }}%</AmIChip
               >
               <span

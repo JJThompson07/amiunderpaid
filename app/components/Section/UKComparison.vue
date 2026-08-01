@@ -3,7 +3,7 @@
     <div class="p-6">
       <div class="flex items-center gap-3 mb-4">
         <div class="p-2 bg-indigo-50 rounded-lg text-secondary-600">
-          <map-pin class="w-5 h-5" />
+          <MapPin class="w-5 h-5" />
         </div>
         <div class="flex-1">
           <h3 class="text-lg font-bold text-slate-900">{{ location }}</h3>

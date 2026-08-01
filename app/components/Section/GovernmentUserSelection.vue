@@ -3,7 +3,7 @@
     class="government-section p-4 bg-white border shadow-xl rounded-2xl border-slate-200 relative flex-1 flex flex-col gap-4">
     <div class="flex items-center gap-2">
       <div class="p-1.5 bg-amber-100 rounded-lg text-amber-600">
-        <alert-circle class="w-4 h-4" aria-hidden="true" />
+        <AlertCircle class="w-4 h-4" aria-hidden="true" />
       </div>
       <h3 class="font-bold text-slate-900">{{ $t('sections.gov-user-selection.title') }}</h3>
     </div>

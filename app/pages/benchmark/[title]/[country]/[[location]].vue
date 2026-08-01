@@ -151,7 +151,7 @@
       <!-- 5. Disclaimer -->
       <p
         class="flex items-center justify-center gap-1 mt-4 lg:mt-12 text-2xs text-center text-slate-400">
-        <info class="w-3 h-3" />
+        <Info class="w-3 h-3" />
         {{ $t('common.data.disclaimer') }}
       </p>
     </div>

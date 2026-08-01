@@ -39,7 +39,7 @@
         class="absolute right-0 top-0 bottom-0 px-3 bg-slate-100 text-slate-600 hover:bg-slate-300/50 flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out rounded-r-xl"
         :class="inputValue.length > 0 ? 'opacity-100' : 'opacity-0'"
         @click="inputValue = ''">
-        <x class="h-4 w-4" />
+        <X class="h-4 w-4" />
       </div>
 
       <!-- Loading Indicator -->

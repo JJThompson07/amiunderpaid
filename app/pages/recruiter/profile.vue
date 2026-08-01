@@ -23,7 +23,7 @@
         <div class="flex items-center gap-3 mb-8">
           <div
             class="w-10 h-10 bg-secondary-50 rounded-xl flex items-center justify-center text-secondary-600">
-            <briefcase-business class="w-5 h-5" />
+            <BriefcaseBusiness class="w-5 h-5" />
           </div>
           <h2 class="text-xl font-bold text-slate-900">{{ $t('recruiter.account.heading') }}</h2>
         </div>
@@ -49,7 +49,7 @@
             class="mt-4 bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex flex-col gap-2">
             <p
               class="text-2xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1.5">
-              <tag class="w-3.5 h-3.5" />
+              <Tag class="w-3.5 h-3.5" />
               {{ $t('recruiter.account.discounts.title', 'Active Partner Discounts') }}
             </p>
             <div class="flex flex-wrap gap-3 mt-1">
@@ -198,7 +198,7 @@
               <p
                 v-if="showSuccess"
                 class="text-xs font-bold text-positive-600 animate-pulse flex gap-1 items-center">
-                <check-square-icon class="h-4 w-4" />
+                <CheckSquareIcon class="h-4 w-4" />
                 {{ $t('common.saved.success', { items: $t('common.categories') }) }}
               </p>
               <p v-else />
@@ -227,7 +227,7 @@
         <div class="flex items-center gap-3 mb-8">
           <div
             class="w-10 h-10 bg-secondary-50 rounded-xl flex items-center justify-center text-secondary-600">
-            <lock-icon class="w-5 h-5" />
+            <LockIcon class="w-5 h-5" />
           </div>
           <h2 class="text-xl font-bold text-slate-900">{{ $t('account.passwordChange.title') }}</h2>
         </div>
@@ -267,7 +267,7 @@
             <p
               v-else-if="passwordSuccess"
               class="text-xs font-bold text-positive-600 animate-pulse flex gap-1 items-center">
-              <check-square-icon class="h-4 w-4" />
+              <CheckSquareIcon class="h-4 w-4" />
               {{ $t('account.passwordChange.success.message') }}
             </p>
             <p v-else />

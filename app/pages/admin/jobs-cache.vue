@@ -9,7 +9,7 @@
 
     <div class="p-6 bg-white border rounded-xl border-slate-200 shadow-sm space-y-4">
       <div class="flex items-center gap-2">
-        <database-zap class="w-5 h-5 text-indigo-600" />
+        <DatabaseZap class="w-5 h-5 text-indigo-600" />
         <h2 class="text-xl font-bold text-slate-900">Cache Maintenance</h2>
       </div>
       <p class="text-sm text-slate-600">
@@ -23,8 +23,8 @@
           class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
           @click="runCleanup">
           <div class="flex gap-2 items-center">
-            <refresh-ccw v-if="isCleaning" class="w-4 h-4 animate-spin" />
-            <trash2 v-else class="w-4 h-4" />
+            <RefreshCcw v-if="isCleaning" class="w-4 h-4 animate-spin" />
+            <Trash2 v-else class="w-4 h-4" />
             {{ isCleaning ? 'Cleaning Cache...' : 'Run Cache Cleanup' }}
           </div>
         </AmIButton>
@@ -41,7 +41,7 @@
     <div class="p-6 bg-white border rounded-xl border-slate-200 shadow-sm space-y-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <users class="w-5 h-5 text-amber-600" />
+          <Users class="w-5 h-5 text-amber-600" />
           <h2 class="text-xl font-bold text-slate-900">Pending Match Suggestions</h2>
         </div>
         <AmIButton
@@ -56,7 +56,7 @@
       <div
         v-else-if="suggestions.length === 0"
         class="py-10 text-center bg-slate-50 rounded-lg border border-dashed border-slate-300">
-        <check-circle2 class="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+        <CheckCircle2 class="w-8 h-8 text-emerald-500 mx-auto mb-2" />
         <p class="text-slate-600 font-medium">All caught up!</p>
         <p class="text-slate-500 text-sm">No pending match suggestions in the queue.</p>
       </div>
@@ -102,14 +102,14 @@
               <td class="p-3 text-xs">{{ item.timestamp }}</td>
               <td class="p-3 text-right flex flex-col gap-2">
                 <AmIButton title="Approve & Save to Cache" @click="approveMatch(item)">
-                  <check class="w-5 h-5 mx-auto" />
+                  <Check class="w-5 h-5 mx-auto" />
                 </AmIButton>
                 <AmIButton
                   class="text-center"
                   title="Reject & Delete"
                   bg-colour="bg-negative-700"
                   @click="rejectMatch(item.id)">
-                  <x class="w-5 h-5 mx-auto" />
+                  <X class="w-5 h-5 mx-auto" />
                 </AmIButton>
               </td>
             </tr>

@@ -32,7 +32,9 @@
           <div
             class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
             <span class="text-2xs font-black text-slate-400 uppercase tracking-widest">Today</span>
-            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+            <span
+v-if="pending"
+class="text-2xl font-black text-slate-300 animate-pulse mt-1"
               >---</span
             >
             <div v-else class="flex flex-col items-end">
@@ -48,7 +50,9 @@
             <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Yesterday</span
             >
-            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+            <span
+v-if="pending"
+class="text-2xl font-black text-slate-300 animate-pulse mt-1"
               >---</span
             >
             <div v-else class="flex flex-col items-end">
@@ -64,7 +68,9 @@
             <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Daily Avg</span
             >
-            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+            <span
+v-if="pending"
+class="text-2xl font-black text-slate-300 animate-pulse mt-1"
               >---</span
             >
             <div v-else class="flex flex-col items-end">
@@ -80,7 +86,9 @@
             <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Lifetime Searches</span
             >
-            <span v-if="pending" class="text-2xl font-black text-slate-300 animate-pulse mt-1"
+            <span
+v-if="pending"
+class="text-2xl font-black text-slate-300 animate-pulse mt-1"
               >---</span
             >
             <div v-else class="flex flex-col items-end">

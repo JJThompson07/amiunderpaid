@@ -47,7 +47,7 @@
           <div class="flex items-center gap-3">
             <div
               class="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600 shrink-0">
-              <map-pin class="w-5 h-5" />
+              <MapPin class="w-5 h-5" />
             </div>
             <h2 class="text-xl font-bold text-slate-900">{{ $t('recruiter.territories.my') }}</h2>
           </div>

@@ -5,7 +5,7 @@
     <ol class="flex items-center gap-2 flex-wrap">
       <li>
         <NuxtLink to="/" class="flex items-center gap-1 hover:text-white transition-colors">
-          <home-icon class="w-3 h-3" />
+          <HomeIcon class="w-3 h-3" />
         </NuxtLink>
       </li>
       <li class="text-slate-300 select-none">/</li>

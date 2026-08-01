@@ -46,7 +46,7 @@
               type="button"
               class="text-primary-400 hover:text-negative-500 transition-colors ml-1 focus:outline-none"
               @click.stop="removeOption(val)">
-              <x class="h-3.5 w-3.5" />
+              <X class="h-3.5 w-3.5" />
             </button>
           </span>
         </div>
@@ -80,7 +80,7 @@
           v-if="modelValue.length > 0 && !disabled"
           class="absolute right-0 top-0 bottom-0 px-3 text-slate-400 hover:text-negative-500 flex items-center justify-center cursor-pointer transition-colors z-10"
           @click.stop="clearAll">
-          <x class="h-4 w-4" />
+          <X class="h-4 w-4" />
         </div>
 
         <div v-if="loading" class="absolute right-10 top-1/2 -translate-y-1/2 z-10">

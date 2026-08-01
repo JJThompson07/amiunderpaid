@@ -26,7 +26,7 @@
               getCategoryLabel(row.categoryValue)
             }}</span>
             <div class="flex items-center gap-1 mt-0.5 mb-1.5">
-              <map-pin-icon class="w-3 h-3 text-slate-400" />
+              <MapPinIcon class="w-3 h-3 text-slate-400" />
               <span class="text-slate-500 text-xs">{{ getTerritoryName(row.territoryId) }}</span>
             </div>
             <span
@@ -55,14 +55,14 @@
           <div
             v-if="isExclusive(row, month.value)"
             class="bg-primary-100 text-primary-800 border border-primary-400 px-2 py-1 rounded-md flex items-center justify-center gap-1.5 text-2xs uppercase tracking-wider font-bold shadow-inner w-full max-w-22.5">
-            <crown-icon class="w-3.5 h-3.5" />
+            <CrownIcon class="w-3.5 h-3.5" />
             <span class="hidden sm:inline">Excl</span>
           </div>
 
           <div
             v-else-if="row.isBasic"
             class="bg-secondary-50 text-secondary-800 border border-secondary-400 px-2 py-1 rounded-md flex items-center justify-center gap-1.5 text-2xs uppercase tracking-wider font-bold w-full max-w-22.5">
-            <check-square-icon class="w-3 h-3" />
+            <CheckSquareIcon class="w-3 h-3" />
             <span class="hidden sm:inline">Basic</span>
           </div>
 
@@ -85,7 +85,7 @@
             bg-hover-colour="hover:bg-primary-100"
             text-colour="text-primary-600"
             @click="$emit('edit', row.territoryId)">
-            <pencil-icon class="w-4 h-4" />
+            <PencilIcon class="w-4 h-4" />
           </AmIIconButton>
 
           <AmIIconButton
@@ -96,7 +96,7 @@
             spinner-colour="border-negative-500/30 border-t-negative-500"
             :loading="isCancelling === row.territoryId"
             @click="$emit('cancel', row.territoryId)">
-            <trash-icon class="w-4 h-4" />
+            <TrashIcon class="w-4 h-4" />
           </AmIIconButton>
         </div>
       </template>

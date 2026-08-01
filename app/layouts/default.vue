@@ -31,8 +31,8 @@
             >{{ $t('buttons.sign-out') }}</AmIButton
           >
           <button v-if="isMobile" class="p-1" @click="openMenu = !openMenu">
-            <menu-icon v-if="!openMenu" class="w-5 h-5" />
-            <x-icon v-else class="w-5 h-5" />
+            <MenuIcon v-if="!openMenu" class="w-5 h-5" />
+            <XIcon v-else class="w-5 h-5" />
           </button>
         </div>
       </div>

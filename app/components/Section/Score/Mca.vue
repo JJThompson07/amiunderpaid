@@ -76,7 +76,7 @@
         class="flex items-center justify-between w-full text-left font-bold text-slate-700 hover:text-slate-900 transition-colors group cursor-pointer"
         @click="showBreakdown = !showBreakdown">
         <span>{{ showBreakdown ? $t('mca.toggle.hide') : $t('mca.toggle.show') }}</span>
-        <chevron-down
+        <ChevronDown
           class="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-transform duration-300"
           :class="showBreakdown ? 'rotate-180' : ''" />
       </button>

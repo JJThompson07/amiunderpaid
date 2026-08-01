@@ -21,7 +21,7 @@
           <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
             <div
               class="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600">
-              <pound-sterling class="w-5 h-5" />
+              <PoundSterling class="w-5 h-5" />
             </div>
             <h2 class="text-xl font-bold text-slate-900">United Kingdom (£)</h2>
           </div>
@@ -50,7 +50,7 @@
           <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
             <div
               class="w-10 h-10 bg-secondary-50 rounded-xl flex items-center justify-center text-secondary-600">
-              <dollar-sign class="w-5 h-5" />
+              <DollarSign class="w-5 h-5" />
             </div>
             <h2 class="text-xl font-bold text-slate-900">United States ($)</h2>
           </div>
@@ -81,7 +81,7 @@
         <p
           v-if="showSuccess"
           class="text-sm font-bold text-positive-600 animate-pulse flex items-center gap-2">
-          <check-circle2 class="w-5 h-5" /> Pricing updated successfully!
+          <CheckCircle2 class="w-5 h-5" /> Pricing updated successfully!
         </p>
         <p v-else-if="error" class="text-sm font-bold text-red-600">{{ error }}</p>
         <p v-else class="text-xs text-slate-400 font-medium hidden md:block">
