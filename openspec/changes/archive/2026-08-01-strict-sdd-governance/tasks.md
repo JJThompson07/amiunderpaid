@@ -7,3 +7,5 @@
 - [x] 5. Combine checks into a unified `pnpm lint` command in `package.json`.
 - [x] 6. Resolve blocking linter errors on legacy codebase by auto-fixing and downgrading rules to warnings.
 - [x] 7. Adjust `structure-lint.ts` to allow Nuxt auto-namespaced single-word Vue components.
+- [x] 8. Add `.gitattributes` to hide lockfiles and OpenSpec markdown noise in PRs.
+- [x] 9. Enforce Vue 3 `PascalCase` component naming in templates and auto-fix all legacy instances.
