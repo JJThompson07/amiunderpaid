@@ -111,7 +111,7 @@ import { CheckSquareIcon, CrownIcon, MapPinIcon, PencilIcon, TrashIcon } from 'l
 
 defineProps({
   territories: {
-    type: Array as PropType<any[]>,
+    type: Array as PropType<Record<string, unknown>[]>,
     required: true
   },
   isCancelling: {
@@ -120,7 +120,10 @@ defineProps({
   }
 });
 
-defineEmits(['cancel', 'edit']);
+defineEmits<{
+  cancel: [id: number];
+  edit: [id: number];
+}>();
 
 // 1. Composables
 const { categories: categoriesData } = useCategories();
@@ -147,27 +150,28 @@ const displayMonths = computed(() => {
 });
 
 // 3. Formatting Helpers
-const getTerritoryName = (id: number) => {
+const getTerritoryName = (id: number): string => {
   const t = getTerritoryById(id);
   return t ? t.name : `Region #${id}`;
 };
 
-const getTerritoryBand = (id: number) => {
+const getTerritoryBand = (id: number): number => {
   const t = getTerritoryById(id);
   return t ? t.band || 1 : 1;
 };
 
-const getCategoryLabel = (val: string) => {
+const getCategoryLabel = (val: string): string => {
   if (!categoriesData.value) {
     return val;
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const found = categoriesData.value.find((c: any) => c.id === val || c.label === val);
   return found ? found.label || found.id : val;
 };
 
 // 4. Status Checking
-const isExclusive = (territory: any, monthValue: string) => {
-  return territory.exclusiveMonths && territory.exclusiveMonths.includes(monthValue);
+const isExclusive = (territory: { exclusiveMonths?: string[] }, monthValue: string): boolean => {
+  return !!(territory.exclusiveMonths && territory.exclusiveMonths.includes(monthValue));
 };
 
 // 5. Pricing Logic
@@ -175,7 +179,7 @@ const currencySymbol = computed(() => {
   return userProfile.value?.billingCountry === 'USA' ? '$' : '£';
 });
 
-const getRowPricing = (territoryId: number) => {
+const getRowPricing = (territoryId: number): { basic: string; exclusive: string } => {
   if (!pricingData.value || !userProfile.value) {
     return { basic: '--', exclusive: '--' };
   }
@@ -203,7 +207,7 @@ const getRowPricing = (territoryId: number) => {
   };
 };
 
-const getCellPrice = (territoryId: number, isExcl: boolean) => {
+const getCellPrice = (territoryId: number, isExcl: boolean): string => {
   // 1. Guard against missing data
   if (!pricingData.value || !userProfile.value) {
     return '--';
