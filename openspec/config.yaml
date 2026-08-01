@@ -1,20 +1,40 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+# MAINTAINERS: This context MUST mirror AGENTS.md and CODE_STANDARDS.md.
+# Keep them in sync in the same change.
+context: |
+  PROJECT:
+  Am I Underpaid & Benchmark My Role repository. Dual-tenant, SSR platform.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  TECH STACK:
+  Nuxt 3 (Nitro), Vue 3 (Composition API, `<script setup lang="ts">`), Tailwind CSS v3, Firebase (Firestore, Auth, vuefire, firebase-admin), TypeScript (Strict), Vitest.
+
+  ARCHITECTURE & SEPARATION OF CONCERNS:
+  - Composables: `~/composables/` for reusable business logic.
+  - State: `useState()` for global state (No Pinia/Vuex).
+  - Auth Reactivity: ALWAYS use Vuefire's `useCurrentUser()`. NEVER use `useFirebaseAuth()?.currentUser` for UI reactivity.
+  - Server API: `~/server/api/`, authenticated endpoints must verify Firebase token.
+
+  ENFORCED CONVENTIONS:
+  - Base UI components prefixed with `AmI` (e.g., `AmIButton`). Modals with `Modal`, Toasts with `Toast`.
+  - i18n required everywhere visual (except `~/pages/admin/`).
+
+  DEFINITION OF A SUCCESSFUL CHANGE:
+  - Code changes MUST include corresponding tests.
+  - Unit tests strictly required for new core utilities (`~/utils/`) and composables (`~/composables/`) in adjacent `tests/` directories.
+  - All changes MUST pass the test suite (`pnpm vitest run`) and standard build steps.
+
+rules:
+  proposal:
+    - Include clear Why, What, Scope, and Non-goals sections.
+    - Do not propose new runtime dependencies without explicit justification.
+  specs:
+    - Express requirements as MUST / SHOULD.
+    - Detail exact deltas (ADDED/MODIFIED/REMOVED) and Given/When/Then scenarios.
+  design:
+    - Describe the architecture layer by layer for new changes.
+  tasks:
+    - Break implementation down into actionable, sequential checkboxes.
+    - Name concrete repo-relative files.
+    - Include test authoring in the same task step as the feature code.
+    - The final task MUST be a gate check task (e.g., "Run local verification `pnpm vitest run`").
