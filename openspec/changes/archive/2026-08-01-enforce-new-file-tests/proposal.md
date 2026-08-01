@@ -11,9 +11,11 @@ Currently, `scripts/structure-lint.ts` emits a warning when an adjacent unit tes
 ## Capabilities
 
 ### New Capabilities
+
 None.
 
 ### Modified Capabilities
+
 None. (This is a pure tooling/governance change. `skip_specs: true` should be set in `.openspec.yaml`).
 
 ## Impact
