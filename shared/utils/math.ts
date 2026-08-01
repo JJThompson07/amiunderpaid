@@ -1,4 +1,4 @@
-import type { PercentileData, HistogramBucket } from './types';
+import type { HistogramBucket, PercentileData } from './types';
 
 // ==========================================
 // 🧮 SHARED MATH CONSTANTS
@@ -66,7 +66,9 @@ export const calculatePercentile = (salary: number, data: PercentileData): numbe
     { p: BRACKETS.P90, v: data.p90 }
   ].filter((pt) => pt.v !== undefined && pt.v !== null) as { p: number; v: number }[];
 
-  if (points.length < 2) return BRACKETS.P50;
+  if (points.length < 2) {
+    return BRACKETS.P50;
+  }
 
   const firstPoint = points[0]!;
   const lastPoint = points[points.length - 1]!;
@@ -122,19 +124,25 @@ export const calculateLivePercentile = (
   totalJobs: number, // Still required for the signature, but we'll override it internally
   meanSalary: number
 ): number | null => {
-  if (!buckets?.length || !meanSalary) return null;
+  if (!buckets?.length || !meanSalary) {
+    return null;
+  }
 
   // 1. Sort buckets ascending
   const sortedBuckets = [...buckets].sort((a, b) => Number(a.value) - Number(b.value));
   const topBucket = sortedBuckets[sortedBuckets.length - 1];
-  if (!topBucket) return null;
+  if (!topBucket) {
+    return null;
+  }
 
   const topBucketMin = Number(topBucket.value);
   const topBucketCount = topBucket.count;
 
   // 2. CRITICAL FIX: Calculate the true number of jobs that actually have salary data
   const validSalaryJobs = sortedBuckets.reduce((sum, bucket) => sum + bucket.count, 0);
-  if (validSalaryJobs === 0) return null;
+  if (validSalaryJobs === 0) {
+    return null;
+  }
 
   let jobsBelow = 0;
 
@@ -142,7 +150,9 @@ export const calculateLivePercentile = (
   if (salary <= topBucketMin) {
     for (let i = 0; i < sortedBuckets.length; i++) {
       const currentBucket = sortedBuckets[i];
-      if (!currentBucket) continue;
+      if (!currentBucket) {
+        continue;
+      }
 
       const lowerBound = Number(currentBucket.value);
       const nextBucket = sortedBuckets[i + 1];
@@ -178,7 +188,9 @@ export const calculateLivePercentile = (
   for (let i = 0; i < sortedBuckets.length - 1; i++) {
     const current = sortedBuckets[i];
     const next = sortedBuckets[i + 1];
-    if (!current || !next) continue;
+    if (!current || !next) {
+      continue;
+    }
 
     const min = Number(current.value);
     const max = Number(next.value);

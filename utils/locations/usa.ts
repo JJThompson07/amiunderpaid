@@ -1,22 +1,22 @@
-import { US_TERRITORY_BAND_MAP, JobBand } from '../bands/usa';
+import { JobBand, US_TERRITORY_BAND_MAP } from '../bands/usa';
 
-export interface USARegion {
+export type USARegion = {
   id: number;
   name: string;
-}
-export interface USALocation {
+};
+export type USALocation = {
   id: number;
   gov_name: string;
   name: string;
-}
+};
 
-export interface USATerritory {
+export type USATerritory = {
   id: number;
   gov_name: string;
   name: string;
   band: JobBand;
   region: USARegion;
-}
+};
 
 export const USA_LOCATIONS: USALocation[] = [
   { id: 1, gov_name: 'Alabama', name: 'Alabama' },

@@ -18,7 +18,9 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
 
   // 2. Formatting Helpers
   const unslugify = (slug: string) => {
-    if (!slug) return '';
+    if (!slug) {
+      return '';
+    }
     return slug
       .split('-')
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -111,7 +113,9 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
 
   const regionalData = computed<SalaryBenchmark | null>(() => {
     const data = pageData.value?.micro?.microRegionalData;
-    if (!data) return null;
+    if (!data) {
+      return null;
+    }
     return {
       title: marketData.matchedTitle.value || displayTitle.value,
       location: location.value,
@@ -125,9 +129,12 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
   });
 
   const hasGovernmentData = computed<boolean>(() => {
-    if (marketAverage.value === 0) return false;
-    if (marketData.isGenericFallback.value && displayTitle.value.toLowerCase() !== 'professional')
+    if (marketAverage.value === 0) {
       return false;
+    }
+    if (marketData.isGenericFallback.value && displayTitle.value.toLowerCase() !== 'professional') {
+      return false;
+    }
     return true;
   });
 
@@ -150,10 +157,14 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
   );
 
   const McaScore = computed(() => {
-    if (!pageData.value?.macro?.macroNationalData) return null;
+    if (!pageData.value?.macro?.macroNationalData) {
+      return null;
+    }
     const hasMicro = !!pageData.value?.micro?.microNationalData;
     const hasLive = (adzuna.histogramTotalCount.value || 0) > 0;
-    if (!hasMicro && !hasLive) return null;
+    if (!hasMicro && !hasLive) {
+      return null;
+    }
 
     const rawResult =
       country.value === 'UK'

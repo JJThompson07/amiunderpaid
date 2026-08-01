@@ -1,5 +1,5 @@
 // server/api/admin/job-groups/title.delete.ts
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);

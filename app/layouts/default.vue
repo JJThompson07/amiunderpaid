@@ -31,8 +31,8 @@
             >{{ $t('buttons.sign-out') }}</AmIButton
           >
           <button v-if="isMobile" class="p-1" @click="openMenu = !openMenu">
-            <MenuIcon v-if="!openMenu" class="w-5 h-5" />
-            <XIcon v-else class="w-5 h-5" />
+            <menu-icon v-if="!openMenu" class="w-5 h-5" />
+            <x-icon v-else class="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { MenuIcon, XIcon } from 'lucide-vue-next';
 const { isAdmin } = useUserRole();
 const { locale } = useI18n();
@@ -122,7 +122,9 @@ useHead({
 
     // ✨ 2. Build a rock-solid SSR base URL (No more localhost leaks!)
     const getBaseUrl = () => {
-      if (import.meta.dev) return 'http://localhost:3000';
+      if (import.meta.dev) {
+        return 'http://localhost:3000';
+      }
       if ($siteBrand === 'amiunderpaid') {
         return locale.value === 'en-GB'
           ? 'https://www.amiunderpaid.co.uk'

@@ -65,9 +65,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { getAuth, confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
+import { confirmPasswordReset, getAuth, verifyPasswordResetCode } from 'firebase/auth';
 
 definePageMeta({
   layout: false

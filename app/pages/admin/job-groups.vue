@@ -60,7 +60,7 @@
 
       <div v-if="pending" class="text-slate-500 font-medium flex items-center gap-2">
         <span
-          class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full"></span>
+          class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full" />
         Loading dictionary...
       </div>
 
@@ -171,11 +171,11 @@ import { Search } from 'lucide-vue-next';
 
 definePageMeta({ middleware: 'admin' });
 
-interface JobGroup {
+type JobGroup = {
   id_code: string;
   group_name: string;
   titles: string[];
-}
+};
 
 const adminFetch = useAdminFetch();
 
@@ -220,7 +220,9 @@ const groups = computed<JobGroup[]>(() => {
 
 // --- COMPUTED LOGIC ---
 const filteredGroups = computed(() => {
-  if (!searchQuery.value) return groups.value;
+  if (!searchQuery.value) {
+    return groups.value;
+  }
 
   const query = searchQuery.value.toLowerCase().trim();
   return groups.value.filter(
@@ -242,7 +244,9 @@ const paginatedGroups = computed(() => {
 // 2. Add Title
 const addTitle = async (idCode: string) => {
   const newTitle = newInputs[idCode];
-  if (!newTitle) return;
+  if (!newTitle) {
+    return;
+  }
 
   isProcessing.value = idCode;
   try {
@@ -269,7 +273,9 @@ const addTitle = async (idCode: string) => {
 
 // 3. Remove Title
 const removeTitle = async (idCode: string, titleToRemove: string) => {
-  if (!confirm(`Are you sure you want to remove "${titleToRemove}"?`)) return;
+  if (!confirm(`Are you sure you want to remove "${titleToRemove}"?`)) {
+    return;
+  }
 
   isProcessing.value = idCode;
   try {
@@ -295,7 +301,9 @@ const removeTitle = async (idCode: string, titleToRemove: string) => {
 
 // 4. Run Migration
 const runMigration = async () => {
-  if (!confirm(`Are you sure you want to migrate ${activeCountry.value} data?`)) return;
+  if (!confirm(`Are you sure you want to migrate ${activeCountry.value} data?`)) {
+    return;
+  }
   isMigrating.value = true;
   try {
     const res = await adminFetch<{ success: boolean }>('/api/admin/job-groups/migrate', {

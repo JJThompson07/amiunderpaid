@@ -1,10 +1,10 @@
-export interface SalaryRecord {
+export type SalaryRecord = {
   title: string;
   location: string;
   year: number;
   salary: number;
   country: string;
-}
+};
 
 /**
  * SOURCE DATA SUMMARY (2025/2026 PROJECTIONS):

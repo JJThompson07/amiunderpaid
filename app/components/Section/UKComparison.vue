@@ -3,7 +3,7 @@
     <div class="p-6">
       <div class="flex items-center gap-3 mb-4">
         <div class="p-2 bg-indigo-50 rounded-lg text-secondary-600">
-          <MapPin class="w-5 h-5" />
+          <map-pin class="w-5 h-5" />
         </div>
         <div class="flex-1">
           <h3 class="text-lg font-bold text-slate-900">{{ location }}</h3>
@@ -153,28 +153,44 @@ const props = defineProps({
 });
 
 const jobVsLocationDiff = computed(() => {
-  if (!props.regionalData || !props.marketAverage) return 0;
+  if (!props.regionalData || !props.marketAverage) {
+    return 0;
+  }
   const locAvg = props.regionalData.avg_salary || 0;
-  if (locAvg === 0) return 0;
+  if (locAvg === 0) {
+    return 0;
+  }
   return Math.round(((props.marketAverage - locAvg) / locAvg) * 100);
 });
 
 const userVsLocationDiff = computed(() => {
-  if (!props.regionalData || !props.userSalary) return 0;
+  if (!props.regionalData || !props.userSalary) {
+    return 0;
+  }
   const locAvg = props.regionalData.avg_salary || 0;
-  if (locAvg === 0) return 0;
+  if (locAvg === 0) {
+    return 0;
+  }
   return Math.round(((props.userSalary - locAvg) / locAvg) * 100);
 });
 
 const jobTrend = computed(() => {
-  if (jobVsLocationDiff.value > 0) return 1;
-  if (jobVsLocationDiff.value < 0) return -1;
+  if (jobVsLocationDiff.value > 0) {
+    return 1;
+  }
+  if (jobVsLocationDiff.value < 0) {
+    return -1;
+  }
   return 0;
 });
 
 const userTrend = computed(() => {
-  if (userVsLocationDiff.value > 0) return 1;
-  if (userVsLocationDiff.value < 0) return -1;
+  if (userVsLocationDiff.value > 0) {
+    return 1;
+  }
+  if (userVsLocationDiff.value < 0) {
+    return -1;
+  }
   return 0;
 });
 </script>

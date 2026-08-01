@@ -26,7 +26,7 @@
               getCategoryLabel(row.categoryValue)
             }}</span>
             <div class="flex items-center gap-1 mt-0.5 mb-1.5">
-              <MapPinIcon class="w-3 h-3 text-slate-400" />
+              <map-pin-icon class="w-3 h-3 text-slate-400" />
               <span class="text-slate-500 text-xs">{{ getTerritoryName(row.territoryId) }}</span>
             </div>
             <span
@@ -55,14 +55,14 @@
           <div
             v-if="isExclusive(row, month.value)"
             class="bg-primary-100 text-primary-800 border border-primary-400 px-2 py-1 rounded-md flex items-center justify-center gap-1.5 text-2xs uppercase tracking-wider font-bold shadow-inner w-full max-w-22.5">
-            <CrownIcon class="w-3.5 h-3.5" />
+            <crown-icon class="w-3.5 h-3.5" />
             <span class="hidden sm:inline">Excl</span>
           </div>
 
           <div
             v-else-if="row.isBasic"
             class="bg-secondary-50 text-secondary-800 border border-secondary-400 px-2 py-1 rounded-md flex items-center justify-center gap-1.5 text-2xs uppercase tracking-wider font-bold w-full max-w-22.5">
-            <CheckSquareIcon class="w-3 h-3" />
+            <check-square-icon class="w-3 h-3" />
             <span class="hidden sm:inline">Basic</span>
           </div>
 
@@ -85,7 +85,7 @@
             bg-hover-colour="hover:bg-primary-100"
             text-colour="text-primary-600"
             @click="$emit('edit', row.territoryId)">
-            <PencilIcon class="w-4 h-4" />
+            <pencil-icon class="w-4 h-4" />
           </AmIIconButton>
 
           <AmIIconButton
@@ -96,7 +96,7 @@
             spinner-colour="border-negative-500/30 border-t-negative-500"
             :loading="isCancelling === row.territoryId"
             @click="$emit('cancel', row.territoryId)">
-            <TrashIcon class="w-4 h-4" />
+            <trash-icon class="w-4 h-4" />
           </AmIIconButton>
         </div>
       </template>
@@ -107,7 +107,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { PropType } from 'vue';
-import { MapPinIcon, CrownIcon, CheckSquareIcon, TrashIcon, PencilIcon } from 'lucide-vue-next';
+import { CheckSquareIcon, CrownIcon, MapPinIcon, PencilIcon, TrashIcon } from 'lucide-vue-next';
 
 defineProps({
   territories: {
@@ -158,7 +158,9 @@ const getTerritoryBand = (id: number) => {
 };
 
 const getCategoryLabel = (val: string) => {
-  if (!categoriesData.value) return val;
+  if (!categoriesData.value) {
+    return val;
+  }
   const found = categoriesData.value.find((c: any) => c.id === val || c.label === val);
   return found ? found.label || found.id : val;
 };
@@ -174,17 +176,23 @@ const currencySymbol = computed(() => {
 });
 
 const getRowPricing = (territoryId: number) => {
-  if (!pricingData.value || !userProfile.value) return { basic: '--', exclusive: '--' };
+  if (!pricingData.value || !userProfile.value) {
+    return { basic: '--', exclusive: '--' };
+  }
 
   const band = getTerritoryBand(territoryId);
   const billingCountry = userProfile.value.billingCountry || 'UK';
   const countryPricing = pricingData.value[billingCountry];
 
-  if (!countryPricing) return { basic: '--', exclusive: '--' };
+  if (!countryPricing) {
+    return { basic: '--', exclusive: '--' };
+  }
 
   const bandKey = `band${band}`;
   const bandData = countryPricing[bandKey];
-  if (!bandData) return { basic: '--', exclusive: '--' };
+  if (!bandData) {
+    return { basic: '--', exclusive: '--' };
+  }
 
   const basicDiscount = userProfile.value.basicDiscount || 0;
   const exclusiveDiscount = userProfile.value.exclusiveDiscount || 0;
@@ -197,7 +205,9 @@ const getRowPricing = (territoryId: number) => {
 
 const getCellPrice = (territoryId: number, isExcl: boolean) => {
   // 1. Guard against missing data
-  if (!pricingData.value || !userProfile.value) return '--';
+  if (!pricingData.value || !userProfile.value) {
+    return '--';
+  }
 
   const t = getTerritoryById(territoryId);
   const band = t ? t.band : 1;
@@ -205,11 +215,15 @@ const getCellPrice = (territoryId: number, isExcl: boolean) => {
   const billingCountry = userProfile.value.billingCountry || 'UK';
   const countryPricing = pricingData.value[billingCountry];
 
-  if (!countryPricing) return '--';
+  if (!countryPricing) {
+    return '--';
+  }
 
   const bandKey = `band${band}`;
   const bandData = countryPricing[bandKey];
-  if (!bandData) return '--';
+  if (!bandData) {
+    return '--';
+  }
 
   // 2. Get base price and the correct discount from the user's profile
   const basePrice = isExcl ? bandData.exclusive || 0 : bandData.basic || 0;

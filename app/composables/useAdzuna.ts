@@ -1,6 +1,4 @@
-export type HistogramData = {
-  [salary: number]: number;
-};
+export type HistogramData = Record<number, number>;
 
 export type AdzunaJob = {
   id: number;
@@ -62,7 +60,9 @@ export const useAdzuna = () => {
 
   const histogramRange = computed<number>(() => {
     const buckets = histogramBuckets.value;
-    if (!buckets || buckets.length === 0) return 0;
+    if (!buckets || buckets.length === 0) {
+      return 0;
+    }
     const min = buckets[0]?.value || 0;
     const max = buckets[buckets.length - 1]?.value || 0;
     return max - min;
@@ -170,7 +170,9 @@ export const useAdzuna = () => {
   };
 
   const isUnderpaid = (salary: number): boolean => {
-    if (!hasJobsData.value) return false;
+    if (!hasJobsData.value) {
+      return false;
+    }
     return salary < meanSalary.value;
   };
 

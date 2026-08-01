@@ -7,7 +7,7 @@
     </label>
     <label
       class="flex flex-col items-center px-4 py-8 bg-slate-50 text-primary-600 rounded-2xl border-2 border-dashed border-slate-200 cursor-pointer hover:border-primary-300 hover:bg-primary-50/30 transition-all group">
-      <UploadCloud
+      <upload-cloud
         class="w-8 h-8 mb-2 text-slate-300 group-hover:text-primary-400 transition-colors" />
       <span
         class="text-xs font-bold uppercase tracking-wide text-slate-500 group-hover:text-primary-600">

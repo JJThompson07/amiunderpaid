@@ -151,7 +151,7 @@
       <!-- 5. Disclaimer -->
       <p
         class="flex items-center justify-center gap-1 mt-4 lg:mt-12 text-2xs text-center text-slate-400">
-        <Info class="w-3 h-3" />
+        <info class="w-3 h-3" />
         {{ $t('common.data.disclaimer') }}
       </p>
     </div>
@@ -199,7 +199,7 @@
 <script setup lang="ts">
 // ** imports **
 import { Info } from 'lucide-vue-next';
-import { ref, computed, onMounted, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 const { $siteBrand } = useNuxtApp();
 const route = useRoute();
@@ -300,8 +300,12 @@ const { updateSearchLog } = useUserLogging();
 watch(
   [pending, adzunaLoading, currentSearchId],
   () => {
-    if (pending.value || adzunaLoading.value) return;
-    if (!currentSearchId.value) return;
+    if (pending.value || adzunaLoading.value) {
+      return;
+    }
+    if (!currentSearchId.value) {
+      return;
+    }
 
     const hasData = hasGovernmentData.value || hasJobsData.value;
 

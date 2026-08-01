@@ -6,7 +6,7 @@
       <div class="mb-6 flex justify-center">
         <div
           class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
-          <TrendingUp class="w-8 h-8" />
+          <trending-up class="w-8 h-8" />
         </div>
       </div>
 
@@ -63,13 +63,13 @@
               :disabled="loadingStored"
               class="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
               @click="saveStoredCategories">
-              <Save class="w-3 h-3" />
+              <save class="w-3 h-3" />
               <span>Save List</span>
             </button>
             <button
               class="text-slate-400 hover:text-indigo-600 p-1.5"
               @click="fetchStoredCategories">
-              <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loadingStored }" />
+              <refresh-cw class="w-4 h-4" :class="{ 'animate-spin': loadingStored }" />
             </button>
           </div>
         </div>
@@ -109,8 +109,8 @@
 </template>
 
 <script setup lang="ts">
-import { TrendingUp, Save, RefreshCw } from 'lucide-vue-next';
-import { doc, writeBatch, collection, query, where, getDocs } from 'firebase/firestore';
+import { RefreshCw, Save, TrendingUp } from 'lucide-vue-next';
+import { collection, doc, getDocs, query, where, writeBatch } from 'firebase/firestore';
 
 /**
  * PAGE METADATA
@@ -131,7 +131,9 @@ const loadingStored = ref(false);
 const { showToast } = useSystemToast();
 
 const handleSyncCategories = async () => {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   syncingCategories.value = true;
   categoryStatus.value = `Fetching ${targetCountry.value} categories...`;
 
@@ -169,7 +171,9 @@ const handleSyncCategories = async () => {
 };
 
 const fetchStoredCategories = async () => {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   loadingStored.value = true;
   try {
     const q = query(
@@ -191,7 +195,9 @@ const fetchStoredCategories = async () => {
 };
 
 const saveStoredCategories = async () => {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   loadingStored.value = true;
   try {
     const batch = writeBatch(db);

@@ -1,7 +1,7 @@
 // server/api/user/update-search.post.ts
 import { getFirestore } from 'firebase-admin/firestore';
 
-interface UpdateSearchBody {
+type UpdateSearchBody = {
   id: string;
   mcaScore?: number | null;
   marketAverage?: number | null;
@@ -10,7 +10,7 @@ interface UpdateSearchBody {
   macroPercentile?: number | null;
   livePercentile?: number | null;
   searchSuccess?: boolean;
-}
+};
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<UpdateSearchBody>(event);
@@ -24,13 +24,27 @@ export default defineEventHandler(async (event) => {
   try {
     const updateData: Record<string, any> = {};
 
-    if (body.mcaScore !== undefined) updateData.mcaScore = body.mcaScore;
-    if (body.marketAverage !== undefined) updateData.marketAverage = body.marketAverage;
-    if (body.governmentAverage !== undefined) updateData.governmentAverage = body.governmentAverage;
-    if (body.microPercentile !== undefined) updateData.microPercentile = body.microPercentile;
-    if (body.macroPercentile !== undefined) updateData.macroPercentile = body.macroPercentile;
-    if (body.livePercentile !== undefined) updateData.livePercentile = body.livePercentile;
-    if (body.searchSuccess !== undefined) updateData.searchSuccess = body.searchSuccess;
+    if (body.mcaScore !== undefined) {
+      updateData.mcaScore = body.mcaScore;
+    }
+    if (body.marketAverage !== undefined) {
+      updateData.marketAverage = body.marketAverage;
+    }
+    if (body.governmentAverage !== undefined) {
+      updateData.governmentAverage = body.governmentAverage;
+    }
+    if (body.microPercentile !== undefined) {
+      updateData.microPercentile = body.microPercentile;
+    }
+    if (body.macroPercentile !== undefined) {
+      updateData.macroPercentile = body.macroPercentile;
+    }
+    if (body.livePercentile !== undefined) {
+      updateData.livePercentile = body.livePercentile;
+    }
+    if (body.searchSuccess !== undefined) {
+      updateData.searchSuccess = body.searchSuccess;
+    }
 
     if (Object.keys(updateData).length > 0) {
       await db.collection('search_history').doc(body.id).set(updateData, { merge: true });

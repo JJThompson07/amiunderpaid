@@ -40,7 +40,7 @@
           <div class="flex items-center gap-2">
             <span
               v-if="loading"
-              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             <span>Submit Request</span>
           </div>
         </AmIButton>

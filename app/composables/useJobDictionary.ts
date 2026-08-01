@@ -1,43 +1,43 @@
 import type { SearchClient } from 'algoliasearch';
 
-interface JobGroupHit {
+type JobGroupHit = {
   objectID: string;
   gov_id: string;
   group_name: string;
   titles?: string[];
-}
+};
 
-interface MasterMatch {
+type MasterMatch = {
   id_code: string;
   group_name: string;
-}
+};
 
 // 1. Define your excellent string literal types
 export type UseJobDictionaryType = 'exact' | 'ambiguous' | 'unmapped' | 'error';
 
 // 2. Define the STRICT shape for each specific outcome
-export interface JobMatchExact {
+export type JobMatchExact = {
   type: 'exact';
   id: string; // Guaranteed to be a string
   group_name: string; // Guaranteed to exist (no '?')
-}
+};
 
-export interface JobMatchAmbiguous {
+export type JobMatchAmbiguous = {
   type: 'ambiguous';
   id: null;
   options: { id_code: string; group_name: string }[]; // Guaranteed to exist
-}
+};
 
-export interface JobMatchUnmapped {
+export type JobMatchUnmapped = {
   type: 'unmapped';
   id: null;
-}
+};
 
-export interface JobMatchError {
+export type JobMatchError = {
   type: 'error';
   id: null;
   message: string; // You can pass an error message back to the UI!
-}
+};
 
 // 3. Create the Union using your types
 export type JobDictionaryResult =

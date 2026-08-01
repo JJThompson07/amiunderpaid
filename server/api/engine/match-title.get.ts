@@ -6,7 +6,9 @@ export default defineEventHandler(async (event) => {
   const searchTitle = ((query.title as string) || '').toLowerCase().trim();
   const country = query.country === 'USA' ? 'USA' : 'UK';
 
-  if (!searchTitle) return { success: false, matches: [] };
+  if (!searchTitle) {
+    return { success: false, matches: [] };
+  }
 
   const db = getFirestore();
   const collectionName = country === 'USA' ? 'usa_job_groups' : 'uk_job_groups';

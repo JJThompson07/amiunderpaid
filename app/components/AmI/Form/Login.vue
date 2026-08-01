@@ -2,13 +2,13 @@
   <div
     class="min-h-screen flex items-center justify-center bg-slate-50 p-4 relative overflow-hidden">
     <div
-      class="absolute top-0 left-0 w-full h-100 bg-linear-to-b from-secondary-900 to-slate-50 z-0"></div>
+      class="absolute top-0 left-0 w-full h-100 bg-linear-to-b from-secondary-900 to-slate-50 z-0" />
 
     <div class="relative z-10 w-full max-w-md">
       <NuxtLink
         to="/"
         class="inline-flex items-center gap-2 mb-6 text-sm font-semibold transition-colors text-slate-300 hover:text-white">
-        <ArrowLeft class="w-4 h-4" />
+        <arrow-left class="w-4 h-4" />
         {{ $t('login.common.back-to-search') }}
       </NuxtLink>
 
@@ -54,7 +54,7 @@
           <div
             v-if="error"
             class="text-[11px] font-bold text-red-600 bg-red-50 p-3 rounded-xl border border-red-100 flex items-center gap-2">
-            <div class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></div>
+            <div class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
             {{ error }}
           </div>
 
@@ -69,7 +69,7 @@
                 <div class="flex items-center justify-center gap-2">
                   <span
                     v-if="loading"
-                    class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   <span>
                     {{
                       loading
@@ -110,7 +110,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Mail, KeyRound, ArrowLeft } from 'lucide-vue-next';
+import { ArrowLeft, KeyRound, Mail } from 'lucide-vue-next';
 
 // Much cleaner props now that the common texts are handled by i18n directly!
 defineProps({
@@ -144,7 +144,10 @@ const toggleMode = () => {
 };
 
 const handleSubmit = () => {
-  if (isLogin.value) emit('login', { email: email.value, password: password.value });
-  else emit('signup', { email: email.value, password: password.value });
+  if (isLogin.value) {
+    emit('login', { email: email.value, password: password.value });
+  } else {
+    emit('signup', { email: email.value, password: password.value });
+  }
 };
 </script>

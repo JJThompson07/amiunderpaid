@@ -9,7 +9,7 @@
 
     <div class="p-6 bg-white border rounded-xl border-slate-200 shadow-sm space-y-4">
       <div class="flex items-center gap-2">
-        <DatabaseZap class="w-5 h-5 text-indigo-600" />
+        <database-zap class="w-5 h-5 text-indigo-600" />
         <h2 class="text-xl font-bold text-slate-900">Cache Maintenance</h2>
       </div>
       <p class="text-sm text-slate-600">
@@ -23,8 +23,8 @@
           class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
           @click="runCleanup">
           <div class="flex gap-2 items-center">
-            <RefreshCcw v-if="isCleaning" class="w-4 h-4 animate-spin" />
-            <Trash2 v-else class="w-4 h-4" />
+            <refresh-ccw v-if="isCleaning" class="w-4 h-4 animate-spin" />
+            <trash2 v-else class="w-4 h-4" />
             {{ isCleaning ? 'Cleaning Cache...' : 'Run Cache Cleanup' }}
           </div>
         </AmIButton>
@@ -41,7 +41,7 @@
     <div class="p-6 bg-white border rounded-xl border-slate-200 shadow-sm space-y-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <Users class="w-5 h-5 text-amber-600" />
+          <users class="w-5 h-5 text-amber-600" />
           <h2 class="text-xl font-bold text-slate-900">Pending Match Suggestions</h2>
         </div>
         <AmIButton
@@ -56,7 +56,7 @@
       <div
         v-else-if="suggestions.length === 0"
         class="py-10 text-center bg-slate-50 rounded-lg border border-dashed border-slate-300">
-        <CheckCircle2 class="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+        <check-circle2 class="w-8 h-8 text-emerald-500 mx-auto mb-2" />
         <p class="text-slate-600 font-medium">All caught up!</p>
         <p class="text-slate-500 text-sm">No pending match suggestions in the queue.</p>
       </div>
@@ -102,14 +102,14 @@
               <td class="p-3 text-xs">{{ item.timestamp }}</td>
               <td class="p-3 text-right flex flex-col gap-2">
                 <AmIButton title="Approve & Save to Cache" @click="approveMatch(item)">
-                  <Check class="w-5 h-5 mx-auto" />
+                  <check class="w-5 h-5 mx-auto" />
                 </AmIButton>
                 <AmIButton
                   class="text-center"
                   title="Reject & Delete"
                   bg-colour="bg-negative-700"
                   @click="rejectMatch(item.id)">
-                  <X class="w-5 h-5 mx-auto" />
+                  <x class="w-5 h-5 mx-auto" />
                 </AmIButton>
               </td>
             </tr>
@@ -121,7 +121,7 @@
 </template>
 
 <script setup lang="ts">
-import { DatabaseZap, Trash2, RefreshCcw, Users, Check, X, CheckCircle2 } from 'lucide-vue-next';
+import { Check, CheckCircle2, DatabaseZap, RefreshCcw, Trash2, Users, X } from 'lucide-vue-next';
 
 // Protect this route with your admin middleware
 definePageMeta({
@@ -140,8 +140,9 @@ const runCleanup = async () => {
     !confirm(
       'Are you sure you want to run the cache cleanup? This will delete all expired entries.'
     )
-  )
+  ) {
     return;
+  }
 
   isCleaning.value = true;
   cleanupStats.value = null;
@@ -203,7 +204,9 @@ const approveMatch = async (suggestion: any) => {
 };
 
 const rejectMatch = async (id: string) => {
-  if (!confirm('Are you sure you want to reject and delete this suggestion?')) return;
+  if (!confirm('Are you sure you want to reject and delete this suggestion?')) {
+    return;
+  }
 
   try {
     // 4. Updated to useAdminFetch

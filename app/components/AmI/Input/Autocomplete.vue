@@ -39,13 +39,13 @@
         class="absolute right-0 top-0 bottom-0 px-3 bg-slate-100 text-slate-600 hover:bg-slate-300/50 flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out rounded-r-xl"
         :class="inputValue.length > 0 ? 'opacity-100' : 'opacity-0'"
         @click="inputValue = ''">
-        <X class="h-4 w-4" />
+        <x class="h-4 w-4" />
       </div>
 
       <!-- Loading Indicator -->
       <div v-if="loading" class="absolute right-12 top-1/2 -translate-y-1/2">
         <div
-          class="w-4 h-4 border-2 border-slate-200 border-t-primary-500 rounded-full animate-spin"></div>
+          class="w-4 h-4 border-2 border-slate-200 border-t-primary-500 rounded-full animate-spin" />
       </div>
 
       <!-- Dropdown -->
@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 // ** imports **
-import { ref, computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { onClickOutside } from '@vueuse/core';
 import type { Component, PropType } from 'vue';
 import { X } from 'lucide-vue-next';
@@ -139,7 +139,9 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 const getLabelForValue = (val: string) => {
-  if (!val) return '';
+  if (!val) {
+    return '';
+  }
   const found = props.options.find((opt) => opt.value === val);
   return found ? found.label : val;
 };
@@ -152,8 +154,12 @@ const activeIndex = ref(-1);
 
 // ** computed properties **
 const filteredOptions = computed(() => {
-  if (!inputValue.value) return [];
-  if (props.preFilteredOptions) return props.options;
+  if (!inputValue.value) {
+    return [];
+  }
+  if (props.preFilteredOptions) {
+    return props.options;
+  }
 
   const search = inputValue.value.toLowerCase();
   // Change opt.value to opt.label here!
@@ -177,17 +183,25 @@ const onInput = () => {
 };
 
 const onFocus = () => {
-  if (inputValue.value) isOpen.value = true;
+  if (inputValue.value) {
+    isOpen.value = true;
+  }
 };
 
 const navigateOptions = (direction: number) => {
-  if (!isOpen.value || filteredOptions.value.length === 0) return;
+  if (!isOpen.value || filteredOptions.value.length === 0) {
+    return;
+  }
 
   const max = filteredOptions.value.length - 1;
   let next = activeIndex.value + direction;
 
-  if (next > max) next = 0;
-  if (next < 0) next = max;
+  if (next > max) {
+    next = 0;
+  }
+  if (next < 0) {
+    next = max;
+  }
 
   activeIndex.value = next;
 };

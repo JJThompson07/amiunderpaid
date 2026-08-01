@@ -10,7 +10,7 @@
       <div
         v-else
         class="w-14 h-14 rounded-2xl border border-black/5 overflow-hidden shrink-0 bg-white flex items-center justify-center shadow-sm">
-        <BriefcaseBusiness class="w-6 h-6 text-slate-300" />
+        <briefcase-business class="w-6 h-6 text-slate-300" />
       </div>
       <div class="flex-1">
         <h3
@@ -87,7 +87,7 @@
               :style="brandStyle">
               <span
                 v-if="isLoading"
-                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               <span>{{
                 isLoading ? $t('common.saved.saving', 'Sending...') : $t('common.submit', 'Submit')
               }}</span>
@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 import { BriefcaseBusiness } from 'lucide-vue-next';
 import type { PropType } from 'vue';
 
@@ -145,10 +145,15 @@ const previewLogo = computed(() => {
 });
 
 const replaceWildcards = (text: string) => {
-  if (!text) return '';
+  if (!text) {
+    return '';
+  }
   let incentive = 'roles';
-  if (route.path.includes('/benchmark')) incentive = 'candidates';
-  else if (route.path.includes('/recruiter')) incentive = 'roles/candidates';
+  if (route.path.includes('/benchmark')) {
+    incentive = 'candidates';
+  } else if (route.path.includes('/recruiter')) {
+    incentive = 'roles/candidates';
+  }
 
   return text
     .replace(/{location}/gi, props.location || 'their location')
@@ -178,7 +183,9 @@ const brandStyle = computed(() => ({
 
 // THE SUBMISSION LOGIC
 const submitLead = async () => {
-  if (!name.value || !email.value || !props.recruiterId) return;
+  if (!name.value || !email.value || !props.recruiterId) {
+    return;
+  }
 
   isLoading.value = true;
   error.value = '';

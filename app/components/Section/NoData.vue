@@ -3,7 +3,7 @@
     class="relative flex flex-col w-full max-w-4xl gap-6 p-8 mx-auto bg-white border shadow-xl rounded-3xl border-slate-200">
     <div class="flex flex-col items-center gap-4 text-center">
       <div class="p-3 bg-slate-100 rounded-2xl text-slate-400">
-        <SearchX class="w-8 h-8" />
+        <search-x class="w-8 h-8" />
       </div>
       <div>
         <h2 class="text-xl font-bold text-slate-900">{{ $t('sections.no-data.title') }}</h2>
@@ -72,8 +72,8 @@
 </template>
 
 <script setup lang="ts">
-import { SearchX, Search } from 'lucide-vue-next';
-import { ref, computed } from 'vue';
+import { Search, SearchX } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import type { SearchClient } from 'algoliasearch';
 
 const { $siteBrand } = useNuxtApp();

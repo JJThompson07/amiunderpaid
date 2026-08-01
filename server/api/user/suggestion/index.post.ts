@@ -5,7 +5,9 @@ export default defineEventHandler(async (event) => {
   const db = getFirestore();
 
   const cleanSearchTerm = (body.search_term || '').trim().toLowerCase();
-  if (!cleanSearchTerm || !body.target_id_code) return { success: false };
+  if (!cleanSearchTerm || !body.target_id_code) {
+    return { success: false };
+  }
 
   // Standardize country code
   const countryCode =

@@ -1,17 +1,17 @@
 <template>
   <div class="relative w-full max-w-5xl mx-auto mt-8">
     <div class="flex justify-between items-center gap-4 mb-6">
-      <div class="flex-1"></div>
+      <div class="flex-1" />
       <a
         :href="alternateSiteUrl"
         target="_self"
         class="relative cursor-pointer decoration-0 px-4 py-2 flex flex-row gap-1 items-center text-xs bg-primary-500 text-white hover:bg-primary-400 rounded-lg overflow-hidden transition-all duration-700 ease-in-out font-bold">
         {{ $t('search.ami.switch-site') }}
-        <ArrowRightIcon class="w-4 h-4" />
+        <arrow-right-icon class="w-4 h-4" />
       </a>
       <div class="flex flex-1 justify-end">
         <AmIButton v-if="!showCalc" title="Salary converter" @click="showCalc = true"
-          ><CalculatorIcon class="w-5 h-5 text-slate-50"
+          ><calculator-icon class="w-5 h-5 text-slate-50"
         /></AmIButton>
 
         <LazyModalSalaryConverter
@@ -116,8 +116,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { Search, MapPin, CalculatorIcon, Wallet, ArrowRightIcon } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { ArrowRightIcon, CalculatorIcon, MapPin, Search, Wallet } from 'lucide-vue-next';
 import { slugify } from '~/helpers/utility';
 
 const { t } = useI18n();
@@ -319,7 +319,9 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
 
     // Failsafe timeout in case navigation gets cancelled/fails for any reason:
     setTimeout(() => {
-      if (loading.value) loading.value = false;
+      if (loading.value) {
+        loading.value = false;
+      }
     }, 5000);
   }
 };

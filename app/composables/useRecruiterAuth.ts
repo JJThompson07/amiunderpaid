@@ -1,8 +1,8 @@
 import {
-  signInWithEmailAndPassword,
-  signOut,
+  sendEmailVerification,
   sendPasswordResetEmail,
-  sendEmailVerification
+  signInWithEmailAndPassword,
+  signOut
 } from 'firebase/auth';
 
 export const useRecruiterAuth = () => {

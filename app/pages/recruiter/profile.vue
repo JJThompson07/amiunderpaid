@@ -23,7 +23,7 @@
         <div class="flex items-center gap-3 mb-8">
           <div
             class="w-10 h-10 bg-secondary-50 rounded-xl flex items-center justify-center text-secondary-600">
-            <BriefcaseBusiness class="w-5 h-5" />
+            <briefcase-business class="w-5 h-5" />
           </div>
           <h2 class="text-xl font-bold text-slate-900">{{ $t('recruiter.account.heading') }}</h2>
         </div>
@@ -49,7 +49,7 @@
             class="mt-4 bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex flex-col gap-2">
             <p
               class="text-2xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1.5">
-              <Tag class="w-3.5 h-3.5" />
+              <tag class="w-3.5 h-3.5" />
               {{ $t('recruiter.account.discounts.title', 'Active Partner Discounts') }}
             </p>
             <div class="flex flex-wrap gap-3 mt-1">
@@ -108,7 +108,7 @@
                   >{{ $t('recruiter.account.saving') }}</span
                 >
                 <span
-                  class="w-2.5 h-2.5 border border-slate-200 border-t-primary-500 rounded-full animate-spin"></span>
+                  class="w-2.5 h-2.5 border border-slate-200 border-t-primary-500 rounded-full animate-spin" />
               </div>
             </div>
 
@@ -168,7 +168,7 @@
                   :key="catValue"
                   class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl shadow-xs group">
                   <div class="flex items-center gap-2 overflow-hidden">
-                    <div class="w-2 h-2 rounded-full bg-primary-500 shrink-0"></div>
+                    <div class="w-2 h-2 rounded-full bg-primary-500 shrink-0" />
                     <span class="font-bold text-slate-700 text-sm truncate">
                       {{ getCategoryLabel(catValue) }}
                     </span>
@@ -198,10 +198,10 @@
               <p
                 v-if="showSuccess"
                 class="text-xs font-bold text-positive-600 animate-pulse flex gap-1 items-center">
-                <CheckSquareIcon class="h-4 w-4" />
+                <check-square-icon class="h-4 w-4" />
                 {{ $t('common.saved.success', { items: $t('common.categories') }) }}
               </p>
-              <p v-else></p>
+              <p v-else />
 
               <button
                 :disabled="isSaving"
@@ -214,7 +214,7 @@
                 @click="saveProfileCategories">
                 <span
                   v-if="isSaving"
-                  class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 {{ isSaving ? $t('common.saved.saving') : $t('common.saved.save') }}
               </button>
             </div>
@@ -227,7 +227,7 @@
         <div class="flex items-center gap-3 mb-8">
           <div
             class="w-10 h-10 bg-secondary-50 rounded-xl flex items-center justify-center text-secondary-600">
-            <LockIcon class="w-5 h-5" />
+            <lock-icon class="w-5 h-5" />
           </div>
           <h2 class="text-xl font-bold text-slate-900">{{ $t('account.passwordChange.title') }}</h2>
         </div>
@@ -267,10 +267,10 @@
             <p
               v-else-if="passwordSuccess"
               class="text-xs font-bold text-positive-600 animate-pulse flex gap-1 items-center">
-              <CheckSquareIcon class="h-4 w-4" />
+              <check-square-icon class="h-4 w-4" />
               {{ $t('account.passwordChange.success.message') }}
             </p>
-            <p v-else></p>
+            <p v-else />
 
             <button
               type="submit"
@@ -283,7 +283,7 @@
               ]">
               <span
                 v-if="updatingPassword"
-                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               {{
                 updatingPassword
                   ? $t('account.passwordChange.submittingBtn')
@@ -298,7 +298,7 @@
 </template>
 
 <script setup lang="ts">
-import { BriefcaseBusiness, CheckSquareIcon, Tag, LockIcon, KeyRound } from 'lucide-vue-next';
+import { BriefcaseBusiness, CheckSquareIcon, KeyRound, LockIcon, Tag } from 'lucide-vue-next';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 
 definePageMeta({
@@ -400,7 +400,9 @@ const currencyOptions = [
 ];
 
 const formattedCategories = computed(() => {
-  if (!categoriesData.value) return [];
+  if (!categoriesData.value) {
+    return [];
+  }
 
   const uniqueCategories = new Map();
 

@@ -1,6 +1,6 @@
 // tests/formatter.spec.ts
-import { describe, it, expect, vi } from 'vitest';
-import { formatOrdinal, formatMcaScoreForUi } from '../formatter';
+import { describe, expect, it, vi } from 'vitest';
+import { formatMcaScoreForUi, formatOrdinal } from '../formatter';
 import type { BenchmarkResult } from '../types';
 
 describe('UI Formatter: formatOrdinal', () => {

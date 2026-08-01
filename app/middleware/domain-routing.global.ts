@@ -1,4 +1,4 @@
-import { defineNuxtRouteMiddleware, useRequestURL, useNuxtApp } from '#imports';
+import { defineNuxtRouteMiddleware, useNuxtApp, useRequestURL } from '#imports';
 
 export default defineNuxtRouteMiddleware(async (to) => {
   const { $siteBrand, $i18n } = useNuxtApp();
@@ -13,9 +13,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // 1. Force Locale strictly for amiunderpaid
   if ($siteBrand === 'amiunderpaid') {
     if (isUKSite) {
-      if ($i18n.locale.value !== 'en-GB') await $i18n.setLocale('en-GB');
+      if ($i18n.locale.value !== 'en-GB') {
+        await $i18n.setLocale('en-GB');
+      }
     } else if (isUSSite) {
-      if ($i18n.locale.value !== 'en-US') await $i18n.setLocale('en-US');
+      if ($i18n.locale.value !== 'en-US') {
+        await $i18n.setLocale('en-US');
+      }
     }
   }
 

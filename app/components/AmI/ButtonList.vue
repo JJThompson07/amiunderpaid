@@ -8,7 +8,7 @@
       class="flex items-center justify-between p-2.5 border rounded-lg shadow-xs group"
       :class="[bgColour, borderColour]">
       <div class="flex items-center gap-2 overflow-hidden">
-        <div class="w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0"></div>
+        <div class="w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0" />
         <span class="font-bold text-xs truncate" :class="[textColour]">
           {{ option.label }}
         </span>
@@ -17,7 +17,7 @@
         class="text-slate-400 hover:text-negative-500 p-1 rounded hover:bg-negative-50 transition-colors shrink-0"
         title="Remove"
         @click="$emit('remove', option.value)">
-        <XIcon class="h-3.5 w-3.5" />
+        <x-icon class="h-3.5 w-3.5" />
       </button>
     </div>
   </div>

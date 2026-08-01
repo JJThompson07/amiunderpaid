@@ -57,7 +57,9 @@ export const useUserLogging = () => {
       searchSuccess?: boolean;
     }
   ) => {
-    if (import.meta.dev || !import.meta.client || !searchId) return;
+    if (import.meta.dev || !import.meta.client || !searchId) {
+      return;
+    }
 
     fetch('/api/user/update-search', {
       method: 'POST',

@@ -5,8 +5,8 @@
       <div class="mb-6 flex justify-center">
         <div
           class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
-          <BookOpen v-if="!user" class="w-8 h-8" />
-          <Lock v-else class="w-8 h-8 text-emerald-500" />
+          <book-open v-if="!user" class="w-8 h-8" />
+          <lock v-else class="w-8 h-8 text-emerald-500" />
         </div>
       </div>
 
@@ -45,7 +45,7 @@
                 class="ml-1 p-0.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete this dataset"
                 @click="deleteRecords(record.country)">
-                <X class="w-3 h-3" />
+                <x class="w-3 h-3" />
               </button>
             </div>
           </div>
@@ -82,7 +82,7 @@
           </label>
           <label
             class="flex flex-col items-center px-4 py-8 bg-slate-50 text-indigo-600 rounded-2xl border-2 border-dashed border-slate-200 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all group">
-            <UploadCloud
+            <upload-cloud
               class="w-10 h-10 mb-2 text-slate-300 group-hover:text-indigo-400 transition-colors" />
             <span
               class="text-xs font-bold uppercase tracking-wide text-slate-500 group-hover:text-indigo-600">
@@ -116,7 +116,7 @@
           >
           <span
             v-if="loading || parsing"
-            class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+            class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
         </div>
         <div
           ref="consoleRef"
@@ -135,7 +135,7 @@
           title="Sync mappings"
           @click="seedToFirestore">
           <div class="flex items-center gap-2">
-            <CheckCircle2 class="w-4 h-4" />
+            <check-circle2 class="w-4 h-4" />
             <span>Sync {{ parsedData.length }} Mappings</span>
           </div>
         </AmIButton>
@@ -150,7 +150,7 @@
           title="Parse Index"
           @click="handleParse">
           <div class="flex items-center justify-center gap-2">
-            <LoaderCircle v-if="parsing" class="w-4 h-4 animate-spin" />
+            <loader-circle v-if="parsing" class="w-4 h-4 animate-spin" />
             <span v-else>Parse Index</span>
           </div>
         </AmIButton>
@@ -160,14 +160,14 @@
 </template>
 
 <script setup lang="ts">
-import { BookOpen, UploadCloud, CheckCircle2, Lock, LoaderCircle, X } from 'lucide-vue-next';
-import { doc, collection, query, where, getCountFromServer, getDoc } from 'firebase/firestore';
+import { BookOpen, CheckCircle2, LoaderCircle, Lock, UploadCloud, X } from 'lucide-vue-next';
+import { collection, doc, getCountFromServer, getDoc, query, where } from 'firebase/firestore';
 
-interface JobTitleRecord {
+type JobTitleRecord = {
   title: string;
   soc: string;
   group: string;
-}
+};
 
 /**
  * PAGE METADATA
@@ -196,7 +196,9 @@ const existingData = ref<{ country: string; count: number }[]>([]);
 // ** methods **
 
 const fetchSummary = async () => {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   const countries = ['UK', 'USA'];
   const results: { country: string; count: number }[] = [];
 
@@ -224,7 +226,9 @@ const onFileSelect = (e: Event) => {
 };
 
 const deleteRecords = async (country: string) => {
-  if (!db) return;
+  if (!db) {
+    return;
+  }
   if (
     !confirm(
       `Are you sure you want to delete ALL job title mappings for ${country}? This cannot be undone.`
@@ -255,7 +259,9 @@ const deleteRecords = async (country: string) => {
 };
 
 const handleParse = async () => {
-  if (!selectedFile.value) return;
+  if (!selectedFile.value) {
+    return;
+  }
 
   parsing.value = true;
   log(`Initiating upload...`);
@@ -291,7 +297,9 @@ const handleParse = async () => {
 };
 
 const seedToFirestore = async () => {
-  if (loading.value || parsedData.value.length === 0 || !db) return;
+  if (loading.value || parsedData.value.length === 0 || !db) {
+    return;
+  }
 
   // Helper to generate consistent IDs
   const getRecordId = (record: JobTitleRecord) => {

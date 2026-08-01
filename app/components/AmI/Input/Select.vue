@@ -46,7 +46,7 @@
               type="button"
               class="text-primary-400 hover:text-negative-500 transition-colors ml-1 focus:outline-none"
               @click.stop="removeOption(val)">
-              <X class="h-3.5 w-3.5" />
+              <x class="h-3.5 w-3.5" />
             </button>
           </span>
         </div>
@@ -80,12 +80,12 @@
           v-if="modelValue.length > 0 && !disabled"
           class="absolute right-0 top-0 bottom-0 px-3 text-slate-400 hover:text-negative-500 flex items-center justify-center cursor-pointer transition-colors z-10"
           @click.stop="clearAll">
-          <X class="h-4 w-4" />
+          <x class="h-4 w-4" />
         </div>
 
         <div v-if="loading" class="absolute right-10 top-1/2 -translate-y-1/2 z-10">
           <div
-            class="w-4 h-4 border-2 border-slate-200 border-t-primary-500 rounded-full animate-spin"></div>
+            class="w-4 h-4 border-2 border-slate-200 border-t-primary-500 rounded-full animate-spin" />
         </div>
       </div>
 
@@ -133,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
 import { onClickOutside, useFocus } from '@vueuse/core';
 import type { Component, PropType } from 'vue';
 import { X } from 'lucide-vue-next';
@@ -191,7 +191,9 @@ const getLabelForValue = (val: string) => {
 
 // Computed
 const filteredOptions = computed(() => {
-  if (!searchQuery.value) return props.options;
+  if (!searchQuery.value) {
+    return props.options;
+  }
   const search = searchQuery.value.toLowerCase();
   return props.options.filter((opt) => opt.label.toLowerCase().includes(search));
 });
@@ -204,7 +206,9 @@ const showPlaceholder = computed(() => {
 
 // Methods
 const onFocusContainer = () => {
-  if (props.disabled) return;
+  if (props.disabled) {
+    return;
+  }
   isOpen.value = true;
   focused.value = true; // Automatically handles the DOM focus
 };
@@ -244,11 +248,17 @@ const clearAll = () => {
 
 // Keyboard Navigation
 const navigateOptions = (direction: number) => {
-  if (!isOpen.value || filteredOptions.value.length === 0) return;
+  if (!isOpen.value || filteredOptions.value.length === 0) {
+    return;
+  }
   const max = filteredOptions.value.length - 1;
   let next = activeIndex.value + direction;
-  if (next > max) next = 0;
-  if (next < 0) next = max;
+  if (next > max) {
+    next = 0;
+  }
+  if (next < 0) {
+    next = max;
+  }
   activeIndex.value = next;
 };
 

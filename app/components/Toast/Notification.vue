@@ -21,7 +21,7 @@
 
       <button :class="['shrink-0 ml-2 transition-colors', theme.closeBtn]" @click="isOpen = false">
         <span class="sr-only">Close</span>
-        <X class="w-5 h-5" />
+        <x class="w-5 h-5" />
       </button>
     </div>
   </ToastGeneric>
@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { CheckCircle2, AlertTriangle, Info, X } from 'lucide-vue-next';
+import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-vue-next';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

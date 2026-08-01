@@ -1,4 +1,4 @@
-import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
+import { type App, cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import type { H3Event } from 'h3';
@@ -6,7 +6,9 @@ import type { H3Event } from 'h3';
 export const useAdminApp = (): App => {
   const apps = getApps();
   // If VueFire already initialized the app via nuxt.config.ts, just use it!
-  if (apps.length > 0) return apps[0]!;
+  if (apps.length > 0) {
+    return apps[0]!;
+  }
 
   let serviceAccount: any;
   const b64Env = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
@@ -76,7 +78,9 @@ export const batchDelete = async (collectionName: string, filters: Record<string
   }
 
   const snapshot = await query.get();
-  if (snapshot.empty) return 0;
+  if (snapshot.empty) {
+    return 0;
+  }
 
   let count = 0;
   const docs = snapshot.docs;

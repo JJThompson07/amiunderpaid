@@ -37,7 +37,7 @@
               maskRepeat: 'no-repeat',
               WebkitMaskPosition: 'center',
               maskPosition: 'center'
-            }"></div>
+            }" />
         </div>
 
         <div class="flex-1">
@@ -81,7 +81,9 @@ const { getTerritoryById } = useTerritories();
 // 2. Create a smarter click handler
 const handleRegionClick = (state: any) => {
   // Double-check they don't already own it
-  if (props.claimedIds.includes(state.id)) return;
+  if (props.claimedIds.includes(state.id)) {
+    return;
+  }
 
   // Grab the FULL territory object from the master list (which has the 'band'!)
   const fullTerritory = getTerritoryById(state.id);

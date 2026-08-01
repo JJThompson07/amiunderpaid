@@ -24,7 +24,7 @@
           class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
           <div
             class="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-white bg-slate-500 shadow md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-            <UserSearch class="w-5 h-5 text-secondary-100" />
+            <user-search class="w-5 h-5 text-secondary-100" />
           </div>
           <div
             class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
@@ -50,7 +50,7 @@
           class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
           <div
             class="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-white bg-secondary-600 shadow md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-            <Database class="w-5 h-5 text-white" />
+            <database class="w-5 h-5 text-white" />
           </div>
           <div
             class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
@@ -76,7 +76,7 @@
           class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
           <div
             class="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-white bg-positive-500 shadow md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-            <BarChart3 class="w-5 h-5 text-white" />
+            <bar-chart3 class="w-5 h-5 text-white" />
           </div>
           <div
             class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
@@ -114,7 +114,7 @@
 
 <script setup lang="ts">
 // ** imports **
-import { Database, UserSearch, BarChart3 } from 'lucide-vue-next';
+import { BarChart3, Database, UserSearch } from 'lucide-vue-next';
 
 const { $siteBrand } = useNuxtApp();
 const { t } = useI18n();

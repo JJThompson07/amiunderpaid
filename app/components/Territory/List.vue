@@ -30,7 +30,7 @@
                   $t('recruiter.territories.selected', { count: groupItemsSelected(group.options) })
                 }}
               </AmIChip>
-              <ChevronDownIcon
+              <chevron-down-icon
                 class="w-4 h-4 text-slate-900 transition-transform duration-200 ease-in-out"
                 :class="{ 'rotate-180': openGroups.has(group.group) }" />
             </span>
@@ -71,7 +71,7 @@
 
 <script setup lang="ts">
 import { ChevronDownIcon } from 'lucide-vue-next';
-import { computed, ref, type PropType } from 'vue';
+import { computed, type PropType, ref } from 'vue';
 
 export type TerritoryListOption = {
   name: string;

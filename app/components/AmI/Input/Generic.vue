@@ -42,10 +42,10 @@
 <script setup lang="ts">
 import type { Component, PropType } from 'vue';
 
-export interface SelectOption {
+export type SelectOption = {
   label: string;
   value: string | number;
-}
+};
 
 const props = defineProps({
   modelValue: {

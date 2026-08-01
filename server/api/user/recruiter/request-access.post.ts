@@ -40,7 +40,9 @@ export default defineEventHandler(async (event) => {
     return { success: true };
   } catch (error: any) {
     console.error('🔥 Error requesting recruiter access:', error);
-    if (error.statusCode) throw error;
+    if (error.statusCode) {
+      throw error;
+    }
     throw createError({
       statusCode: 500,
       message: 'Failed to submit access request. Please try again later.'

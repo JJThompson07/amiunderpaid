@@ -1,4 +1,4 @@
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
 
 export default defineNuxtRouteMiddleware(async (to) => {
   // 1. SSR FAST-PATH: Keep this at the very top!

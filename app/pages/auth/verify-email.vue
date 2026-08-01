@@ -97,9 +97,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { getAuth, applyActionCode } from 'firebase/auth';
+import { applyActionCode, getAuth } from 'firebase/auth';
 
 // Prevent this page from using any global layouts with navbars/footers
 // to keep it hyper-focused on the single task.

@@ -5,7 +5,9 @@ export const useConsoleLog = () => {
   const log = (msg: string) => {
     status.value += `> ${msg}\n`;
     nextTick(() => {
-      if (consoleRef.value) consoleRef.value.scrollTop = consoleRef.value.scrollHeight;
+      if (consoleRef.value) {
+        consoleRef.value.scrollTop = consoleRef.value.scrollHeight;
+      }
     });
   };
 

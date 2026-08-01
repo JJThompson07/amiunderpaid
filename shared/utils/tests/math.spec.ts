@@ -1,6 +1,6 @@
 // tests/math.spec.ts
-import { describe, it, expect } from 'vitest';
-import { calculatePercentile, calculateRegionalModifier, calculateLivePercentile } from '../math';
+import { describe, expect, it } from 'vitest';
+import { calculateLivePercentile, calculatePercentile, calculateRegionalModifier } from '../math';
 
 describe('Math Engine: calculatePercentile', () => {
   const mockGovData = {

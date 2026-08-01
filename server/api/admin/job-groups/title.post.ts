@@ -1,11 +1,13 @@
 // server/api/admin/job-groups/title.post.ts
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const { country, idCode, newTitle } = body;
 
-  if (!idCode || !newTitle) return { success: false, message: 'Missing fields' };
+  if (!idCode || !newTitle) {
+    return { success: false, message: 'Missing fields' };
+  }
 
   const collectionName = country === 'USA' ? 'usa_job_groups' : 'uk_job_groups';
   const db = getFirestore();

@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch, onBeforeUnmount, computed } from 'vue';
+import { computed, onBeforeUnmount, watch } from 'vue';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -114,6 +114,8 @@ watch(
 );
 
 onBeforeUnmount(() => {
-  if (timeoutId) clearTimeout(timeoutId);
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+  }
 });
 </script>

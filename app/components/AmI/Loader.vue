@@ -3,7 +3,7 @@
     <div class="flex items-center justify-center p-4 bg-white rounded-2xl shadow-xl">
       <div class="flex flex-col items-center gap-4">
         <div
-          class="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+          class="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
         <p class="text-sm font-medium text-slate-500">{{ message }}</p>
       </div>
     </div>

@@ -80,7 +80,9 @@ const hoursPerWeek = ref<number>(40);
 const daysPerWeek = ref<number>(5);
 const period = ref('hour');
 const annualSalary = computed(() => {
-  if (wage.value <= 0) return 0;
+  if (wage.value <= 0) {
+    return 0;
+  }
   switch (period.value) {
     case 'hour':
       return wage.value * hoursPerWeek.value * 52; // Assuming 52 weeks/year

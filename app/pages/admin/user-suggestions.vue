@@ -9,7 +9,7 @@
 
       <div v-if="pending" class="text-slate-500 font-medium flex items-center gap-2">
         <span
-          class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full"></span>
+          class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full" />
         Loading queue...
       </div>
 
@@ -66,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-interface Suggestion {
+type Suggestion = {
   id: string;
   search_term: string;
   target_id_code: string;
@@ -74,7 +74,7 @@ interface Suggestion {
   country: string;
   count: number;
   status: string;
-}
+};
 
 // Define layout and middleware if required for your admin section
 definePageMeta({

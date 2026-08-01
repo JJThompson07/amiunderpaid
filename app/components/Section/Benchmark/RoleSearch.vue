@@ -2,13 +2,13 @@
   <div class="relative w-full max-w-5xl mx-auto mt-8">
     <div class="flex items-center justify-between gap-4 mb-6 w-full">
       <div class="flex gap-4 items-center w-full">
-        <div class="flex-1"></div>
+        <div class="flex-1" />
         <AmITabs
           v-model="country"
           :options="countryOptions"
           round
           @update:model-value="switchLocale" />
-        <div class="flex flex-1"></div>
+        <div class="flex flex-1" />
       </div>
     </div>
 
@@ -114,8 +114,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { Search, MapPin, Wallet } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
+import { MapPin, Search, Wallet } from 'lucide-vue-next';
 import { slugify } from '~/helpers/utility';
 
 const { setLocale, locale, t } = useI18n();
@@ -351,7 +351,9 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
     // Navigating to a new page! Leave loading = true so the button keeps spinning.
     // Failsafe timeout in case navigation gets cancelled/fails for any reason:
     setTimeout(() => {
-      if (loading.value) loading.value = false;
+      if (loading.value) {
+        loading.value = false;
+      }
     }, 5000);
   }
 };

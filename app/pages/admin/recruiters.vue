@@ -14,7 +14,7 @@
 
       <div v-if="pending" class="text-slate-500 font-medium flex items-center gap-2">
         <span
-          class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full"></span>
+          class="animate-spin h-4 w-4 border-2 border-slate-400 border-t-transparent rounded-full" />
         Loading recruiters...
       </div>
 
@@ -66,7 +66,7 @@
                       v-if="t.isBasic"
                       class="shrink-0 text-2xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 rounded flex items-center justify-center w-4.5 h-4.5"
                       title="Basic">
-                      <CheckSquare class="w-3 h-3" />
+                      <check-square class="w-3 h-3" />
                     </span>
                     <div
                       v-if="t.exclusiveMonths && t.exclusiveMonths.length > 0"
@@ -87,16 +87,16 @@
           <template #status="{ row }">
             <div class="flex items-center justify-center gap-1">
               <template v-if="row.status === 'requested'">
-                <HelpCircle class="w-4 h-4 text-amber-500 animate-pulse" />
+                <help-circle class="w-4 h-4 text-amber-500 animate-pulse" />
                 <span class="text-xs font-bold text-amber-700">Requested</span>
               </template>
               <template v-else-if="row.status === 'rejected'">
-                <XCircle class="w-4 h-4 text-red-500" />
+                <x-circle class="w-4 h-4 text-red-500" />
                 <span class="text-xs font-bold text-red-700">Rejected</span>
               </template>
               <template v-else>
-                <CheckCircle2 v-if="row.verified" class="w-4 h-4 text-emerald-500" />
-                <XCircle v-else class="w-4 h-4 text-slate-300" />
+                <check-circle2 v-if="row.verified" class="w-4 h-4 text-emerald-500" />
+                <x-circle v-else class="w-4 h-4 text-slate-300" />
                 <span
                   class="text-xs font-bold"
                   :class="row.verified ? 'text-emerald-700' : 'text-slate-400'">
@@ -146,14 +146,14 @@
                   title="Accept Access Request"
                   :disabled="actioningIds.has(row.id)"
                   @click="acceptRequest(row)">
-                  <Check class="w-4 h-4" />
+                  <check class="w-4 h-4" />
                 </button>
                 <button
                   class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                   title="Reject Access Request"
                   :disabled="actioningIds.has(row.id)"
                   @click="rejectRequest(row)">
-                  <X class="w-4 h-4" />
+                  <x class="w-4 h-4" />
                 </button>
               </template>
               <template v-else-if="row.status === 'rejected'">
@@ -164,7 +164,7 @@
                   class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors cursor-pointer"
                   title="Edit Discounts"
                   @click="openDiscountModal(row)">
-                  <Tag class="w-4 h-4" />
+                  <tag class="w-4 h-4" />
                 </button>
               </template>
             </div>
@@ -182,7 +182,7 @@
         <div class="flex justify-between items-start mb-2">
           <h3 class="text-xl font-black text-slate-900">Manage Discounts</h3>
           <button class="text-slate-400 hover:text-slate-600" @click="showModal = false">
-            <X class="w-5 h-5" />
+            <x class="w-5 h-5" />
           </button>
         </div>
         <p class="text-sm text-slate-500 mb-6">
@@ -222,7 +222,7 @@
 </template>
 
 <script setup lang="ts">
-import { CheckCircle2, XCircle, Tag, X, CheckSquare, Check, HelpCircle } from 'lucide-vue-next';
+import { Check, CheckCircle2, CheckSquare, HelpCircle, Tag, X, XCircle } from 'lucide-vue-next';
 
 definePageMeta({ middleware: 'admin' });
 
@@ -232,7 +232,9 @@ const { showToast } = useSystemToast();
 const actioningIds = ref(new Set<string>());
 
 const acceptRequest = async (row: any) => {
-  if (actioningIds.value.has(row.id)) return;
+  if (actioningIds.value.has(row.id)) {
+    return;
+  }
 
   if (
     !confirm(
@@ -270,7 +272,9 @@ const acceptRequest = async (row: any) => {
 };
 
 const rejectRequest = async (row: any) => {
-  if (actioningIds.value.has(row.id)) return;
+  if (actioningIds.value.has(row.id)) {
+    return;
+  }
 
   if (
     !confirm(
@@ -344,7 +348,9 @@ const openDiscountModal = (recruiter: any) => {
 };
 
 const saveDiscount = async () => {
-  if (!selectedRecruiter.value) return;
+  if (!selectedRecruiter.value) {
+    return;
+  }
   isSaving.value = true;
 
   try {

@@ -1,4 +1,4 @@
-import { defineEventHandler, readMultipartFormData, createError } from 'h3';
+import { createError, defineEventHandler, readMultipartFormData } from 'h3';
 import * as XLSX from 'xlsx';
 
 /**
@@ -11,7 +11,7 @@ import * as XLSX from 'xlsx';
  * - 'OCC_TITLE' column = Job Title
  */
 
-interface SalaryRecord {
+type SalaryRecord = {
   title: string;
   location: string;
   year: number;
@@ -24,12 +24,14 @@ interface SalaryRecord {
   country: string;
   id_code?: string;
   period: string; // Fixed to 'year'
-}
+};
 
 export default defineEventHandler(async (event) => {
   try {
     const body = await readMultipartFormData(event);
-    if (!body) throw createError({ statusCode: 400, message: 'Invalid request body' });
+    if (!body) {
+      throw createError({ statusCode: 400, message: 'Invalid request body' });
+    }
 
     const file = body.find((item) => item.name === 'file');
     const countryPart = body.find((item) => item.name === 'country');
@@ -106,10 +108,14 @@ export default defineEventHandler(async (event) => {
 
       // Helper to strictly validate UK numeric values
       const parseUKVal = (val: any) => {
-        if (val == null || val === 'x' || val === '..' || val === ':') return undefined;
+        if (val == null || val === 'x' || val === '..' || val === ':') {
+          return undefined;
+        }
         const parsed =
           typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) : parseFloat(val);
-        if (!isNaN(parsed) && parsed >= 1000) return Math.round(parsed);
+        if (!isNaN(parsed) && parsed >= 1000) {
+          return Math.round(parsed);
+        }
         return undefined;
       };
 
@@ -117,14 +123,18 @@ export default defineEventHandler(async (event) => {
         const row = rawData[i];
 
         // 2. Safely check using titleIdx instead of locIdx
-        if (!row || row[titleIdx] == null || String(row[titleIdx]).trim() === '') continue;
+        if (!row || row[titleIdx] == null || String(row[titleIdx]).trim() === '') {
+          continue;
+        }
 
         const title = String(row[titleIdx]).trim(); // Extract the actual job title
         const id_code =
           codeIdx > -1 && row[codeIdx] != null ? String(row[codeIdx]).trim() : undefined;
 
         const salaryVal = parseUKVal(row[medianIdx]);
-        if (salaryVal === undefined) continue;
+        if (salaryVal === undefined) {
+          continue;
+        }
 
         // 3. Update the record generation to put Title and Location in the right places
         const record: SalaryRecord = {
@@ -138,17 +148,27 @@ export default defineEventHandler(async (event) => {
         };
 
         const meanVal = parseUKVal(meanIdx > -1 ? row[meanIdx] : undefined);
-        if (meanVal) record.avg_salary = meanVal;
+        if (meanVal) {
+          record.avg_salary = meanVal;
+        }
 
         const p10 = parseUKVal(pct10Idx > -1 ? row[pct10Idx] : undefined);
         const p25 = parseUKVal(pct25Idx > -1 ? row[pct25Idx] : undefined);
         const p75 = parseUKVal(pct75Idx > -1 ? row[pct75Idx] : undefined);
         const p90 = parseUKVal(pct90Idx > -1 ? row[pct90Idx] : undefined);
 
-        if (p10) record.salary_10_pt = p10;
-        if (p25) record.salary_25_pt = p25;
-        if (p75) record.salary_75_pt = p75;
-        if (p90) record.salary_90_pt = p90;
+        if (p10) {
+          record.salary_10_pt = p10;
+        }
+        if (p25) {
+          record.salary_25_pt = p25;
+        }
+        if (p75) {
+          record.salary_75_pt = p75;
+        }
+        if (p90) {
+          record.salary_90_pt = p90;
+        }
 
         normalizedData.push(record);
       }
@@ -193,10 +213,14 @@ export default defineEventHandler(async (event) => {
 
       // Helper to clean BLS numeric strings and handle suppression (*, #, null, undefined)
       const parseUSVal = (val: any) => {
-        if (val == null || val === '*' || val === '#') return undefined;
+        if (val == null || val === '*' || val === '#') {
+          return undefined;
+        }
         const parsed =
           typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) : parseFloat(val);
-        if (!isNaN(parsed)) return Math.round(parsed);
+        if (!isNaN(parsed)) {
+          return Math.round(parsed);
+        }
         return undefined;
       };
 
@@ -204,8 +228,12 @@ export default defineEventHandler(async (event) => {
         const row = rawData[i];
 
         // Ensure the row exists and both Title and Location cells have non-null string data
-        if (!row || row[titleIdx] == null || String(row[titleIdx]).trim() === '') continue;
-        if (row[locIdx] == null || String(row[locIdx]).trim() === '') continue;
+        if (!row || row[titleIdx] == null || String(row[titleIdx]).trim() === '') {
+          continue;
+        }
+        if (row[locIdx] == null || String(row[locIdx]).trim() === '') {
+          continue;
+        }
 
         const title = String(row[titleIdx]).trim();
         const location = String(row[locIdx]).trim(); // Explicitly use AREA_TITLE for location
@@ -213,7 +241,9 @@ export default defineEventHandler(async (event) => {
           codeIdx > -1 && row[codeIdx] != null ? String(row[codeIdx]).trim() : undefined;
 
         const salaryVal = parseUSVal(row[salaryIdx]);
-        if (salaryVal === undefined) continue;
+        if (salaryVal === undefined) {
+          continue;
+        }
 
         const record: SalaryRecord = {
           title,
@@ -226,17 +256,27 @@ export default defineEventHandler(async (event) => {
         };
 
         const meanVal = parseUSVal(meanIdx > -1 ? row[meanIdx] : undefined);
-        if (meanVal) record.avg_salary = meanVal;
+        if (meanVal) {
+          record.avg_salary = meanVal;
+        }
 
         const p10 = parseUSVal(pct10Idx > -1 ? row[pct10Idx] : undefined);
         const p25 = parseUSVal(pct25Idx > -1 ? row[pct25Idx] : undefined);
         const p75 = parseUSVal(pct75Idx > -1 ? row[pct75Idx] : undefined);
         const p90 = parseUSVal(pct90Idx > -1 ? row[pct90Idx] : undefined);
 
-        if (p10) record.salary_10_pt = p10;
-        if (p25) record.salary_25_pt = p25;
-        if (p75) record.salary_75_pt = p75;
-        if (p90) record.salary_90_pt = p90;
+        if (p10) {
+          record.salary_10_pt = p10;
+        }
+        if (p25) {
+          record.salary_25_pt = p25;
+        }
+        if (p75) {
+          record.salary_75_pt = p75;
+        }
+        if (p90) {
+          record.salary_90_pt = p90;
+        }
 
         normalizedData.push(record);
       }

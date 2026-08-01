@@ -58,7 +58,7 @@
             <div
               class="h-full rounded-full transition-all duration-1000 ease-out"
               :class="confidenceBgColor"
-              :style="{ width: `${(verdict.confidenceScore || 0) * 10}%` }"></div>
+              :style="{ width: `${(verdict.confidenceScore || 0) * 10}%` }" />
           </div>
           <span class="text-sm font-bold text-slate-700"
             >{{ verdict.confidenceScore || 0 }}/10</span
@@ -76,7 +76,7 @@
         class="flex items-center justify-between w-full text-left font-bold text-slate-700 hover:text-slate-900 transition-colors group cursor-pointer"
         @click="showBreakdown = !showBreakdown">
         <span>{{ showBreakdown ? $t('mca.toggle.hide') : $t('mca.toggle.show') }}</span>
-        <ChevronDown
+        <chevron-down
           class="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-transform duration-300"
           :class="showBreakdown ? 'rotate-180' : ''" />
       </button>
@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { ChevronDown } from 'lucide-vue-next'; // 👈 Added the icon import
 import { useI18n } from 'vue-i18n';
 
@@ -151,27 +151,43 @@ const dashOffset = computed(() => {
 // ==========================================
 const ringColor = computed(() => {
   const score = animatedScore.value;
-  if (score >= 80) return '#25c25d';
-  if (score >= 60) return '#2881cf';
-  if (score >= 40) return '#d38e1f';
+  if (score >= 80) {
+    return '#25c25d';
+  }
+  if (score >= 60) {
+    return '#2881cf';
+  }
+  if (score >= 40) {
+    return '#d38e1f';
+  }
   return '#f34040';
 });
 
 const cardClasses = computed(() => {
   const score = props.verdict?.score || 0;
-  if (score >= 80)
+  if (score >= 80) {
     return 'bg-linear-to-b from-positive-50/75 via-white to-white border-positive-100';
-  if (score >= 60)
+  }
+  if (score >= 60) {
     return 'bg-linear-to-b from-neutral-100/75 via-white to-white border-neutral-200';
-  if (score >= 40) return 'bg-linear-to-b from-warning-50/75 via-white to-white border-warning-200';
+  }
+  if (score >= 40) {
+    return 'bg-linear-to-b from-warning-50/75 via-white to-white border-warning-200';
+  }
   return 'bg-linear-to-b from-negative-50/75 via-white to-white border-negative-100';
 });
 
 const badgeClasses = computed(() => {
   const score = props.verdict?.score || 0;
-  if (score >= 80) return 'bg-positive-200/50 text-positive-700';
-  if (score >= 60) return 'bg-neutral-200/50 text-neutral-700';
-  if (score >= 40) return 'bg-warning-200/50 text-warning-700';
+  if (score >= 80) {
+    return 'bg-positive-200/50 text-positive-700';
+  }
+  if (score >= 60) {
+    return 'bg-neutral-200/50 text-neutral-700';
+  }
+  if (score >= 40) {
+    return 'bg-warning-200/50 text-warning-700';
+  }
   return 'bg-negative-200/50 text-negative-700';
 });
 
@@ -180,15 +196,23 @@ const badgeClasses = computed(() => {
 // ==========================================
 const confidenceBgColor = computed(() => {
   const score = props.verdict?.confidenceScore || 0;
-  if (score >= 8) return 'bg-positive-500'; // Green
-  if (score >= 5) return 'bg-warning-500'; // Amber
+  if (score >= 8) {
+    return 'bg-positive-500';
+  } // Green
+  if (score >= 5) {
+    return 'bg-warning-500';
+  } // Amber
   return 'bg-negative-500'; // Red
 });
 
 const confidenceDescription = computed(() => {
   const score = props.verdict?.confidenceScore || 0;
-  if (score >= 8) return t('mca.confidence.desc_high');
-  if (score >= 5) return t('mca.confidence.desc_medium');
+  if (score >= 8) {
+    return t('mca.confidence.desc_high');
+  }
+  if (score >= 5) {
+    return t('mca.confidence.desc_medium');
+  }
   return t('mca.confidence.desc_low');
 });
 

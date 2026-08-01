@@ -60,12 +60,12 @@ import { ref } from 'vue';
 // Imported the additional icons needed for the right column!
 import {
   BriefcaseBusiness,
-  UserRoundPlus,
+  CalendarDaysIcon,
+  LockIcon,
+  MagnetIcon,
   MapPinIcon,
   TargetIcon,
-  CalendarDaysIcon,
-  MagnetIcon,
-  LockIcon,
+  UserRoundPlus,
   UserStarIcon
 } from 'lucide-vue-next';
 

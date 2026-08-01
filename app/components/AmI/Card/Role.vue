@@ -7,7 +7,7 @@
         <div class="flex flex-row gap-1 justify-between items-center w-full text-slate-500">
           <span class="text-2xs flex-1 line-clamp-1">{{ company }}</span>
           <span class="text-2xs flex gap-1 items-center line-clamp-1"
-            ><MapPinIcon class="w-3 h-3" />{{ location }}</span
+            ><map-pin-icon class="w-3 h-3" />{{ location }}</span
           >
         </div>
       </div>
@@ -139,7 +139,9 @@ const hasRange = computed<boolean>(() => {
 });
 
 const salaryMaxComparison = computed<number>(() => {
-  if (!props.userSalary) return 0;
+  if (!props.userSalary) {
+    return 0;
+  }
 
   if ($siteBrand === 'benchmarkmyrole') {
     return getRawUncappedDiffPercentage(props.userSalary, props.salaryMax);

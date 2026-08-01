@@ -1,7 +1,7 @@
 // app/utils/engineScoring/formatter.ts
 import type { BenchmarkResult } from './types'; // Adjust this path if types.ts is somewhere else
 
-export interface McaUiData {
+export type McaUiData = {
   score: number;
   label: string;
   confidenceScore: number;
@@ -11,12 +11,16 @@ export interface McaUiData {
   macroPercentile: number;
   livePercentile: number | null;
   modifier: number;
-}
+};
 
 // Helper: Converts a percentile into a JSON key ('high', 'mid', or 'low')
 const getTier = (val: number, highBound: number, midBound: number): 'high' | 'mid' | 'low' => {
-  if (val >= highBound) return 'high';
-  if (val >= midBound) return 'mid';
+  if (val >= highBound) {
+    return 'high';
+  }
+  if (val >= midBound) {
+    return 'mid';
+  }
   return 'low';
 };
 

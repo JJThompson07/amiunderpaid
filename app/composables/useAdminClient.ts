@@ -38,7 +38,9 @@ export const useAdminClient = (log: (msg: string) => void) => {
    * @param data Array of data to seed
    */
   const batchSeed = async <T>(data: T[], collectionName: string) => {
-    if (data.length === 0) return;
+    if (data.length === 0) {
+      return;
+    }
     loading.value = true;
     log('Starting Firestore Batch Sync (Server-Side)...');
 

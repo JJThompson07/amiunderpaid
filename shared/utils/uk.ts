@@ -1,11 +1,11 @@
-import type { PercentileData, HistogramBucket, BenchmarkResult } from './types';
+import type { BenchmarkResult, HistogramBucket, PercentileData } from './types';
 import {
-  WEIGHTS,
-  LIVE_CONFIDENCE_THRESHOLDS,
-  calculatePercentile,
+  calculateConfidenceScore,
   calculateLivePercentile,
+  calculatePercentile,
   calculateRegionalModifier,
-  calculateConfidenceScore
+  LIVE_CONFIDENCE_THRESHOLDS,
+  WEIGHTS
 } from './math';
 
 export const calculateUKBenchmarkScore = (

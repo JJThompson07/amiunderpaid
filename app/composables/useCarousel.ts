@@ -1,5 +1,5 @@
-import { ref, computed, onMounted, onUpdated } from 'vue';
-import { useEventListener, useElementSize } from '@vueuse/core';
+import { computed, onMounted, onUpdated, ref } from 'vue';
+import { useElementSize, useEventListener } from '@vueuse/core';
 
 export const useCarousel = () => {
   const trackRef = ref<HTMLElement | null>(null);
@@ -11,25 +11,35 @@ export const useCarousel = () => {
   const { width } = useElementSize(trackRef);
 
   const maxItemsToShow = computed(() => {
-    if (width.value < 640) return 1;
-    if (width.value < 1024) return 2;
+    if (width.value < 640) {
+      return 1;
+    }
+    if (width.value < 1024) {
+      return 2;
+    }
     return 3;
   });
 
   const actualItemsToShow = computed(() => {
-    if (itemCount.value === 0) return maxItemsToShow.value;
+    if (itemCount.value === 0) {
+      return maxItemsToShow.value;
+    }
     return Math.min(maxItemsToShow.value, itemCount.value);
   });
 
   const cardWidth = computed(() => {
-    if (!width.value) return '100%';
+    if (!width.value) {
+      return '100%';
+    }
     const gap = 16; // gap-4 translates to 1rem (16px)
     const totalGap = (actualItemsToShow.value - 1) * gap;
     return `calc((100% - ${totalGap}px) / ${actualItemsToShow.value})`;
   });
 
   const checkScroll = () => {
-    if (!trackRef.value) return;
+    if (!trackRef.value) {
+      return;
+    }
     const { scrollLeft, scrollWidth, clientWidth } = trackRef.value;
 
     isScrollable.value = scrollWidth > clientWidth + 2;
@@ -38,7 +48,9 @@ export const useCarousel = () => {
   };
 
   const scrollByAmount = (direction: 1 | -1) => {
-    if (!trackRef.value || trackRef.value.children.length === 0) return;
+    if (!trackRef.value || trackRef.value.children.length === 0) {
+      return;
+    }
     const firstCard = trackRef.value.children[0] as HTMLElement;
     const cardWidth = firstCard.offsetWidth;
     const gapString = window.getComputedStyle(trackRef.value).gap;
@@ -51,7 +63,9 @@ export const useCarousel = () => {
   const updateItemCount = () => {
     if (trackRef.value) {
       const count = trackRef.value.children.length;
-      if (itemCount.value !== count) itemCount.value = count;
+      if (itemCount.value !== count) {
+        itemCount.value = count;
+      }
     }
   };
 

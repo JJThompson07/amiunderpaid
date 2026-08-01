@@ -6,7 +6,9 @@ export default defineEventHandler(async (event) => {
   const db = getFirestore();
 
   const cleanSearchTerm = (body.title || '').trim().toLowerCase();
-  if (!cleanSearchTerm || !body.gov_id_code) return { success: false };
+  if (!cleanSearchTerm || !body.gov_id_code) {
+    return { success: false };
+  }
 
   // 1. Grab the country from the request body
   const countryCode =

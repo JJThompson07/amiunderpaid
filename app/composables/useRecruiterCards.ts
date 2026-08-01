@@ -1,10 +1,10 @@
 import type { Ref } from 'vue';
 
 // 1. Explicitly define the shape we expect back from the API
-export interface RecruiterCardResponse {
+export type RecruiterCardResponse = {
   success: boolean;
   cards: any[]; // You can swap `any` for a specific Card interface if you have one!
-}
+};
 
 export const useRecruiterCards = async (
   location: Ref<string | undefined | null>,
@@ -17,7 +17,9 @@ export const useRecruiterCards = async (
 
   const territoryId = computed(() => {
     const targetLocation = location.value || matchedLocation.value;
-    if (!targetLocation || targetLocation === 'National') return null;
+    if (!targetLocation || targetLocation === 'National') {
+      return null;
+    }
 
     const match = allTerritories.find((t) => t.name.toLowerCase() === targetLocation.toLowerCase());
     return match ? match.id : null;

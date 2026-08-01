@@ -25,7 +25,7 @@
           <div class="flex flex-col">
             <span class="font-bold text-slate-800 text-sm">{{ row.categoryLabel }}</span>
             <span class="text-slate-500 text-xs flex items-center gap-1 mb-1.5">
-              <MapPinIcon class="w-3 h-3" />
+              <map-pin-icon class="w-3 h-3" />
               {{ row.territory.name }}
             </span>
           </div>
@@ -62,11 +62,11 @@
           ]"
           @click="toggleBasic(row.id)">
           <div class="flex items-center gap-1.5">
-            <CheckCircle2Icon
+            <check-circle2-icon
               v-if="isBasic(row.id) || isBasicLocked(row.id)"
               class="w-3.5 h-3.5"
               :class="isBasicLocked(row.id) ? 'text-emerald-500' : 'text-positive-400'" />
-            <CircleIcon v-else class="w-3.5 h-3.5 text-slate-400" />
+            <circle-icon v-else class="w-3.5 h-3.5 text-slate-400" />
             <span v-if="isBasicLocked(row.id)" class="uppercase tracking-wider text-2xs">{{
               $t('recruiter.schedule.owned')
             }}</span>
@@ -108,12 +108,12 @@
                     : 'bg-white border border-slate-200 text-slate-300 hover:border-primary-300 hover:text-primary-400 shadow-sm'
             ]"
             @click="toggleMonth(row.id, month.value)">
-            <CheckCircle2Icon v-if="isMonthLocked(row.id, month.value)" class="w-5 h-5" />
-            <CrownIcon v-else-if="isMonthSelected(row.id, month.value)" class="w-5 h-5" />
-            <LockIcon
+            <check-circle2-icon v-if="isMonthLocked(row.id, month.value)" class="w-5 h-5" />
+            <crown-icon v-else-if="isMonthSelected(row.id, month.value)" class="w-5 h-5" />
+            <lock-icon
               v-else-if="isMonthTaken(row.id, month.value)"
               class="w-5 h-5 text-slate-400" />
-            <PlusIcon v-else class="w-4 h-4" />
+            <plus-icon v-else class="w-4 h-4" />
           </button>
 
           <div class="h-4 flex items-center justify-center">
@@ -217,12 +217,12 @@
 import { computed } from 'vue';
 import type { PropType } from 'vue';
 import {
-  MapPinIcon,
-  PlusIcon,
-  CrownIcon,
   CheckCircle2Icon,
   CircleIcon,
-  LockIcon
+  CrownIcon,
+  LockIcon,
+  MapPinIcon,
+  PlusIcon
 } from 'lucide-vue-next';
 
 export type Territory = { id: number; name: string; band?: number };

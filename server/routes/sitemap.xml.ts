@@ -1,5 +1,5 @@
 // server/routes/sitemap.xml.ts
-import { defineEventHandler, setHeader, getRequestURL } from 'h3';
+import { defineEventHandler, getRequestURL, setHeader } from 'h3';
 import { useAdminFirestore } from '../utils/firebase';
 
 export default defineEventHandler(async (event) => {
@@ -44,8 +44,12 @@ export default defineEventHandler(async (event) => {
     const country = data.country || 'UK'; // Default if missing
 
     // Filter out jobs that don't belong to this domain
-    if (isAmIUnderpaidUS && country !== 'USA') return null;
-    if (isAmIUnderpaidUK && country !== 'UK') return null;
+    if (isAmIUnderpaidUS && country !== 'USA') {
+      return null;
+    }
+    if (isAmIUnderpaidUK && country !== 'UK') {
+      return null;
+    }
 
     const titleSlug = slugify(data.title);
 
