@@ -54,3 +54,12 @@ When a change is fully verified and approved:
 ## 3. Commits
 
 - **Gitmojis Required:** You MUST always use gitmojis in commit messages. The gitmoji should be at the very beginning of the commit message, optionally followed by the conventional commit type (e.g., `🐛 fix: ...`, `✨ feat: ...`, `🚀 build: ...`, `♻️ refactor: ...`, `📝 docs: ...`).
+
+## 4. CI / Testing Enforcement
+
+- **Test Verification:** Before concluding ANY task, proposing a change, or asking the user to push a branch, you MUST run both `pnpm test` (Unit Tests) and `pnpm test:e2e` (Playwright tests).
+- **Hard Blocker:** If ANY test fails during execution, this blocks further execution. You must fix the regression before proceeding or explicitly ask the user for guidance if you are stuck.
+
+## 5. Coding Standards & Linting
+
+- **Strict Imports:** All imports, especially destructured members, MUST be sorted alphabetically to prevent ESLint `sort-imports` errors (e.g., `import { describe, expect, it } from 'vitest';` not `import { describe, it, expect }`).
