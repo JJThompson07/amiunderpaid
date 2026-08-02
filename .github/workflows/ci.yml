@@ -70,4 +70,8 @@ jobs:
         run: E2E=true pnpm run build
       
       - name: Run Playwright E2E Tests
-        run: pnpm run test:e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        run: |
+          set -a
+          source .env
+          set +a
+          pnpm run test:e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
