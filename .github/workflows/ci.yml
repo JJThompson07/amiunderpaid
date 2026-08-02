@@ -30,9 +30,10 @@ jobs:
       - name: Run Unit Tests & Enforce 80% Coverage
         run: pnpm run test:coverage
 
-      # Playwright Tests can be un-commented once they are built and configured
-      # - name: Install Playwright Browsers
-      #   run: pnpm exec playwright install --with-deps
-      # 
-      # - name: Run Playwright E2E Tests
-      #   run: pnpm run test:e2e
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+      
+      - name: Run Playwright E2E Tests
+        run: pnpm run test:e2e
+        env:
+          E2E_RECRUITER_PASSWORD: ${{ secrets.E2E_RECRUITER_PASSWORD }}
