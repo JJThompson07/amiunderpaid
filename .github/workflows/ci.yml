@@ -64,7 +64,7 @@ jobs:
         run: pnpm install
 
       - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install chromium firefox --with-deps
       
       - name: Build Application for E2E
         run: pnpm run build
