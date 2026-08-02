@@ -1,17 +1,23 @@
 import { expect, test } from '@playwright/test';
 
-test.describe('Checkout Flows', () => {
-  test('Checkout buttons trigger Stripe or Auth flow', async ({ page }) => {
-    // Navigate to a pricing or checkout related page if it exists
-    await page.goto('/');
+test.describe('Recruiter Flows', () => {
+  test('Recruiters can open the Request Access modal', async ({ page }) => {
+    // Navigate to the recruiter login page where "Request Access" button exists
+    await page.goto('/recruiter/login');
+    
+    // There should be a "Request Access" button
+    const requestAccessBtn = page.getByRole('button').filter({ hasText: /Request Access/i }).first();
+    
+    // Ensure the button is visible and click it
+    await expect(requestAccessBtn).toBeVisible();
+    await requestAccessBtn.click();
+    
+    // The modal should appear
+    const modalTitle = page.getByText(/Request Partner Access/i).first();
+    await expect(modalTitle).toBeVisible();
 
-    // Find a checkout button
-    const checkoutButton = page.getByRole('button', { name: /Get Access|Buy|Subscribe/i }).first();
-
-    if (await checkoutButton.isVisible()) {
-      // We don't click it to avoid triggering actual external Stripe calls in basic E2E tests,
-      // but we assert it is present and enabled.
-      await expect(checkoutButton).toBeEnabled();
-    }
+    // Check for Agency Name and Email fields in the modal
+    await expect(page.getByText(/Agency Name/i).first()).toBeVisible();
+    await expect(page.getByText(/Email Address/i).first()).toBeVisible();
   });
 });

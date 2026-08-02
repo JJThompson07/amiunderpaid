@@ -1,21 +1,38 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Search Flows', () => {
-  test('User can interact with the search input on the homepage', async ({ page }) => {
+  test('User can search for a job title and navigate to results', async ({ page }) => {
+    // 1. Navigate to the homepage
     await page.goto('/');
 
-    // Find the main search input
-    const searchInput = page.getByPlaceholder(/job title|e\.g\./i).first();
+    // 2. Wait for the search form to be visible
+    const form = page.locator('form').first();
+    await expect(form).toBeVisible();
 
-    if (await searchInput.isVisible()) {
-      await searchInput.fill('Software Engineer');
-      await expect(searchInput).toHaveValue('Software Engineer');
+    // 3. Find the job title autocomplete input (first one)
+    const searchInput = page.locator('.ami-autocomplete-input input').first();
+    await expect(searchInput).toBeVisible();
 
-      // The autocomplete dropdown should eventually appear
-      // We just ensure no crash happened and the value was typed
-    } else {
-      // Fallback assertion
-      await expect(page.locator('body')).toBeVisible();
-    }
+    // 4. Type a valid job title
+    const jobTitle = 'Software Engineer';
+    await searchInput.fill(jobTitle);
+
+    // 5. Ensure the submit button is enabled and click it
+    // AmIButton uses a div with role="button"
+    const submitButton = page.getByRole('button').filter({ hasText: /Check salary/i }).first();
+    await expect(submitButton).toBeVisible();
+    await submitButton.click();
+
+    // 6. Expect the browser to navigate to the salary results page
+    // The path should be something like /salary/software-engineer/[country]
+    await page.waitForURL(/\/salary\/software-engineer/i, { timeout: 15000 });
+
+    // 7. Verify the new page loaded successfully
+    await expect(page.locator('body')).toBeVisible();
+    
+    // Check that the heading or title reflects the search
+    const heading = page.locator('h1').first();
+    await expect(heading).toBeVisible();
+    await expect(heading).toContainText(/Software Engineer/i);
   });
 });
