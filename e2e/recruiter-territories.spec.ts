@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Recruiter Territory Claims', () => {
-  const TEST_EMAIL = 'joshuajthompson07+recruiter@gmail.com';
-  const TEST_PASSWORD = 'James1993@';
+  const TEST_EMAIL = process.env.E2E_RECRUITER_EMAIL || 'joshuajthompson07+recruiter@gmail.com';
+  const TEST_PASSWORD = process.env.E2E_RECRUITER_PASSWORD || '';
 
   test.beforeEach(async ({ page }) => {
     // Navigate to login
