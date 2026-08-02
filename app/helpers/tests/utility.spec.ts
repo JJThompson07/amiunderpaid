@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getPercentage, getUncappedPercentage, getDiff, getDiffPercentage, getRawDiffPercentage, getRawUncappedDiffPercentage, slugify } from '../utility';
+import { getPercentage, getUncappedPercentage, getDiff, getDiffPercentage, getRawDiffPercentage, getRawUncappedDiffPercentage, slugify, levenshteinDistance } from '../utility';
 
 describe('utility', () => {
   it('getPercentage', () => {
@@ -35,5 +35,14 @@ describe('utility', () => {
     expect(slugify('Hello World')).toBe('hello-world');
     expect(slugify('ui/ux')).toBe('ui-ux');
     expect(slugify('test\\path')).toBe('test-path');
+  });
+  it('levenshteinDistance', () => {
+    expect(levenshteinDistance('kitten', 'sitting')).toBe(3);
+    expect(levenshteinDistance('flitten', 'sitting')).toBe(4);
+    expect(levenshteinDistance('nurse', 'nurs')).toBe(1);
+    expect(levenshteinDistance('engineer', 'engineers')).toBe(1);
+    expect(levenshteinDistance('', 'test')).toBe(4);
+    expect(levenshteinDistance('test', '')).toBe(4);
+    expect(levenshteinDistance('', '')).toBe(0);
   });
 });
