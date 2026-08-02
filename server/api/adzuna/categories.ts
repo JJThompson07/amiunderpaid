@@ -2,7 +2,7 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const query = getQuery(event);
   const country = query.country ? String(query.country).toLowerCase() : 'gb';
-  const targetCountry = country === 'usa' ? 'us' : country;
+  const targetCountry = country === 'usa' || country === 'us' ? 'us' : 'gb';
 
   const appId = config.adzunaAppId || config.public?.adzunaAppId || process.env.adzunaAppId;
   const appKey = config.adzunaAppKey || config.public?.adzunaAppKey || process.env.adzunaAppKey;
