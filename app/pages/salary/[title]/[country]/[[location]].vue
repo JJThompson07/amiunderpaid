@@ -248,6 +248,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 const { $siteBrand } = useNuxtApp();
 const route = useRoute();
 const { isXl } = useViewport();
+const { t } = useI18n();
 
 // 🚀 Inject the Engine
 const {
@@ -379,7 +380,7 @@ const url = useRequestURL();
 useSeoMeta({
   title: () => {
     const locStr = location.value ? `${location.value}, ` : '';
-    return $t('meta.location.title', {
+    return t('meta.location.title', {
       displayTitle: displayTitle.value,
       locStr,
       country: country.value
@@ -387,11 +388,11 @@ useSeoMeta({
   },
   description: () => {
     const locStr = location.value || country.value;
-    return $t('meta.location.description', { displayTitle: displayTitle.value, locStr });
+    return t('meta.location.description', { displayTitle: displayTitle.value, locStr });
   },
   ogTitle: () => {
     const locStr = location.value ? `${location.value}, ` : '';
-    return $t('meta.location.ogTitle', {
+    return t('meta.location.ogTitle', {
       displayTitle: displayTitle.value,
       locStr,
       country: country.value
@@ -399,7 +400,7 @@ useSeoMeta({
   },
   ogDescription: () => {
     const locStr = location.value || country.value;
-    return $t('meta.location.ogDescription', { displayTitle: displayTitle.value, locStr });
+    return t('meta.location.ogDescription', { displayTitle: displayTitle.value, locStr });
   },
   ogImage: `${url.origin}/${$siteBrand}-og.png`,
   twitterCard: 'summary',
@@ -425,11 +426,11 @@ useHead({
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
           itemListElement: [
-            { '@type': 'ListItem', position: 1, name: $t('navbar.home'), item: url.origin },
+            { '@type': 'ListItem', position: 1, name: t('navbar.home'), item: url.origin },
             {
               '@type': 'ListItem',
               position: 2,
-              name: $t('meta.location.header.title', { displayTitle: displayTitle.value }),
+              name: t('meta.location.header.title', { displayTitle: displayTitle.value }),
               item: `${url.origin}${route.path}`
             },
             {
