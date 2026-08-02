@@ -1,3 +1,5 @@
+import { nextTick, ref } from 'vue';
+
 export const useConsoleLog = () => {
   const status = ref('');
   const consoleRef = ref<HTMLElement | null>(null);

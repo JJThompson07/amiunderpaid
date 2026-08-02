@@ -1,4 +1,5 @@
 import { useWindowSize } from '@vueuse/core';
+import { computed } from 'vue';
 
 export const useViewport = () => {
   const { width } = useWindowSize();

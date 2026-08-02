@@ -10,7 +10,10 @@
         <ArrowRightIcon class="w-4 h-4" />
       </a>
       <div class="flex flex-1 justify-end">
-        <AmIButton v-if="!showCalc" title="Salary converter" @click="showCalc = true"
+        <AmIButton
+v-if="!showCalc"
+title="Salary converter"
+@click="showCalc = true"
           ><CalculatorIcon class="w-5 h-5 text-slate-50"
         /></AmIButton>
 
