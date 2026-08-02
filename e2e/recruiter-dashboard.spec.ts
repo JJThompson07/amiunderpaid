@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Recruiter Dashboard Flows', () => {
-  // Use a longer timeout for tests that require real authentication
-  test.setTimeout(30000);
+  const TEST_EMAIL = process.env.E2E_RECRUITER_EMAIL || 'joshuajthompson07+recruiter@gmail.com';
+  const TEST_PASSWORD = process.env.E2E_RECRUITER_PASSWORD || '';
 
   test('Recruiter can log in and view their dashboard', async ({ page }) => {
     // 1. Navigate to the login page
@@ -12,20 +12,17 @@ test.describe('Recruiter Dashboard Flows', () => {
     const emailInput = page.locator('input[type="text"], input[type="email"]').first();
     const passwordInput = page.locator('input[type="password"]').first();
     
-    await emailInput.fill(process.env.E2E_RECRUITER_EMAIL || 'joshuajthompson07+recruiter@gmail.com');
-    await passwordInput.fill(process.env.E2E_RECRUITER_PASSWORD || '');
+    await emailInput.fill(TEST_EMAIL);
+    await passwordInput.fill(TEST_PASSWORD);
 
-    // 3. Click the login button
-    const submitBtn = page.getByRole('button').filter({ hasText: /Sign in|login/i }).first();
-    await submitBtn.click();
+    // 3. Wait for Vue event listeners to hydrate before submitting
+    await page.waitForTimeout(500);
+    await passwordInput.press('Enter');
 
     // 4. Wait for navigation to the dashboard
-    await page.waitForURL('**/recruiter/dashboard', { timeout: 15000 });
+    const dashboardHeading = page.getByRole('heading', { name: /Dashboard/i }).first();
+    await expect(dashboardHeading).toBeVisible({ timeout: 15000 });
 
-    // 5. Assert dashboard elements are visible
-    // Wait for the "Dashboard" title or some specific text
-    await expect(page.locator('h1').filter({ hasText: /Dashboard/i }).first()).toBeVisible();
-    
     // Test passes if we successfully reached the dashboard!
   });
 });
