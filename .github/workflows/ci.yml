@@ -24,12 +24,12 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install
-
       - name: Create .env file
         run: |
           echo "${{ secrets.CI_ENV_FILE }}" > .env
+
+      - name: Install dependencies
+        run: pnpm install
 
       - name: Run Unit Tests & Enforce 80% Coverage
         run: pnpm run test:coverage
