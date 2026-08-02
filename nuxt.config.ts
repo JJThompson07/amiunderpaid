@@ -22,7 +22,7 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
   }
 }
 
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = process.env.NODE_ENV !== 'production';
 const DAY_IN_S = 86400;
 
 export default defineNuxtConfig({
@@ -39,7 +39,7 @@ export default defineNuxtConfig({
 
   // ** 1. ENABLE SERVER-SIDE RENDERING **
   // This must be true for SEO and Caching to work
-  ssr: true,
+  ssr: !process.env.E2E,
 
   // ** 2. CONFIGURE CACHING (Route Rules) **
   routeRules: isDev
@@ -89,8 +89,8 @@ export default defineNuxtConfig({
     langDir: 'locales',
     defaultLocale: 'en-GB',
     strategy: 'no_prefix',
-    differentDomains: true,
-    multiDomainLocales: true,
+    differentDomains: !process.env.E2E,
+    multiDomainLocales: !process.env.E2E,
 
     locales: [
       {
@@ -100,7 +100,7 @@ export default defineNuxtConfig({
         file: 'en-GB/index.ts',
         // Update the dev domain here
         domains: isDev
-          ? ['localhost:3000', 'ami-uk.localhost:3000', 'bmr.localhost:3000']
+          ? ['localhost:3000', '127.0.0.1:3000', 'ami-uk.localhost:3000', 'bmr.localhost:3000']
           : ['www.amiunderpaid.co.uk', 'www.benchmarkmyrole.com']
       },
       {
@@ -110,7 +110,7 @@ export default defineNuxtConfig({
         file: 'en-US/index.ts',
         // Update both dev domains here
         domains: isDev
-          ? ['ami-us.localhost:3000', 'bmr.localhost:3000']
+          ? ['ami-us.localhost:3000', 'bmr.us.localhost:3000']
           : ['www.amiunderpaid.com', 'www.benchmarkmyrole.com']
       }
     ],

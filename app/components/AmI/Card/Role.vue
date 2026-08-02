@@ -21,7 +21,10 @@
             <div
               v-if="userSalary"
               class="flex flex-col items-end gap-1 text-sm text-right relative">
-              <AmIChip v-bind="comparisonChipAttributes" text-size="text-sm" compact
+              <AmIChip
+v-bind="comparisonChipAttributes"
+text-size="text-sm"
+compact
                 >{{ salaryMaxComparison }}%</AmIChip
               >
               <span

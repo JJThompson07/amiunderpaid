@@ -12,6 +12,8 @@ export default defineEventHandler((event) => {
     'User-agent: *',
     'Allow: /',
     'Disallow: /admin/',
+    'Disallow: /recruiter/',
+    'Disallow: /auth/',
     'Disallow: /_nuxt/',
     '',
     `Sitemap: ${origin}/sitemap.xml`

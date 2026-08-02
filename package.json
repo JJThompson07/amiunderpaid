@@ -21,7 +21,8 @@
     "spellcheck": "cspell lint",
     "test": "vitest run",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@nuxtjs/algolia": "^1.11.2",
@@ -43,6 +44,7 @@
     "@intlify/utils": "^1.0.1",
     "@nuxt/eslint": "^0.7.6",
     "@nuxtjs/i18n": "^10.2.3",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.3.3",
     "@types/estree": "^1.0.9",
     "@types/json-schema": "^7.0.15",
