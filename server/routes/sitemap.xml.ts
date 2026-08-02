@@ -60,15 +60,17 @@ export default defineEventHandler(async (event) => {
     return `${routePrefix}/${titleSlug}/${country}`;
   });
 
-  const allRoutes = [...staticRoutes, ...dynamicRoutes];
+  const allRoutes = [...staticRoutes, ...dynamicRoutes.filter(Boolean)];
 
-  // 3. Generate XML
+  // 3. Generate XML with lastmod
+  const today = new Date().toISOString().split('T')[0];
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${allRoutes
     .map((route) => {
       return `  <url>
     <loc>${origin}${route}</loc>
+    <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>${route === '/' ? '1.0' : route === '/frequently-asked-questions' ? '0.8' : '0.7'}</priority>
   </url>`;
