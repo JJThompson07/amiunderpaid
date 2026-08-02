@@ -15,7 +15,11 @@ vi.stubGlobal('useFirestore', vi.fn(() => 'mock-db'));
 vi.stubGlobal('useCurrentUser', vi.fn(() => ({
   get value() { return mockUser; }
 })));
-vi.stubGlobal('useDocument', vi.fn(() => ({ data: mockData, pending: mockPending })));
+vi.stubGlobal('useDocument', vi.fn((docRef) => {
+  // Read value to trigger computed evaluation
+  const _ = docRef?.value;
+  return { data: mockData, pending: mockPending };
+}));
 vi.stubGlobal('computed', (fn: any) => ({ get value() { return fn(); } }));
 
 describe('useContactSettings', () => {

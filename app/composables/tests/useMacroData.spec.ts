@@ -117,4 +117,70 @@ describe('useMacroData', () => {
     expect(result.userRegionalData).toBeNull();
     expect(result.allRegionalData).toEqual({});
   });
+
+  it('handles empty national and regional hits gracefully', async () => {
+    mockNationalSearch.mockResolvedValueOnce({
+      hits: []
+    });
+
+    mockRegionalSearch.mockResolvedValueOnce({
+      hits: []
+    });
+
+    const composable = useMacroData();
+    const result = await composable.fetchMacroBaselines('UK', 'London');
+
+    expect(result.macroNationalData.mean).toBe(0);
+    expect(result.macroNationalData.p50).toBe(0);
+    expect(result.userRegionalData).toBeNull();
+    expect(result.allRegionalData).toEqual({});
+  });
+
+  it('handles missing salary fields by falling back to salary or 0', async () => {
+    mockNationalSearch.mockResolvedValueOnce({
+      // avg_salary is missing, so it should fall back to salary, then 0
+      hits: [{ salary: 32000 }]
+    });
+
+    mockRegionalSearch.mockResolvedValueOnce({
+      hits: [
+        // searchLocation is present but avg_salary is missing
+        { searchLocation: 'London', salary: 42000 },
+        // missing searchLocation should be ignored
+        { avg_salary: 28000 },
+        // missing both avg_salary and salary
+        { searchLocation: 'North' }
+      ]
+    });
+
+    const composable = useMacroData();
+    const result = await composable.fetchMacroBaselines('UK', 'London');
+
+    expect(result.macroNationalData.mean).toBe(32000);
+    expect(result.macroNationalData.p50).toBe(32000);
+    
+    expect(result.userRegionalData?.mean).toBe(42000);
+    expect(result.userRegionalData?.p50).toBe(42000);
+    
+    expect(result.allRegionalData['north']).toBeDefined();
+    expect(result.allRegionalData['north'].mean).toBe(0);
+    expect(result.allRegionalData['north'].p50).toBe(0);
+  });
+
+  it('handles missing userLocation or unmatched location', async () => {
+    mockNationalSearch.mockResolvedValueOnce({
+      hits: [{ avg_salary: 30000 }]
+    });
+
+    mockRegionalSearch.mockResolvedValueOnce({
+      hits: [{ searchLocation: 'London', avg_salary: 40000 }]
+    });
+
+    const composable = useMacroData();
+    // Pass a location that does not match
+    const result = await composable.fetchMacroBaselines('UK', 'Manchester');
+
+    expect(result.userRegionalData).toBeNull();
+    expect(result.regionalMedianAllRoles).toBeNull();
+  });
 });

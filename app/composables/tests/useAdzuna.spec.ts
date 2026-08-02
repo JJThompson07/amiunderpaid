@@ -62,6 +62,36 @@ describe('useAdzuna', () => {
     expect(composable.hasJobsData.value).toBe(false);
   });
 
+  it('fetchJobs handles gov_id_code correctly when admin verified', async () => {
+    mock$fetch.mockResolvedValueOnce({
+      mean: 50000,
+      count: 10,
+      results: [],
+      gov_id_code: ' GOV-123 ',
+      is_admin_verified: true
+    });
+
+    const composable = useAdzuna();
+    await composable.fetchJobs('Developer', 'London', 'gb');
+
+    expect(composable.cachedGovIdCode.value).toBe('GOV-123');
+  });
+
+  it('fetchJobs ignores gov_id_code if not admin verified', async () => {
+    mock$fetch.mockResolvedValueOnce({
+      mean: 50000,
+      count: 10,
+      results: [],
+      gov_id_code: ' GOV-123 ',
+      is_admin_verified: false
+    });
+
+    const composable = useAdzuna();
+    await composable.fetchJobs('Developer', 'London', 'gb');
+
+    expect(composable.cachedGovIdCode.value).toBe(undefined);
+  });
+
   it('fetchHistogram success populates distributionData', async () => {
     mock$fetch.mockResolvedValueOnce({
       histogram: { 10000: 5, 20000: 10 }
@@ -78,6 +108,22 @@ describe('useAdzuna', () => {
       { value: 10000, count: 5 },
       { value: 20000, count: 10 }
     ]);
+    expect(composable.histogramRange.value).toBe(10000); // 20000 - 10000
+    expect(composable.histogramMaxCount.value).toBe(10);
+    expect(composable.histogramTotalCount.value).toBe(15);
+  });
+
+  it('fetchHistogram error clears distributionData and returns early for range', async () => {
+    mock$fetch.mockRejectedValueOnce(new Error('Failed'));
+
+    const composable = useAdzuna();
+    await composable.fetchHistogram('Developer', 'London', 'gb');
+
+    expect(composable.distributionData.value).toBe(null);
+    expect(composable.hasDistributionData.value).toBe(false);
+    expect(composable.histogramRange.value).toBe(0);
+    expect(composable.histogramMaxCount.value).toBe(1);
+    expect(composable.histogramTotalCount.value).toBe(0);
   });
 
   it('fetchCategories success populates categories', async () => {
@@ -92,6 +138,27 @@ describe('useAdzuna', () => {
       params: { country: 'us' }
     });
     expect(composable.categories.value).toEqual([{ label: 'IT', tag: 'it-jobs' }]);
+  });
+
+  it('fetchCategories success applies sanitizeAdzunaData correctly', async () => {
+    mock$fetch.mockResolvedValueOnce({
+      results: [
+        { label: 'IT', tag: 'it-jobs', __hidden__: 'secret', nested: { __internal__: 1, valid: true } },
+        null,
+        'string'
+      ],
+      __proto__: 'hacked'
+    });
+
+    const composable = useAdzuna();
+    await composable.fetchCategories('gb');
+
+    // Should remove keys starting and ending with __
+    expect(composable.categories.value).toEqual([
+      { label: 'IT', tag: 'it-jobs', nested: { valid: true } },
+      null,
+      'string'
+    ]);
   });
 
   it('isUnderpaid returns true if salary is less than mean', () => {

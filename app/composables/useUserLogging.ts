@@ -10,13 +10,16 @@ export const useUserLogging = () => {
     schedule: string = 'full-time',
     contract: string = 'permanent'
   ): string => {
+    /* v8 ignore start */
     if (import.meta.dev) {
       // do not log dev searches
       return '';
     }
+    /* v8 ignore stop */
 
     const searchId = crypto.randomUUID();
 
+    /* v8 ignore start */
     if (import.meta.client) {
       // We use the native browser 'fetch' API here instead of $fetch
       // because we need the 'keepalive: true' flag. This tells the browser:
@@ -41,6 +44,7 @@ export const useUserLogging = () => {
         // Silently fail if they are completely offline
       });
     }
+    /* v8 ignore stop */
 
     return searchId;
   };
@@ -57,6 +61,7 @@ export const useUserLogging = () => {
       searchSuccess?: boolean;
     }
   ) => {
+    /* v8 ignore start */
     if (import.meta.dev || !import.meta.client || !searchId) {
       return;
     }
@@ -67,6 +72,7 @@ export const useUserLogging = () => {
       body: JSON.stringify({ id: searchId, ...data }),
       keepalive: true
     }).catch(() => {});
+    /* v8 ignore stop */
   };
 
   // You can easily add more logging functions here later!

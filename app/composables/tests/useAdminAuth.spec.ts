@@ -61,6 +61,22 @@ describe('useAdminAuth', () => {
     expect(error.value).toBe('auth.errors.invalid_credentials');
   });
 
+  it('handles auth/too-many-requests error', async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValueOnce({ code: 'auth/too-many-requests' });
+    const { login, error } = useAdminAuth();
+    const result = await login('email', 'password', 'valid-key');
+    expect(result).toBe(false);
+    expect(error.value).toBe('auth.errors.too_many_requests');
+  });
+
+  it('handles unknown error', async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValueOnce({ code: 'auth/unknown-error' });
+    const { login, error } = useAdminAuth();
+    const result = await login('email', 'password', 'valid-key');
+    expect(result).toBe(false);
+    expect(error.value).toBe('auth.errors.unexpected_signin_error');
+  });
+
   it('successfully logs out', async () => {
     const { logout } = useAdminAuth();
     await logout();

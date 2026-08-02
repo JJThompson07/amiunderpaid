@@ -125,5 +125,103 @@ describe('useRecruiterAuth', () => {
       
       consoleSpy.mockRestore();
     });
+
+    it('handles generic resend error', async () => {
+      (sendEmailVerification as any).mockRejectedValue({ code: 'auth/generic-error' });
+      
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const { resendVerificationEmail } = useRecruiterAuth();
+      
+      const result = await resendVerificationEmail();
+      expect(result).toBe(false);
+      
+      consoleSpy.mockRestore();
+    });
+
+    it('returns false if no auth or no current user', async () => {
+      const oldAuth = vi.mocked(globalThis.useFirebaseAuth)();
+      vi.stubGlobal('useFirebaseAuth', () => null);
+      
+      const { resendVerificationEmail } = useRecruiterAuth();
+      const result = await resendVerificationEmail();
+      expect(result).toBe(false);
+
+      vi.stubGlobal('useFirebaseAuth', () => ({ currentUser: null }));
+      const { resendVerificationEmail: resend2 } = useRecruiterAuth();
+      const result2 = await resend2();
+      expect(result2).toBe(false);
+
+      vi.stubGlobal('useFirebaseAuth', () => oldAuth);
+    });
+  });
+
+  describe('Additional Error Branches', () => {
+    it('handles login without auth', async () => {
+      const oldAuth = vi.mocked(globalThis.useFirebaseAuth)();
+      vi.stubGlobal('useFirebaseAuth', () => null);
+      
+      const { login, error } = useRecruiterAuth();
+      const result = await login('a', 'b');
+      
+      expect(result).toBe(false);
+      expect(error.value).toBe('auth.errors.service_not_ready');
+      
+      vi.stubGlobal('useFirebaseAuth', () => oldAuth);
+    });
+
+    it('handles login too-many-requests', async () => {
+      (signInWithEmailAndPassword as any).mockRejectedValue({ code: 'auth/too-many-requests' });
+      const { login, error } = useRecruiterAuth();
+      
+      const result = await login('a', 'b');
+      expect(result).toBe(false);
+      expect(error.value).toBe('auth.errors.too_many_requests');
+    });
+
+    it('handles login unknown error', async () => {
+      (signInWithEmailAndPassword as any).mockRejectedValue({ code: 'auth/unknown' });
+      const { login, error } = useRecruiterAuth();
+      
+      const result = await login('a', 'b');
+      expect(result).toBe(false);
+      expect(error.value).toBe('auth.errors.unexpected_signin_error');
+    });
+
+    it('handles resetPassword without auth', async () => {
+      const oldAuth = vi.mocked(globalThis.useFirebaseAuth)();
+      vi.stubGlobal('useFirebaseAuth', () => null);
+      
+      const { resetPassword, error } = useRecruiterAuth();
+      const result = await resetPassword('a');
+      
+      expect(result).toBe(false);
+      expect(error.value).toBe('auth.errors.service_not_ready');
+      
+      vi.stubGlobal('useFirebaseAuth', () => oldAuth);
+    });
+
+    it('handles resetPassword invalid-email', async () => {
+      (sendPasswordResetEmail as any).mockRejectedValue({ code: 'auth/invalid-email' });
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      
+      const { resetPassword, error } = useRecruiterAuth();
+      const result = await resetPassword('a');
+      
+      expect(result).toBe(false);
+      expect(error.value).toBe('auth.errors.invalid_email');
+      consoleSpy.mockRestore();
+    });
+
+    it('handles resetPassword default error', async () => {
+      (sendPasswordResetEmail as any).mockRejectedValue({ code: 'auth/unknown' });
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      
+      const { resetPassword, error } = useRecruiterAuth();
+      const result = await resetPassword('a');
+      
+      expect(result).toBe(false);
+      expect(error.value).toBe('auth.errors.reset_failed');
+      consoleSpy.mockRestore();
+    });
   });
 });

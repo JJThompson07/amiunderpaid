@@ -90,5 +90,19 @@ describe('useUserLogging', () => {
         });
       }
     });
+
+    it('catches fetch error silently on logSearch', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+      const { logSearch } = useUserLogging();
+      // Should not throw
+      expect(() => logSearch('Title', 'Country', 'Location', 'Salary')).not.toThrow();
+    });
+
+    it('catches fetch error silently on updateSearchLog', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+      const { updateSearchLog } = useUserLogging();
+      // Should not throw
+      expect(() => updateSearchLog('mock-uuid-1234', {})).not.toThrow();
+    });
   });
 });

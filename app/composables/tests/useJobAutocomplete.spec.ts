@@ -114,4 +114,68 @@ describe('useJobAutocomplete', () => {
       { label: 'London', value: 'London' }
     ]);
   });
+
+  it('fetches USA locations correctly with title filter', async () => {
+    mockSearchForFacetValues.mockResolvedValueOnce({
+      facetHits: [
+        { value: 'New York' }
+      ]
+    });
+    
+    const country = { value: 'USA' };
+    const location = { value: '' };
+    const title = { value: 'Teacher' };
+    
+    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    composable.titleOptions.value = [{ label: 'Teacher', value: 'Teacher' }];
+    await composable.fetchLocations('new');
+    
+    expect(mockSearchForFacetValues).toHaveBeenCalledWith('location', 'new', { filters: 'country:USA AND searchTitle:"teacher"', maxFacetHits: 20 });
+    expect(composable.locationOptions.value).toEqual([
+      { label: 'New York', value: 'New York' }
+    ]);
+  });
+
+  it('fetches USA locations without title filter', async () => {
+    mockSearchForFacetValues.mockResolvedValueOnce({
+      facetHits: [
+        { value: 'Texas' }
+      ]
+    });
+    
+    const country = { value: 'USA' };
+    const location = { value: '' };
+    const title = { value: '' };
+    
+    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    await composable.fetchLocations('tex');
+    
+    expect(mockSearchForFacetValues).toHaveBeenCalledWith('location', 'tex', { filters: 'country:USA', maxFacetHits: 20 });
+  });
+
+  it('fetchTitles ignores error', async () => {
+    mockSearch.mockRejectedValueOnce(new Error('Failed'));
+    const country = { value: 'UK' };
+    const composable = useJobAutocomplete(country as any, {value:''} as any, {value:''} as any);
+    await composable.fetchTitles('dev');
+    expect(composable.titleOptions.value).toEqual([]);
+    expect(composable.fetching.value).toBe(false);
+  });
+
+  it('fetchLocations ignores error', async () => {
+    mockSearchForFacetValues.mockRejectedValueOnce(new Error('Failed'));
+    const country = { value: 'UK' };
+    const composable = useJobAutocomplete(country as any, {value:''} as any, {value:''} as any);
+    await composable.fetchLocations('lon');
+    expect(composable.locationOptions.value).toEqual([]);
+    expect(composable.fetching.value).toBe(false);
+  });
+
+  it('does not fetch locations if search term is less than 2 chars', async () => {
+    const composable = useJobAutocomplete({value:'UK'} as any, {value:''} as any, {value:''} as any);
+    composable.locationOptions.value = [{ label: 'test', value: 'test' }];
+    
+    await composable.fetchLocations('a');
+    expect(composable.locationOptions.value).toEqual([]);
+  });
 });
