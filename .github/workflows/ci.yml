@@ -67,7 +67,7 @@ jobs:
         run: pnpm exec playwright install chromium firefox --with-deps
       
       - name: Build Application for E2E
-        run: pnpm run build
+        run: E2E=true pnpm run build
       
       - name: Run Playwright E2E Tests
         run: pnpm run test:e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
