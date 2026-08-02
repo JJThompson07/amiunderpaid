@@ -64,3 +64,8 @@ When a change is fully verified and approved:
 ## 5. Coding Standards & Linting
 
 - **Strict Imports:** All imports, especially destructured members, MUST be sorted alphabetically to prevent ESLint `sort-imports` errors (e.g., `import { describe, expect, it } from 'vitest';` not `import { describe, it, expect }`).
+
+## 6. Multi-Tenant & Country Considerations
+
+- **Country Context:** ALWAYS consider the country/tenant context (e.g., UK vs. USA) when interacting with databases, Algolia indexes, or displaying UI logic. Avoid hardcoding country logic if it can be inferred dynamically (e.g., via `useRegion()`).
+- **Data Boundaries:** Ensure that server-side scripts, database queries (Firestore), and search integrations (Algolia) correctly isolate data by the selected country. Never assume a default country for global operations without explicitly confirming the execution context.
