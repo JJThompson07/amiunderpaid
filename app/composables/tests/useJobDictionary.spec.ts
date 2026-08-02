@@ -96,6 +96,36 @@ describe('useJobDictionary', () => {
     expect(result).toEqual({ type: 'exact', id: '789', group_name: 'Software Developer' });
   });
 
+  it('returns exact match from Algolia via normalized punctuation match', async () => {
+    mockFetch.mockResolvedValueOnce({ matches: [] }); // No Firestore match
+
+    mockSearch.mockResolvedValueOnce({
+      hits: [
+        { gov_id: '111', group_name: 'UI/UX Designer', titles: [] }
+      ]
+    });
+
+    const composable = useJobDictionary();
+    const result = await composable.resolveJobId('UI UX Designer'); // Missing slash
+    
+    expect(result).toEqual({ type: 'exact', id: '111', group_name: 'UI/UX Designer' });
+  });
+
+  it('returns exact match from Algolia via Levenshtein fuzzy typo match', async () => {
+    mockFetch.mockResolvedValueOnce({ matches: [] }); // No Firestore match
+
+    mockSearch.mockResolvedValueOnce({
+      hits: [
+        { gov_id: '222', group_name: 'Software Engineer', titles: [] }
+      ]
+    });
+
+    const composable = useJobDictionary();
+    const result = await composable.resolveJobId('Software Enginear'); // Typo with 'a'
+    
+    expect(result).toEqual({ type: 'exact', id: '222', group_name: 'Software Engineer' });
+  });
+
   it('returns ambiguous match from Algolia if no exact match', async () => {
     mockFetch.mockResolvedValueOnce({ matches: [] }); // No Firestore match
 

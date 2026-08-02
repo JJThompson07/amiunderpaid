@@ -1,4 +1,5 @@
 import type { SearchClient } from 'algoliasearch';
+import { levenshteinDistance } from '~/helpers/utility';
 
 type JobGroupHit = {
   objectID: string;
@@ -88,15 +89,31 @@ export const useJobDictionary = (): {
       if (hits.length > 0 && hits[0]) {
         const topHit = hits[0];
         const query = cleanTitle.toLowerCase().trim();
+        const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normQuery = normalize(query);
 
         // 1. Did they exactly type the official Group Name?
-        const isExactGroup = topHit.group_name.toLowerCase() === query;
+        const isExactGroup = topHit.group_name.toLowerCase() === query || normalize(topHit.group_name) === normQuery;
 
         // 2. Did they exactly type one of your mapped Synonyms?
-        const isExactSynonym = topHit.titles?.some((title) => title.toLowerCase() === query);
+        const isExactSynonym = topHit.titles?.some(
+          (title) => title.toLowerCase() === query || normalize(title) === normQuery
+        );
 
-        // If YES to either, bypass the modal entirely and route them instantly!
-        if (isExactGroup || isExactSynonym) {
+        // 3. Is it a very close typo/spelling match? (Levenshtein distance <= 2)
+        // We only want to apply this if the query is reasonably long to avoid matching short acronyms incorrectly
+        let isCloseFuzzyMatch = false;
+        if (normQuery.length >= 5) {
+          const groupDist = levenshteinDistance(normQuery, normalize(topHit.group_name));
+          isCloseFuzzyMatch = groupDist <= 2;
+
+          if (!isCloseFuzzyMatch && topHit.titles) {
+            isCloseFuzzyMatch = topHit.titles.some((title) => levenshteinDistance(normQuery, normalize(title)) <= 2);
+          }
+        }
+
+        // If YES to any, bypass the modal entirely and route them instantly!
+        if (isExactGroup || isExactSynonym || isCloseFuzzyMatch) {
           return {
             type: 'exact' as const,
             id: topHit.gov_id,

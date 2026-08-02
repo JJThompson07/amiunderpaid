@@ -10,14 +10,14 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 2. Dynamically route to the correct Master Dictionary
-    const targetCollection = country === 'US' ? 'usa_job_groups' : 'uk_job_groups';
+    const targetCollection = country === 'USA' || country === 'US' ? 'usa_job_groups' : 'uk_job_groups';
 
     const groupRef = db.collection(targetCollection).doc(targetIdCode);
 
     await groupRef.set(
       {
         group_name: targetGroupName,
-        titles: FieldValue.arrayUnion(searchTerm)
+        titles: FieldValue.arrayUnion(searchTerm.trim().toLowerCase())
       },
       { merge: true }
     );
