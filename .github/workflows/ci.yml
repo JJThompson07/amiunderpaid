@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  test:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -34,8 +34,37 @@ jobs:
       - name: Run Unit Tests & Enforce 80% Coverage
         run: pnpm run test:coverage
 
+  e2e-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3]
+        shardTotal: [3]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Create .env file
+        run: |
+          echo "${{ secrets.CI_ENV_FILE }}" > .env
+
+      - name: Install dependencies
+        run: pnpm install
+
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
       
       - name: Run Playwright E2E Tests
-        run: pnpm run test:e2e
+        run: pnpm run test:e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
