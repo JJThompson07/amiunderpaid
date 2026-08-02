@@ -12,8 +12,8 @@ test.describe('Recruiter Dashboard Flows', () => {
     const emailInput = page.locator('input[type="text"], input[type="email"]').first();
     const passwordInput = page.locator('input[type="password"]').first();
     
-    await emailInput.fill('joshuajthompson07+recruiter@gmail.com');
-    await passwordInput.fill('James1993@');
+    await emailInput.fill(process.env.E2E_RECRUITER_EMAIL || 'joshuajthompson07+recruiter@gmail.com');
+    await passwordInput.fill(process.env.E2E_RECRUITER_PASSWORD || '');
 
     // 3. Click the login button
     const submitBtn = page.getByRole('button').filter({ hasText: /Sign in|login/i }).first();
