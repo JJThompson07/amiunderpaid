@@ -6,8 +6,10 @@ export default defineConfig({
   plugins: [vue()],
   test: {
     environment: 'happy-dom',
+    exclude: ['node_modules/**', 'e2e/**'],
     alias: {
-      '~': fileURLToPath(new URL('./', import.meta.url))
+      '~': fileURLToPath(new URL('./app/', import.meta.url)),
+      '~~': fileURLToPath(new URL('./', import.meta.url))
     },
     coverage: {
       provider: 'v8',
