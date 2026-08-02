@@ -25,3 +25,8 @@ logs
 
 
 service-account.json
+
+# Testing outputs
+coverage/
+playwright-report/
+test-results/
