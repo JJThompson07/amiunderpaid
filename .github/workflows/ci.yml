@@ -1,0 +1,38 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run Unit Tests & Enforce 80% Coverage
+        run: pnpm run test:coverage
+
+      # Playwright Tests can be un-commented once they are built and configured
+      # - name: Install Playwright Browsers
+      #   run: pnpm exec playwright install --with-deps
+      # 
+      # - name: Run Playwright E2E Tests
+      #   run: pnpm run test:e2e
