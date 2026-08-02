@@ -72,7 +72,7 @@ export default defineEventHandler(async (event) => {
       distinct: 1
     });
 
-    const response = await index.saveObjects(groups);
+    const response = await index.replaceAllObjects(groups, { safe: true });
 
     return { success: true, count: response.objectIDs.length };
   } catch (error: any) {
