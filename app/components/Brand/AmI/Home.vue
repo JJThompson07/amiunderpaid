@@ -9,6 +9,7 @@
         <AmIDevProviderToggle v-if="isDev" />
       </div>
       <SectionAmISalarySearch />
+      <SectionAmITrendingSearches />
 
       <!-- Privacy Note section -->
       <SectionSharedPrivacyNote />

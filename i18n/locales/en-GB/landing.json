@@ -1,6 +1,6 @@
 {
   "heading": "Am I Underpaid?",
-  "subheading": "Discover your Market Compensation Alignment (MCA) Score.",
+  "subheading": "Discover your Market Compensation Alignment (MCA) Score. The definitive UK Salary Checker & Market Pay Calculator.",
   "subheading-context": "Stop guessing. We combine official ONS benchmarks with over 700,000 live UK job listings to calculate your definitive MCA Score in seconds.",
   "privacy-note": "Your privacy matters. The information provided above is used solely to generate your results.",
   "why": {
@@ -27,5 +27,20 @@
     "heading": "Benchmark My Role",
     "subheading": "Looking to hire? Ensure your offer stands out.",
     "subheading-context": "BenchmarkMyRole compares your open roles against live market vacancies and official ONS benchmarks. Generate an MCA Score for your job descriptions to ensure you are offering a highly competitive package to top talent."
+  },
+  "trending": {
+    "heading": "Popular UK Salaries",
+    "roles": [
+      "Software Engineer",
+      "Marketing Manager",
+      "Data Analyst",
+      "Project Manager",
+      "Accountant",
+      "Graphic Designer",
+      "Nurse",
+      "Teacher",
+      "Financial Analyst",
+      "Sales Manager"
+    ]
   }
 }
