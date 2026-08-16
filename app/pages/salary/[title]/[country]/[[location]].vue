@@ -127,7 +127,7 @@
             class="text-primary-500 hover:text-primary-700 transition-colors duration-500 ease-in-out"
             >{{ $t('sections.jobs.jobs') }}</a
           >
-          {{ dataProvider === 'reed' ? ' By Reed' : $t('sections.jobs.by-adzuna') }}
+          {{ dataProvider === 'reed' ? $t('sections.jobs.by-reed') : $t('sections.jobs.by-adzuna') }}
         </h3>
 
         <!-- 👇 AmICarousel returns to give desktop users navigation arrows! -->
