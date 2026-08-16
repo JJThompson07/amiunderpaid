@@ -179,7 +179,7 @@ export default defineEventHandler(async (event) => {
     return cleanData;
   } catch (e: any) {
     const statusCode = e?.response?.status || e?.statusCode;
-    if ((statusCode === 429 || statusCode === 403) && countryCode === 'gb') {
+    if (statusCode === 429 || statusCode === 403) {
       try {
         const { fetchReedData } = await import('../../utils/reed');
         const reedData = await fetchReedData(titleStr, locationStr, '', '');

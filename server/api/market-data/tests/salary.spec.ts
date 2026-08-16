@@ -83,7 +83,7 @@ describe('Adzuna Salary API - 429 Fallback', () => {
     );
   });
 
-  it('should NOT fall back to Reed API if Adzuna returns 429 for usa', async () => {
+  it('should fall back to Reed API if Adzuna returns 429 for usa', async () => {
     getQueryMock.mockReturnValue({
       title: 'developer',
       location: 'new york',
@@ -96,7 +96,8 @@ describe('Adzuna Salary API - 429 Fallback', () => {
       response: { status: 429 }
     });
 
-    // Expect the error to be thrown instead of falling back to Reed (Reed is UK-only)
-    await expect(salaryHandler({} as any)).rejects.toThrow('Salary data temporarily unavailable.');
+    // Expect successful fallback to Reed for USA!
+    const result = await salaryHandler({} as any);
+    expect(result.provider).toBe('reed');
   });
 });

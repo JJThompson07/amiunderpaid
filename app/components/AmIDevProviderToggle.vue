@@ -42,14 +42,9 @@ const isOpen = ref(false);
 const override = useDevProviderOverride();
 const { currentCountry } = useRegion();
 
-const options = computed(() => {
-  const base = [
-    { label: 'Auto', value: 'auto' },
-    { label: 'Adzuna', value: 'adzuna' }
-  ];
-  if (currentCountry.value === 'UK') {
-    base.push({ label: 'Reed', value: 'reed' });
-  }
-  return base;
-});
+const options = [
+  { label: 'Auto', value: 'auto' },
+  { label: 'Adzuna', value: 'adzuna' },
+  { label: 'Reed', value: 'reed' }
+];
 </script>
