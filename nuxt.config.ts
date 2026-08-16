@@ -137,6 +137,8 @@ export default defineNuxtConfig({
     adzunaAppKey: process.env.ADZUNA_APP_KEY,
     reedApiKey: process.env.REED_API_KEY,
     firebaseServiceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
+    algoliaApplicationId: process.env.ALGOLIA_APPLICATION_ID,
+    algoliaAdminApiKey: process.env.ALGOLIA_ADMIN_KEY || process.env.ALGOLIA_ADMIN_API_KEY || process.env.ALGOLIA_API_KEY,
 
     public: {
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,

@@ -6,13 +6,13 @@ export default defineEventHandler(async (event) => {
   const country = query.country ? String(query.country).toLowerCase() : 'gb';
   const targetCountry = country === 'usa' || country === 'us' ? 'us' : 'gb';
 
-  const appId = config.adzunaAppId || config.public?.adzunaAppId || process.env.adzunaAppId;
-  const appKey = config.adzunaAppKey || config.public?.adzunaAppKey || process.env.adzunaAppKey;
+  const appId = config.adzunaAppId;
+  const appKey = config.adzunaAppKey;
 
   if (!appId || !appKey) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Adzuna API credentials are not configured.'
+      statusMessage: 'Market data service is misconfigured.'
     });
   }
 
@@ -83,9 +83,9 @@ export default defineEventHandler(async (event) => {
     };
   } catch (e: any) {
     throw createError({
-      statusCode: e.response?.status || 500,
-      statusMessage: `Failed to fetch Adzuna locations for ${targetCountry}`,
-      data: e.data
+      statusCode: e.response?.status === 429 ? 503 : (e.response?.status || 500),
+      statusMessage: 'Market data temporarily unavailable.',
+      data: process.dev ? e.data : undefined
     });
   }
 });

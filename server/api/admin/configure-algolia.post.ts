@@ -1,16 +1,17 @@
 import algoliasearch from 'algoliasearch';
 
 export default defineEventHandler(async (event) => {
+  await verifyAdmin(event);
   const body = await readBody(event);
   const indexName = body.indexName || 'job_titles';
 
-  const appId = process.env.ALGOLIA_APPLICATION_ID;
-  const apiKey = process.env.ALGOLIA_ADMIN_API_KEY || process.env.ALGOLIA_API_KEY;
+  const appId = config.algoliaApplicationId;
+  const apiKey = config.algoliaAdminApiKey;
 
   if (!appId || !apiKey) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Algolia Admin credentials missing'
+      statusMessage: 'Search service is misconfigured.'
     });
   }
 
@@ -30,7 +31,7 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     throw createError({
       statusCode: 500,
-      statusMessage: error.message
+      statusMessage: 'Failed to configure search index.'
     });
   }
 });
