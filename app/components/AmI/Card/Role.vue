@@ -15,7 +15,7 @@
     <section class="ami-role-range flex flex-col gap-2 py-2 px-4">
       <div class="flex flex-col">
         <span class="uppercase text-2xs text-slate-400">{{ $t('card.role.salary') }}</span>
-        <div class="flex flex-row items-center justify-between">
+        <div class="flex flex-row items-center justify-between min-h-7">
           <span :class="isSalaryProvided ? 'text-xl font-bold' : 'text-slate-400 text-xs italic'">{{ salaryRange }}</span>
           <div>
             <div
