@@ -31,16 +31,16 @@
   "trending": {
     "heading": "Popular UK Salaries",
     "roles": [
-      "Software Engineer",
-      "Marketing Manager",
-      "Data Analyst",
-      "Project Manager",
-      "Accountant",
-      "Graphic Designer",
-      "Nurse",
-      "Teacher",
-      "Financial Analyst",
-      "Sales Manager"
+      { "title": "Software Engineer", "salary": 55000 },
+      { "title": "Marketing Manager", "salary": 45000 },
+      { "title": "Data Analyst", "salary": 40000 },
+      { "title": "Project Manager", "salary": 50000 },
+      { "title": "Accountant", "salary": 42000 },
+      { "title": "Graphic Designer", "salary": 30000 },
+      { "title": "Nurse", "salary": 35000 },
+      { "title": "Teacher", "salary": 38000 },
+      { "title": "Financial Analyst", "salary": 48000 },
+      { "title": "Sales Manager", "salary": 46000 }
     ]
   }
 }

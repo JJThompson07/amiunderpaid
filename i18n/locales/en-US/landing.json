@@ -31,16 +31,16 @@
   "trending": {
     "heading": "Popular US Salaries",
     "roles": [
-      "Software Engineer",
-      "Marketing Manager",
-      "Data Analyst",
-      "Project Manager",
-      "Accountant",
-      "Graphic Designer",
-      "Nurse",
-      "Teacher",
-      "Financial Analyst",
-      "Sales Manager"
+      { "title": "Software Engineer", "salary": 110000 },
+      { "title": "Marketing Manager", "salary": 85000 },
+      { "title": "Data Analyst", "salary": 75000 },
+      { "title": "Project Manager", "salary": 95000 },
+      { "title": "Accountant", "salary": 70000 },
+      { "title": "Graphic Designer", "salary": 55000 },
+      { "title": "Nurse", "salary": 80000 },
+      { "title": "Teacher", "salary": 65000 },
+      { "title": "Financial Analyst", "salary": 90000 },
+      { "title": "Sales Manager", "salary": 100000 }
     ]
   }
 }
