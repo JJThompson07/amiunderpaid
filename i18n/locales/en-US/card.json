@@ -17,7 +17,7 @@
   },
   "role": {
     "salary": "Estimated Salary",
-    "not-provided": "Not provided",
+    "not-provided": "Salary not provided",
     "view-job": "View Role",
     "amiunderpaid": {
       "compare": {

@@ -16,7 +16,7 @@
       <div class="flex flex-col">
         <span class="uppercase text-2xs text-slate-400">{{ $t('card.role.salary') }}</span>
         <div class="flex flex-row items-center justify-between">
-          <span class="text-xl font-bold" :class="{ 'text-slate-400 font-normal italic text-sm': !isSalaryProvided }">{{ salaryRange }}</span>
+          <span :class="isSalaryProvided ? 'text-xl font-bold' : 'text-slate-400 text-xs italic'">{{ salaryRange }}</span>
           <div>
             <div
               v-if="userSalary && isSalaryProvided"
