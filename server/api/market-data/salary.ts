@@ -124,7 +124,7 @@ export default defineEventHandler(async (event) => {
 
   // 3. Fetch from Adzuna API
   try {
-    if (process.dev && devProviderOverride === 'reed') {
+    if (import.meta.dev && devProviderOverride === 'reed') {
       throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
     }
 
