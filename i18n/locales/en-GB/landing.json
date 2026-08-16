@@ -32,21 +32,21 @@
   "trending": {
     "heading": "Popular UK Salaries",
     "roles": [
-      { "title": "Software Engineer", "salary": 55000 },
-      { "title": "Marketing Manager", "salary": 45000 },
-      { "title": "Data Analyst", "salary": 40000 },
-      { "title": "Project Manager", "salary": 50000 },
-      { "title": "Accountant", "salary": 42000 },
-      { "title": "Graphic Designer", "salary": 30000 },
-      { "title": "Nurse", "salary": 35000 },
-      { "title": "Teacher", "salary": 38000 },
-      { "title": "Financial Analyst", "salary": 48000 },
-      { "title": "Sales Manager", "salary": 46000 }
+      { "title": "Software Engineer", "salary": 60000 },
+      { "title": "Marketing Manager", "salary": 50000 },
+      { "title": "Data Analyst", "salary": 45000 },
+      { "title": "Project Manager", "salary": 55000 },
+      { "title": "Accountant", "salary": 45000 },
+      { "title": "Graphic Designer", "salary": 32000 },
+      { "title": "Nurse", "salary": 37000 },
+      { "title": "Teacher", "salary": 41000 },
+      { "title": "Financial Analyst", "salary": 52000 },
+      { "title": "Sales Manager", "salary": 55000 }
     ],
     "macro_stats": {
-      "mean": 35000,
-      "p10": 22000,
-      "p90": 65000
+      "mean": 37430,
+      "p10": 24000,
+      "p90": 68000
     }
   }
 }
