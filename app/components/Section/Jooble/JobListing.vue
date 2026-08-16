@@ -10,7 +10,7 @@
     :user-salary="userSalary"
     :market-average="marketAverage"
     :currency-symbol="currencySymbol"
-    :url="listing.redirect_url"
+    :url="sanitizeUrl(listing.redirect_url)"
     :raw-salary="listing.raw_salary"
     data-provider="jooble"
   />
@@ -18,6 +18,7 @@
 
 <script setup lang="ts">
 import type { PropType } from 'vue';
+import { sanitizeUrl } from '~~/shared/utils/sanitize';
 
 defineProps({
   listing: {

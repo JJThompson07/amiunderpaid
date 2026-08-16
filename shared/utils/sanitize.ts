@@ -26,3 +26,20 @@ export const sanitizeAdzunaData = (data: any): any => {
   }
   return data;
 };
+
+/**
+ * Sanitizes URLs to prevent javascript: execution (XSS)
+ * by strictly allowing only http: and https: protocols.
+ */
+export const sanitizeUrl = (url: string | undefined): string => {
+  if (!url) return '#';
+  try {
+    const parsed = new URL(url);
+    if (['http:', 'https:'].includes(parsed.protocol)) {
+      return parsed.toString();
+    }
+  } catch {
+    // Invalid URL format
+  }
+  return '#';
+};

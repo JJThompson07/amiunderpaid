@@ -10,13 +10,14 @@
     :user-salary="userSalary"
     :market-average="marketAverage"
     :currency-symbol="currencySymbol"
-    :url="listing.redirect_url"
+    :url="sanitizeUrl(listing.redirect_url)"
     data-provider="reed"
   />
 </template>
 
 <script setup lang="ts">
 import type { PropType } from 'vue';
+import { sanitizeUrl } from '~~/shared/utils/sanitize';
 
 defineProps({
   listing: {

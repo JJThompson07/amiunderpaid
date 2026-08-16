@@ -88,6 +88,8 @@ import {
 } from 'lucide-vue-next';
 import { getRawUncappedDiffPercentage } from '~/helpers/utility';
 
+import { sanitizeUrl } from '~~/shared/utils/sanitize';
+
 const props = defineProps({
   title: {
     type: String,
@@ -215,7 +217,8 @@ const salaryRange = computed(() => {
 const handleViewRole = () => {
   trackViewRole(props.title, props.company, props.location, props.url);
 
-  window.open(props.url, '_blank');
+  const safeUrl = sanitizeUrl(props.url);
+  window.open(safeUrl, '_blank');
 };
 </script>
 
