@@ -56,13 +56,13 @@ describe('Reed Utility', () => {
       60000: 1
     });
 
-    // It should map to Adzuna format
+    // It should map to Adzuna format and be sorted by max salary descending
     expect(processed.results[0]).toMatchObject({
-      id: 1,
-      title: 'Developer',
+      id: 2,
+      title: 'Senior Developer',
       location: { display_name: 'London', area: ['London'] },
-      salary_min: 40000,
-      salary_max: 60000,
+      salary_min: 55000,
+      salary_max: 65000,
       contract_time: 'full-time',
       contract_type: 'permanent',
       provider: 'reed'

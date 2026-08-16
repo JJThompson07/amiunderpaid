@@ -115,11 +115,14 @@ export const processReedData = (response: ReedJobResponse, jobType: string, cont
   const mean = validSalaryCount > 0 ? Math.round(totalSalary / validSalaryCount) : 0;
   const histogram = buildHistogramBuckets(rawSalaries, 7);
 
+  // Sort jobs by highest maximum salary descending
+  const sortedJobs = mappedJobs.sort((a, b) => (b.salary_max || 0) - (a.salary_max || 0));
+
   return {
     mean,
     count: response.totalResults,
     histogram,
-    results: mappedJobs,
+    results: sortedJobs,
     provider: 'reed' as const
   };
 };
