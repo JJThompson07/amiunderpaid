@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: e.response?.status === 429 ? 503 : (e.response?.status || 500),
       statusMessage: 'Market data temporarily unavailable.',
-      data: process.dev ? e.data : undefined
+      data: import.meta.dev ? e.data : undefined
     });
   }
 });
