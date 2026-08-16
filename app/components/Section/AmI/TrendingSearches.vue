@@ -14,11 +14,11 @@
           v-for="item in trendingRoles"
           :key="`first-${item.title}`"
           :to="getRoleUrl(item.title)"
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-full hover:bg-primary-50 hover:text-primary-700 hover:border-primary-200 transition-all duration-300 shadow-sm hover:shadow"
+          class="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-primary-900 bg-primary-50 border border-primary-200 rounded-xl hover:bg-primary-100 hover:border-primary-300 transition-all duration-300 shadow-sm hover:shadow-md"
         >
           <span>{{ item.title }}</span>
-          <span class="text-slate-400 font-normal">&bull;</span>
-          <span class="font-semibold text-slate-700">{{ formatSalary(item.salary) }}</span>
+          <span class="text-primary-300 font-normal">&bull;</span>
+          <span class="font-bold text-primary-700">AVG {{ formatSalary(item.salary) }}</span>
         </NuxtLink>
       </div>
 
@@ -30,12 +30,12 @@
           v-for="item in trendingRoles"
           :key="`second-${item.title}`"
           :to="getRoleUrl(item.title)"
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-full hover:bg-primary-50 hover:text-primary-700 hover:border-primary-200 transition-all duration-300 shadow-sm hover:shadow"
+          class="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-primary-900 bg-primary-50 border border-primary-200 rounded-xl hover:bg-primary-100 hover:border-primary-300 transition-all duration-300 shadow-sm hover:shadow-md"
           tabindex="-1"
         >
           <span>{{ item.title }}</span>
-          <span class="text-slate-400 font-normal">&bull;</span>
-          <span class="font-semibold text-slate-700">{{ formatSalary(item.salary) }}</span>
+          <span class="text-primary-300 font-normal">&bull;</span>
+          <span class="font-bold text-primary-700">AVG {{ formatSalary(item.salary) }}</span>
         </NuxtLink>
       </div>
     </div>
