@@ -9,6 +9,9 @@ You are an autonomous AI coding agent operating in the Am I Underpaid & Benchmar
 - **Database & Auth:** Firebase (Firestore, Auth) using `vuefire` on the client and `firebase-admin` on the server.
 - **Strict Guidelines:** You MUST consult and obey the `CODE_STANDARDS.md` file before proposing or applying any changes.
 - **The Golden Rule:** NEVER use `useFirebaseAuth()?.currentUser` for UI reactivity. Always use `useCurrentUser()`.
+- **The Security Rule:** NEVER read secrets via `process.env` or `config.public` in server handlers. ALL credentials MUST be accessed exclusively via Nuxt's private `runtimeConfig` (e.g. `config.myApiKey`). Any new secret MUST also be registered in `nuxt.config.ts` `runtimeConfig` before use.
+- **The Error Message Rule:** Server error messages returned to the client MUST be opaque. NEVER include provider names, country codes, or internal routing details in `statusMessage`. Use `503` for downstream provider failures and `500` for server misconfigurations.
+- **The Dev-Gate Rule:** Any feature that only exists for local development (e.g. provider overrides, debug toggles) MUST be gated behind `process.dev` (server) and `import.meta.dev` (client). Zero dev-only surface area in production.
 
 ## 2. OpenSpec Workflow
 

@@ -66,3 +66,74 @@ You are an AI assistant helping to build a dual-tenant, server-side rendered (SS
 - **Requirement:** Unit tests are strictly required for all new core utilities (`~/utils/`) and composables (`~/composables/`).
 - **Execution:** All changes MUST pass the test suite (`pnpm vitest run`) before being committed or archived.
 - **Location:** Tests should be located in a `tests/` directory adjacent to the file being tested (e.g., `~/shared/utils/tests/math.spec.ts`).
+
+## 9. Security & Credentials
+
+These rules are **non-negotiable** and must be applied uniformly across all server-side code.
+
+### 9.1 Credential Access — Private `runtimeConfig` Only
+
+All secrets and API credentials (API keys, service account JSON, webhook secrets) **MUST** be read exclusively from Nuxt's private `runtimeConfig`. This is the only mechanism that prevents secrets from leaking into the client bundle.
+
+```typescript
+// ✅ CORRECT — private runtimeConfig, server-only
+const config = useRuntimeConfig();
+const apiKey = config.myServiceApiKey;
+
+// ❌ FORBIDDEN — bypasses Nuxt's validation layer, may leak to client
+const apiKey = process.env.MY_SERVICE_API_KEY;
+
+// ❌ FORBIDDEN — config.public is serialised into the client bundle
+const apiKey = config.public.myServiceApiKey;
+
+// ❌ FORBIDDEN — chained fallbacks that permit public/env access
+const apiKey = config.myKey || config.public?.myKey || process.env.MY_KEY;
+```
+
+### 9.2 Register All Secrets in `nuxt.config.ts`
+
+Every secret used by a server route or utility **MUST** be declared in the `runtimeConfig` block in `nuxt.config.ts`. Secrets not registered here will not be validated at startup.
+
+```typescript
+runtimeConfig: {
+  myServiceApiKey: process.env.MY_SERVICE_API_KEY, // ✅ declared here, accessed via config
+  public: {
+    // Only non-sensitive values live here — this is sent to the browser
+  }
+}
+```
+
+### 9.3 Opaque Error Messages
+
+Server error messages returned to the client **MUST NOT** reveal:
+- Provider or vendor names (e.g. `'Adzuna'`, `'Reed'`)
+- Country routing logic (e.g. `for ${countryCode}`)
+- Internal infrastructure topology
+
+```typescript
+// ✅ CORRECT — opaque, user-friendly
+throw createError({ statusCode: 503, statusMessage: 'Market data temporarily unavailable.' });
+
+// ❌ FORBIDDEN — leaks internal architecture
+throw createError({ statusCode: 500, statusMessage: `Failed to fetch Adzuna jobs for ${countryCode}` });
+```
+
+Use `503 Service Unavailable` (not `500`) when the failure is caused by a downstream provider being rate-limited or unavailable, as this is semantically correct and helps downstream monitoring tools.
+
+### 9.4 Error Status Codes
+
+| Scenario | Correct Status Code |
+|---|---|
+| Downstream provider rate-limited (429) or unavailable | `503` |
+| Missing or misconfigured server credentials | `500` |
+| Invalid client input | `400` |
+| Unauthenticated request | `401` |
+| Authorised but forbidden resource | `403` |
+
+### 9.5 Dev-Only Features
+
+Features that exist only for local development **MUST** be gated behind both:
+- `process.dev` on the server side (Nitro handlers)
+- `import.meta.dev` on the client side (Vue components / composables)
+
+This guarantees zero surface area in production builds.
