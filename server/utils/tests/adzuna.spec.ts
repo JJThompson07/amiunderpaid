@@ -92,5 +92,16 @@ describe('adzuna utils', () => {
       const key = generateCacheKey('Developer (Backend) & DevOps!', 'New York, NY', 'us');
       expect(key).toBe('us-new-york-ny-developer-backend-devops-');
     });
+
+    it('truncates and hashes keys longer than 200 characters to prevent Firestore overflow', () => {
+      const longTitle = 'a'.repeat(150);
+      const longLocation = 'b'.repeat(100);
+      const key = generateCacheKey(longTitle, longLocation, 'gb');
+      
+      expect(key.length).toBeLessThanOrEqual(200);
+      expect(key.length).toBe(197); // 180 chars + '-' + 16 char hash
+      expect(key.startsWith(`gb-${'b'.repeat(100)}-${'a'.repeat(76)}`)).toBe(true);
+      expect(key).toMatch(/-[a-f0-9]{16}$/); // ends with dash and 16 char hex hash
+    });
   });
 });

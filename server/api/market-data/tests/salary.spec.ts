@@ -11,7 +11,11 @@ vi.stubGlobal('useRuntimeConfig', () => mockConfig);
 vi.stubGlobal('defineEventHandler', (fn: any) => fn);
 vi.stubGlobal('useAdminFirestore', vi.fn());
 vi.stubGlobal('generateCacheKey', vi.fn(() => 'cache-key'));
-vi.stubGlobal('createError', (err: any) => new Error(err.statusMessage));
+vi.stubGlobal('createError', (err: any) => {
+  const e = new Error(err.statusMessage) as any;
+  e.statusCode = err.statusCode;
+  return e;
+});
 vi.stubGlobal('sanitizeAdzunaData', vi.fn((data: any) => data));
 const $fetchMock = vi.fn();
 vi.stubGlobal('$fetch', $fetchMock);
@@ -23,6 +27,13 @@ vi.mock('../../../utils/reed', () => ({
   fetchReedData: vi.fn().mockResolvedValue({
     histogram: { '50000': 1 },
     provider: 'reed'
+  })
+}));
+
+vi.mock('../../../utils/jooble', () => ({
+  fetchJoobleData: vi.fn().mockResolvedValue({
+    histogram: { '100000': 2 },
+    provider: 'jooble'
   })
 }));
 
@@ -83,7 +94,7 @@ describe('Adzuna Salary API - 429 Fallback', () => {
     );
   });
 
-  it('should fall back to Reed API if Adzuna returns 429 for usa', async () => {
+  it('should fall back to Jooble API if Adzuna returns 429 for usa', async () => {
     getQueryMock.mockReturnValue({
       title: 'developer',
       location: 'new york',
@@ -96,8 +107,27 @@ describe('Adzuna Salary API - 429 Fallback', () => {
       response: { status: 429 }
     });
 
-    // Expect successful fallback to Reed for USA!
+    // Expect successful fallback to Jooble for USA!
     const result = await salaryHandler({} as any);
-    expect(result.provider).toBe('reed');
+    expect(result.provider).toBe('jooble');
+    expect(result.histogram).toEqual({ '100000': 2 });
+  });
+
+  it('should fall back to Jooble API if Adzuna returns empty histogram for usa', async () => {
+    getQueryMock.mockReturnValue({
+      title: 'developer',
+      location: 'new york',
+      country: 'usa'
+    });
+
+    // Mock Adzuna returning empty histogram successfully
+    $fetchMock.mockResolvedValueOnce({
+      histogram: {}
+    });
+
+    // Expect successful fallback to Jooble for USA!
+    const result = await salaryHandler({} as any);
+    expect(result.provider).toBe('jooble');
+    expect(result.histogram).toEqual({ '100000': 2 });
   });
 });

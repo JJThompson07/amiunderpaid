@@ -127,70 +127,80 @@ export default defineEventHandler(async (event) => {
     if (import.meta.dev && devProviderOverride === 'reed') {
       throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
     }
+    if (import.meta.dev && devProviderOverride === 'jooble') {
+      throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
+    }
 
     const rawData = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/histogram`, {
       params
     });
 
     const cleanData = sanitizeAdzunaData(rawData);
-
-    // FIX 2: Adzuna histogram data doesn't contain categories!
-    // Let's try to steal the category tag from the jobs cache for this exact search.
-    let categoryTag = 'unknown';
-    try {
-      // The default limit for jobs is 5, so we check that cache key
-      const jobsCacheKey = `${cacheKey}-5`;
-      const jobsDoc = await db.collection('adzuna_jobs_cache').doc(jobsCacheKey).get();
-      if (jobsDoc.exists) {
-        categoryTag = jobsDoc.data()?.categoryTag || 'unknown';
-      }
-    } catch {
-      // Silently ignore and leave categoryTag as 'unknown'
-    }
-
-    // --- CALCULATE EXPIRES AT ---
-    let cacheDays = 120; // Default
-    if (categoryTag !== 'unknown') {
+    
+    // Check if the histogram actually has data
+    const hasData = cleanData?.histogram && Object.keys(cleanData.histogram).length > 0;
+    
+    if (hasData) {
+      // FIX 2: Adzuna histogram data doesn't contain categories!
+      // Let's try to steal the category tag from the jobs cache for this exact search.
+      let categoryTag = 'unknown';
       try {
-        const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
-        if (catSnap.exists) {
-          cacheDays = Number(catSnap.data()?.cache || 120);
+        // The default limit for jobs is 10 (changed recently)
+        const jobsCacheKey = `${cacheKey}-full-time-permanent-10`;
+        const jobsDoc = await db.collection('adzuna_jobs_cache').doc(jobsCacheKey).get();
+        if (jobsDoc.exists) {
+          categoryTag = jobsDoc.data()?.categoryTag || 'unknown';
         }
       } catch {
-        // Silently ignore failures and default to 120 cacheDays
+        // Silently ignore and leave categoryTag as 'unknown'
       }
+
+      // --- CALCULATE EXPIRES AT ---
+      let cacheDays = 120; // Default
+      if (categoryTag !== 'unknown') {
+        try {
+          const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
+          if (catSnap.exists) {
+            cacheDays = Number(catSnap.data()?.cache || 120);
+          }
+        } catch {
+          // Silently ignore failures and default to 120 cacheDays
+        }
+      }
+
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + cacheDays);
+
+      cleanData.provider = 'adzuna';
+
+      // 4. Save to Cache (Server-Side)
+      await cacheRef.set({
+        categoryTag,
+        data: cleanData,
+        timestamp: FieldValue.serverTimestamp(),
+        expiresAt: expiresAt, // <-- Save the exact expiration date!
+        searchParams: { title: titleStr, location: locationStr, country: countryCode }
+      });
+
+      // FIX 3: Return the safely sanitized data instead of rawData
+      return cleanData;
+    } else {
+      throw createError({ statusCode: 404, statusMessage: 'Zero results from Adzuna' });
     }
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + cacheDays);
-
-    cleanData.provider = 'adzuna';
-
-    // 4. Save to Cache (Server-Side)
-    await cacheRef.set({
-      categoryTag,
-      data: cleanData,
-      timestamp: FieldValue.serverTimestamp(),
-      expiresAt: expiresAt, // <-- Save the exact expiration date!
-      searchParams: { title: titleStr, location: locationStr, country: countryCode }
-    });
-
-    // FIX 3: Return the safely sanitized data instead of rawData
-    return cleanData;
   } catch (e: any) {
     const statusCode = e?.response?.status || e?.statusCode;
-    if (statusCode === 429 || statusCode === 403) {
+    if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
       try {
-        const { fetchReedData } = await import('../../utils/reed');
-        const reedData = await fetchReedData(titleStr, locationStr, '', '');
+        const { executeMarketFallback } = await import('../../utils/fallback');
+        const fallbackRaw = await executeMarketFallback(titleStr, locationStr, countryCode, '', '');
         
         const fallbackData = {
-          histogram: reedData.histogram,
-          provider: 'reed'
+          histogram: fallbackRaw.histogram,
+          provider: fallbackRaw.provider
         };
 
         const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24); // Cache Reed for 24h
+        expiresAt.setHours(expiresAt.getHours() + 24); // Cache Fallbacks for 24h
 
         await cacheRef.set({
           categoryTag: 'unknown',
@@ -201,11 +211,11 @@ export default defineEventHandler(async (event) => {
         });
 
         return fallbackData;
-      } catch (reedErr) {
+      } catch (fallbackErr) {
         throw createError({
           statusCode: 503,
           statusMessage: 'Salary data temporarily unavailable. Please try again later.',
-          data: reedErr
+          data: fallbackErr
         });
       }
     }

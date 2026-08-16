@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeAdzunaData } from '../sanitize';
+import { sanitizeAdzunaData, sanitizeUrl } from '../sanitize';
 
 describe('sanitizeAdzunaData', () => {
   it('returns primitive values as is', () => {
@@ -55,5 +55,24 @@ describe('sanitizeAdzunaData', () => {
       { good: 2 },
       [{ nested_good: 4 }]
     ]);
+  });
+});
+
+describe('sanitizeUrl', () => {
+  it('allows http and https URLs', () => {
+    expect(sanitizeUrl('https://example.com')).toBe('https://example.com/');
+    expect(sanitizeUrl('http://test.com/path')).toBe('http://test.com/path');
+  });
+
+  it('blocks javascript: URLs and returns #', () => {
+    expect(sanitizeUrl('javascript:alert(1)')).toBe('#');
+  });
+
+  it('blocks other protocols and invalid URLs', () => {
+    expect(sanitizeUrl('data:text/html,<html>')).toBe('#');
+    expect(sanitizeUrl('ftp://server/file')).toBe('#');
+    expect(sanitizeUrl('not-a-url')).toBe('#');
+    expect(sanitizeUrl(undefined)).toBe('#');
+    expect(sanitizeUrl('')).toBe('#');
   });
 });

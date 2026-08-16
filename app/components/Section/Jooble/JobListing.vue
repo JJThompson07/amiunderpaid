@@ -11,7 +11,8 @@
     :market-average="marketAverage"
     :currency-symbol="currencySymbol"
     :url="sanitizeUrl(listing.redirect_url)"
-    data-provider="reed"
+    :raw-salary="listing.raw_salary"
+    data-provider="jooble"
   />
 </template>
 

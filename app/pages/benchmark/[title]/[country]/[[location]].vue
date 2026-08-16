@@ -119,13 +119,13 @@
       <div v-if="jobListings.length" class="w-full flex flex-col gap-3 min-w-0">
         <h3 class="relative text-xl md:text-2xl text-slate-900 font-bold sm:whitespace-nowrap px-1">
           <a
-            :href="dataProvider === 'reed' ? 'https://www.reed.co.uk' : $t(`sections.jobs.href.${country.toLowerCase()}`)"
+            :href="dataProvider === 'reed' ? 'https://www.reed.co.uk' : dataProvider === 'jooble' ? 'https://jooble.org' : $t(`sections.jobs.href.${country.toLowerCase()}`)"
             target="_blank"
             rel="noopener noreferrer"
             class="text-primary-500 hover:text-primary-700 transition-colors duration-500 ease-in-out"
             >{{ $t('sections.jobs.jobs') }}</a
           >
-          {{ dataProvider === 'reed' ? $t('sections.jobs.by-reed') : $t('sections.jobs.by-adzuna') }}
+          {{ dataProvider === 'reed' ? $t('sections.jobs.by-reed') : dataProvider === 'jooble' ? $t('sections.jobs.by-jooble') : $t('sections.jobs.by-adzuna') }}
         </h3>
 
         <span class="text-slate-500 text-2xs uppercase">
@@ -136,6 +136,12 @@
           <div v-for="listing in jobListings" :key="listing.id" class="w-full">
             <SectionReedJobListing
               v-if="dataProvider === 'reed'"
+              :listing="listing"
+              :user-salary="userSalary"
+              :market-average="marketAverage"
+              :currency-symbol="currencySymbol" />
+            <SectionJoobleJobListing
+              v-else-if="dataProvider === 'jooble'"
               :listing="listing"
               :user-salary="userSalary"
               :market-average="marketAverage"

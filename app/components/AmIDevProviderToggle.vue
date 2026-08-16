@@ -42,9 +42,18 @@ const isOpen = ref(false);
 const override = useDevProviderOverride();
 const { currentCountry } = useRegion();
 
-const options = [
-  { label: 'Auto', value: 'auto' },
-  { label: 'Adzuna', value: 'adzuna' },
-  { label: 'Reed', value: 'reed' }
-];
+const options = computed(() => {
+  const baseOptions = [
+    { label: 'Auto', value: 'auto' },
+    { label: 'Adzuna', value: 'adzuna' },
+  ];
+  
+  if (currentCountry.value === 'USA') {
+    baseOptions.push({ label: 'Jooble', value: 'jooble' });
+  } else {
+    baseOptions.push({ label: 'Reed', value: 'reed' });
+  }
+  
+  return baseOptions;
+});
 </script>

@@ -57,36 +57,29 @@ export const slugify = (text: string) =>
     .replace(/--+/g, '-'); // Replace multiple - with single -
 
 export const levenshteinDistance = (a: string, b: string): number => {
-  if (a.length === 0) return b.length;
-  if (b.length === 0) return a.length;
+  // 1. Guard against oversized inputs
+  const strA = a.slice(0, 100);
+  const strB = b.slice(0, 100);
 
-  const matrix: number[][] = Array(b.length + 1)
-    .fill(null)
-    .map(() => Array(a.length + 1).fill(0));
+  if (strA.length === 0) return strB.length;
+  if (strB.length === 0) return strA.length;
 
-  for (let i = 0; i <= b.length; i++) {
-    matrix[i]![0] = i;
-  }
+  // 2. Memory-optimized O(N) allocation
+  let prevRow: number[] = Array.from({ length: strA.length + 1 }, (_, i) => i);
+  let currRow: number[] = new Array(strA.length + 1).fill(0);
 
-  for (let j = 0; j <= a.length; j++) {
-    matrix[0]![j] = j;
-  }
-
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i]![j] = matrix[i - 1]![j - 1]!;
-      } else {
-        matrix[i]![j] = Math.min(
-          matrix[i - 1]![j - 1]! + 1, // substitution
-          Math.min(
-            matrix[i]![j - 1]! + 1, // insertion
-            matrix[i - 1]![j]! + 1 // deletion
-          )
-        );
-      }
+  for (let i = 1; i <= strB.length; i++) {
+    currRow[0] = i;
+    for (let j = 1; j <= strA.length; j++) {
+      const cost = strB.charAt(i - 1) === strA.charAt(j - 1) ? 0 : 1;
+      currRow[j] = Math.min(
+        currRow[j - 1]! + 1,       // insertion
+        prevRow[j]! + 1,           // deletion
+        prevRow[j - 1]! + cost     // substitution
+      );
     }
+    [prevRow, currRow] = [currRow, prevRow];
   }
 
-  return matrix[b.length]![a.length]!;
+  return prevRow[strA.length]!;
 };
