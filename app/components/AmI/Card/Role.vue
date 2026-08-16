@@ -117,6 +117,10 @@ const props = defineProps({
     type: Number,
     required: true
   },
+  rawSalary: {
+    type: String,
+    default: ''
+  },
   userSalary: {
     type: Number,
     default: 0
@@ -185,6 +189,10 @@ const comparisonChipAttributes = computed(() => {
 });
 
 const salaryRange = computed(() => {
+  if (props.rawSalary) {
+    return props.rawSalary;
+  }
+
   const min = [props.currencySymbol, Math.round(props.salaryMin).toLocaleString()].join('');
   const max = [props.currencySymbol, Math.round(props.salaryMax).toLocaleString()].join('');
 
