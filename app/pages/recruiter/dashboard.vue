@@ -118,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { Map, MapPin } from 'lucide-vue-next'; // Mail icon removed since it's in the toast now
+import { MapPin } from 'lucide-vue-next'; // Mail icon removed since it's in the toast now
 
 definePageMeta({
   middleware: 'recruiters'
