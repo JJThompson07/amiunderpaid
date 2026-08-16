@@ -1,4 +1,5 @@
-import type { JobSearchResponse } from '~~/shared/utils/market-data';
+import { type JobSearchResponse } from '~~/shared/utils/market-data';
+import { buildHistogramBuckets } from '~~/shared/utils/math';
 
 export interface JoobleJobResponse {
   totalCount: number;
@@ -119,7 +120,7 @@ export const processJoobleData = (response: JoobleJobResponse, jobType: string, 
   
   let totalSalary = 0;
   let validSalaryCount = 0;
-  const histogram: Record<number, number> = {};
+  const rawSalaries: number[] = [];
 
   const mappedJobs = jobs.map((job) => {
     const parsedSalary = parseJoobleSalary(job.salary);
@@ -149,16 +150,14 @@ export const processJoobleData = (response: JoobleJobResponse, jobType: string, 
       const avg = (parsedSalary.min + parsedSalary.max) / 2;
       totalSalary += avg;
       validSalaryCount++;
-
-      // Create histogram bucket (round down to nearest 5000)
-      const bucket = Math.floor(avg / 5000) * 5000;
-      histogram[bucket] = (histogram[bucket] || 0) + 1;
+      rawSalaries.push(avg);
     }
 
     return mapped;
   });
 
   const mean = validSalaryCount > 0 ? Math.round(totalSalary / validSalaryCount) : 0;
+  const histogram = buildHistogramBuckets(rawSalaries, 7);
 
   return {
     mean,
