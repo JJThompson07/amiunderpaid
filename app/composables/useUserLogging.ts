@@ -59,6 +59,7 @@ export const useUserLogging = () => {
       macroPercentile?: number | null;
       livePercentile?: number | null;
       searchSuccess?: boolean;
+      provider?: string;
     }
   ) => {
     /* v8 ignore start */

@@ -1,49 +1,31 @@
+import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
+import type {
+  JobCategoryEntry,
+  JobSearchResponse,
+  MarketDataProvider,
+  SalaryDistributionResponse
+} from '~~/shared/utils/market-data';
+
 export type HistogramData = Record<number, number>;
 
-export type AdzunaJob = {
-  id: number;
-  title: string;
-  description: string;
-  location: {
-    display_name: string;
-    area: string[];
-  };
-  salary_max: number;
-  salary_min: number;
-  category: {
-    label: string;
-    tag: string;
-  };
-  company: {
-    display_name: string;
-  };
-  contract_type: string;
-  contract_time: string;
-  redirect_url: string;
-};
+// Re-export so consumers don't need two import paths
+export type { JobCategoryEntry, JobListing, JobSearchResponse, MarketDataProvider, SalaryDistributionResponse } from '~~/shared/utils/market-data';
 
-const sanitizeAdzunaData = (data: any): any => {
-  if (Array.isArray(data)) {
-    return data.map(sanitizeAdzunaData);
-  }
-  if (data !== null && typeof data === 'object') {
-    return Object.keys(data).reduce((acc, key) => {
-      if (!key.startsWith('__') && !key.endsWith('__')) {
-        acc[key] = sanitizeAdzunaData(data[key]);
-      }
-      return acc;
-    }, {} as any);
-  }
-  return data;
-};
-
-export const useAdzuna = () => {
-  const distributionData = useState<any>('adzuna_distribution', () => null);
-  const jobsData = useState<any>('adzuna_jobs', () => null);
-  const categories = useState<any[]>('adzuna_categories', () => []);
-  const activeRequests = useState<number>('adzuna_loading_count', () => 0);
+/**
+ * useJobs Composable
+ *
+ * Fetches market data (jobs, salaries, categories) from our Nuxt API endpoints.
+ * Note: Our backend acts as an API gateway. It natively queries Adzuna but will
+ * seamlessly fall back to Reed if Adzuna hits a rate limit (429 Error). The client
+ * remains completely agnostic to which provider was used.
+ */
+export const useJobs = () => {
+  const distributionData = useState<SalaryDistributionResponse | null>('market_data_distribution', () => null);
+  const jobsData = useState<JobSearchResponse | null>('market_data_jobs', () => null);
+  const categories = useState<JobCategoryEntry[]>('market_data_categories', () => []);
+  const activeRequests = useState<number>('market_data_loading_count', () => 0);
   const loading = computed(() => activeRequests.value > 0);
-  const cachedGovIdCode = useState<string | undefined>('adzuna_cached_gov_id', () => undefined);
+  const cachedGovIdCode = useState<string | undefined>('market_data_cached_gov_id', () => undefined);
 
   const meanSalary = computed<number>(() => jobsData.value?.mean || 0);
   const jobsCount = computed<number>(() => jobsData.value?.count || 0);
@@ -88,12 +70,13 @@ export const useAdzuna = () => {
     location: string,
     country: string,
     jobType: string = 'full-time',
-    contractType: string = 'permanent'
-  ) => {
+    contractType: string = 'permanent',
+    devProviderOverride?: string
+  ): Promise<void> => {
     activeRequests.value++;
     cachedGovIdCode.value = undefined;
 
-    // Wipe the underlying distribution state so computed properties reset!
+    // Wipe the underlying distribution state so computed properties reset
     distributionData.value = null;
 
     const cleanTitle = title
@@ -102,17 +85,21 @@ export const useAdzuna = () => {
       .trim();
 
     try {
-      const rawData: any = await $fetch('/api/adzuna/jobs', {
-        params: {
-          title: cleanTitle,
-          location,
-          country,
-          jobType,
-          contractType
+      const rawData = await $fetch<JobSearchResponse & { gov_id_code?: string; is_admin_verified?: boolean }>(
+        '/api/market-data/jobs',
+        {
+          params: {
+            title: cleanTitle,
+            location,
+            country,
+            jobType,
+            contractType,
+            devProvider: devProviderOverride === 'auto' ? undefined : devProviderOverride
+          }
         }
-      });
+      );
 
-      // ONLY use the cached ID if an admin has explicitly verified it!
+      // ONLY use the cached ID if an admin has explicitly verified it
       if (rawData.gov_id_code && rawData.is_admin_verified) {
         cachedGovIdCode.value = String(rawData.gov_id_code).trim();
       }
@@ -120,7 +107,8 @@ export const useAdzuna = () => {
       jobsData.value = sanitizeAdzunaData({
         mean: rawData.mean,
         count: rawData.count,
-        results: rawData.results
+        results: rawData.results,
+        provider: rawData.provider || 'adzuna'
       });
     } catch {
       jobsData.value = null;
@@ -134,22 +122,27 @@ export const useAdzuna = () => {
     location: string,
     country: string,
     jobType: string = 'full-time',
-    contractType: string = 'permanent'
-  ) => {
+    contractType: string = 'permanent',
+    devProviderOverride?: string
+  ): Promise<void> => {
     activeRequests.value++;
 
     try {
-      const rawData: any = await $fetch('/api/adzuna/salary', {
+      const rawData = await $fetch<SalaryDistributionResponse>('/api/market-data/salary', {
         params: {
           title,
           location,
           country,
           jobType,
-          contractType
+          contractType,
+          devProvider: devProviderOverride === 'auto' ? undefined : devProviderOverride
         }
       });
 
-      distributionData.value = sanitizeAdzunaData({ histogram: rawData.histogram });
+      distributionData.value = sanitizeAdzunaData({
+        histogram: rawData.histogram,
+        provider: rawData.provider || 'adzuna'
+      });
     } catch {
       distributionData.value = null;
     } finally {
@@ -157,11 +150,10 @@ export const useAdzuna = () => {
     }
   };
 
-  const fetchCategories = async (country: string) => {
+  const fetchCategories = async (country: string): Promise<void> => {
     const countryCode = country.toLowerCase() === 'usa' ? 'us' : 'gb';
 
-    // No try/catch needed! If $fetch fails, the error automatically bubbles up.
-    const response: any = await $fetch('/api/adzuna/categories', {
+    const response = await $fetch<{ results?: JobCategoryEntry[] }>('/api/market-data/categories', {
       params: { country: countryCode }
     });
 
@@ -175,6 +167,10 @@ export const useAdzuna = () => {
     }
     return salary < meanSalary.value;
   };
+
+  const dataProvider = computed<MarketDataProvider>(() =>
+    jobsData.value?.provider || distributionData.value?.provider || 'adzuna'
+  );
 
   return {
     distributionData,
@@ -190,6 +186,7 @@ export const useAdzuna = () => {
     histogramMaxCount,
     histogramTotalCount,
     cachedGovIdCode,
+    dataProvider,
     fetchJobs,
     fetchHistogram,
     fetchCategories,

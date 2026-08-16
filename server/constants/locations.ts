@@ -15,3 +15,19 @@ export const ADZUNA_LOCATION_MAP: Record<string, string> = {
   scotland: 'Scotland',
   'northern-ireland': 'Northern Ireland'
 };
+
+// Verified against Reed API behavior (2026-08-15)
+export const REED_LOCATION_MAP: Record<string, string> = {
+  east: 'East Anglia',
+  'east-midlands': 'East Midlands',
+  london: 'London',
+  'north-east': 'North East',
+  'north-west': 'North West',
+  'south-east': 'South East',
+  'south-west': 'South West',
+  'west-midlands': 'West Midlands',
+  'yorkshire-and-the-humber': 'Yorkshire',
+  wales: 'Wales',
+  scotland: 'Scotland',
+  'northern-ireland': 'Northern Ireland'
+};

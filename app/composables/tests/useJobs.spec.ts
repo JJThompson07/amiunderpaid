@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAdzuna } from '../useAdzuna';
+import { useJobs } from '../useJobs';
 
 vi.mock('firebase/firestore', () => ({ doc: vi.fn(), collection: vi.fn(), getFirestore: vi.fn(), Timestamp: { now: vi.fn() } }));
 vi.mock('firebase/auth', () => ({ getAuth: vi.fn() }));
@@ -24,7 +24,7 @@ vi.stubGlobal('computed', (fn: any) => {
 const mock$fetch = vi.fn();
 vi.stubGlobal('$fetch', mock$fetch);
 
-describe('useAdzuna', () => {
+describe('useJobs', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     Object.keys(stateCache).forEach((key) => delete stateCache[key]);
@@ -37,16 +37,17 @@ describe('useAdzuna', () => {
       results: [{ title: 'Developer' }]
     });
 
-    const composable = useAdzuna();
+    const composable = useJobs();
     await composable.fetchJobs('Developer', 'London', 'gb');
 
-    expect(mock$fetch).toHaveBeenCalledWith('/api/adzuna/jobs', {
-      params: { title: 'Developer', location: 'London', country: 'gb', jobType: 'full-time', contractType: 'permanent' }
+    expect(mock$fetch).toHaveBeenCalledWith('/api/market-data/jobs', {
+      params: { title: 'Developer', location: 'London', country: 'gb', jobType: 'full-time', contractType: 'permanent', devProvider: undefined }
     });
     expect(composable.jobsData.value).toEqual({
       mean: 50000,
       count: 10,
-      results: [{ title: 'Developer' }]
+      results: [{ title: 'Developer' }],
+      provider: 'adzuna'
     });
     expect(composable.hasJobsData.value).toBe(true);
     expect(composable.meanSalary.value).toBe(50000);
@@ -55,11 +56,31 @@ describe('useAdzuna', () => {
   it('fetchJobs error clears jobsData', async () => {
     mock$fetch.mockRejectedValueOnce(new Error('Failed'));
     
-    const composable = useAdzuna();
+    const composable = useJobs();
     await composable.fetchJobs('Developer', 'London', 'gb');
     
     expect(composable.jobsData.value).toBe(null);
     expect(composable.hasJobsData.value).toBe(false);
+  });
+
+  it('fetchJobs passes devProviderOverride when provided', async () => {
+    mock$fetch.mockResolvedValueOnce({ mean: 10, count: 1, results: [] });
+    const composable = useJobs();
+    await composable.fetchJobs('Developer', 'London', 'gb', 'full-time', 'permanent', 'reed');
+    
+    expect(mock$fetch).toHaveBeenCalledWith('/api/market-data/jobs', {
+      params: { title: 'Developer', location: 'London', country: 'gb', jobType: 'full-time', contractType: 'permanent', devProvider: 'reed' }
+    });
+  });
+
+  it('fetchJobs coerces devProviderOverride "auto" to undefined in params', async () => {
+    mock$fetch.mockResolvedValueOnce({ mean: 10, count: 1, results: [] });
+    const composable = useJobs();
+    await composable.fetchJobs('Developer', 'London', 'gb', 'full-time', 'permanent', 'auto');
+
+    expect(mock$fetch).toHaveBeenCalledWith('/api/market-data/jobs', {
+      params: { title: 'Developer', location: 'London', country: 'gb', jobType: 'full-time', contractType: 'permanent', devProvider: undefined }
+    });
   });
 
   it('fetchJobs handles gov_id_code correctly when admin verified', async () => {
@@ -71,7 +92,7 @@ describe('useAdzuna', () => {
       is_admin_verified: true
     });
 
-    const composable = useAdzuna();
+    const composable = useJobs();
     await composable.fetchJobs('Developer', 'London', 'gb');
 
     expect(composable.cachedGovIdCode.value).toBe('GOV-123');
@@ -86,7 +107,7 @@ describe('useAdzuna', () => {
       is_admin_verified: false
     });
 
-    const composable = useAdzuna();
+    const composable = useJobs();
     await composable.fetchJobs('Developer', 'London', 'gb');
 
     expect(composable.cachedGovIdCode.value).toBe(undefined);
@@ -97,11 +118,12 @@ describe('useAdzuna', () => {
       histogram: { 10000: 5, 20000: 10 }
     });
 
-    const composable = useAdzuna();
+    const composable = useJobs();
     await composable.fetchHistogram('Developer', 'London', 'gb');
 
     expect(composable.distributionData.value).toEqual({
-      histogram: { '10000': 5, '20000': 10 }
+      histogram: { '10000': 5, '20000': 10 },
+      provider: 'adzuna'
     });
     expect(composable.hasDistributionData.value).toBe(true);
     expect(composable.histogramBuckets.value).toEqual([
@@ -116,7 +138,7 @@ describe('useAdzuna', () => {
   it('fetchHistogram error clears distributionData and returns early for range', async () => {
     mock$fetch.mockRejectedValueOnce(new Error('Failed'));
 
-    const composable = useAdzuna();
+    const composable = useJobs();
     await composable.fetchHistogram('Developer', 'London', 'gb');
 
     expect(composable.distributionData.value).toBe(null);
@@ -131,10 +153,10 @@ describe('useAdzuna', () => {
       results: [{ label: 'IT', tag: 'it-jobs' }]
     });
 
-    const composable = useAdzuna();
+    const composable = useJobs();
     await composable.fetchCategories('usa'); // usa maps to us
 
-    expect(mock$fetch).toHaveBeenCalledWith('/api/adzuna/categories', {
+    expect(mock$fetch).toHaveBeenCalledWith('/api/market-data/categories', {
       params: { country: 'us' }
     });
     expect(composable.categories.value).toEqual([{ label: 'IT', tag: 'it-jobs' }]);
@@ -150,7 +172,7 @@ describe('useAdzuna', () => {
       __proto__: 'hacked'
     });
 
-    const composable = useAdzuna();
+    const composable = useJobs();
     await composable.fetchCategories('gb');
 
     // Should remove keys starting and ending with __
@@ -162,15 +184,35 @@ describe('useAdzuna', () => {
   });
 
   it('isUnderpaid returns true if salary is less than mean', () => {
-    stateCache['adzuna_jobs'] = { value: { mean: 60000, count: 5 } };
-    const composable = useAdzuna();
+    stateCache['market_data_jobs'] = { value: { mean: 60000, count: 5 } };
+    const composable = useJobs();
     expect(composable.hasJobsData.value).toBe(true);
     expect(composable.isUnderpaid(50000)).toBe(true);
     expect(composable.isUnderpaid(70000)).toBe(false);
   });
 
   it('isUnderpaid returns false if no jobs data', () => {
-    const composable = useAdzuna();
+    const composable = useJobs();
     expect(composable.isUnderpaid(50000)).toBe(false);
+  });
+
+  it('dataProvider returns provider from jobsData when available', () => {
+    stateCache['market_data_jobs'] = { value: { mean: 50000, count: 5, provider: 'reed' } };
+    const composable = useJobs();
+    expect(composable.dataProvider.value).toBe('reed');
+  });
+
+  it('dataProvider falls back to distributionData provider when jobsData has none', () => {
+    stateCache['market_data_jobs'] = { value: null };
+    stateCache['market_data_distribution'] = { value: { histogram: {}, provider: 'reed' } };
+    const composable = useJobs();
+    expect(composable.dataProvider.value).toBe('reed');
+  });
+
+  it('dataProvider defaults to adzuna when neither source has a provider', () => {
+    stateCache['market_data_jobs'] = { value: null };
+    stateCache['market_data_distribution'] = { value: null };
+    const composable = useJobs();
+    expect(composable.dataProvider.value).toBe('adzuna');
   });
 });

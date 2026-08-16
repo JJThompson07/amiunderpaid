@@ -15,8 +15,8 @@ vi.stubGlobal('useAnalytics', () => mockAnalytics);
 const mockAdzuna = {
   fetchJobs: vi.fn(),
   fetchHistogram: vi.fn(),
-  cachedGovIdCode: { value: null },
-  jobsData: { value: null },
+  cachedGovIdCode: { value: null as any },
+  jobsData: { value: null as any },
   histogramTotalCount: { value: 0 },
   histogramBuckets: { value: [] },
   histogramRange: { value: {} },
@@ -27,7 +27,7 @@ const mockAdzuna = {
   isUnderpaid: { value: false },
   hasJobsData: { value: false }
 };
-vi.stubGlobal('useAdzuna', () => mockAdzuna);
+vi.stubGlobal('useJobs', () => mockAdzuna);
 
 const mockMarketData = {
   resolveUkIdentity: vi.fn(),
@@ -48,6 +48,8 @@ const mockMicroData = {
   fetchMicroBaselines: vi.fn()
 };
 vi.stubGlobal('useMicroData', () => mockMicroData);
+
+vi.stubGlobal('useDevProviderOverride', () => ({ value: 'auto' }));
 
 vi.stubGlobal('useAsyncData', async (key: string, fetcher: Function) => {
   const data = await fetcher();

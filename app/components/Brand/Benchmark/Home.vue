@@ -3,6 +3,10 @@
     <main class="relative z-10 px-4 pt-20 pb-20">
       <SectionBenchmarkHero />
 
+      <div class="flex justify-center max-w-4xl mx-auto w-full">
+        <AmIDevProviderToggle v-if="isDev" />
+      </div>
+
       <SectionBenchmarkRoleSearch
         :initial-country="isUSA ? 'USA' : 'UK'"
         @country-change="($event: string) => (isUSA = $event === 'USA')" />
@@ -15,6 +19,7 @@
 <script setup lang="ts">
 const { $siteBrand } = useNuxtApp();
 const { t } = useI18n();
+const isDev = import.meta.dev;
 
 // 1. Geography Logic
 // Defaulting to USA (true) since Benchmark My Role operates on the .com domain.

@@ -98,6 +98,7 @@ export default defineNuxtConfig({
         iso: 'en-GB',
         language: 'en-GB',
         file: 'en-GB/index.ts',
+        domain: isDev ? 'localhost:3000' : 'www.amiunderpaid.co.uk',
         // Update the dev domain here
         domains: isDev
           ? ['localhost:3000', '127.0.0.1:3000', 'ami-uk.localhost:3000', 'bmr.localhost:3000']
@@ -108,6 +109,7 @@ export default defineNuxtConfig({
         iso: 'en-US',
         language: 'en-US',
         file: 'en-US/index.ts',
+        domain: isDev ? 'ami-us.localhost:3000' : 'www.amiunderpaid.com',
         // Update both dev domains here
         domains: isDev
           ? ['ami-us.localhost:3000', 'bmr.us.localhost:3000']
@@ -135,7 +137,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     adzunaAppId: process.env.ADZUNA_APP_ID,
     adzunaAppKey: process.env.ADZUNA_APP_KEY,
+    reedApiKey: process.env.REED_API_KEY,
     firebaseServiceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
+    algoliaApplicationId: process.env.ALGOLIA_APPLICATION_ID,
+    algoliaAdminApiKey: process.env.ALGOLIA_ADMIN_KEY || process.env.ALGOLIA_ADMIN_API_KEY || process.env.ALGOLIA_API_KEY,
 
     public: {
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,

@@ -121,17 +121,26 @@
       <div v-if="jobListings.length" class="w-full flex flex-col gap-3 min-w-0">
         <h3 class="relative text-xl md:text-2xl text-slate-900 font-bold sm:whitespace-nowrap px-1">
           <a
-            :href="$t(`sections.jobs.href.${country.toLowerCase()}`)"
+            :href="dataProvider === 'reed' ? 'https://www.reed.co.uk' : $t(`sections.jobs.href.${country.toLowerCase()}`)"
+            target="_blank"
+            rel="noopener noreferrer"
             class="text-primary-500 hover:text-primary-700 transition-colors duration-500 ease-in-out"
             >{{ $t('sections.jobs.jobs') }}</a
           >
-          {{ $t('sections.jobs.by-adzuna') }}
+          {{ dataProvider === 'reed' ? $t('sections.jobs.by-reed') : $t('sections.jobs.by-adzuna') }}
         </h3>
 
         <!-- 👇 AmICarousel returns to give desktop users navigation arrows! -->
         <AmICarousel>
           <div v-for="listing in jobListings" :key="listing.id" class="w-full">
+            <SectionReedJobListing
+              v-if="dataProvider === 'reed'"
+              :listing="listing"
+              :user-salary="userSalary"
+              :market-average="marketAverage"
+              :currency-symbol="currencySymbol" />
             <AmICardRole
+              v-else
               :title="listing.title"
               :company="listing.company.display_name"
               :contract="listing.contract_type"
@@ -284,6 +293,7 @@ const {
   histogramTotalCount,
   meanSalary,
   jobsCount,
+  dataProvider,
   handleAmbiguitySelect,
   isUnderpaidAdzuna
 } = await useLocationEngine('salary');
@@ -365,7 +375,8 @@ watch(
         typeof mcaScore.value?.macroPercentile === 'number' ? mcaScore.value.macroPercentile : null,
       livePercentile:
         typeof mcaScore.value?.livePercentile === 'number' ? mcaScore.value.livePercentile : null,
-      searchSuccess: hasData
+      searchSuccess: hasData,
+      provider: dataProvider.value
     });
 
     // Clear to prevent duplicate triggers on re-renders

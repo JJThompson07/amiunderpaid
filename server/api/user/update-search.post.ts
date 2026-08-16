@@ -10,6 +10,7 @@ type UpdateSearchBody = {
   macroPercentile?: number | null;
   livePercentile?: number | null;
   searchSuccess?: boolean;
+  provider?: string;
 };
 
 export default defineEventHandler(async (event) => {
@@ -44,6 +45,9 @@ export default defineEventHandler(async (event) => {
     }
     if (body.searchSuccess !== undefined) {
       updateData.searchSuccess = body.searchSuccess;
+    }
+    if (body.provider !== undefined) {
+      updateData.provider = body.provider;
     }
 
     if (Object.keys(updateData).length > 0) {

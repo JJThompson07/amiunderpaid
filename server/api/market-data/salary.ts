@@ -1,4 +1,14 @@
+/**
+ * Market Data Endpoint (Salary)
+ * 
+ * This endpoint acts as an API gateway. It attempts to fetch data from the 
+ * primary provider (Adzuna). If the primary provider returns a 429 Rate Limit error, 
+ * this endpoint catches the error and seamlessly falls back to a secondary provider (Reed), 
+ * mapping the response to a unified schema. 
+ * The client does not need to know which provider was ultimately used.
+ */
 import { FieldValue } from 'firebase-admin/firestore';
+import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 import { ADZUNA_LOCATION_MAP } from '../../constants/locations';
 
 export default defineEventHandler(async (event) => {
@@ -32,8 +42,12 @@ export default defineEventHandler(async (event) => {
   const cacheKey = generateCacheKey(titleStr, locationStr, countryCode);
   const cacheRef = db.collection('adzuna_distribution_cache').doc(cacheKey);
 
-  try {
-    const docSnap = await cacheRef.get();
+  const devProviderOverride = process.dev ? (query.devProvider as string) : undefined;
+  const skipCache = process.dev && !!devProviderOverride;
+
+  if (!skipCache) {
+    try {
+      const docSnap = await cacheRef.get();
     if (docSnap.exists) {
       const data = docSnap.data();
       const now = new Date().getTime();
@@ -70,18 +84,22 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
-  } catch {
-    // Silently ignore cache read errors and fall back to fetching from the Adzuna API
+    } catch {
+      // Silently ignore cache read errors and fall back to fetching from the Adzuna API
+    }
   }
 
   // 2. Prepare API Credentials
-  const appId = config.adzunaAppId || config.public?.adzunaAppId || process.env.adzunaAppId;
-  const appKey = config.adzunaAppKey || config.public?.adzunaAppKey || process.env.adzunaAppKey;
+  // Credentials are always read from private runtimeConfig (server-only).
+  // Never access via config.public or process.env — this bypasses Nuxt's validation layer
+  // and risks exposing secrets to the client bundle.
+  const appId = config.adzunaAppId;
+  const appKey = config.adzunaAppKey;
 
   if (!appId || !appKey) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Adzuna API credentials are not configured.'
+      statusMessage: 'Market data service is misconfigured.'
     });
   }
 
@@ -106,6 +124,10 @@ export default defineEventHandler(async (event) => {
 
   // 3. Fetch from Adzuna API
   try {
+    if (import.meta.dev && devProviderOverride === 'reed') {
+      throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
+    }
+
     const rawData = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/histogram`, {
       params
     });
@@ -142,6 +164,8 @@ export default defineEventHandler(async (event) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + cacheDays);
 
+    cleanData.provider = 'adzuna';
+
     // 4. Save to Cache (Server-Side)
     await cacheRef.set({
       categoryTag,
@@ -153,10 +177,42 @@ export default defineEventHandler(async (event) => {
 
     // FIX 3: Return the safely sanitized data instead of rawData
     return cleanData;
-  } catch (e) {
+  } catch (e: any) {
+    const statusCode = e?.response?.status || e?.statusCode;
+    if ((statusCode === 429 || statusCode === 403) && countryCode === 'gb') {
+      try {
+        const { fetchReedData } = await import('../../utils/reed');
+        const reedData = await fetchReedData(titleStr, locationStr, '', '');
+        
+        const fallbackData = {
+          histogram: reedData.histogram,
+          provider: 'reed'
+        };
+
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24); // Cache Reed for 24h
+
+        await cacheRef.set({
+          categoryTag: 'unknown',
+          data: fallbackData,
+          timestamp: FieldValue.serverTimestamp(),
+          expiresAt: expiresAt,
+          searchParams: { title: titleStr, location: locationStr, country: countryCode }
+        });
+
+        return fallbackData;
+      } catch (reedErr) {
+        throw createError({
+          statusCode: 503,
+          statusMessage: 'Salary data temporarily unavailable. Please try again later.',
+          data: reedErr
+        });
+      }
+    }
+
     throw createError({
-      statusCode: 500,
-      statusMessage: `Failed to fetch Adzuna salary histogram for ${countryCode}`,
+      statusCode: 503,
+      statusMessage: 'Salary data temporarily unavailable. Please try again later.',
       data: e
     });
   }

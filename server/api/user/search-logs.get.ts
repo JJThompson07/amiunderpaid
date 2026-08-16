@@ -17,6 +17,7 @@ export type SearchLog = {
   governmentAverage: number | null;
   searchSuccess: boolean | null;
   historicalFetchedMCA: boolean | null;
+  provider: string | null;
 };
 
 export default defineEventHandler(async (event) => {
@@ -133,7 +134,8 @@ export default defineEventHandler(async (event) => {
         marketAverage: data.marketAverage || null,
         governmentAverage: data.governmentAverage || null,
         searchSuccess: data.searchSuccess ?? null,
-        historicalFetchedMCA: data.historical_fetched_MCA ?? null
+        historicalFetchedMCA: data.historical_fetched_MCA ?? null,
+        provider: data.provider || null
       };
     });
 

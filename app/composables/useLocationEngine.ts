@@ -39,14 +39,16 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
   const currencySymbol = computed<string>(() => (country.value === 'USA' ? '$' : '£'));
 
   // 3. Import Data Composables
-  const adzuna = useAdzuna();
+  const adzuna = useJobs();
   const marketData = useMarketData();
   const macroData = useMacroData();
   const microData = useMicroData();
 
+  const devProviderOverride = useDevProviderOverride();
+
   // 4. The Orchestrator
   const asyncDataKey = computed<string>(
-    () => `${mode}-${country.value}-${location.value}-${searchTitle.value}`
+    () => `${mode}-${country.value}-${location.value}-${searchTitle.value}-${devProviderOverride.value}`
   );
 
   const {
@@ -62,9 +64,10 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
           location.value,
           country.value,
           jobType.value,
-          contractType.value
+          contractType.value,
+          devProviderOverride.value
         ),
-        adzuna.fetchHistogram(searchTitle.value, location.value, country.value)
+        adzuna.fetchHistogram(searchTitle.value, location.value, country.value, jobType.value, contractType.value, devProviderOverride.value)
       ]);
 
       const targetGovId = govId.value || adzuna.cachedGovIdCode.value;
@@ -210,7 +213,7 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
     trackAmbiguousSearch(match.title, match.group);
 
     try {
-      await $fetch('/api/adzuna/update-match', {
+      await $fetch('/api/market-data/update-match', {
         method: 'POST',
         body: {
           title: searchTitle.value,
@@ -245,7 +248,7 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
         marketData.matchedIdCode.value &&
         !govId.value
       ) {
-        $fetch('/api/adzuna/update-match', {
+        $fetch('/api/market-data/update-match', {
           method: 'POST',
           body: {
             title: searchTitle.value,
@@ -328,6 +331,7 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
     histogramTotalCount: adzuna.histogramTotalCount,
     meanSalary: adzuna.meanSalary,
     jobsCount: adzuna.jobsCount,
+    dataProvider: adzuna.dataProvider,
     // Methods
     handleAmbiguitySelect,
     isUnderpaidAdzuna: adzuna.isUnderpaid

@@ -1,8 +1,8 @@
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { generateCacheKey } from '../../utils/adzuna';
-import { calculateUKBenchmarkScore } from '../../../shared/utils/uk';
-import { calculateUSABenchmarkScore } from '../../../shared/utils/usa';
+import { calculateUKBenchmarkScore } from '~~/shared/utils/uk';
+import { calculateUSABenchmarkScore } from '~~/shared/utils/usa';
 
 export default defineEventHandler(async (event) => {
   const authHeader = getRequestHeader(event, 'authorization');
