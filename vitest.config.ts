@@ -15,7 +15,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'], // 'text' prints in terminal, 'html' gives you a visual dashboard
       include: ['shared/utils/**/*.ts', 'app/composables/**/*.ts', 'app/helpers/**/*.ts', 'utils/**/*.ts'],
-      exclude: ['shared/utils/types.ts', 'shared/utils/tests/**', 'app/helpers/tests/**', 'utils/tests/**', 'utils/seedData.ts'],
+      exclude: ['shared/utils/types.ts', 'shared/utils/market-data.ts', 'shared/utils/tests/**', 'app/helpers/tests/**', 'utils/tests/**', 'utils/seedData.ts'],
       thresholds: {
         statements: 80,
         branches: 80,

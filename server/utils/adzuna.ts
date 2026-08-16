@@ -1,19 +1,6 @@
-// Helper to recursively clean data before saving to Firestore
-export const sanitizeAdzunaData = (data: any): any => {
-  if (Array.isArray(data)) {
-    return data.map(sanitizeAdzunaData);
-  }
-  if (data !== null && typeof data === 'object') {
-    return Object.keys(data).reduce((acc, key) => {
-      // Remove keys that start and end with '__' (reserved by Firestore)
-      if (!key.startsWith('__') || !key.endsWith('__')) {
-        acc[key] = sanitizeAdzunaData(data[key]);
-      }
-      return acc;
-    }, {} as any);
-  }
-  return data;
-};
+// Re-export from the shared utility layer so both client and server use the
+// same implementation. The canonical source of truth is shared/utils/sanitize.ts.
+export { sanitizeAdzunaData } from '../../shared/utils/sanitize';
 
 export const generateCacheKey = (title: string, location: string, country: string) => {
   // Allow alphanumeric, plus +, #, . (for C++, C#, .NET)
