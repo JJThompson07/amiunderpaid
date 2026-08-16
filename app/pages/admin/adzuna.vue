@@ -121,7 +121,7 @@ definePageMeta({
 });
 
 const db = useFirestore();
-const { fetchCategories, categories } = useAdzuna();
+const { fetchCategories, categories } = useJobs();
 
 const targetCountry = ref('UK');
 const syncingCategories = ref(false);

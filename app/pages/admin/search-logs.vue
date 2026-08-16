@@ -207,6 +207,12 @@ class="text-2xl font-black text-slate-300 animate-pulse mt-1"
             <span v-else-if="value === false" class="text-rose-400 text-xs font-bold">✗</span>
             <span v-else class="text-slate-300 text-xs">-</span>
           </template>
+
+          <template #provider="{ value }">
+            <span class="text-xs text-slate-500 capitalize font-medium">
+              {{ value || 'Adzuna' }}
+            </span>
+          </template>
         </AmITable>
 
         <div
@@ -268,6 +274,7 @@ const tableColumns = [
     cellClass: 'text-center'
   },
   { key: 'searchSuccess', label: '✓', class: 'w-10 text-center', cellClass: 'text-center' },
+  { key: 'provider', label: 'Source', class: 'w-16 text-center', cellClass: 'text-center' },
   { key: 'schedule', label: 'Hrs', class: 'w-12 text-center', cellClass: 'text-center' },
   { key: 'contract', label: 'Type', class: 'w-12 text-center', cellClass: 'text-center' },
   { key: 'country', label: 'Region', class: 'w-20 text-center', cellClass: 'text-center' },

@@ -5,6 +5,9 @@
       <SectionAmIHero />
 
       <!-- The Calculator Component -->
+      <div class="flex justify-center max-w-4xl mx-auto w-full">
+        <AmIDevProviderToggle v-if="isDev" />
+      </div>
       <SectionAmISalarySearch />
 
       <!-- Privacy Note section -->
@@ -25,6 +28,7 @@
 const { $siteBrand } = useNuxtApp();
 const { t } = useI18n();
 const { isUSSite } = useRegion();
+const isDev = import.meta.dev;
 
 // ✨ 1. Build the rock-solid SSR base URL (Kills the localhost leaks!)
 const baseUrl = import.meta.dev
