@@ -21,8 +21,8 @@ The system SHALL display a continuous horizontal rolling marquee of trending sea
 - **THEN** the scrolling animation pauses to allow the user to easily click a link.
 
 ### Requirement: Semantic SEO headings in the hero section
-The system SHALL use keyword-optimized headings (e.g., `<h2 class="visually-hidden">`) in the hero section to ensure search engines properly understand the page's primary value proposition without breaking visual design.
+The system SHALL use keyword-optimized headings in the hero section to ensure search engines properly understand the page's primary value proposition without breaking visual design. Specifically, the system SHALL natively weave targeted SEO keywords into the visible `<h2>` subtitle.
 
 #### Scenario: Search engine parses the hero section
 - **WHEN** a search engine parses the hero section
-- **THEN** it finds a semantic heading containing primary keywords such as "UK Salary Checker & Market Pay Calculator" (or the US equivalent).
+- **THEN** it finds a semantic visible heading containing primary keywords such as "UK Salary Checker & Market Pay Calculator" (or the US equivalent).
