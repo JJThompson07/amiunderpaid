@@ -8,6 +8,7 @@
  * The client does not need to know which provider was ultimately used.
  */
 import { FieldValue } from 'firebase-admin/firestore';
+import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 import { ADZUNA_LOCATION_MAP } from '../../constants/locations';
 
 export default defineEventHandler(async (event) => {
