@@ -41,6 +41,11 @@
       { "title": "Teacher", "salary": 65000 },
       { "title": "Financial Analyst", "salary": 90000 },
       { "title": "Sales Manager", "salary": 100000 }
-    ]
+    ],
+    "macro_stats": {
+      "mean": 59000,
+      "p10": 30000,
+      "p90": 120000
+    }
   }
 }

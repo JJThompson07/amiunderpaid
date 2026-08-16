@@ -39,6 +39,24 @@
         </NuxtLink>
       </div>
     </div>
+
+    <!-- Macro Stats Bar -->
+    <div 
+      v-if="macroStats" 
+      class="mt-6 text-center flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-xs font-medium text-slate-500 bg-slate-50/50 py-2.5 rounded-xl max-w-fit mx-auto px-6 border border-slate-100"
+    >
+      <span>
+        National Average (All Roles): <strong class="text-slate-700">{{ formatSalary(macroStats.mean) }}</strong>
+      </span>
+      <span class="hidden md:inline text-slate-300">&bull;</span>
+      <span>
+        Bottom 10%: <strong class="text-slate-700">{{ formatSalary(macroStats.p10) }}</strong>
+      </span>
+      <span class="hidden md:inline text-slate-300">&bull;</span>
+      <span>
+        Top 10%: <strong class="text-slate-700">{{ formatSalary(macroStats.p90) }}</strong>
+      </span>
+    </div>
   </section>
 </template>
 
@@ -54,6 +72,11 @@ const { currentCountry } = useRegion();
 const trendingRoles = computed(() => {
   const roles = tm('landing.trending.roles');
   return Array.isArray(roles) ? roles : [];
+});
+
+const macroStats = computed(() => {
+  const stats = tm('landing.trending.macro_stats');
+  return stats ? (stats as { mean: number; p10: number; p90: number }) : null;
 });
 
 const getRoleUrl = (role: string) => {
