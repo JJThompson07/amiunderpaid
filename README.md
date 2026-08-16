@@ -34,7 +34,7 @@ Built with **Nuxt 4**, **Tailwind CSS v4**, and **Firebase**, the platform lever
 - **Framework**: Nuxt 4 (Vue 3.5+)
 - **Styling**: Tailwind CSS v4
 - **Database & Auth**: Firebase (Firestore, Authentication)
-- **Search Engine**: Algolia
+- **Search & Market Data**: Algolia, Adzuna, Reed, Jooble
 - **Icons**: Lucide Vue Next
 - **Localization**: @nuxtjs/i18n
 
