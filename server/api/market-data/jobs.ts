@@ -217,24 +217,14 @@ export default defineEventHandler(async (event) => {
     // Fallback if Adzuna is rate-limited, forbidden, or returned 0 results
     if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
       try {
-        let fallbackRaw;
-        let providerName;
-        
-        if (countryCode === 'us') {
-          const { fetchJoobleData } = await import('../../utils/jooble');
-          fallbackRaw = await fetchJoobleData(titleStr, locationStr, typeStr, contractStr);
-          providerName = 'jooble';
-        } else {
-          const { fetchReedData } = await import('../../utils/reed');
-          fallbackRaw = await fetchReedData(titleStr, locationStr, typeStr, contractStr);
-          providerName = 'reed';
-        }
+        const { executeMarketFallback } = await import('../../utils/fallback');
+        const fallbackRaw = await executeMarketFallback(titleStr, locationStr, countryCode, typeStr, contractStr);
         
         const fallbackData = {
           mean: fallbackRaw.mean,
           count: fallbackRaw.count,
           results: fallbackRaw.results.slice(0, limit),
-          provider: providerName
+          provider: fallbackRaw.provider
         };
 
         const expiresAt = new Date();

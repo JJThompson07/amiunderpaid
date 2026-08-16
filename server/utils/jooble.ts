@@ -25,7 +25,7 @@ export interface JoobleJobResponse {
  * 
  * Returns { min: number, max: number, raw: string }
  */
-export const parseJoobleSalary = (salaryStr: string | undefined): { min: number, max: number, raw: string } => {
+export const parseJoobleSalary = (salaryStr: string | undefined, jobType: string = 'full-time'): { min: number, max: number, raw: string } => {
   const raw = salaryStr || '';
   if (!raw) return { min: 0, max: 0, raw };
 
@@ -66,9 +66,10 @@ export const parseJoobleSalary = (salaryStr: string | undefined): { min: number,
     min = min * 12;
     max = max * 12;
   } else if (str.includes('hour')) {
-    // Assuming 40 hours/week, 52 weeks/year = 2080 hours
-    min = min * 2080;
-    max = max * 2080;
+    // 40 hours/week = 2080 hours, 20 hours/week = 1040 hours
+    const hoursPerYear = jobType === 'part-time' ? 1040 : 2080;
+    min = min * hoursPerYear;
+    max = max * hoursPerYear;
   }
 
   return { min, max, raw };
@@ -123,7 +124,7 @@ export const processJoobleData = (response: JoobleJobResponse, jobType: string, 
   const rawSalaries: number[] = [];
 
   const mappedJobs = jobs.map((job) => {
-    const parsedSalary = parseJoobleSalary(job.salary);
+    const parsedSalary = parseJoobleSalary(job.salary, jobType);
 
     // Map to Adzuna structure so frontend doesn't break
     const mapped = {

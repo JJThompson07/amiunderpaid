@@ -191,22 +191,12 @@ export default defineEventHandler(async (event) => {
     const statusCode = e?.response?.status || e?.statusCode;
     if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
       try {
-        let fallbackRaw;
-        let providerName;
-        
-        if (countryCode === 'us') {
-          const { fetchJoobleData } = await import('../../utils/jooble');
-          fallbackRaw = await fetchJoobleData(titleStr, locationStr, '', '');
-          providerName = 'jooble';
-        } else {
-          const { fetchReedData } = await import('../../utils/reed');
-          fallbackRaw = await fetchReedData(titleStr, locationStr, '', '');
-          providerName = 'reed';
-        }
+        const { executeMarketFallback } = await import('../../utils/fallback');
+        const fallbackRaw = await executeMarketFallback(titleStr, locationStr, countryCode, '', '');
         
         const fallbackData = {
           histogram: fallbackRaw.histogram,
-          provider: providerName
+          provider: fallbackRaw.provider
         };
 
         const expiresAt = new Date();
