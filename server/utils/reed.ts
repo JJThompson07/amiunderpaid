@@ -53,7 +53,7 @@ export const fetchReedData = async (
   if (contractType === 'temp') params.temp = true;
 
   // Basic Auth: key as username, empty password
-  const authHeader = 'Basic ' + Buffer.from(`${apiKey}:`).toString('base64');
+  const authHeader = 'Basic ' + btoa(`${apiKey}:`);
 
   try {
     const response = await $fetch<ReedJobResponse>('https://www.reed.co.uk/api/1.0/search', {
