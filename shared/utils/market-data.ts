@@ -6,7 +6,7 @@
  * out of sync on what the API contract looks like.
  */
 
-export type MarketDataProvider = 'adzuna' | 'reed';
+export type MarketDataProvider = 'adzuna' | 'reed' | 'jooble';
 
 export interface JobLocation {
   display_name: string;
@@ -30,6 +30,7 @@ export interface JobListing {
   location: JobLocation;
   salary_min: number;
   salary_max: number;
+  raw_salary?: string;
   category: JobCategory;
   company: JobCompany;
   contract_type: string;

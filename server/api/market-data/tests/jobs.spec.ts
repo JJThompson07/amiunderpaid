@@ -11,20 +11,33 @@ vi.stubGlobal('useRuntimeConfig', () => mockConfig);
 vi.stubGlobal('defineEventHandler', (fn: any) => fn);
 vi.stubGlobal('useAdminFirestore', vi.fn());
 vi.stubGlobal('generateCacheKey', vi.fn(() => 'cache-key'));
-vi.stubGlobal('createError', (err: any) => new Error(err.statusMessage));
+vi.stubGlobal('createError', (err: any) => {
+  const e = new Error(err.statusMessage) as any;
+  e.statusCode = err.statusCode;
+  return e;
+});
 vi.stubGlobal('sanitizeAdzunaData', vi.fn((data: any) => data));
 const $fetchMock = vi.fn();
 vi.stubGlobal('$fetch', $fetchMock);
 const getQueryMock = vi.fn();
 vi.stubGlobal('getQuery', getQueryMock);
 
-// We need to mock the import of `../../utils/reed` that happens inside the catch block
+// We need to mock the import of `../../utils/reed` and `../../utils/jooble` that happens inside the catch block
 vi.mock('../../../utils/reed', () => ({
   fetchReedData: vi.fn().mockResolvedValue({
     mean: 50000,
     count: 10,
     results: [{ id: 1, title: 'Reed Job', provider: 'reed' }],
     provider: 'reed'
+  })
+}));
+
+vi.mock('../../../utils/jooble', () => ({
+  fetchJoobleData: vi.fn().mockResolvedValue({
+    mean: 100000,
+    count: 20,
+    results: [{ id: 2, title: 'Jooble Job', provider: 'jooble' }],
+    provider: 'jooble'
   })
 }));
 
@@ -88,7 +101,7 @@ describe('Adzuna Jobs API - 429 Fallback', () => {
     );
   });
 
-  it('should fall back to Reed API if Adzuna returns 429 for usa', async () => {
+  it('should fall back to Jooble API if Adzuna returns 429 for usa', async () => {
     vi.mocked(getQueryMock).mockReturnValue({
       title: 'Software Engineer',
       country: 'us'
@@ -100,7 +113,26 @@ describe('Adzuna Jobs API - 429 Fallback', () => {
 
     // Expect the promise to resolve successfully with fallback data
     const result = await jobsHandler({} as any);
-    expect(result.provider).toBe('reed');
-    expect(result.count).toBe(10);
+    expect(result.provider).toBe('jooble');
+    expect(result.count).toBe(20);
+    expect(result.results[0].title).toBe('Jooble Job');
+  });
+  
+  it('should fall back to Jooble API if Adzuna returns 0 results for usa', async () => {
+    vi.mocked(getQueryMock).mockReturnValue({
+      title: 'Software Engineer',
+      country: 'us'
+    });
+
+    // Mock Adzuna returning 0 results successfully
+    vi.mocked($fetchMock).mockResolvedValueOnce({
+      count: 0,
+      results: []
+    });
+
+    // Expect the promise to resolve successfully with fallback data
+    const result = await jobsHandler({} as any);
+    expect(result.provider).toBe('jooble');
+    expect(result.count).toBe(20);
   });
 });

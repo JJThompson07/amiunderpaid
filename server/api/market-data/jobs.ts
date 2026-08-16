@@ -155,69 +155,90 @@ export default defineEventHandler(async (event) => {
     if (import.meta.dev && devProviderOverride === 'reed') {
       throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
     }
+    if (import.meta.dev && devProviderOverride === 'jooble') {
+      throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
+    }
 
     const rawData = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1`, {
       params
     });
 
     const cleanData = sanitizeAdzunaData(rawData);
-    const categoryTag = cleanData.results?.[0]?.category?.tag || 'unknown';
-
-    // --- CALCULATE EXPIRES AT ---
-    let cacheDays = 120; // Default
-    if (categoryTag !== 'unknown') {
-      try {
-        const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
-        if (catSnap.exists) {
-          cacheDays = Number(catSnap.data()?.cache || 120);
-        }
-      } catch {
-        // Silently ignore failures and default to 120 cacheDays
-      }
-    }
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + cacheDays);
     
-    cleanData.provider = 'adzuna';
+    // If Adzuna succeeded and found results, use it!
+    if (cleanData.count && cleanData.count > 0) {
+      const categoryTag = cleanData.results?.[0]?.category?.tag || 'unknown';
 
-    // 4. Save to Cache
-    await cacheRef.set(
-      {
-        categoryTag,
-        data: cleanData,
-        timestamp: FieldValue.serverTimestamp(),
-        expiresAt: expiresAt, // <-- Save the exact expiration date!
-        searchParams: { title: titleStr, location: locationStr, country: countryCode },
-        gov_id_code: existingGovIdCode || null, // Preserve admin match
-        is_admin_verified: isAdminVerified, // Preserve admin status
-        job_type: typeStr,
-        contract_type: contractStr
-      },
-      { merge: true }
-    );
+      // --- CALCULATE EXPIRES AT ---
+      let cacheDays = 120; // Default
+      if (categoryTag !== 'unknown') {
+        try {
+          const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
+          if (catSnap.exists) {
+            cacheDays = Number(catSnap.data()?.cache || 120);
+          }
+        } catch {
+          // Silently ignore failures and default to 120 cacheDays
+        }
+      }
 
-    return {
-      ...cleanData,
-      gov_id_code: existingGovIdCode,
-      is_admin_verified: isAdminVerified
-    };
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + cacheDays);
+      
+      cleanData.provider = 'adzuna';
+
+      // 4. Save to Cache
+      await cacheRef.set(
+        {
+          categoryTag,
+          data: cleanData,
+          timestamp: FieldValue.serverTimestamp(),
+          expiresAt: expiresAt, // <-- Save the exact expiration date!
+          searchParams: { title: titleStr, location: locationStr, country: countryCode },
+          gov_id_code: existingGovIdCode || null, // Preserve admin match
+          is_admin_verified: isAdminVerified, // Preserve admin status
+          job_type: typeStr,
+          contract_type: contractStr
+        },
+        { merge: true }
+      );
+
+      return {
+        ...cleanData,
+        gov_id_code: existingGovIdCode,
+        is_admin_verified: isAdminVerified
+      };
+    } else {
+      // Fall through to fallback on 0 results!
+      throw createError({ statusCode: 404, statusMessage: 'Zero results from Adzuna' });
+    }
   } catch (e: any) {
     const statusCode = e?.response?.status || e?.statusCode;
-    if (statusCode === 429 || statusCode === 403) {
+    // Fallback if Adzuna is rate-limited, forbidden, or returned 0 results
+    if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
       try {
-        const { fetchReedData } = await import('../../utils/reed');
-        const reedData = await fetchReedData(titleStr, locationStr, typeStr, contractStr);
+        let fallbackRaw;
+        let providerName;
+        
+        if (countryCode === 'us') {
+          const { fetchJoobleData } = await import('../../utils/jooble');
+          fallbackRaw = await fetchJoobleData(titleStr, locationStr, typeStr, contractStr);
+          providerName = 'jooble';
+        } else {
+          const { fetchReedData } = await import('../../utils/reed');
+          fallbackRaw = await fetchReedData(titleStr, locationStr, typeStr, contractStr);
+          providerName = 'reed';
+        }
         
         const fallbackData = {
-          mean: reedData.mean,
-          count: reedData.count,
-          results: reedData.results.slice(0, limit),
-          provider: 'reed'
+          mean: fallbackRaw.mean,
+          count: fallbackRaw.count,
+          results: fallbackRaw.results.slice(0, limit),
+          provider: providerName
         };
 
         const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24); // Cache Reed for 24h
+        expiresAt.setHours(expiresAt.getHours() + 24); // Cache Fallback for 24h
 
         await cacheRef.set(
           {
@@ -239,11 +260,11 @@ export default defineEventHandler(async (event) => {
           gov_id_code: existingGovIdCode,
           is_admin_verified: isAdminVerified
         };
-      } catch (reedErr) {
+      } catch (fallbackErr) {
         throw createError({
           statusCode: 503,
           statusMessage: 'Market data temporarily unavailable. Please try again later.',
-          data: reedErr
+          data: fallbackErr
         });
       }
     }

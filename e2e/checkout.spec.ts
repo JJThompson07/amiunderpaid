@@ -6,11 +6,12 @@ test.describe('Recruiter Flows', () => {
     await page.goto('/recruiter/login');
     
     // There should be a "Request Access" button
-    const requestAccessBtn = page.getByRole('button').filter({ hasText: /Request Access/i }).first();
+    const requestAccessBtn = page.getByRole('button', { name: 'Request Access', exact: true });
     
-    // Ensure the button is visible and click it
+    // Ensure the button is visible and wait for hydration
     await expect(requestAccessBtn).toBeVisible();
-    await requestAccessBtn.click();
+    await page.waitForTimeout(1000); // Vue hydration wait
+    await requestAccessBtn.click({ force: true });
     
     // The modal should appear
     const modalTitle = page.getByText(/Request Partner Access/i).first();
