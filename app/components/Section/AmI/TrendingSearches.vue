@@ -40,22 +40,34 @@
       </div>
     </div>
 
-    <!-- Macro Stats Bar -->
-    <div 
-      v-if="macroStats" 
-      class="mt-6 text-center flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-xs font-medium text-slate-500 bg-slate-50/50 py-2.5 rounded-xl max-w-fit mx-auto px-6 border border-slate-100"
-    >
-      <span>
-        National Average (All Roles): <strong class="text-slate-700">{{ formatSalary(macroStats.mean) }}</strong>
-      </span>
-      <span class="hidden md:inline text-slate-300">&bull;</span>
-      <span>
-        Bottom 10%: <strong class="text-slate-700">{{ formatSalary(macroStats.p10) }}</strong>
-      </span>
-      <span class="hidden md:inline text-slate-300">&bull;</span>
-      <span>
-        Top 10%: <strong class="text-slate-700">{{ formatSalary(macroStats.p90) }}</strong>
-      </span>
+    <!-- Macro Stats -->
+    <div v-if="macroStats" class="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto px-4">
+      <!-- Bottom 10% -->
+      <div class="relative bg-white/60 backdrop-blur-xl border border-slate-200/60 rounded-2xl p-5 text-center shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:bg-white transition-all duration-300 group overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="relative z-10">
+          <div class="text-[0.65rem] font-bold tracking-widest text-slate-400 uppercase mb-1.5">Bottom 10%</div>
+          <div class="text-2xl font-black text-slate-800 tracking-tight">{{ formatSalary(macroStats.p10) }}</div>
+        </div>
+      </div>
+
+      <!-- Mean -->
+      <div class="relative bg-white/80 backdrop-blur-xl border border-primary-200/60 rounded-2xl p-5 text-center shadow-md hover:shadow-xl hover:-translate-y-0.5 hover:bg-white transition-all duration-300 group overflow-hidden sm:scale-105 z-10 ring-1 ring-primary-100">
+        <div class="absolute inset-0 bg-gradient-to-br from-primary-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="relative z-10">
+          <div class="text-[0.65rem] font-bold tracking-widest text-primary-500 uppercase mb-1.5">National Average</div>
+          <div class="text-2xl font-black text-primary-950 tracking-tight">{{ formatSalary(macroStats.mean) }}</div>
+        </div>
+      </div>
+
+      <!-- Top 10% -->
+      <div class="relative bg-white/60 backdrop-blur-xl border border-slate-200/60 rounded-2xl p-5 text-center shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:bg-white transition-all duration-300 group overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="relative z-10">
+          <div class="text-[0.65rem] font-bold tracking-widest text-slate-400 uppercase mb-1.5">Top 10%</div>
+          <div class="text-2xl font-black text-slate-800 tracking-tight">{{ formatSalary(macroStats.p90) }}</div>
+        </div>
+      </div>
     </div>
   </section>
 </template>
