@@ -32,21 +32,21 @@
   "trending": {
     "heading": "Popular US Salaries",
     "roles": [
-      { "title": "Software Engineer", "salary": 110000 },
-      { "title": "Marketing Manager", "salary": 85000 },
-      { "title": "Data Analyst", "salary": 75000 },
-      { "title": "Project Manager", "salary": 95000 },
-      { "title": "Accountant", "salary": 70000 },
-      { "title": "Graphic Designer", "salary": 55000 },
-      { "title": "Nurse", "salary": 80000 },
+      { "title": "Software Engineer", "salary": 132000 },
+      { "title": "Marketing Manager", "salary": 140000 },
+      { "title": "Data Analyst", "salary": 95000 },
+      { "title": "Project Manager", "salary": 100000 },
+      { "title": "Accountant", "salary": 78000 },
+      { "title": "Graphic Designer", "salary": 60000 },
+      { "title": "Nurse", "salary": 86000 },
       { "title": "Teacher", "salary": 65000 },
-      { "title": "Financial Analyst", "salary": 90000 },
-      { "title": "Sales Manager", "salary": 100000 }
+      { "title": "Financial Analyst", "salary": 99000 },
+      { "title": "Sales Manager", "salary": 135000 }
     ],
     "macro_stats": {
-      "mean": 59000,
+      "mean": 67920,
       "p10": 30000,
-      "p90": 120000
+      "p90": 114860
     }
   }
 }
