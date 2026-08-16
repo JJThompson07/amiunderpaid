@@ -37,7 +37,7 @@ describe('UI Formatter: formatOrdinal', () => {
       }
     };
     expect(formatOrdinal(1)).toBe('1th');
-    Intl.PluralRules = originalPluralRules;
+    (Intl as any).PluralRules = originalPluralRules;
   });
 });
 

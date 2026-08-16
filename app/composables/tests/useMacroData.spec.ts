@@ -163,8 +163,8 @@ describe('useMacroData', () => {
     expect(result.userRegionalData?.p50).toBe(42000);
     
     expect(result.allRegionalData['north']).toBeDefined();
-    expect(result.allRegionalData['north'].mean).toBe(0);
-    expect(result.allRegionalData['north'].p50).toBe(0);
+    expect(result.allRegionalData['north']!.mean).toBe(0);
+    expect(result.allRegionalData['north']!.p50).toBe(0);
   });
 
   it('handles missing userLocation or unmatched location', async () => {

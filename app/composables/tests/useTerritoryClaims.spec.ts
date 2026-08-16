@@ -61,7 +61,7 @@ describe('useTerritoryClaims', () => {
     expect(claimsLimitExceeded.value).toBe(true);
     
     // We can evaluate the computed by checking what useCollection was called with
-    const useCollectionMock = vi.mocked(globalThis.useCollection as any);
+    const useCollectionMock = vi.mocked((globalThis as any).useCollection);
     const claimsQueryComputed = useCollectionMock.mock.calls[0][0];
     const queryResult = claimsQueryComputed.value;
     
@@ -81,7 +81,7 @@ describe('useTerritoryClaims', () => {
     
     expect(claimsLimitExceeded.value).toBe(false);
     
-    const useCollectionMock = vi.mocked(globalThis.useCollection as any);
+    const useCollectionMock = vi.mocked((globalThis as any).useCollection);
     const claimsQueryComputed = useCollectionMock.mock.calls[0][0];
     
     expect(claimsQueryComputed.value).toBe(null);

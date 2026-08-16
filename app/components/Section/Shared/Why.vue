@@ -1,28 +1,28 @@
 <template>
-  <section class="max-w-4xl mx-auto mt-20 px-4 pb-20 border-t border-slate-200 pt-16 select-none">
-    <div class="grid md:grid-cols-2 gap-12 text-slate-600">
-      <div>
-        <h3 class="text-xl font-bold text-secondary-900 mb-4">Why check your market rate?</h3>
+  <section class="max-w-5xl mx-auto mt-24 px-4 pb-20 select-none">
+    <div class="grid md:grid-cols-2 gap-8 text-slate-600">
+      <div class="bg-white/50 backdrop-blur-xl border border-slate-200/60 p-8 md:p-10 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+        <h3 class="text-2xl font-black tracking-tight text-secondary-950 mb-4">Why check your market rate?</h3>
         <i18n-t
           keypath="landing.why.body"
           tag="p"
-          class="leading-relaxed"
+          class="leading-relaxed text-slate-600"
           :values="{ year: new Date().getFullYear() }">
           <template #benchmarks>
-            <strong>{{ $t('landing.why.benchmarks_bold') }}</strong>
+            <strong class="text-secondary-900">{{ $t('landing.why.benchmarks_bold') }}</strong>
           </template>
         </i18n-t>
       </div>
-      <div>
-        <h3 class="text-xl font-bold text-secondary-900 mb-4">
+      <div class="bg-white/50 backdrop-blur-xl border border-slate-200/60 p-8 md:p-10 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+        <h3 class="text-2xl font-black tracking-tight text-secondary-950 mb-4">
           {{ $t('landing.data.heading') }}
         </h3>
-        <i18n-t keypath="landing.data.body" tag="p" class="leading-relaxed">
+        <i18n-t keypath="landing.data.body" tag="p" class="leading-relaxed text-slate-600">
           <template #comparison>
-            <strong>{{ $t('landing.data.comparison_bold') }}</strong>
+            <strong class="text-secondary-900">{{ $t('landing.data.comparison_bold') }}</strong>
           </template>
           <template #bureau>
-            <strong>{{
+            <strong class="text-secondary-900">{{
               isUSA ? $t('landing.data.bureau.usa') : $t('landing.data.bureau.uk')
             }}</strong>
           </template>

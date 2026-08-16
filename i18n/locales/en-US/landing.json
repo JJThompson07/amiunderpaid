@@ -1,6 +1,6 @@
 {
   "heading": "Am I Underpaid?",
-  "subheading": "Discover your Market Compensation Alignment (MCA) Score.",
+  "subheading": "Discover your Market Compensation Alignment (MCA) Score. The definitive US Salary Checker & Market Pay Calculator.",
   "subheading-context": "Stop guessing. We combine official Bureau of Labor Statistics (BLS) benchmarks with over 7,000,000 live job listings to calculate your definitive MCA Score in seconds.",
   "privacy-note": "Your privacy matters. The information provided above is used solely to generate your results.",
   "why": {
@@ -20,11 +20,32 @@
   "sources": {
     "ons": "ONS Data",
     "adzuna": "Adzuna API",
+    "reed": "Reed API",
     "bls": "BLS Data"
   },
   "benchmark": {
     "heading": "Benchmark My Role",
     "subheading": "Looking to hire? Ensure your offer stands out.",
     "subheading-context": "BenchmarkMyRole compares your open roles against live market vacancies and official BLS benchmarks. Generate an MCA Score for your job descriptions to ensure you are offering a highly competitive package to top US talent."
+  },
+  "trending": {
+    "heading": "Popular US Salaries",
+    "roles": [
+      { "title": "Software Engineer", "salary": 110000 },
+      { "title": "Marketing Manager", "salary": 85000 },
+      { "title": "Data Analyst", "salary": 75000 },
+      { "title": "Project Manager", "salary": 95000 },
+      { "title": "Accountant", "salary": 70000 },
+      { "title": "Graphic Designer", "salary": 55000 },
+      { "title": "Nurse", "salary": 80000 },
+      { "title": "Teacher", "salary": 65000 },
+      { "title": "Financial Analyst", "salary": 90000 },
+      { "title": "Sales Manager", "salary": 100000 }
+    ],
+    "macro_stats": {
+      "mean": 59000,
+      "p10": 30000,
+      "p90": 120000
+    }
   }
 }

@@ -97,7 +97,7 @@ export const processReedData = (response: ReedJobResponse, jobType: string, cont
       contract_time: jobType,
       contract_type: contractType,
       redirect_url: job.jobUrl,
-      provider: 'reed'
+      provider: 'reed' as const
     };
 
     // Calculate stats
@@ -121,6 +121,6 @@ export const processReedData = (response: ReedJobResponse, jobType: string, cont
     count: response.totalResults,
     histogram,
     results: mappedJobs,
-    provider: 'reed'
+    provider: 'reed' as const
   };
 };

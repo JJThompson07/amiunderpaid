@@ -1,6 +1,6 @@
 {
   "heading": "Am I Underpaid?",
-  "subheading": "Discover your Market Compensation Alignment (MCA) Score.",
+  "subheading": "Discover your Market Compensation Alignment (MCA) Score. The definitive UK Salary Checker & Market Pay Calculator.",
   "subheading-context": "Stop guessing. We combine official ONS benchmarks with over 700,000 live UK job listings to calculate your definitive MCA Score in seconds.",
   "privacy-note": "Your privacy matters. The information provided above is used solely to generate your results.",
   "why": {
@@ -20,11 +20,32 @@
   "sources": {
     "ons": "ONS Data",
     "adzuna": "Adzuna API",
+    "reed": "Reed API",
     "bls": "BLS Data"
   },
   "benchmark": {
     "heading": "Benchmark My Role",
     "subheading": "Looking to hire? Ensure your offer stands out.",
     "subheading-context": "BenchmarkMyRole compares your open roles against live market vacancies and official ONS benchmarks. Generate an MCA Score for your job descriptions to ensure you are offering a highly competitive package to top talent."
+  },
+  "trending": {
+    "heading": "Popular UK Salaries",
+    "roles": [
+      { "title": "Software Engineer", "salary": 55000 },
+      { "title": "Marketing Manager", "salary": 45000 },
+      { "title": "Data Analyst", "salary": 40000 },
+      { "title": "Project Manager", "salary": 50000 },
+      { "title": "Accountant", "salary": 42000 },
+      { "title": "Graphic Designer", "salary": 30000 },
+      { "title": "Nurse", "salary": 35000 },
+      { "title": "Teacher", "salary": 38000 },
+      { "title": "Financial Analyst", "salary": 48000 },
+      { "title": "Sales Manager", "salary": 46000 }
+    ],
+    "macro_stats": {
+      "mean": 35000,
+      "p10": 22000,
+      "p90": 65000
+    }
   }
 }

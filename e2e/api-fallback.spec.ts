@@ -26,13 +26,25 @@ test.describe('API Fallback (Reed)', () => {
             location: { display_name: 'London', area: ['London'] },
             salary_min: 40000,
             salary_max: 60000,
+            contract_time: 'full_time',
+            contract_type: 'permanent',
             provider: 'reed'
           }]
         }
       });
     });
 
-    // Mock match-title to return an exact match, bypassing the ambiguity modal
+    // Mock macro/micro baselines to prevent Firebase Admin 500 errors during client-side navigation in CI
+    await page.route('**/api/engine/macro-baselines**', async (route) => {
+      await route.fulfill({ status: 200, json: {} });
+    });
+    
+    await page.route('**/api/engine/micro-baselines**', async (route) => {
+      await route.fulfill({ status: 200, json: {} });
+    });
+    await page.route('**/api/user/log-search**', async (route) => {
+      await route.fulfill({ status: 200, json: { id: 'mocked-id' } });
+    });
     await page.route('**/api/engine/match-title**', async (route) => {
       await route.fulfill({
         status: 200,
@@ -42,9 +54,31 @@ test.describe('API Fallback (Reed)', () => {
       });
     });
 
-    // 2. Navigate directly to a search result page to bypass UI flakiness of autocomplete
-    // and verify that the results page successfully queries our mocked fallback APIs.
-    await page.goto('/salary/software-engineer/gb');
+    // 2. Perform a client-side navigation to bypass SSR.
+    // SSR will throw a 500 error in CI since the API keys are not set.
+    await page.goto('/');
+    
+    // Wait for Nuxt to mount
+    await expect(page.locator('h1').first()).toContainText('Am I Underpaid');
+    
+    // Use the exposed Vue Router to navigate client-side
+    await page.evaluate(() => {
+      const nuxtRoot = document.querySelector('#__nuxt');
+      // @ts-ignore
+      const router = nuxtRoot?.__vue_app__?.config?.globalProperties?.$router;
+      if (router) {
+        router.push('/salary/software-engineer/gb');
+      } else {
+        // Fallback: click the search button programmatically from the DOM if router isn't found
+        const input = document.querySelector('.ami-autocomplete-input input') as HTMLInputElement;
+        if (input) {
+          input.value = 'Software Engineer';
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Check salary'));
+          btn?.click();
+        }
+      }
+    });
 
     // 3. Wait for the results to load (checking for job titles or the histogram)
     // The main heading contains the job title

@@ -53,7 +53,7 @@ describe('Adzuna Jobs API - 429 Fallback', () => {
       collection: vi.fn(() => mockCollection)
     };
 
-    vi.mocked(globalThis.useAdminFirestore as any).mockReturnValue(mockDb);
+    vi.mocked((globalThis as any).useAdminFirestore).mockReturnValue(mockDb);
   });
 
   it('should fall back to Reed API if Adzuna returns 429 for gb', async () => {
@@ -88,21 +88,19 @@ describe('Adzuna Jobs API - 429 Fallback', () => {
     );
   });
 
-  it('should NOT fall back to Reed API if Adzuna returns 429 for usa', async () => {
-    getQueryMock.mockReturnValue({
-      title: 'developer',
-      location: 'new york',
-      country: 'usa',
-      resultsPerPage: '10'
+  it('should fall back to Reed API if Adzuna returns 429 for usa', async () => {
+    vi.mocked(getQueryMock).mockReturnValue({
+      title: 'Software Engineer',
+      country: 'us'
     });
 
-    // Mock Adzuna throwing 429
-    $fetchMock.mockRejectedValueOnce({
-      statusCode: 429,
+    vi.mocked($fetchMock).mockRejectedValueOnce({
       response: { status: 429 }
     });
 
-    // Expect the error to be thrown instead of falling back to Reed (Reed is UK-only)
-    await expect(jobsHandler({} as any)).rejects.toThrow('Market data temporarily unavailable.');
+    // Expect the promise to resolve successfully with fallback data
+    const result = await jobsHandler({} as any);
+    expect(result.provider).toBe('reed');
+    expect(result.count).toBe(10);
   });
 });

@@ -1,31 +1,8 @@
 <template>
   <div class="relative w-full max-w-5xl mx-auto mt-8">
-    <div class="flex justify-between items-center gap-4 mb-6">
-      <div class="flex-1" />
-      <a
-        :href="alternateSiteUrl"
-        target="_self"
-        class="relative cursor-pointer decoration-0 px-4 py-2 flex flex-row gap-1 items-center text-xs bg-primary-500 text-white hover:bg-primary-400 rounded-lg overflow-hidden transition-all duration-700 ease-in-out font-bold">
-        {{ $t('search.ami.switch-site') }}
-        <ArrowRightIcon class="w-4 h-4" />
-      </a>
-      <div class="flex flex-1 justify-end">
-        <AmIButton
-v-if="!showCalc"
-title="Salary converter"
-@click="showCalc = true"
-          ><CalculatorIcon class="w-5 h-5 text-slate-50"
-        /></AmIButton>
 
-        <LazyModalSalaryConverter
-          v-if="showCalc"
-          :country="currentCountry"
-          :currency-symbol="currencySymbol"
-          @close="showCalc = false" />
-      </div>
-    </div>
 
-    <div class="p-3 bg-white shadow-2xl rounded-3xl ring-1 ring-slate-900/5">
+    <div class="p-3 bg-white/90 backdrop-blur-2xl shadow-2xl rounded-3xl ring-1 ring-slate-900/5 border border-white/60">
       <form class="flex flex-col gap-3" @submit.prevent="handleSearch">
         <div class="flex-1">
           <AmIInputAutocomplete
@@ -108,6 +85,28 @@ title="Salary converter"
       </form>
     </div>
 
+    <div class="flex justify-between items-center px-4 py-3 mt-1">
+      <a
+        :href="alternateSiteUrl"
+        class="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors flex items-center gap-1 group">
+        {{ $t('search.ami.switch-site') }}
+        <ArrowRightIcon class="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+      </a>
+      
+      <button
+        type="button"
+        class="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors flex items-center gap-1.5"
+        @click="showCalc = true">
+        <CalculatorIcon class="w-4 h-4" />
+        Salary Converter
+      </button>
+
+      <LazyModalSalaryConverter
+        v-if="showCalc"
+        :country="currentCountry"
+        :currency-symbol="currencySymbol"
+        @close="showCalc = false" />
+    </div>
     <LazyModalAmbiguity
       v-if="showAmbiguityModal"
       :search-term="cleanSearchTitle"

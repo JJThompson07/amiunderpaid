@@ -4,11 +4,10 @@
     <main class="relative z-10 px-4 pt-20 pb-20">
       <SectionAmIHero />
 
-      <!-- The Calculator Component -->
-      <div class="flex justify-center max-w-4xl mx-auto w-full">
-        <AmIDevProviderToggle v-if="isDev" />
-      </div>
+      <!-- Dev Tools (Floating) -->
+      <AmIDevProviderToggle v-if="isDev" />
       <SectionAmISalarySearch />
+      <SectionAmITrendingSearches />
 
       <!-- Privacy Note section -->
       <SectionSharedPrivacyNote />

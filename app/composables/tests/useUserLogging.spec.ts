@@ -30,7 +30,7 @@ describe('useUserLogging', () => {
       // Since we can't reliably mock import.meta across modules in Vitest without specific plugins,
       // we check if fetch was called to determine the environment and then assert on its arguments.
       if (mockFetch.mock.calls.length > 0) {
-        const [url, options] = mockFetch.mock.calls[0];
+        const [url, options] = mockFetch.mock.calls[0]!;
         expect(url).toBe('/api/user/track-search');
         expect(options.method).toBe('POST');
         expect(options.keepalive).toBe(true);
@@ -53,7 +53,7 @@ describe('useUserLogging', () => {
       logSearch('Title', 'Country', 'Location', 'Salary');
       
       if (mockFetch.mock.calls.length > 0) {
-        const [, options] = mockFetch.mock.calls[0];
+        const [, options] = mockFetch.mock.calls[0]!;
         const body = JSON.parse(options.body);
         expect(body.schedule).toBe('full-time');
         expect(body.contract).toBe('permanent');
@@ -79,7 +79,7 @@ describe('useUserLogging', () => {
       
       if (mockFetch.mock.calls.length > 0) {
         expect(mockFetch).toHaveBeenCalledTimes(1);
-        const [url, options] = mockFetch.mock.calls[0];
+        const [url, options] = mockFetch.mock.calls[0]!;
         expect(url).toBe('/api/user/update-search');
         expect(options.method).toBe('POST');
         expect(options.keepalive).toBe(true);

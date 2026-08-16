@@ -44,6 +44,7 @@ export interface JobSearchResponse {
   count: number;
   results: JobListing[];
   provider: MarketDataProvider;
+  histogram?: Record<number, number>;
 }
 
 /** Response shape for the /api/market-data/salary endpoint. */

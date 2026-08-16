@@ -83,7 +83,7 @@ describe('useScheduleMath', () => {
   it('generates upcoming months correctly', () => {
     const { upcomingMonths } = useScheduleMath(props, emitMock);
     expect(upcomingMonths.value.length).toBe(7);
-    expect(upcomingMonths.value[0].value).toMatch(/^\d{4}-\d{2}$/);
+    expect(upcomingMonths.value[0]!.value).toMatch(/^\d{4}-\d{2}$/);
   });
 
   it('toggles basic subscription and emits update', () => {
@@ -229,7 +229,7 @@ describe('useScheduleMath', () => {
     
     // Toggle exclusive month (which adds it to selectedMonths but not lockedMonths)
     // We must select the first month (index 0) so that calcPayNow registers the upfront cost
-    const firstMonth = upcomingMonths.value[0].value;
+    const firstMonth = upcomingMonths.value[0]!.value;
     toggleMonth(rowId, firstMonth);
     expect(payNowTotal.value).toBeGreaterThan(0);
   });
