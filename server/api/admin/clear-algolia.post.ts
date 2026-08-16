@@ -3,6 +3,7 @@ import algoliasearch from 'algoliasearch';
 
 export default defineEventHandler(async (event) => {
   await verifyAdmin(event);
+  const config = useRuntimeConfig();
   const body = await readBody(event);
   const { indexName, filters } = body;
 
