@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { generateCacheKey } from '../adzuna';
-import { sanitizeAdzunaData } from '../../../shared/utils/sanitize';
+import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 
 describe('adzuna utils', () => {
   describe('sanitizeAdzunaData', () => {

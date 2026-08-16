@@ -1,5 +1,5 @@
 import { REED_LOCATION_MAP } from '../constants/locations';
-import type { JobSearchResponse } from '../../shared/utils/market-data';
+import type { JobSearchResponse } from '~~/shared/utils/market-data';
 
 export interface ReedJobResponse {
   results: Array<{

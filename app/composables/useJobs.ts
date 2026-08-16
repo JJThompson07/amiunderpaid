@@ -1,15 +1,15 @@
-import { sanitizeAdzunaData } from '../../shared/utils/sanitize';
+import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 import type {
   JobCategoryEntry,
   JobSearchResponse,
   MarketDataProvider,
   SalaryDistributionResponse
-} from '../../shared/utils/market-data';
+} from '~~/shared/utils/market-data';
 
 export type HistogramData = Record<number, number>;
 
 // Re-export so consumers don't need two import paths
-export type { JobCategoryEntry, JobListing, JobSearchResponse, MarketDataProvider, SalaryDistributionResponse } from '../../shared/utils/market-data';
+export type { JobCategoryEntry, JobListing, JobSearchResponse, MarketDataProvider, SalaryDistributionResponse } from '~~/shared/utils/market-data';
 
 /**
  * useJobs Composable

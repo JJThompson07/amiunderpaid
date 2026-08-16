@@ -1,6 +1,6 @@
 // Re-export from the shared utility layer so both client and server use the
 // same implementation. The canonical source of truth is shared/utils/sanitize.ts.
-export { sanitizeAdzunaData } from '../../shared/utils/sanitize';
+export { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 
 export const generateCacheKey = (title: string, location: string, country: string) => {
   // Allow alphanumeric, plus +, #, . (for C++, C#, .NET)
