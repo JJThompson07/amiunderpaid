@@ -35,15 +35,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Settings, X } from 'lucide-vue-next';
 
 const isOpen = ref(false);
 const override = useDevProviderOverride();
+const { currentCountry } = useRegion();
 
-const options = [
-  { label: 'Auto', value: 'auto' },
-  { label: 'Adzuna', value: 'adzuna' },
-  { label: 'Reed', value: 'reed' }
-];
+const options = computed(() => {
+  const base = [
+    { label: 'Auto', value: 'auto' },
+    { label: 'Adzuna', value: 'adzuna' }
+  ];
+  if (currentCountry.value === 'UK') {
+    base.push({ label: 'Reed', value: 'reed' });
+  }
+  return base;
+});
 </script>
