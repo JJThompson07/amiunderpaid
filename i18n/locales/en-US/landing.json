@@ -20,6 +20,7 @@
   "sources": {
     "ons": "ONS Data",
     "adzuna": "Adzuna API",
+    "reed": "Reed API",
     "bls": "BLS Data"
   },
   "benchmark": {
