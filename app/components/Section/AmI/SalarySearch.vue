@@ -2,7 +2,7 @@
   <div class="relative w-full max-w-5xl mx-auto mt-8">
 
 
-    <div class="p-3 bg-white shadow-2xl rounded-3xl ring-1 ring-slate-900/5">
+    <div class="p-4 bg-white/80 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-[2.5rem] border border-white/60 ring-1 ring-slate-900/5">
       <form class="flex flex-col gap-3" @submit.prevent="handleSearch">
         <div class="flex-1">
           <AmIInputAutocomplete
