@@ -8,7 +8,7 @@
     <div class="relative flex w-full group">
       <!-- Duplicate content to ensure infinite scroll -->
       <div 
-        class="flex animate-marquee gap-4 whitespace-nowrap min-w-full px-2 group-hover:[animation-play-state:paused]"
+        class="flex shrink-0 items-center justify-around animate-marquee gap-4 whitespace-nowrap min-w-full px-2 group-hover:[animation-play-state:paused]"
       >
         <NuxtLink
           v-for="item in trendingRoles"
@@ -23,7 +23,7 @@
       </div>
 
       <div 
-        class="flex animate-marquee gap-4 whitespace-nowrap min-w-full px-2 group-hover:[animation-play-state:paused]"
+        class="flex shrink-0 items-center justify-around animate-marquee gap-4 whitespace-nowrap min-w-full px-2 group-hover:[animation-play-state:paused]"
         aria-hidden="true"
       >
         <NuxtLink
