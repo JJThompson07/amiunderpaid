@@ -1,7 +1,7 @@
 <template>
   <div
     :key="route.fullPath"
-    class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6 max-w-7xl mx-auto overflow-x-hidden">
+    class="min-h-screen pt-16 pb-8 bg-slate-50 flex flex-col relative gap-6 max-w-7xl mx-auto">
     <SectionSharedBackdrop />
 
     <AmILocationBreadcrumbs
