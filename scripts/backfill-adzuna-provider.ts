@@ -7,12 +7,16 @@ import { resolve } from 'path';
 dotenv.config({ path: resolve(process.cwd(), '.env') });
 
 // Initialize Firebase Admin
-if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-  console.error('FIREBASE_SERVICE_ACCOUNT environment variable is not set.');
+let serviceAccount;
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+} else if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+  const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8');
+  serviceAccount = JSON.parse(decoded);
+} else {
+  console.error('FIREBASE_SERVICE_ACCOUNT or FIREBASE_SERVICE_ACCOUNT_BASE64 environment variable is not set.');
   process.exit(1);
 }
-
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 initializeApp({
   credential: cert(serviceAccount)
 });
