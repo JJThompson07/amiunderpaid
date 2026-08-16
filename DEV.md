@@ -37,6 +37,13 @@ Welcome to the **Am I Underpaid?** and **Benchmark My Role** developer documenta
     # Algolia Config
     ALGOLIA_APPLICATION_ID=your_algolia_app_id
     ALGOLIA_SEARCH_API_KEY=your_algolia_search_key
+    ALGOLIA_ADMIN_KEY=your_algolia_admin_key
+
+    # Market Data Provider Keys
+    ADZUNA_APP_ID=your_adzuna_app_id
+    ADZUNA_APP_KEY=your_adzuna_app_key
+    REED_API_KEY=your_reed_api_key
+    JOOBLE_API_KEY=your_jooble_api_key
     ```
     _(Additional external provider keys are required. See `nuxt.config.ts` for a full list of required `runtimeConfig` variables.)_
 
