@@ -137,3 +137,10 @@ Features that exist only for local development **MUST** be gated behind both:
 - `import.meta.dev` on the client side (Vue components / composables)
 
 This guarantees zero surface area in production builds.
+
+## 10. TypeScript Strictness & Build Integrity
+
+- **No `any` Types:** Avoid using `any` type casting or implicit `any` variables whenever possible. Explicitly define interfaces or use generic types (e.g. `Array<{ title: string }>` or `Record<string, unknown>`).
+- **Strict Null Checks:** Always handle potential `null` or `undefined` values. Use non-null assertions (`!`) only when you are absolutely certain the value exists, otherwise use optional chaining (`?.`) or fallback values (`||`).
+- **No Typecheck Errors:** All TypeScript errors MUST be resolved before a PR can be merged. The build pipeline (`pnpm nuxi typecheck`) must exit with 0 errors (ignoring internal framework warnings like `vue-router/volar`).
+- **Zero Broken Builds:** You must run `nuxi typecheck` to verify that there are no regressions or type-related compilation breaks after making significant refactors.

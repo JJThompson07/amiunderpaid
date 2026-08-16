@@ -81,14 +81,17 @@ import { slugify } from '~/helpers/utility';
 const { tm } = useI18n();
 const { currentCountry } = useRegion();
 
-const trendingRoles = computed(() => {
-  const roles = tm('landing.trending.roles');
+interface TrendingRole { title: string; salary: number; }
+interface MacroStats { mean: number; p10: number; p90: number; }
+
+const trendingRoles = computed<TrendingRole[]>(() => {
+  const roles: any = tm('landing.trending.roles');
   return Array.isArray(roles) ? roles : [];
 });
 
-const macroStats = computed(() => {
-  const stats = tm('landing.trending.macro_stats');
-  return stats ? (stats as { mean: number; p10: number; p90: number }) : null;
+const macroStats = computed<MacroStats | null>(() => {
+  const stats: any = tm('landing.trending.macro_stats');
+  return stats || null;
 });
 
 const getRoleUrl = (role: string) => {

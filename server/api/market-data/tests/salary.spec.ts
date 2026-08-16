@@ -51,7 +51,7 @@ describe('Adzuna Salary API - 429 Fallback', () => {
       collection: vi.fn(() => mockCollection)
     };
 
-    vi.mocked(globalThis.useAdminFirestore as any).mockReturnValue(mockDb);
+    vi.mocked((globalThis as any).useAdminFirestore).mockReturnValue(mockDb);
   });
 
   it('should fall back to Reed API if Adzuna returns 429 for gb', async () => {

@@ -10,7 +10,7 @@ vi.stubGlobal('useAdminFetch', () => mockAdminFetch);
 vi.stubGlobal('ref', (val: any) => ({ value: val }));
 
 describe('useAdminClient', () => {
-  let logMock: ReturnType<typeof vi.fn>;
+  let logMock: any;
 
   beforeEach(() => {
     vi.clearAllMocks();

@@ -155,7 +155,7 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
   const isAdminVerified = computed<boolean>(() =>
     Boolean(userSelected.value || govId.value || !!adzuna.cachedGovIdCode.value)
   );
-  const adzunaCategory = computed<string>(
+  const adzunaCategory = computed<string | undefined>(
     () => adzuna.jobsData.value?.results?.[0]?.category?.label
   );
 

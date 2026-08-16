@@ -37,7 +37,7 @@ describe('useAdminAuth', () => {
   });
 
   it('fails to login when auth service is not ready', async () => {
-    mockUseFirebaseAuth.mockReturnValueOnce(null);
+    mockUseFirebaseAuth.mockReturnValueOnce(null as any);
     const { login, error } = useAdminAuth();
     const result = await login('email', 'password', 'valid-key');
     expect(result).toBe(false);

@@ -109,6 +109,7 @@ describe('useCarousel', () => {
   it('triggers lifecycle hooks and updates itemCount', async () => {
     vi.useFakeTimers();
     const TestComponent = defineComponent({
+      props: ['testProp'],
       template: '<div ref="trackRef"><div>c1</div><div>c2</div></div>',
       setup() {
         const { trackRef } = useCarousel();

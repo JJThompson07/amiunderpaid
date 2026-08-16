@@ -55,7 +55,7 @@ describe('useRecruiterCards', () => {
     location.value = 'National';
     const { recruiterCards } = await useRecruiterCards(location, matchedLocation, adzunaCategory);
     expect(recruiterCards.value).toEqual([]);
-    expect(globalThis.$fetch).not.toHaveBeenCalled();
+    expect((globalThis as any).$fetch).not.toHaveBeenCalled();
   });
 
   it('returns empty cards if adzunaCategory is null', async () => {
@@ -63,7 +63,7 @@ describe('useRecruiterCards', () => {
     adzunaCategory.value = null;
     const { recruiterCards } = await useRecruiterCards(location, matchedLocation, adzunaCategory);
     expect(recruiterCards.value).toEqual([]);
-    expect(globalThis.$fetch).not.toHaveBeenCalled();
+    expect((globalThis as any).$fetch).not.toHaveBeenCalled();
   });
 
   it('fetches cards when territoryId and adzunaCategory are present', async () => {
@@ -71,7 +71,7 @@ describe('useRecruiterCards', () => {
     adzunaCategory.value = 'IT';
     const { recruiterCards } = await useRecruiterCards(location, matchedLocation, adzunaCategory, 'custom-prefix');
 
-    expect(globalThis.$fetch).toHaveBeenCalledWith('/api/user/search/recruiter-card', {
+    expect((globalThis as any).$fetch).toHaveBeenCalledWith('/api/user/search/recruiter-card', {
       query: { territoryId: 1, category: 'IT' }
     });
     expect(recruiterCards.value).toEqual([{ id: '123' }]);

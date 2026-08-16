@@ -44,7 +44,7 @@ describe('useUserProfile', () => {
     const { userProfile, loadingProfile } = useUserProfile();
     
     // Check that useDocument was called
-    const useDocumentMock = vi.mocked(globalThis.useDocument as any);
+    const useDocumentMock = vi.mocked((globalThis as any).useDocument);
     expect(useDocumentMock).toHaveBeenCalledTimes(1);
     
     // Evaluate the computed userDocRef
@@ -60,7 +60,7 @@ describe('useUserProfile', () => {
     mockUser.value = null;
     useUserProfile();
     
-    const useDocumentMock = vi.mocked(globalThis.useDocument as any);
+    const useDocumentMock = vi.mocked((globalThis as any).useDocument);
     const userDocRefComputed = useDocumentMock.mock.calls[0][0];
     expect(userDocRefComputed.value).toBe(null);
   });

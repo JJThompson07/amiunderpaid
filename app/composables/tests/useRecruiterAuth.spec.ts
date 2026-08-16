@@ -72,7 +72,7 @@ describe('useRecruiterAuth', () => {
       
       expect(signOut).toHaveBeenCalledWith(mockAuth);
       expect(mockCookie.value).toBeNull();
-      expect(globalThis.navigateTo).toHaveBeenCalledWith('/recruiter/login');
+      expect((globalThis as any).navigateTo).toHaveBeenCalledWith('/recruiter/login');
     });
   });
 
@@ -139,7 +139,7 @@ describe('useRecruiterAuth', () => {
     });
 
     it('returns false if no auth or no current user', async () => {
-      const oldAuth = vi.mocked(globalThis.useFirebaseAuth)();
+      const oldAuth = vi.mocked((globalThis as any).useFirebaseAuth)();
       vi.stubGlobal('useFirebaseAuth', () => null);
       
       const { resendVerificationEmail } = useRecruiterAuth();
@@ -157,7 +157,7 @@ describe('useRecruiterAuth', () => {
 
   describe('Additional Error Branches', () => {
     it('handles login without auth', async () => {
-      const oldAuth = vi.mocked(globalThis.useFirebaseAuth)();
+      const oldAuth = vi.mocked((globalThis as any).useFirebaseAuth)();
       vi.stubGlobal('useFirebaseAuth', () => null);
       
       const { login, error } = useRecruiterAuth();
@@ -188,7 +188,7 @@ describe('useRecruiterAuth', () => {
     });
 
     it('handles resetPassword without auth', async () => {
-      const oldAuth = vi.mocked(globalThis.useFirebaseAuth)();
+      const oldAuth = vi.mocked((globalThis as any).useFirebaseAuth)();
       vi.stubGlobal('useFirebaseAuth', () => null);
       
       const { resetPassword, error } = useRecruiterAuth();

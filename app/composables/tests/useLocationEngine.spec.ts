@@ -71,7 +71,8 @@ const watchCallbacks: any[] = [];
 vi.stubGlobal('watch', (source: any, cb: any) => {
   watchCallbacks.push(cb);
 });
-vi.stubGlobal('navigateTo', vi.fn());
+const mockNavigateTo = vi.fn();
+vi.stubGlobal('navigateTo', mockNavigateTo);
 vi.stubGlobal('$fetch', vi.fn());
 
 describe('useLocationEngine', () => {
@@ -231,7 +232,7 @@ describe('useLocationEngine', () => {
     watchCallbacks.forEach(cb => cb(50000));
     
     // expect navigateTo to have been called
-    expect(globalThis.navigateTo).toHaveBeenCalled();
+    expect(mockNavigateTo).toHaveBeenCalled();
   });
 
   it('watches marketData.resolving to trigger dynamic redirect', async () => {
@@ -269,6 +270,6 @@ describe('useLocationEngine', () => {
   it('sorts jobListings by salary_max descending', async () => {
     mockAdzuna.jobsData.value = { results: [{ salary_max: 100 }, { salary_max: 200 }] };
     const engine = await useLocationEngine('salary');
-    expect(engine.jobListings.value[0].salary_max).toBe(200);
+    expect(engine.jobListings.value[0]?.salary_max).toBe(200);
   });
 });
