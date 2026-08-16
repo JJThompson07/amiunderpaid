@@ -50,20 +50,24 @@ compact
       </div>
       <div class="flex flex-row flex-wrap gap-1">
         <AmIChip
-          bg-colour="bg-primary-100"
+          bg-colour="bg-slate-100"
+          text-colour="text-slate-600"
           text-size="text-2xs"
           font="font-base"
           compact
+          class="capitalize"
           :icon="FilePenLine"
-          >{{ contract }}</AmIChip
+          >{{ contract.replace(/_/g, ' ').toLowerCase() }}</AmIChip
         >
         <AmIChip
-          bg-colour="bg-primary-100"
+          bg-colour="bg-slate-100"
+          text-colour="text-slate-600"
           text-size="text-2xs"
           font="font-base"
           compact
+          class="capitalize"
           :icon="CalendarRange"
-          >{{ schedule }}</AmIChip
+          >{{ schedule.replace(/_/g, ' ').toLowerCase() }}</AmIChip
         >
       </div>
     </section>

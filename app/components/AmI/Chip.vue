@@ -1,6 +1,6 @@
 <template>
   <div
-    class="chip inline-flex items-center gap-2 uppercase rounded-full tracking-tighter"
+    class="chip inline-flex items-center gap-2 rounded-full tracking-tighter"
     :class="[bgColour, textColour, textSize, font, compact ? 'px-2 py-1' : 'px-4 py-2']">
     <div v-if="icon" class="flex shrink-0">
       <component :is="icon" class="w-3 h-3" />
