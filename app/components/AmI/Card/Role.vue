@@ -16,10 +16,10 @@
       <div class="flex flex-col">
         <span class="uppercase text-2xs text-slate-400">{{ $t('card.role.salary') }}</span>
         <div class="flex flex-row items-center justify-between">
-          <span class="text-xl font-bold">{{ salaryRange }}</span>
+          <span class="text-xl font-bold" :class="{ 'text-slate-400 font-normal italic text-sm': !isSalaryProvided }">{{ salaryRange }}</span>
           <div>
             <div
-              v-if="userSalary"
+              v-if="userSalary && isSalaryProvided"
               class="flex flex-col items-end gap-1 text-sm text-right relative">
               <AmIChip
 v-bind="comparisonChipAttributes"
@@ -149,8 +149,13 @@ const hasRange = computed<boolean>(() => {
   );
 });
 
+const isSalaryProvided = computed<boolean>(() => {
+  if (props.rawSalary) return true;
+  return Boolean(props.salaryMin) || Boolean(props.salaryMax);
+});
+
 const salaryMaxComparison = computed<number>(() => {
-  if (!props.userSalary) {
+  if (!props.userSalary || !isSalaryProvided.value) {
     return 0;
   }
 
@@ -189,6 +194,10 @@ const comparisonChipAttributes = computed(() => {
 });
 
 const salaryRange = computed(() => {
+  if (!isSalaryProvided.value) {
+    return useNuxtApp().$i18n.t('card.role.not-provided');
+  }
+
   if (props.rawSalary) {
     return props.rawSalary;
   }
