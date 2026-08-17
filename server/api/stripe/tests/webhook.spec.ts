@@ -5,6 +5,7 @@ import type { H3Event } from 'h3';
 vi.stubGlobal('defineEventHandler', (fn: any) => fn);
 vi.stubGlobal('useRuntimeConfig', () => ({
   stripeSecretKey: 'sk_test_123',
+  // cspell:disable-next-line
   stripeWebhookSecret: 'whsec_123'
 }));
 vi.stubGlobal('readRawBody', async () => 'raw_body_string');
