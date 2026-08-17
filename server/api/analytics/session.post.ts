@@ -8,12 +8,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get geolocation headers
-  let country = getHeader(event, 'x-vercel-ip-country') || getHeader(event, 'cf-ipcountry') || 'Unknown';
-  let city = getHeader(event, 'x-vercel-ip-city') || 'Unknown';
+  const countryRaw =
+    (getHeader(event, 'x-vercel-ip-country') || getHeader(event, 'cf-ipcountry') || 'Unknown') as string;
+  let country = countryRaw.replace(/[^a-zA-Z0-9 -]/g, '').trim().substring(0, 50) || 'Unknown';
 
-  // Sanitize to avoid weird characters in object keys
-  country = country.replace(/[^a-zA-Z0-9 -]/g, '').trim() || 'Unknown';
-  city = city.replace(/[^a-zA-Z0-9 -]/g, '').trim() || 'Unknown';
+  const cityRaw = (getHeader(event, 'x-vercel-ip-city') || 'Unknown') as string;
+  let city = cityRaw.replace(/[^a-zA-Z0-9 -]/g, '').trim().substring(0, 100) || 'Unknown';
 
   // YYYY-MM-DD UTC
   const now = new Date();

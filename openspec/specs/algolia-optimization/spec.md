@@ -7,11 +7,11 @@
 - **Behavior**: Update `fetchTitles` debounce delay from `300` to `500`.
 - **Behavior**: Inside `fetchTitles`, construct a cache key combining `country`, the trimmed search value, and `currentLocation` (to ensure USA regional searches don't bleed across different location contexts).
 - **Behavior**: If `titleCache.has(key)`, set `titleOptions.value = titleCache.get(key)!` and return immediately without setting `fetching.value = true`.
-- **Behavior**: If cache miss, fetch from Algolia, assign to `titleOptions.value`, and then `titleCache.set(key, titleOptions.value)`.
+- **Behavior**: If cache miss, fetch from Algolia, assign to `titleOptions.value`, clear `titleCache` if size > 200, and then `titleCache.set(key, titleOptions.value)`.
 - **Behavior**: Update `fetchLocations` debounce delay from `300` to `500`.
 - **Behavior**: Inside `fetchLocations`, construct a cache key combining `country`, the trimmed search value, and `currentTitle` (to ensure USA regional searches don't bleed across different job title contexts).
 - **Behavior**: If `locationCache.has(key)`, set `locationOptions.value = locationCache.get(key)!` and return immediately.
-- **Behavior**: If cache miss, fetch from Algolia, assign to `locationOptions.value`, and then `locationCache.set(key, locationOptions.value)`.
+- **Behavior**: If cache miss, fetch from Algolia, assign to `locationOptions.value`, clear `locationCache` if size > 200, and then `locationCache.set(key, locationOptions.value)`.
 
 ### `app/composables/tests/useJobAutocomplete.spec.ts`
 

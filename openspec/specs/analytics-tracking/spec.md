@@ -9,8 +9,8 @@
 
 ### `server/api/analytics/session.post.ts`
 
-- **Behavior**: Read the `x-vercel-ip-country` header (fallback `cf-ipcountry`) for the country. Default to `Unknown`.
-- **Behavior**: Read the `x-vercel-ip-city` header for the city. Default to `Unknown`.
+- **Behavior**: Read the `x-vercel-ip-country` header (fallback `cf-ipcountry`) for the country, sanitize special characters, truncate to 50 characters, and default to `Unknown`.
+- **Behavior**: Read the `x-vercel-ip-city` header for the city, sanitize special characters, truncate to 100 characters, and default to `Unknown`.
 - **Behavior**: Construct the current UTC date string in `YYYY-MM-DD` format.
 - **Behavior**: Use the Firebase Admin SDK (`getFirestore()`) to update the `user_sessions` collection at document `YYYY-MM-DD`.
 - **Behavior**: Perform a `set` operation with `{ merge: true }`.

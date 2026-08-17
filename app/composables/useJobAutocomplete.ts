@@ -105,6 +105,7 @@ export const useJobAutocomplete = (
     try {
       titleOptions.value =
         country.value === 'UK' ? await fetchUKTitles(term) : await fetchUSATitles(term);
+      if (titleCache.size > 200) titleCache.clear();
       titleCache.set(cacheKey, titleOptions.value);
     } catch {
       // Silent fail for autocomplete
@@ -134,6 +135,7 @@ export const useJobAutocomplete = (
         country.value === 'UK'
           ? await fetchUKLocations(term)
           : await fetchUSALocations(term);
+      if (locationCache.size > 200) locationCache.clear();
       locationCache.set(cacheKey, locationOptions.value);
     } catch {
       // Silent fail for autocomplete
