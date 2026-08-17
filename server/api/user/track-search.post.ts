@@ -33,7 +33,11 @@ export default defineEventHandler(async (event) => {
 
     const docRef = await db.collection('search_history').add(docData);
 
-    return { success: true, id: docRef.id };
+    // Security Remediation: Mint an HMAC token to authenticate future updates to this specific search record
+    const config = useRuntimeConfig();
+    const token = generateSearchToken(docRef.id, config.stripeWebhookSecret || 'fallback-secret-for-dev');
+
+    return { success: true, id: docRef.id, token };
   } catch {
     // silent fail so not to disrupt the user
     return { success: false };

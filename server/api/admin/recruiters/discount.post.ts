@@ -16,13 +16,24 @@ export default defineEventHandler(async (event) => {
     return createError({ statusCode: 400, message: 'Missing UID' });
   }
 
+  const bDiscount = Number(basicDiscount) || 0;
+  const eDiscount = Number(exclusiveDiscount) || 0;
+
+  // Security Remediation: Explicitly validate the input limits server-side to prevent negative or > 100 values
+  if (!Number.isFinite(bDiscount) || bDiscount < 0 || bDiscount > 100) {
+    throw createError({ statusCode: 400, statusMessage: 'Basic discount must be between 0 and 100.' });
+  }
+  if (!Number.isFinite(eDiscount) || eDiscount < 0 || eDiscount > 100) {
+    throw createError({ statusCode: 400, statusMessage: 'Exclusive discount must be between 0 and 100.' });
+  }
+
   const db = getFirestore();
   await db
     .collection('users')
     .doc(uid)
     .update({
-      basicDiscount: Number(basicDiscount) || 0,
-      exclusiveDiscount: Number(exclusiveDiscount) || 0,
+      basicDiscount: bDiscount,
+      exclusiveDiscount: eDiscount,
       updatedAt: new Date().toISOString()
     });
 

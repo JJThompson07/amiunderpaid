@@ -37,6 +37,9 @@ export const useUserLogging = () => {
         
         const data = await response.json();
         if (data.success && data.id) {
+          if (data.token) {
+            useState('currentSearchToken').value = data.token;
+          }
           return data.id;
         }
       } catch {
@@ -66,10 +69,12 @@ export const useUserLogging = () => {
       return;
     }
 
+    const token = useState('currentSearchToken').value;
+
     fetch('/api/user/update-search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: searchId, ...data }),
+      body: JSON.stringify({ id: searchId, token, ...data }),
       keepalive: true
     }).catch(() => {});
     /* v8 ignore stop */

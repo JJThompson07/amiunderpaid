@@ -12,7 +12,7 @@ describe('useUserLogging', () => {
     // Mock fetch
     mockFetch = vi.fn(() => Promise.resolve({ 
       ok: true,
-      json: () => Promise.resolve({ success: true, id: 'server-minted-uuid' })
+      json: () => Promise.resolve({ success: true, id: 'server-minted-uuid', token: 'mock-hmac-token' })
     }));
     vi.stubGlobal('fetch', mockFetch);
     
@@ -71,9 +71,15 @@ describe('useUserLogging', () => {
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it('calls fetch with updated data when conditions are met', () => {
-      const { updateSearchLog } = useUserLogging();
+    it('calls fetch with updated data when conditions are met', async () => {
+      const { logSearch, updateSearchLog } = useUserLogging();
       
+      // First log a search to populate the token in useState
+      await logSearch('Title', 'Country', 'Location', 'Salary');
+      
+      // Clear the mock calls so we only inspect the update
+      mockFetch.mockClear();
+
       updateSearchLog('mock-uuid-1234', { 
         mcaScore: 85,
         searchSuccess: true 
@@ -87,6 +93,7 @@ describe('useUserLogging', () => {
         expect(options.keepalive).toBe(true);
         expect(JSON.parse(options.body)).toEqual({
           id: 'mock-uuid-1234',
+          token: 'mock-hmac-token',
           mcaScore: 85,
           searchSuccess: true
         });
