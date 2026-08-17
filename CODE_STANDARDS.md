@@ -4,9 +4,9 @@ You are an AI assistant helping to build a dual-tenant, server-side rendered (SS
 
 ## 1. Core Tech Stack
 
-- **Framework:** Nuxt 3 (Nitro server engine)
+- **Framework:** Nuxt 4 (Nitro server engine)
 - **UI Component Library:** Vue 3 (Composition API)
-- **Styling:** Tailwind CSS v3
+- **Styling:** Tailwind CSS v4
 - **Database & Auth:** Firebase (Firestore, Auth)
 - **Firebase Libraries:** `vuefire` (Client), `firebase-admin` (Server)
 - **Language:** TypeScript (Strict mode)
@@ -63,7 +63,7 @@ You are an AI assistant helping to build a dual-tenant, server-side rendered (SS
 ## 8. Unit Testing
 
 - **Framework:** Vitest
-- **Requirement:** Unit tests are strictly required for all new core utilities (`~/utils/`) and composables (`~/composables/`).
+- **Requirement:** Unit tests are strictly required for all new core utilities (`~/shared/utils/`, `~/server/utils/`) and composables (`~/app/composables/`).
 - **Execution:** All changes MUST pass the test suite (`pnpm vitest run`) before being committed or archived.
 - **Location:** Tests should be located in a `tests/` directory adjacent to the file being tested (e.g., `~/shared/utils/tests/math.spec.ts`).
 

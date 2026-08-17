@@ -16,6 +16,7 @@
     "lint": "pnpm spellcheck && pnpm typecheck && prettier . --check && tsx scripts/structure-lint.ts && eslint --max-warnings 0",
     "lint:fix": "prettier . --write && eslint . --fix --max-warnings 0",
     "lint:i18n": "tsx scripts/check-i18n.ts",
+    "check-standards": "tsx scripts/check-standards.ts",
     "format": "prettier --write .",
     "typecheck": "nuxt typecheck",
     "spellcheck": "cspell lint",
