@@ -14,4 +14,14 @@ useHead({
     class: `theme-${$siteBrand}`
   }
 });
+
+onMounted(() => {
+  if (import.meta.dev) return; // Do not log local development sessions
+
+  if (!sessionStorage.getItem('session_logged')) {
+    sessionStorage.setItem('session_logged', 'true');
+    // Fire and forget
+    $fetch('/api/analytics/session', { method: 'POST' }).catch(() => {});
+  }
+});
 </script>
