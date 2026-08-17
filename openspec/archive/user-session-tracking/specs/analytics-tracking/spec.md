@@ -1,13 +1,17 @@
 # Analytics Tracking
 
-## MODIFIED `app/app.vue`
+## MODIFIED
+
+### `app/app.vue`
 
 - **Behavior**: On client mount, check if `import.meta.dev` is true. If so, abort tracking immediately (do not log local development sessions).
 - **Behavior**: If not in dev, check if `sessionStorage.getItem('session_logged')` exists.
 - **Behavior**: If it does not exist, send a non-blocking `POST` request to `/api/analytics/session`.
 - **Behavior**: Set `sessionStorage.setItem('session_logged', 'true')` immediately to prevent duplicates on rapid reloads.
 
-## ADDED `server/api/analytics/session.post.ts`
+## ADDED
+
+### `server/api/analytics/session.post.ts`
 
 - **Behavior**: Read the `x-vercel-ip-country` header (fallback `cf-ipcountry`) for the country. Default to `Unknown`.
 - **Behavior**: Read the `x-vercel-ip-city` header for the city. Default to `Unknown`.
@@ -18,12 +22,12 @@
 - **Behavior**: The update payload must include a computed path string `[\`locations.\${country}.\${city}\`]: FieldValue.increment(1)` to dynamically update the nested tally.
 - **Behavior**: `await` the Firestore write and return `200 OK`.
 
-## ADDED `server/api/analytics/tests/session.spec.ts`
+### `server/api/analytics/tests/session.spec.ts`
 
 - **Behavior**: Mock the Firebase Admin SDK and test that correct headers parse to the right country/city.
 - **Behavior**: Test that missing headers result in `Unknown` for country and city.
 
-## ADDED `app/pages/admin/sessions.vue`
+### `app/pages/admin/sessions.vue`
 
 - **Behavior**: Wrap in the admin layout and ensure middleware restricts access.
 - **Behavior**: Query the `user_sessions` collection.

@@ -2,7 +2,7 @@
 
 Google Analytics is not reliable for accurate user session tracking. The platform needs a robust, homegrown session counter to accurately track the total number of visitors per day and their geographic locations (country and city) to evaluate platform reach and usage effectively.
 
-## What
+## What Changes
 
 Implement a new `user_sessions` collection in Firestore. 
 - Each document represents a single day (e.g., `YYYY-MM-DD`).
