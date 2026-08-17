@@ -157,7 +157,7 @@ describe('useJobAutocomplete', () => {
     mockSearch.mockRejectedValueOnce(new Error('Failed'));
     const country = { value: 'UK' };
     const composable = useJobAutocomplete(country as any, {value:''} as any, {value:''} as any);
-    await composable.fetchTitles('dev');
+    await composable.fetchTitles('error-dev');
     expect(composable.titleOptions.value).toEqual([]);
     expect(composable.fetching.value).toBe(false);
   });
@@ -166,7 +166,7 @@ describe('useJobAutocomplete', () => {
     mockSearchForFacetValues.mockRejectedValueOnce(new Error('Failed'));
     const country = { value: 'UK' };
     const composable = useJobAutocomplete(country as any, {value:''} as any, {value:''} as any);
-    await composable.fetchLocations('lon');
+    await composable.fetchLocations('error-lon');
     expect(composable.locationOptions.value).toEqual([]);
     expect(composable.fetching.value).toBe(false);
   });
@@ -177,5 +177,68 @@ describe('useJobAutocomplete', () => {
     
     await composable.fetchLocations('a');
     expect(composable.locationOptions.value).toEqual([]);
+  });
+
+  it('fetches titles only once if the exact same search is made (cache hit)', async () => {
+    mockSearch.mockResolvedValue({
+      hits: [{ title: 'Unique Title' }]
+    });
+    
+    const country = { value: 'UK' };
+    const location = { value: '' };
+    const title = { value: '' };
+    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    
+    // First call
+    await composable.fetchTitles('unique-search');
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+    
+    // Second call with the same term (should hit cache)
+    await composable.fetchTitles('unique-search');
+    // Ensure mockSearch was not called again
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it('fetches titles again if the search term is the same but the location context changes (cache miss)', async () => {
+    mockSearch.mockResolvedValue({
+      hits: [{ title: 'Another Title' }]
+    });
+    
+    const country = { value: 'USA' };
+    const location = { value: '' };
+    const title = { value: '' };
+    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    
+    // First call (location is empty)
+    await composable.fetchTitles('another-search');
+    
+    // Change the location context
+    location.value = 'Texas';
+    composable.locationOptions.value = [{ label: 'Texas', value: 'Texas' }];
+    
+    // Second call with the same term but different location
+    await composable.fetchTitles('another-search');
+    
+    // Should have called Algolia again because the context changed
+    expect(mockSearch).toHaveBeenCalledTimes(2);
+  });
+
+  it('fetches locations only once if the exact same search is made (cache hit)', async () => {
+    mockSearchForFacetValues.mockResolvedValue({
+      facetHits: [{ value: 'Unique Location' }]
+    });
+    
+    const country = { value: 'UK' };
+    const location = { value: '' };
+    const title = { value: '' };
+    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    
+    // First call
+    await composable.fetchLocations('unique-loc');
+    expect(mockSearchForFacetValues).toHaveBeenCalledTimes(1);
+    
+    // Second call
+    await composable.fetchLocations('unique-loc');
+    expect(mockSearchForFacetValues).toHaveBeenCalledTimes(1);
   });
 });
