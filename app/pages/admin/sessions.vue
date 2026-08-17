@@ -61,7 +61,7 @@
 <script setup lang="ts">
 import { definePageMeta } from '#imports';
 import { useCollection, useFirestore } from 'vuefire';
-import { collection, orderBy, query, where } from 'firebase/firestore';
+import { collection, documentId, orderBy, query, where } from 'firebase/firestore';
 
 definePageMeta({ middleware: 'admin' });
 
@@ -112,9 +112,9 @@ const sessionsRef = collection(db, 'user_sessions');
 const sessionsQuery = computed(() =>
   query(
     sessionsRef,
-    where('__name__', '>=', monthStart.value),
-    where('__name__', '<', monthEnd.value),
-    orderBy('__name__', 'desc')
+    where(documentId(), '>=', monthStart.value),
+    where(documentId(), '<', monthEnd.value),
+    orderBy(documentId(), 'desc')
   )
 );
 
