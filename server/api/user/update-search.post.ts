@@ -3,6 +3,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 type UpdateSearchBody = {
   id: string;
+  token?: string;
   mcaScore?: number | null;
   marketAverage?: number | null;
   governmentAverage?: number | null;
@@ -16,8 +17,14 @@ type UpdateSearchBody = {
 export default defineEventHandler(async (event) => {
   const body = await readBody<UpdateSearchBody>(event);
 
-  if (!body.id) {
-    return { success: false, error: 'Missing search ID' };
+  if (!body.id || !body.token) {
+    return { success: false, error: 'Missing search ID or token' };
+  }
+
+  // Security Remediation: Verify the HMAC token before allowing the update
+  const config = useRuntimeConfig();
+  if (!verifySearchToken(body.id, body.token, config.stripeWebhookSecret || 'fallback-secret-for-dev')) {
+    throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
   }
 
   const db = getFirestore();

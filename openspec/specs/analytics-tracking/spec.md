@@ -39,3 +39,10 @@ The system SHALL ensure that search record updates explicitly target an existing
 #### Scenario: Updating an existing search record
 - **WHEN** a client submits an update to `/api/user/update-search` with a specific ID
 - **THEN** the system updates only the specified fields on the target document without replacing the entire document
+
+### Requirement: Authenticated analytics updates
+The system SHALL require a valid HMAC signature to update search history records.
+
+#### Scenario: Invalid signature on search update
+- **WHEN** a client submits a search history update with an invalid or missing token
+- **THEN** the system rejects the update with a 403 Forbidden

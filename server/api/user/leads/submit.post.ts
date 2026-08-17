@@ -41,8 +41,9 @@ export default defineEventHandler(async (event) => {
 
     // Prioritize the inboundEmail setting, fallback to their account login email
     const targetRecruiterEmail = recruiterUser.inboundEmail || recruiterUser.email;
-    const agencyName =
+    const rawAgencyName =
       recruiterUser.agency_name || recruiterUser.agencyName || 'Our Partner Agency';
+    const safeAgencyName = sanitizeHTML(rawAgencyName);
 
     // 2. Save the Lead to Firestore
     const leadRef = await db.collection('leads').add({
@@ -76,19 +77,20 @@ export default defineEventHandler(async (event) => {
     }
 
     // 4. Queue Confirmation Email to the Candidate
+    // Security Remediation: XSS prevention by ensuring agencyName is sanitized before HTML injection
     await db.collection('mail').add({
       to: email,
       message: {
-        subject: `Your details have been sent to ${agencyName}`,
+        subject: `Your details have been sent to ${safeAgencyName}`,
         html: `
           <h2>Thanks for reaching out!</h2>
           <p>Hi ${safeName},</p>
-          <p>We have successfully passed your contact details over to the team at <strong>${agencyName}</strong>.</p>
+          <p>We have successfully passed your contact details over to the team at <strong>${safeAgencyName}</strong>.</p>
           <p>One of their hiring experts will be in touch with you shortly at this email address to discuss opportunities regarding your search for <strong>${safeSearchedRole || 'roles'}</strong> in <strong>${safeLocation || 'your area'}</strong>.</p>
           <br/>
           <p>Best regards,<br/>The AmIUnderpaid Team</p>
         `,
-        text: `Thanks for reaching out!\n\nHi ${safeName},\n\nWe have successfully passed your contact details over to the team at ${agencyName}.\n\nOne of their hiring experts will be in touch with you shortly at this email address to discuss opportunities regarding your search for ${safeSearchedRole || 'roles'} in ${safeLocation || 'your area'}.\n\nBest regards,\nThe AmIUnderpaid Team`
+        text: `Thanks for reaching out!\n\nHi ${safeName},\n\nWe have successfully passed your contact details over to the team at ${safeAgencyName}.\n\nOne of their hiring experts will be in touch with you shortly at this email address to discuss opportunities regarding your search for ${safeSearchedRole || 'roles'} in ${safeLocation || 'your area'}.\n\nBest regards,\nThe AmIUnderpaid Team`
       }
     });
 

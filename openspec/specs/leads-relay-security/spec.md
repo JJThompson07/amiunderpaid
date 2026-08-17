@@ -22,3 +22,10 @@ The system SHALL sanitize all user-provided inputs (e.g., name, role, location) 
 #### Scenario: Malicious HTML injection attempt
 - **WHEN** a user submits a lead with a name containing HTML tags (e.g., `Bob <a href="http://evil.com">Click</a>`)
 - **THEN** the system escapes the HTML entities so they render as plain text in the resulting email, preventing phishing attacks
+
+### Requirement: Safe agency names
+The system SHALL sanitize the agency name before interpolating it into email templates.
+
+#### Scenario: Malicious agency name
+- **WHEN** an agency name contains HTML tags like `<script>`
+- **THEN** the system escapes the characters in the outbound email

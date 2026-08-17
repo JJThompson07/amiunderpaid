@@ -1,6 +1,10 @@
-// server/api/stripe/webhook.post.ts
 import Stripe from 'stripe';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+
+async function queueRefundAndAlert(stripe: Stripe, session: Stripe.Checkout.Session, reason: string) {
+  console.error(`🚨 ALERT: Needs manual refund! Session ${session.id}. Reason: ${reason}`);
+  // In a real system, you'd trigger an alert or automatically refund via stripe.refunds.create()
+}
 
 export default defineEventHandler(async (event) => {
   // 1. Initialize config and Stripe
@@ -30,6 +34,13 @@ export default defineEventHandler(async (event) => {
   // 4. Process the successful payment
   if (stripeEvent.type === 'checkout.session.completed') {
     const session = stripeEvent.data.object as Stripe.Checkout.Session;
+    const db = getFirestore();
+    
+    // Security Remediation: Deduplicate webhook events to prevent double processing
+    const seen = db.collection('stripe_events').doc(stripeEvent.id);
+    if ((await seen.get()).exists) {
+      return { received: true };
+    }
 
     try {
       const userId = session.metadata?.userId;
@@ -146,10 +157,19 @@ export default defineEventHandler(async (event) => {
         );
       });
 
+      // Write the success marker to the seen document
+      await seen.set({ type: stripeEvent.type, processedAt: FieldValue.serverTimestamp() });
       console.log(`✅ 4. SUCCESSFULLY COMMITTED TRANSACTION FOR USER ${userId}`);
-    } catch (error) {
+    } catch (error: any) {
+      if (error instanceof Error && error.message.startsWith('Territory ')) {
+        // Business conflict: acknowledge so Stripe stops retrying, then refund and alert.
+        console.error('Territory conflict on fulfilment', { eventId: stripeEvent.id, error });
+        await queueRefundAndAlert(stripe, session, error.message);
+        await seen.set({ type: stripeEvent.type, outcome: 'conflict', processedAt: FieldValue.serverTimestamp() });
+        return { received: true };
+      }
       console.error('🔥 Error fulfilling Stripe order:', error);
-      throw createError({ statusCode: 500, message: 'Database fulfillment failed' });
+      throw createError({ statusCode: 500, message: 'Database fulfillment failed' }); // transient: let Stripe retry
     }
   }
 

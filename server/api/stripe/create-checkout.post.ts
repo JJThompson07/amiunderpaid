@@ -75,8 +75,14 @@ export default defineEventHandler(async (event) => {
   // ==========================================
   const userDoc = await db.collection('users').doc(userId).get();
   const userData = userDoc.data() || {};
-  const basicDiscount = userData.basicDiscount || 0;
-  const exclusiveDiscount = userData.exclusiveDiscount || 0;
+  
+  // Security Remediation: Clamp discounts so they can't be set > 100 or negative via client-side manipulation.
+  const clampPercent = (v: unknown): number => {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 0;
+  };
+  const basicDiscount = clampPercent(userData.basicDiscount);
+  const exclusiveDiscount = clampPercent(userData.exclusiveDiscount);
 
   // ==========================================
   // 3. CALCULATE TOTALS (Based on Bands)
