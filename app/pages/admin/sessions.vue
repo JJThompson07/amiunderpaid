@@ -37,12 +37,12 @@
       </div>
 
       <AmITable :columns="tableColumns" :data="sessions" :loading="pending">
-        <template #date="{ item }">
-          <span class="font-bold text-slate-900">{{ item.id }}</span>
+        <template #date="{ row }">
+          <span class="font-bold text-slate-900">{{ row.id }}</span>
         </template>
-        <template #locations="{ item }">
+        <template #locations="{ row }">
           <div class="flex flex-col gap-1 py-2">
-            <div v-for="(cities, country) in item.locations" :key="country" class="text-xs">
+            <div v-for="(cities, country) in row.locations" :key="country" class="text-xs">
               <span class="font-bold text-slate-700">{{ country }}:</span>
               <span class="text-slate-500 ml-1">
                 {{ Object.entries(cities).map(([city, count]) => `${city}: ${count}`).join(', ') }}
@@ -50,8 +50,8 @@
             </div>
           </div>
         </template>
-        <template #total="{ item }">
-          <span class="font-black text-slate-900 text-lg">{{ item.total }}</span>
+        <template #total="{ row }">
+          <span class="font-black text-slate-900 text-lg">{{ row.total }}</span>
         </template>
       </AmITable>
     </div>
