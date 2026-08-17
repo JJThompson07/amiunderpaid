@@ -1,0 +1,9 @@
+{
+  "sessions": {
+    "title": "User Sessions",
+    "subtitle": "Daily aggregation of user sessions and geolocation.",
+    "col-date": "Date",
+    "col-locations": "Location Breakdown",
+    "col-total": "Total Visits"
+  }
+}

@@ -3,7 +3,7 @@ import { defineEventHandler, getHeader, getRequestHeader } from 'h3';
 
 export default defineEventHandler(async (event) => {
   // If in local development (but not testing), abort
-  if (import.meta.dev && process.env.NODE_ENV !== 'test') {
+  if (process.dev && process.env.NODE_ENV !== 'test') {
     return { status: 200, message: 'Local development session skipped' };
   }
 

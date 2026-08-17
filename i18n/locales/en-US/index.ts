@@ -19,6 +19,7 @@ import mca from './mca.json';
 import account from './account.json';
 import toast from './toast.json';
 import auth from './auth.json';
+import admin from './admin.json';
 
 export default defineI18nLocale(async () => {
   return {
@@ -42,6 +43,7 @@ export default defineI18nLocale(async () => {
     mca,
     account,
     toast,
-    auth
+    auth,
+    admin
   };
 });

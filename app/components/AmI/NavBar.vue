@@ -166,7 +166,8 @@ const adminLinks = computed<NavLink[]>(() => [
     mobileOnly: false,
     children: [
       { to: '/admin/user-suggestions', label: t('navbar.user-suggestions') },
-      { to: '/admin/search-logs', label: t('navbar.search-logs') }
+      { to: '/admin/search-logs', label: t('navbar.search-logs') },
+      { to: '/admin/sessions', label: t('navbar.sessions') }
     ]
   },
   {

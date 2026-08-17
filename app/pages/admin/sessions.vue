@@ -4,8 +4,8 @@
 
     <div class="px-6 md:px-8 max-w-7xl mx-auto w-full relative">
       <header class="mb-8">
-        <h1 class="text-2xl font-black text-slate-900">User Sessions</h1>
-        <p class="text-slate-500 mt-1">Daily aggregation of user sessions and geolocation.</p>
+        <h1 class="text-2xl font-black text-slate-900">{{ $t('admin.sessions.title') }}</h1>
+        <p class="text-slate-500 mt-1">{{ $t('admin.sessions.subtitle') }}</p>
       </header>
       
       <AmITable :columns="tableColumns" :data="sessions" :loading="pending">
@@ -33,19 +33,22 @@
 <script setup lang="ts">
 import { definePageMeta } from '#imports';
 import { useCollection, useFirestore } from 'vuefire';
-import { collection, orderBy, query } from 'firebase/firestore';
+import { collection, limit, orderBy, query } from 'firebase/firestore';
 
 definePageMeta({ middleware: 'admin' });
 
+const { t } = useI18n();
+
 const tableColumns = [
-  { key: 'date', label: 'Date', class: 'w-48' },
-  { key: 'locations', label: 'Location Breakdown' },
-  { key: 'total', label: 'Total Visits', class: 'w-48 text-right', cellClass: 'text-right pr-4' }
+  { key: 'date', label: t('admin.sessions.col-date'), class: 'w-48' },
+  { key: 'locations', label: t('admin.sessions.col-locations') },
+  { key: 'total', label: t('admin.sessions.col-total'), class: 'w-48 text-right', cellClass: 'text-right pr-4' }
 ];
 
 const db = useFirestore();
 const sessionsRef = collection(db, 'user_sessions');
-const sessionsQuery = query(sessionsRef, orderBy('__name__', 'desc'));
+const sessionsQuery = query(sessionsRef, orderBy('__name__', 'desc'), limit(90));
 
 const { data: sessions, pending } = useCollection(sessionsQuery);
 </script>
+
