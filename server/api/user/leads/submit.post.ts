@@ -15,7 +15,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const sanitizeHTML = (str: string) => {
-    if (!str) {return '';}
+    if (!str) {
+      return '';
+    }
     return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')

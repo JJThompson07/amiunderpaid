@@ -154,7 +154,9 @@ const hasRange = computed<boolean>(() => {
 });
 
 const isSalaryProvided = computed<boolean>(() => {
-  if (props.rawSalary) {return true;}
+  if (props.rawSalary) {
+    return true;
+  }
   return Boolean(props.salaryMin) || Boolean(props.salaryMax);
 });
 

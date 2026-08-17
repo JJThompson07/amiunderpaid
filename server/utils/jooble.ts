@@ -15,7 +15,7 @@ export type JoobleJobResponse = {
     updated: string;
     id: number | string;
   }[];
-}
+};
 
 /**
  * Parses the unstructured `salary` string provided by Jooble and normalizes it.
@@ -30,7 +30,9 @@ export const parseJoobleSalary = (
   jobType: string = 'full-time'
 ): { min: number; max: number; raw: string } => {
   const raw = salaryStr || '';
-  if (!raw) {return { min: 0, max: 0, raw };}
+  if (!raw) {
+    return { min: 0, max: 0, raw };
+  }
 
   const str = raw.toLowerCase().trim();
 
@@ -59,7 +61,9 @@ export const parseJoobleSalary = (
   };
 
   const nums = matches.map(parseNumber).filter((n) => !isNaN(n));
-  if (nums.length === 0) {return { min: 0, max: 0, raw };}
+  if (nums.length === 0) {
+    return { min: 0, max: 0, raw };
+  }
 
   let min = nums[0] as number;
   let max = (nums.length > 1 ? nums[nums.length - 1] : nums[0]) as number;

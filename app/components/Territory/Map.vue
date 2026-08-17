@@ -26,7 +26,7 @@ export type MapTerritory = {
   name: string;
   ons_matches?: ONSMatch[];
   [key: string]: any;
-}
+};
 
 const props = defineProps<{
   country: CountryCode;
@@ -86,7 +86,7 @@ const normalizeName = (name: string) => {
 type EChartsMapEvent = {
   name: string;
   value?: number;
-}
+};
 
 type MapPolygonData = {
   name: string;
@@ -106,7 +106,7 @@ type MapPolygonData = {
     label?: { show: boolean };
   };
   cursor: string;
-}
+};
 
 const loadAndDrawMap = async () => {
   if (!mapContainer.value) {
@@ -189,12 +189,12 @@ const updateMapData = () => {
 
   type GeoJSONFeature = {
     properties: Record<string, string>;
-  }
+  };
 
   type EChartsTooltipParams = {
     data?: unknown;
     name: string;
-  }
+  };
 
   // 2. Loop through every single polygon on the actual map
   mapObj.geoJSON.features.forEach((feature: GeoJSONFeature) => {

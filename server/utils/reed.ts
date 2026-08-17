@@ -15,7 +15,7 @@ export type ReedJobResponse = {
     jobUrl: string;
   }[];
   totalResults: number;
-}
+};
 
 export const fetchReedData = async (
   title: string,
@@ -72,12 +72,22 @@ export const fetchReedData = async (
     params.locationName = cleanLocation;
   }
 
-  if (jobType === 'full-time') {params.fullTime = true;}
-  if (jobType === 'part-time') {params.partTime = true;}
+  if (jobType === 'full-time') {
+    params.fullTime = true;
+  }
+  if (jobType === 'part-time') {
+    params.partTime = true;
+  }
 
-  if (contractType === 'permanent') {params.permanent = true;}
-  if (contractType === 'contract') {params.contract = true;}
-  if (contractType === 'temp') {params.temp = true;}
+  if (contractType === 'permanent') {
+    params.permanent = true;
+  }
+  if (contractType === 'contract') {
+    params.contract = true;
+  }
+  if (contractType === 'temp') {
+    params.temp = true;
+  }
 
   // Basic Auth: key as username, empty password
   const authHeader = 'Basic ' + btoa(`${apiKey}:`);

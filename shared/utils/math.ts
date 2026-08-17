@@ -301,7 +301,9 @@ export const buildHistogramBuckets = (
   maxBuckets: number = 7
 ): Record<number, number> => {
   const validSalaries = salaries.filter((s) => s > 0);
-  if (!validSalaries.length) {return {};}
+  if (!validSalaries.length) {
+    return {};
+  }
 
   const min = Math.min(...validSalaries);
   const max = Math.max(...validSalaries);
@@ -320,10 +322,15 @@ export const buildHistogramBuckets = (
   const normalized = safeInterval / magnitude; // between 1 and 10
 
   let niceMultiplier;
-  if (normalized <= 1) {niceMultiplier = 1;}
-  else if (normalized <= 2) {niceMultiplier = 2;}
-  else if (normalized <= 5) {niceMultiplier = 5;}
-  else {niceMultiplier = 10;}
+  if (normalized <= 1) {
+    niceMultiplier = 1;
+  } else if (normalized <= 2) {
+    niceMultiplier = 2;
+  } else if (normalized <= 5) {
+    niceMultiplier = 5;
+  } else {
+    niceMultiplier = 10;
+  }
 
   const interval = niceMultiplier * magnitude;
 

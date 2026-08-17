@@ -11,16 +11,16 @@ export type MarketDataProvider = 'adzuna' | 'reed' | 'jooble';
 export type JobLocation = {
   display_name: string;
   area: string[];
-}
+};
 
 export type JobCategory = {
   label: string;
   tag: string;
-}
+};
 
 export type JobCompany = {
   display_name: string;
-}
+};
 
 /** A single job listing in the unified schema (normalised from Adzuna or Reed). */
 export type JobListing = {
@@ -37,7 +37,7 @@ export type JobListing = {
   contract_time: string;
   redirect_url: string;
   provider?: MarketDataProvider;
-}
+};
 
 /** Response shape for the /api/market-data/jobs endpoint. */
 export type JobSearchResponse = {
@@ -46,16 +46,16 @@ export type JobSearchResponse = {
   results: JobListing[];
   provider: MarketDataProvider;
   histogram?: Record<number, number>;
-}
+};
 
 /** Response shape for the /api/market-data/salary endpoint. */
 export type SalaryDistributionResponse = {
   histogram: Record<number, number>;
   provider: MarketDataProvider;
-}
+};
 
 /** A single job category entry returned by the categories endpoint. */
 export type JobCategoryEntry = {
   label: string;
   tag: string;
-}
+};

@@ -44,7 +44,7 @@
       <div
         class="relative bg-white/60 backdrop-blur-xl border border-slate-200/60 rounded-2xl p-5 text-center shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:bg-white transition-all duration-300 group overflow-hidden">
         <div
-          class="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"/>
+          class="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <div class="relative z-10">
           <div class="text-[0.65rem] font-bold tracking-widest text-slate-400 uppercase mb-1.5">
             Bottom 10%
@@ -59,7 +59,7 @@
       <div
         class="relative bg-white/80 backdrop-blur-xl border border-primary-200/60 rounded-2xl p-5 text-center shadow-md hover:shadow-xl hover:-translate-y-0.5 hover:bg-white transition-all duration-300 group overflow-hidden sm:scale-105 z-10 ring-1 ring-primary-100">
         <div
-          class="absolute inset-0 bg-gradient-to-br from-primary-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"/>
+          class="absolute inset-0 bg-gradient-to-br from-primary-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <div class="relative z-10">
           <div class="text-[0.65rem] font-bold tracking-widest text-primary-500 uppercase mb-1.5">
             National Average
@@ -74,7 +74,7 @@
       <div
         class="relative bg-white/60 backdrop-blur-xl border border-slate-200/60 rounded-2xl p-5 text-center shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:bg-white transition-all duration-300 group overflow-hidden">
         <div
-          class="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"/>
+          class="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <div class="relative z-10">
           <div class="text-[0.65rem] font-bold tracking-widest text-slate-400 uppercase mb-1.5">
             Top 10%
@@ -100,12 +100,12 @@ const { currentCountry } = useRegion();
 type TrendingRole = {
   title: string;
   salary: number;
-}
+};
 type MacroStats = {
   mean: number;
   p10: number;
   p90: number;
-}
+};
 
 const trendingRoles = computed<TrendingRole[]>(() => {
   const roles: any = tm('landing.trending.roles');

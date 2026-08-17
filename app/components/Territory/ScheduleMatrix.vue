@@ -235,13 +235,13 @@ export type ScheduleSelection = {
   isBasic: boolean;
   exclusiveMonths: string[];
   rowCost: number;
-}
+};
 
 export type UpcomingMonth = {
   value: string;
   label: string;
   year: number;
-}
+};
 
 const props = defineProps({
   territories: { type: Array as PropType<Territory[]>, required: true },

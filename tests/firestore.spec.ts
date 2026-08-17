@@ -1,6 +1,4 @@
-import type {
-  RulesTestEnvironment
-} from '@firebase/rules-unit-testing';
+import type { RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import {
   assertFails,
   assertSucceeds,

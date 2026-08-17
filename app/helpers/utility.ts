@@ -61,8 +61,12 @@ export const levenshteinDistance = (a: string, b: string): number => {
   const strA = a.slice(0, 100);
   const strB = b.slice(0, 100);
 
-  if (strA.length === 0) {return strB.length;}
-  if (strB.length === 0) {return strA.length;}
+  if (strA.length === 0) {
+    return strB.length;
+  }
+  if (strB.length === 0) {
+    return strA.length;
+  }
 
   // 2. Memory-optimized O(N) allocation
   let prevRow: number[] = Array.from({ length: strA.length + 1 }, (_, i) => i);

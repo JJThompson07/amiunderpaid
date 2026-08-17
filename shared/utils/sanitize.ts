@@ -32,7 +32,9 @@ export const sanitizeAdzunaData = (data: any): any => {
  * by strictly allowing only http: and https: protocols.
  */
 export const sanitizeUrl = (url: string | undefined): string => {
-  if (!url) {return '#';}
+  if (!url) {
+    return '#';
+  }
   try {
     const parsed = new URL(url);
     if (['http:', 'https:'].includes(parsed.protocol)) {
