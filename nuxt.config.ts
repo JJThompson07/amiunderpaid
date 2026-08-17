@@ -2,7 +2,7 @@
 import tailwindcss from '@tailwindcss/vite';
 
 // Debug: Check if env vars are loaded
-if (!process.env.FIREBASE_API_KEY) {
+if (!process.env.FIREBASE_API_KEY && !process.env.CI && process.env.NODE_ENV !== 'test') {
   // if no key then we want to fail immediately
   throw new Error(
     'FATAL CONFIG ERROR: FIREBASE_API_KEY is missing from environment variables. The application cannot start.'
