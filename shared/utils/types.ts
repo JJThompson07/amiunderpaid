@@ -26,3 +26,18 @@ export type HistogramBucket = {
   value: number;
   count: number;
 };
+
+// Unified context object for passing parameters to scorers without tight coupling
+export type EngineContext = {
+  userSalary: number;
+  macroNationalData: PercentileData;
+  macroRegionalData?: PercentileData | null;
+  microNationalData: PercentileData | null;
+  microRegionalData: PercentileData | null;
+  microNationalOfficialTitle?: string | null;
+  regionalMedianAllRoles: number | null;
+  nationalMedianAllRoles: number | null;
+  liveBuckets: HistogramBucket[];
+  totalLiveJobs: number;
+  meanLiveSalary: number;
+};

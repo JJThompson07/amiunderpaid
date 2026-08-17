@@ -21,6 +21,7 @@ const $fetchMock = vi.fn();
 vi.stubGlobal('$fetch', $fetchMock);
 const getQueryMock = vi.fn();
 vi.stubGlobal('getQuery', getQueryMock);
+vi.stubGlobal('defineCachedFunction', (fn: any) => fn);
 
 // We need to mock the import of `../../utils/reed` and `../../utils/jooble` that happens inside the catch block
 vi.mock('../../../utils/reed', () => ({

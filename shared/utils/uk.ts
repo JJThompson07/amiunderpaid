@@ -1,5 +1,6 @@
-import type { BenchmarkResult, HistogramBucket, PercentileData } from './types';
+import type { BenchmarkResult, HistogramBucket, PercentileData, EngineContext } from './types';
 import {
+  calculateBenchmarkScore,
   calculateConfidenceScore,
   calculateLivePercentile,
   calculatePercentile,
@@ -8,18 +9,20 @@ import {
   WEIGHTS
 } from './math';
 
-export const calculateUKBenchmarkScore = (
-  userSalary: number,
-  macroNationalData: PercentileData,
-  microNationalData: PercentileData | null,
-  microNationalOfficialTitle: string | null,
-  microRegionalData: PercentileData | null,
-  regionalMedianAllRoles: number | null,
-  nationalMedianAllRoles: number | null,
-  liveBuckets: HistogramBucket[],
-  totalLiveJobs: number,
-  meanLiveSalary: number
-): BenchmarkResult => {
+export const calculateUKBenchmarkScore = (ctx: EngineContext): BenchmarkResult => {
+  const {
+    userSalary,
+    macroNationalData,
+    microNationalData,
+    microNationalOfficialTitle,
+    microRegionalData,
+    regionalMedianAllRoles,
+    nationalMedianAllRoles,
+    liveBuckets,
+    totalLiveJobs,
+    meanLiveSalary
+  } = ctx;
+
   // 1. Core Calculations
   const modifier = calculateRegionalModifier(regionalMedianAllRoles, nationalMedianAllRoles);
   const normalizedSalary = userSalary / modifier;
@@ -51,32 +54,12 @@ export const calculateUKBenchmarkScore = (
         : WEIGHTS.UK.TARGET;
 
   // 3. FINAL SCORE COMPUTATION
-  let finalScore: number;
-
-  if (livePercentile !== null) {
-    if (microPercentile !== null) {
-      // ✅ Scenario A: We have all data (Perfect match)
-      finalScore =
-        macroPercentile * activeWeights.MACRO +
-        microPercentile * activeWeights.MICRO +
-        livePercentile * activeWeights.LIVE;
-    } else {
-      // ⚠️ Scenario B: No Location (Micro is null)
-      // We proportionally rebalance the remaining Macro and Live weights to equal 100%
-      const remainingWeight = activeWeights.MACRO + activeWeights.LIVE;
-      const rebalancedMacroWeight = activeWeights.MACRO / remainingWeight;
-      const rebalancedLiveWeight = activeWeights.LIVE / remainingWeight;
-
-      finalScore = macroPercentile * rebalancedMacroWeight + livePercentile * rebalancedLiveWeight;
-    }
-  } else {
-    // 🚨 Scenario C: Adzuna API failed or returned 0 jobs (Live is null)
-    finalScore =
-      microPercentile !== null
-        ? macroPercentile * WEIGHTS.NO_LIVE_DATA.MACRO +
-          microPercentile * WEIGHTS.NO_LIVE_DATA.MICRO
-        : macroPercentile;
-  }
+  const finalScore = calculateBenchmarkScore(
+    macroPercentile,
+    microPercentile,
+    livePercentile,
+    activeWeights
+  );
 
   const confidenceScore = calculateConfidenceScore(
     totalLiveJobs,
@@ -86,7 +69,7 @@ export const calculateUKBenchmarkScore = (
   );
 
   return {
-    score: Math.min(99, Math.max(1, Math.round(finalScore))),
+    score: finalScore,
     confidenceScore, // 👈 Inject the score out of 10
     breakdown: {
       modifier,

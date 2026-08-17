@@ -80,11 +80,9 @@ export default defineEventHandler(async (event) => {
         const claimRefs: Record<string, any> = {};
         const claimDocs: Record<string, any> = {};
         for (const item of purchasedItems) {
-          if (item.exclusiveMonths && item.exclusiveMonths.length > 0) {
-            const claimDocId = `${item.territoryId}_${item.categoryValue}`;
-            if (!claimRefs[claimDocId]) {
-              claimRefs[claimDocId] = db.collection('territory_claims').doc(claimDocId);
-            }
+          const claimDocId = `${item.territoryId}_${item.categoryValue}`;
+          if (!claimRefs[claimDocId]) {
+            claimRefs[claimDocId] = db.collection('territory_category_owners').doc(claimDocId);
           }
         }
 
@@ -116,12 +114,13 @@ export default defineEventHandler(async (event) => {
             updatedTerritories.push(item);
           }
 
-          // --- UPDATE 2: THE GLOBAL LOCK ---
-          if (item.exclusiveMonths && item.exclusiveMonths.length > 0) {
-            const claimDocId = `${item.territoryId}_${item.categoryValue}`;
-            const existingClaimData = claimDocs[claimDocId] || {};
-            const takenMonths = existingClaimData.takenExclusiveMonths || {};
+          // --- UPDATE 2: THE GLOBAL LOCK & BASIC OWNERS ---
+          const claimDocId = `${item.territoryId}_${item.categoryValue}`;
+          const existingClaimData = claimDocs[claimDocId] || {};
+          const updates: any = {};
 
+          if (item.exclusiveMonths && item.exclusiveMonths.length > 0) {
+            const takenMonths = existingClaimData.takenExclusiveMonths || {};
             const newExclusiveLocks: Record<string, string> = {};
             for (const month of item.exclusiveMonths) {
               if (takenMonths[month] && takenMonths[month] !== userId) {
@@ -129,19 +128,20 @@ export default defineEventHandler(async (event) => {
               }
               newExclusiveLocks[month] = userId;
             }
+            updates.takenExclusiveMonths = newExclusiveLocks;
+          }
 
-            console.log(`📝 3. QUEUING TRANSACTION WRITE FOR ${claimDocId}:`, newExclusiveLocks);
+          if (item.isBasic) {
+            updates.basicOwners = FieldValue.arrayUnion(userId);
+          }
 
-            t.set(
-              claimRefs[claimDocId],
-              {
-                territoryId: item.territoryId,
-                categoryValue: item.categoryValue,
-                takenExclusiveMonths: newExclusiveLocks,
-                updatedAt: new Date().toISOString()
-              },
-              { merge: true }
-            );
+          if (Object.keys(updates).length > 0) {
+            updates.territoryId = item.territoryId;
+            updates.categoryValue = item.categoryValue;
+            updates.updatedAt = new Date().toISOString();
+
+            console.log(`📝 3. QUEUING TRANSACTION WRITE FOR ${claimDocId}:`, updates);
+            t.set(claimRefs[claimDocId], updates, { merge: true });
           }
         }
 

@@ -57,6 +57,12 @@
             </div>
           </template>
         </AmITable>
+
+        <div v-if="rawLeadsData && rawLeadsData.length >= leadsLimit" class="mt-6 flex justify-center">
+          <AmIButton @click="leadsLimit += 50" bg-colour="bg-white" text-colour="text-slate-700" animation-colour="bg-slate-50" class="border border-slate-200 shadow-none">
+            {{ $t('recruiter.leads.load-more', 'Load More') }}
+          </AmIButton>
+        </div>
       </div>
 
       <div
@@ -362,7 +368,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { ChevronDown, Copy } from 'lucide-vue-next';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
-import { collection, orderBy, query, where } from 'firebase/firestore';
+import { collection, orderBy, query, where, limit } from 'firebase/firestore';
 import { useCollection, useCurrentUser, useFirestore } from 'vuefire';
 
 definePageMeta({ middleware: 'recruiters' });
@@ -375,6 +381,7 @@ const storage = useFirebaseStorage();
 const db = useFirestore();
 const { showToast } = useSystemToast();
 
+const leadsLimit = ref(50);
 const activeTab = ref('leads');
 const showWildcards = ref(false);
 const tabOptions = [
@@ -392,7 +399,8 @@ const leadsQuery = computed(() => {
   return query(
     collection(db, 'leads'),
     where('recruiterId', '==', user.value.uid),
-    orderBy('createdAt', 'desc')
+    orderBy('createdAt', 'desc'),
+    limit(leadsLimit.value)
   );
 });
 

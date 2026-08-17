@@ -135,34 +135,52 @@ export default defineEventHandler(async (event) => {
     updatedAt: new Date().toISOString()
   });
 
-  // 6b. Remove this user's exclusive month locks from territory_claims atomically
-  if (removedExclusiveMonths.length > 0) {
+  // 6b. Remove this user's locks and basic ownership from territory_category_owners atomically
+  const wasBasic = cancelledTerritory?.isBasic;
+  // If the territory is completely removed or just basic was cancelled, we might need to remove from basicOwners.
+  // Wait, if it was just downgraded (isBasic = false), we must remove it from basicOwners.
+  // If it was completely removed (not in updatedTerritories), it means isBasic was also removed.
+  const isStillBasic = updatedTerritories.find((t: any) => t.territoryId === territoryIdToCancel)?.isBasic;
+  const shouldRemoveBasic = wasBasic && !isStillBasic;
+
+  if (removedExclusiveMonths.length > 0 || shouldRemoveBasic) {
     const claimDocId = `${territoryIdToCancel}_${cancelledTerritory?.categoryValue}`;
-    const claimRef = db.collection('territory_claims').doc(claimDocId);
+    const claimRef = db.collection('territory_category_owners').doc(claimDocId);
     const claimSnap = await claimRef.get();
 
     if (claimSnap.exists) {
       const claimData = claimSnap.data() || {};
       const takenMonths: Record<string, string> = claimData.takenExclusiveMonths || {};
+      const basicOwners: string[] = claimData.basicOwners || [];
 
       // Count how many months remain after removing this user's months
       const remainingMonths = Object.entries(takenMonths).filter(
         ([month, ownerId]) => ownerId !== userId || !removedExclusiveMonths.includes(month)
       );
+      
+      const remainingBasic = basicOwners.filter(id => id !== userId);
 
-      if (remainingMonths.length === 0) {
-        // No months left — delete the entire claim document
+      if (remainingMonths.length === 0 && remainingBasic.length === 0) {
+        // No months left AND no basic owners left — delete the entire claim document
         batch.delete(claimRef);
       } else {
-        // Surgically remove only this user's cancelled months
-        const deletions: Record<string, ReturnType<typeof FieldValue.delete>> = {};
-        for (const month of removedExclusiveMonths) {
-          if (takenMonths[month] === userId) {
-            deletions[`takenExclusiveMonths.${month}`] = FieldValue.delete();
+        // Surgically remove only this user's cancelled properties
+        const updates: any = {};
+        
+        if (removedExclusiveMonths.length > 0) {
+          for (const month of removedExclusiveMonths) {
+            if (takenMonths[month] === userId) {
+              updates[`takenExclusiveMonths.${month}`] = FieldValue.delete();
+            }
           }
         }
-        if (Object.keys(deletions).length > 0) {
-          batch.update(claimRef, deletions);
+        
+        if (shouldRemoveBasic) {
+          updates.basicOwners = FieldValue.arrayRemove(userId);
+        }
+
+        if (Object.keys(updates).length > 0) {
+          batch.update(claimRef, updates);
         }
       }
     }

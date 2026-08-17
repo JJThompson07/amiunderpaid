@@ -35,55 +35,80 @@ export default defineEventHandler(async (event) => {
   const searchTerm = query.search ? String(query.search).toLowerCase().trim() : '';
 
   try {
-    const collectionRef = db.collection('search_history');
+    let logsRaw: any[] = [];
+    let displayTotalCount = 0;
+    let nextCursor: string | undefined;
 
+    const collectionRef = db.collection('search_history');
+    
     // Get start boundaries for today and yesterday
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
 
-    // Determine the strategy for the logs fetch
-    let logsPromise;
+    const [countSnapshot, oldestSnapshot, todaySnapshot, yesterdaySnapshot] = await Promise.all([
+      collectionRef.count().get(),
+      collectionRef.orderBy('timestamp', 'asc').limit(1).get(),
+      collectionRef.where('timestamp', '>=', startOfToday).count().get(),
+      collectionRef
+        .where('timestamp', '>=', startOfYesterday)
+        .where('timestamp', '<', startOfToday)
+        .count()
+        .get()
+    ]);
+
+    displayTotalCount = countSnapshot.data().count;
+
     if (searchTerm) {
-      // Hybrid Search: Fetch the last 1000 to filter in-memory since Firestore lacks full-text search
-      logsPromise = collectionRef.orderBy('timestamp', 'desc').limit(1000).get();
-    } else {
-      // Native Pagination: Fast and optimized
-      logsPromise = collectionRef
-        .orderBy('timestamp', 'desc')
-        .offset(offsetCount)
-        .limit(limitCount)
-        .get();
-    }
-
-    const [countSnapshot, oldestSnapshot, latestSnapshot, todaySnapshot, yesterdaySnapshot] =
-      await Promise.all([
-        collectionRef.count().get(),
-        collectionRef.orderBy('timestamp', 'asc').limit(1).get(),
-        logsPromise,
-        collectionRef.where('timestamp', '>=', startOfToday).count().get(),
-        collectionRef
-          .where('timestamp', '>=', startOfYesterday)
-          .where('timestamp', '<', startOfToday)
-          .count()
-          .get()
-      ]);
-
-    // Format raw data
-    let logsRaw = latestSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    let displayTotalCount = countSnapshot.data().count;
-
-    // Apply in-memory search filter if requested
-    if (searchTerm) {
-      const filtered = logsRaw.filter((log: any) => {
-        const titleMatch = log.title && log.title.toLowerCase().includes(searchTerm);
-        const locMatch = log.location && log.location.toLowerCase().includes(searchTerm);
-        return titleMatch || locMatch;
+      // Algolia Search
+      const config = useRuntimeConfig();
+      if (!config.algoliaApplicationId || !config.algoliaAdminApiKey) {
+        throw createError({ statusCode: 500, message: 'Algolia credentials missing for search' });
+      }
+      
+      const algoliasearch = await import('algoliasearch').then((m) => m.default || m);
+      const client = algoliasearch(config.algoliaApplicationId, config.algoliaAdminApiKey);
+      const index = client.initIndex('search_history');
+      
+      // Page is 0-indexed in Algolia. 
+      // If cursor is passed as a page number in search mode, we'd need to handle it.
+      // But the frontend is passing `cursor` as a timestamp now. 
+      // To keep it simple, if searchTerm is active, we just use the cursor as a page number (stringified integer)
+      const algoliaPage = query.cursor ? parseInt(String(query.cursor), 10) : 0;
+      
+      const { hits, nbHits, page: resultPage, nbPages } = await index.search(searchTerm, {
+        page: algoliaPage,
+        hitsPerPage: limitCount
       });
-
-      // Update the total count to reflect the search results, then slice for the current page
-      displayTotalCount = filtered.length;
-      logsRaw = filtered.slice(offsetCount, offsetCount + limitCount);
+      
+      logsRaw = hits.map((hit: any) => ({
+        ...hit,
+        id: hit.objectID,
+        // Algolia stores dates as timestamps or strings, reconstruct it for the frontend
+        timestamp: hit.timestamp ? { toDate: () => new Date(hit.timestamp) } : null
+      }));
+      
+      displayTotalCount = nbHits;
+      if (resultPage + 1 < nbPages) {
+        nextCursor = String(resultPage + 1);
+      }
+    } else {
+      // Native Pagination with Cursors
+      let logsQuery = collectionRef.orderBy('timestamp', 'desc');
+      
+      if (query.cursor) {
+        const cursorDoc = await collectionRef.doc(String(query.cursor)).get();
+        if (cursorDoc.exists) {
+          logsQuery = logsQuery.startAfter(cursorDoc);
+        }
+      }
+      
+      const latestSnapshot = await logsQuery.limit(limitCount).get();
+      logsRaw = latestSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      
+      if (latestSnapshot.docs.length === limitCount) {
+        nextCursor = latestSnapshot.docs[latestSnapshot.docs.length - 1].id;
+      }
     }
 
     const todayCount = todaySnapshot.data().count;
@@ -95,25 +120,20 @@ export default defineEventHandler(async (event) => {
     if (!oldestSnapshot.empty && oldestSnapshot.docs[0]) {
       const oldestData = oldestSnapshot.docs[0].data();
       if (oldestData.timestamp) {
-        // Format the UI date
         oldestDate = oldestData.timestamp.toDate().toLocaleDateString('en-GB', {
           month: 'short',
           year: 'numeric'
         });
 
-        // Calculate the average searches per day
         const nowMs = Date.now();
         const oldestMs = oldestData.timestamp.toMillis();
         const diffMs = nowMs - oldestMs;
 
-        // Convert ms to days (Math.max prevents dividing by 0 if it's the very first day)
         const daysElapsed = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-        // Use the absolute total count (not the filtered one) for the lifetime average
         averagePerDay = Math.round(countSnapshot.data().count / daysElapsed);
       }
     }
 
-    // Map to final frontend interface
     const logs: SearchLog[] = logsRaw.map((data: any) => {
       const dateObj = data.timestamp?.toDate ? data.timestamp.toDate() : null;
       return {
@@ -145,12 +165,13 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      totalCount: displayTotalCount, // This correctly updates the pagination UI!
+      totalCount: displayTotalCount,
       todayCount,
       yesterdayCount,
       oldestDate,
       averagePerDay,
-      logs
+      logs,
+      nextCursor
     };
   } catch (error) {
     throw createError({

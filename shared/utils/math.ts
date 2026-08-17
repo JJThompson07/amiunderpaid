@@ -252,6 +252,46 @@ export const calculateConfidenceScore = (
 };
 
 /**
+ * CORE ENGINE 5: Universal Benchmark Scoring
+ * Consolidates the common logic between UK and USA for calculating the final score.
+ */
+export const calculateBenchmarkScore = (
+  macroPercentile: number,
+  microPercentile: number | null,
+  livePercentile: number | null,
+  activeWeights: { MACRO: number; MICRO: number; LIVE: number }
+): number => {
+  let finalScore: number;
+
+  if (livePercentile !== null) {
+    if (microPercentile !== null) {
+      // ✅ Scenario A: We have all data
+      finalScore =
+        macroPercentile * activeWeights.MACRO +
+        microPercentile * activeWeights.MICRO +
+        livePercentile * activeWeights.LIVE;
+    } else {
+      // ⚠️ Scenario B: No Location (Micro is null)
+      // We proportionally rebalance the remaining Macro and Live weights to equal 100%
+      const remainingWeight = activeWeights.MACRO + activeWeights.LIVE;
+      const rebalancedMacroWeight = activeWeights.MACRO / remainingWeight;
+      const rebalancedLiveWeight = activeWeights.LIVE / remainingWeight;
+
+      finalScore = macroPercentile * rebalancedMacroWeight + livePercentile * rebalancedLiveWeight;
+    }
+  } else {
+    // 🚨 Scenario C: Adzuna API failed or returned 0 jobs (Live is null)
+    finalScore =
+      microPercentile !== null
+        ? macroPercentile * WEIGHTS.NO_LIVE_DATA.MACRO +
+          microPercentile * WEIGHTS.NO_LIVE_DATA.MICRO
+        : macroPercentile;
+  }
+
+  return Math.min(99, Math.max(1, Math.round(finalScore)));
+};
+
+/**
  * CORE ENGINE 4: Dynamic Histogram Builder
  * Takes an array of raw salary numbers and returns a balanced, max-7-bucket histogram
  * with clean, human-readable bucket boundaries.

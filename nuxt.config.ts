@@ -51,6 +51,7 @@ export default defineNuxtConfig({
     : {
         '/salary/**': { swr: DAY_IN_S, ssr: true },
         '/benchmark/**': { swr: DAY_IN_S, ssr: true },
+        '/sitemap.xml': { swr: 86400 },
         // Always disable SSR for highly dynamic, user-specific auth routes
         '/recruiter/**': { ssr: false },
         '/admin/**': { ssr: false }

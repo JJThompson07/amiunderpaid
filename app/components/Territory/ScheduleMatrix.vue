@@ -227,6 +227,22 @@ import {
 
 export type Territory = { id: number; name: string; band?: number };
 
+export interface ScheduleSelection {
+  territoryId: number;
+  territoryName: string;
+  band: number;
+  categoryValue: string;
+  isBasic: boolean;
+  exclusiveMonths: string[];
+  rowCost: number;
+}
+
+export interface UpcomingMonth {
+  value: string;
+  label: string;
+  year: number;
+}
+
 const props = defineProps({
   territories: { type: Array as PropType<Territory[]>, required: true },
   categories: { type: Array as PropType<string[]>, required: true },
@@ -235,12 +251,15 @@ const props = defineProps({
     default: () => []
   },
   takenMonths: {
-    type: Object,
+    type: Object as PropType<Record<string, string[]>>,
     default: () => ({})
   }
 });
 
-const emit = defineEmits(['update:selections', 'update:total']);
+const emit = defineEmits<{
+  (e: 'update:selections', payload: ScheduleSelection[]): void;
+  (e: 'update:total', payload: { payNow: number; nextMonth: number; total7Months: number }): void;
+}>();
 
 // Composables logic
 const {
@@ -283,7 +302,7 @@ const matrixColumns = computed(() => {
   ];
 
   // 2. Dynamic Month Columns
-  const monthCols = upcomingMonths.value.map((month: any) => ({
+  const monthCols = upcomingMonths.value.map((month: UpcomingMonth) => ({
     key: `month-${month.value}`,
     label: month.label, // Used as fallback
     class: 'text-center w-20',

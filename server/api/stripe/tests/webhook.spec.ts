@@ -54,7 +54,10 @@ vi.mock('stripe', () => {
 
 vi.mock('firebase-admin/firestore', () => ({
   getFirestore: mockGetFirestore,
-  FieldValue: { serverTimestamp: vi.fn(() => 'TIMESTAMP') }
+  FieldValue: { 
+    serverTimestamp: vi.fn(() => 'TIMESTAMP'),
+    arrayUnion: vi.fn((val) => `ARRAY_UNION(${val})`)
+  }
 }));
 
 describe('Stripe Webhook', () => {

@@ -90,6 +90,10 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
         marketData.matchedTitle.value = micro.officialGroupTitle;
       }
 
+      // Strip large collections out to prevent massive hydration bloat
+      if (macro.allRegionalData) delete macro.allRegionalData;
+      if (micro.allRegionalMicroData) delete micro.allRegionalMicroData;
+
       return {
         macro,
         micro,
@@ -170,32 +174,27 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
       return null;
     }
 
-    const rawResult =
-      country.value === 'UK'
-        ? calculateUKBenchmarkScore(
-            userSalary.value,
-            pageData.value.macro.macroNationalData,
-            pageData.value.micro.microNationalData || null,
-            pageData.value.micro.officialGroupTitle || '',
-            pageData.value.micro.microRegionalData || null,
-            pageData.value.macro.regionalMedianAllRoles,
-            pageData.value.macro.nationalMedianAllRoles,
-            adzuna.histogramBuckets.value,
-            adzuna.jobsCount.value || 0,
-            adzuna.meanSalary.value || 0
-          )
-        : calculateUSABenchmarkScore(
-            userSalary.value,
-            pageData.value.macro.macroNationalData,
-            pageData.value.macro.userRegionalData || null,
-            pageData.value.micro.microNationalData || null,
-            pageData.value.micro.microRegionalData || null,
-            pageData.value.macro.regionalMedianAllRoles,
-            pageData.value.macro.nationalMedianAllRoles,
-            adzuna.histogramBuckets.value,
-            adzuna.jobsCount.value || 0,
-            adzuna.meanSalary.value || 0
-          );
+    const context = {
+      userSalary: userSalary.value,
+      macroNationalData: pageData.value.macro.macroNationalData,
+      macroRegionalData: pageData.value.macro.userRegionalData || null,
+      microNationalData: pageData.value.micro.microNationalData || null,
+      microRegionalData: pageData.value.micro.microRegionalData || null,
+      microNationalOfficialTitle: pageData.value.micro.officialGroupTitle || '',
+      regionalMedianAllRoles: pageData.value.macro.regionalMedianAllRoles,
+      nationalMedianAllRoles: pageData.value.macro.nationalMedianAllRoles,
+      liveBuckets: adzuna.histogramBuckets.value,
+      totalLiveJobs: adzuna.jobsCount.value || 0,
+      meanLiveSalary: adzuna.meanSalary.value || 0
+    };
+
+    const scorers: Record<string, Function> = {
+      UK: calculateUKBenchmarkScore,
+      USA: calculateUSABenchmarkScore
+    };
+
+    const scorer = scorers[country.value] || calculateUKBenchmarkScore;
+    const rawResult = scorer(context);
 
     return formatMcaScoreForUi(
       rawResult,

@@ -21,6 +21,7 @@ const $fetchMock = vi.fn();
 vi.stubGlobal('$fetch', $fetchMock);
 const getQueryMock = vi.fn();
 vi.stubGlobal('getQuery', getQueryMock);
+vi.stubGlobal('defineCachedFunction', (fn: any) => fn);
 
 // Mock `../../utils/reed` used in the fallback block
 vi.mock('../../../utils/reed', () => ({

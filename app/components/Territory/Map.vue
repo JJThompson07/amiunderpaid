@@ -16,25 +16,28 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, shallowRef, watch, computed } from 'vue';
 import * as echarts from 'echarts';
 import type { CountryCode } from '../../pages/recruiter/territories/index.vue';
+import type { Territory, ONSMatch } from '~~/utils/locations/uk';
 
 const props = defineProps<{
   country: CountryCode;
   claimedIds: number[];
-  territories: any[];
+  territories: Territory[];
   selectedIds: number[];
 }>();
 
-const emit = defineEmits(['territory-clicked']);
+const emit = defineEmits<{
+  (e: 'territory-clicked', territory: Territory): void
+}>();
 
 const mapContainer = ref<HTMLElement | null>(null);
 const loading = ref(true);
 const chart = shallowRef<echarts.ECharts | null>(null);
 
 const territoryLookup = computed(() => {
-  const lookup = new Map<string, any>();
+  const lookup = new Map<string, Territory>();
 
   props.territories.forEach((t) => {
     // Index the main territory name
@@ -42,7 +45,7 @@ const territoryLookup = computed(() => {
 
     // Index all associated ONS names (Crucial for UK maps)
     if (t.ons_matches) {
-      t.ons_matches.forEach((ons: any) => {
+      t.ons_matches.forEach((ons: ONSMatch) => {
         lookup.set(normalizeName(ons.name), t);
       });
     }
@@ -73,6 +76,31 @@ const normalizeName = (name: string) => {
     .toLowerCase();
 };
 
+interface EChartsMapEvent {
+  name: string;
+  value?: number;
+}
+
+interface MapPolygonData {
+  name: string;
+  value: number;
+  itemStyle: {
+    areaColor: string;
+    borderColor: string;
+    borderWidth: number;
+  };
+  emphasis: {
+    disabled?: boolean;
+    itemStyle?: {
+      areaColor: string;
+      borderColor: string;
+      borderWidth: number;
+    };
+    label?: { show: boolean };
+  };
+  cursor: string;
+}
+
 const loadAndDrawMap = async () => {
   if (!mapContainer.value) {
     return;
@@ -101,7 +129,7 @@ const loadAndDrawMap = async () => {
     // Initialize fresh
     chart.value = echarts.init(mapContainer.value);
 
-    chart.value.on('click', (params: any) => {
+    chart.value.on('click', (params: EChartsMapEvent) => {
       const clickedName = normalizeName(params.name);
       const matchedTerritory = territoryLookup.value.get(clickedName);
 
@@ -132,7 +160,7 @@ const updateMapData = () => {
     return;
   }
 
-  const mapData: any[] = [];
+  const mapData: MapPolygonData[] = [];
 
   const white = getThemeColor('--color-white', '#ffffff');
   const slate100 = getThemeColor('--color-slate-100', '#f1f5f9');
@@ -152,8 +180,17 @@ const updateMapData = () => {
 
   const nameProp = props.country === 'UK' ? 'ctyua18nm' : 'name';
 
+interface GeoJSONFeature {
+  properties: Record<string, string>;
+}
+
+interface EChartsTooltipParams {
+  data?: unknown;
+  name: string;
+}
+
   // 2. Loop through every single polygon on the actual map
-  mapObj.geoJSON.features.forEach((feature: any) => {
+  mapObj.geoJSON.features.forEach((feature: GeoJSONFeature) => {
     const rawGeoName = feature.properties[nameProp];
     if (!rawGeoName) {
       return;
@@ -211,7 +248,7 @@ const updateMapData = () => {
     {
       tooltip: {
         trigger: 'item',
-        formatter: (params: any) => {
+        formatter: (params: EChartsTooltipParams) => {
           // Hide tooltip for greyed out areas
           if (!params.data) {
             return undefined;

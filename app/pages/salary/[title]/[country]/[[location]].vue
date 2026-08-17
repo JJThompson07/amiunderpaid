@@ -212,12 +212,15 @@
           :country="country" />
       </div>
 
-      <!-- 6. Disclaimer -->
-      <p
-        class="flex items-center justify-center gap-1 mt-4 lg:mt-12 text-2xs text-center text-slate-400">
-        <Info class="w-3 h-3" />
-        {{ $t('common.data.disclaimer') }}
-      </p>
+      <div class="flex flex-col items-center justify-center gap-1 mt-4 lg:mt-12 text-2xs text-center text-slate-400">
+        <p class="flex items-center gap-1">
+          <Info class="w-3 h-3" />
+          {{ $t('common.data.disclaimer') }}
+        </p>
+        <span class="font-medium opacity-80">
+          Data as of {{ new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) }}
+        </span>
+      </div>
     </div>
 
     <!-- Recruiter Lead Contact Modal -->

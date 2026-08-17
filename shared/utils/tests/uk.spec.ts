@@ -22,18 +22,18 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
   const mockBuckets = [{ value: 40000, count: 50 }];
 
   it('Scenario A1: All Data Present (High Confidence > 150 jobs)', () => {
-    const result = calculateUKBenchmarkScore(
-      50000,
-      mockNationalData,
-      mockNationalData,
-      'All',
-      mockRegionalData,
-      50000,
-      40000,
-      mockBuckets,
-      200,
-      40000
-    );
+    const result = calculateUKBenchmarkScore({
+      userSalary: 50000,
+      macroNationalData: mockNationalData,
+      microNationalData: mockNationalData,
+      microNationalOfficialTitle: 'All',
+      microRegionalData: mockRegionalData,
+      regionalMedianAllRoles: 50000,
+      nationalMedianAllRoles: 40000,
+      liveBuckets: mockBuckets,
+      totalLiveJobs: 200,
+      meanLiveSalary: 40000
+    });
     // Should use WEIGHTS.UK.HIGH_CONFIDENCE logic
     expect(result.score).toBe(77);
     expect(result.breakdown.livePercentile).toBeDefined();
@@ -41,71 +41,71 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
   });
 
   it('Scenario A2: All Data Present (Low Confidence < 50 jobs)', () => {
-    const result = calculateUKBenchmarkScore(
-      50000,
-      mockNationalData,
-      mockNationalData,
-      'All',
-      mockRegionalData,
-      null,
-      null,
-      mockBuckets,
-      10,
-      40000
-    );
+    const result = calculateUKBenchmarkScore({
+      userSalary: 50000,
+      macroNationalData: mockNationalData,
+      microNationalData: mockNationalData,
+      microNationalOfficialTitle: 'All',
+      microRegionalData: mockRegionalData,
+      regionalMedianAllRoles: null,
+      nationalMedianAllRoles: null,
+      liveBuckets: mockBuckets,
+      totalLiveJobs: 10,
+      meanLiveSalary: 40000
+    });
     // Should use WEIGHTS.UK.LOW_CONFIDENCE logic
     expect(result.score).toBe(66);
   });
 
   it('Scenario B: Missing Location (microRegionalData is null) -> Rebalances Macro/Live', () => {
-    const result = calculateUKBenchmarkScore(
-      50000,
-      mockNationalData,
-      null,
-      '',
-      null,
-      null,
-      null,
-      mockBuckets,
-      100,
-      40000
-    );
+    const result = calculateUKBenchmarkScore({
+      userSalary: 50000,
+      macroNationalData: mockNationalData,
+      microNationalData: null,
+      microNationalOfficialTitle: '',
+      microRegionalData: null,
+      regionalMedianAllRoles: null,
+      nationalMedianAllRoles: null,
+      liveBuckets: mockBuckets,
+      totalLiveJobs: 100,
+      meanLiveSalary: 40000
+    });
     // Without Micro data, it rebalances. It should NOT return the generic 50 as actual weight.
     expect(result.breakdown.microPercentile).toBe(null); // UI Fallback is null
     expect(result.score).toBe(88); // Math succeeds via rebalancing
   });
 
   it('Scenario C: Missing Live Data (0 jobs) -> Retreats to Macro/Micro fallbacks', () => {
-    const result = calculateUKBenchmarkScore(
-      50000,
-      mockNationalData,
-      mockNationalData,
-      'All',
-      mockRegionalData,
-      null,
-      null,
-      [],
-      0,
-      0
-    );
+    const result = calculateUKBenchmarkScore({
+      userSalary: 50000,
+      macroNationalData: mockNationalData,
+      microNationalData: mockNationalData,
+      microNationalOfficialTitle: 'All',
+      microRegionalData: mockRegionalData,
+      regionalMedianAllRoles: null,
+      nationalMedianAllRoles: null,
+      liveBuckets: [],
+      totalLiveJobs: 0,
+      meanLiveSalary: 0
+    });
     // Live Percentile should be null, scoring uses NO_LIVE_DATA weights
     expect(result.breakdown.livePercentile).toBeNull();
     expect(result.score).toBe(56);
   });
 
   it('Scenario D: Absolute Fallback (Missing Live AND Missing Micro)', () => {
-    const result = calculateUKBenchmarkScore(
-      50000,
-      mockNationalData,
-      null,
-      '',
-      null,
-      null,
-      null,
-      [],
-      0,
-      0
-    );
+    const result = calculateUKBenchmarkScore({
+      userSalary: 50000,
+      macroNationalData: mockNationalData,
+      microNationalData: null,
+      microNationalOfficialTitle: '',
+      microRegionalData: null,
+      regionalMedianAllRoles: null,
+      nationalMedianAllRoles: null,
+      liveBuckets: [],
+      totalLiveJobs: 0,
+      meanLiveSalary: 0
+    });
     // Only has Macro data. Score should equal the Macro Percentile.
     expect(result.score).toBe(result.breakdown.macroPercentile);
   });

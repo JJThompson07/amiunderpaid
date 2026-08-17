@@ -286,6 +286,9 @@ const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 50;
 
+// Maintain cursors for each page
+const cursors = ref<Record<number, string>>({});
+
 const { data, pending, refresh } = await useFetch<{
   success: boolean;
   totalCount: number;
@@ -294,14 +297,21 @@ const { data, pending, refresh } = await useFetch<{
   oldestDate: string;
   averagePerDay: number;
   logs: SearchLog[];
-}>('/api/user/search-logs', {
-  query: {
-    page: currentPage,
+  nextCursor?: string;
+}>('/api/admin/search-logs', {
+  query: computed(() => ({
     limit: itemsPerPage,
-    search: searchQuery // Passed directly to the server
-  },
+    search: searchQuery.value, // Passed directly to the server
+    cursor: currentPage.value > 1 ? cursors.value[currentPage.value] : undefined
+  })),
   watch: [currentPage, searchQuery]
 });
+
+watch(data, (newData) => {
+  if (newData?.nextCursor) {
+    cursors.value[currentPage.value + 1] = newData.nextCursor;
+  }
+}, { immediate: true });
 
 // --- BACKFILL STATE ---
 const backfillLoading = ref(false);
