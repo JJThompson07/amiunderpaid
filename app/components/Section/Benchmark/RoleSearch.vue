@@ -316,7 +316,7 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
     contract.value
   );
 
-  const searchId = logSearch(
+  const searchId = await logSearch(
     finalTitle.trim(),
     country.value,
     location.value,

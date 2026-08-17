@@ -1,32 +1,41 @@
 # Analytics Tracking
 
-### `app/app.vue`
+## Purpose
+Track user sessions and search activities for analytical purposes.
 
-- **Behavior**: On client mount, check if `import.meta.dev` is true. If so, abort tracking immediately (do not log local development sessions).
-- **Behavior**: If not in dev, get the current UTC date string (e.g. `YYYY-MM-DD`).
-- **Behavior**: Check if `localStorage.getItem('last_session_logged')` equals the current date.
-- **Behavior**: If it does not equal, send a non-blocking `POST` request to `/api/analytics/session`.
-- **Behavior**: Set `localStorage.setItem('last_session_logged', today)` immediately to prevent duplicates on rapid reloads or new tabs within the same day.
+## Requirements
 
-### `server/api/analytics/session.post.ts`
+### Requirement: Session Tracking on Mount
+The system SHALL track a user session precisely once per day when they mount the app.
 
-- **Behavior**: Read the `x-vercel-ip-country` header (fallback `cf-ipcountry`) for the country, sanitize special characters, truncate to 50 characters, and default to `Unknown`.
-- **Behavior**: Read the `x-vercel-ip-city` header for the city, sanitize special characters, truncate to 100 characters, and default to `Unknown`.
-- **Behavior**: Construct the current UTC date string in `YYYY-MM-DD` format.
-- **Behavior**: Use the Firebase Admin SDK (`getFirestore()`) to update the `user_sessions` collection at document `YYYY-MM-DD`.
-- **Behavior**: Perform a `set` operation with `{ merge: true }`.
-- **Behavior**: The update payload must include `total: FieldValue.increment(1)`.
-- **Behavior**: The update payload must include a computed path string `[\`locations.\${country}.\${city}\`]: FieldValue.increment(1)` to dynamically update the nested tally.
-- **Behavior**: `await` the Firestore write and return `200 OK`.
+#### Scenario: Client connects
+- **WHEN** the application mounts on the client and is not in development mode
+- **THEN** it checks local storage to ensure a session hasn't been logged today, and if not, logs it to `/api/analytics/session`
 
-### `server/api/analytics/tests/session.spec.ts`
+### Requirement: Process Session Data
+The system SHALL aggregate session analytics by country and city in Firestore.
 
-- **Behavior**: Mock the Firebase Admin SDK and test that correct headers parse to the right country/city.
-- **Behavior**: Test that missing headers result in `Unknown` for country and city.
+#### Scenario: Aggregating session location
+- **WHEN** a session is logged to `/api/analytics/session`
+- **THEN** it increments the total session count and the location-specific count for the current day based on headers.
 
-### `app/pages/admin/sessions.vue`
+### Requirement: Admin Analytics View
+The system SHALL provide an interface for administrators to view session analytics.
 
-- **Behavior**: Wrap in the admin layout and ensure middleware restricts access.
-- **Behavior**: Query the `user_sessions` collection.
-- **Behavior**: Render a table with three columns: Date, Location Breakdown, and Total.
-- **Behavior**: The Location Breakdown column should iterate through the nested `locations` object and display the country and its cities with their respective tallies (e.g. `UK: London: 42, Manchester: 25`).
+#### Scenario: Admin views sessions
+- **WHEN** an admin navigates to `/admin/sessions`
+- **THEN** they can view a table of session dates, location breakdowns, and total counts.
+
+### Requirement: Server-side search tracking ID generation
+The system SHALL mint document IDs on the server when creating new search history records, rather than accepting client-provided IDs.
+
+#### Scenario: Creating a new search record
+- **WHEN** a client submits a new search to `/api/user/track-search`
+- **THEN** the system ignores any client-provided ID, generates a new unique document ID in Firestore, and returns the generated ID to the client
+
+### Requirement: Validated search record updates
+The system SHALL ensure that search record updates explicitly target an existing document without full overwrites.
+
+#### Scenario: Updating an existing search record
+- **WHEN** a client submits an update to `/api/user/update-search` with a specific ID
+- **THEN** the system updates only the specified fields on the target document without replacing the entire document

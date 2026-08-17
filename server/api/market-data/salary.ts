@@ -212,18 +212,18 @@ export default defineEventHandler(async (event) => {
 
         return fallbackData;
       } catch (fallbackErr) {
+        console.error('Salary Fallback Error:', fallbackErr);
         throw createError({
           statusCode: 503,
-          statusMessage: 'Salary data temporarily unavailable. Please try again later.',
-          data: fallbackErr
+          statusMessage: 'Salary data temporarily unavailable. Please try again later.'
         });
       }
     }
 
+    console.error('Salary Primary Error:', e);
     throw createError({
       statusCode: 503,
-      statusMessage: 'Salary data temporarily unavailable. Please try again later.',
-      data: e
+      statusMessage: 'Salary data temporarily unavailable. Please try again later.'
     });
   }
 });

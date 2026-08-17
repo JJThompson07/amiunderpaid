@@ -2,51 +2,50 @@ export const useUserLogging = () => {
   // Track whenever a user performs a search
   const { $siteBrand } = useNuxtApp();
 
-  const logSearch = (
+  const logSearch = async (
     title: string,
     country: string,
     location: string,
     salary: string,
     schedule: string = 'full-time',
     contract: string = 'permanent'
-  ): string => {
+  ): Promise<string> => {
     /* v8 ignore start */
     if (import.meta.dev) {
-      // do not log dev searches
       return '';
     }
-    /* v8 ignore stop */
-
-    const searchId = crypto.randomUUID();
-
-    /* v8 ignore start */
+    
     if (import.meta.client) {
-      // We use the native browser 'fetch' API here instead of $fetch
-      // because we need the 'keepalive: true' flag. This tells the browser:
-      // "Even if the user navigates to a new page right now, finish sending this data to the database!"
-      fetch('/api/user/track-search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          id: searchId,
-          title,
-          country,
-          location,
-          salary,
-          schedule,
-          contract,
-          brand: $siteBrand
-        }),
-        keepalive: true
-      }).catch(() => {
-        // Silently fail if they are completely offline
-      });
+      try {
+        // We use the native browser 'fetch' API here instead of Nuxt's '$fetch'
+        // because we need the 'keepalive: true' flag. This ensures the search log
+        // is recorded even if the user immediately navigates to a new page or tab.
+        const response = await fetch('/api/user/track-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            country,
+            location,
+            salary,
+            schedule,
+            contract,
+            brand: $siteBrand
+          }),
+          keepalive: true
+        });
+        
+        const data = await response.json();
+        if (data.success && data.id) {
+          return data.id;
+        }
+      } catch {
+        // Silently fail
+      }
     }
     /* v8 ignore stop */
 
-    return searchId;
+    return '';
   };
 
   const updateSearchLog = (

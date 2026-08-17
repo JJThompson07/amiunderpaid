@@ -9,6 +9,25 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Missing required fields' });
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw createError({ statusCode: 400, message: 'Invalid email format' });
+  }
+
+  const sanitizeHTML = (str: string) => {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  };
+
+  const safeName = sanitizeHTML(name);
+  const safeSearchedRole = sanitizeHTML(searchedRole);
+  const safeLocation = sanitizeHTML(location);
+
   const db = getFirestore();
 
   try {
@@ -28,10 +47,10 @@ export default defineEventHandler(async (event) => {
     // 2. Save the Lead to Firestore
     const leadRef = await db.collection('leads').add({
       recruiterId,
-      candidateName: name,
+      candidateName: safeName,
       candidateEmail: email,
-      searchedRole: searchedRole || 'Unknown Role',
-      location: location || 'Unknown Location',
+      searchedRole: safeSearchedRole || 'Unknown Role',
+      location: safeLocation || 'Unknown Location',
       status: 'new',
       createdAt: new Date().toISOString()
     });
@@ -41,17 +60,17 @@ export default defineEventHandler(async (event) => {
       await db.collection('mail').add({
         to: targetRecruiterEmail,
         message: {
-          subject: `New Lead: ${name} is looking for ${searchedRole || 'opportunities'}`,
+          subject: `New Lead: ${safeName} is looking for ${safeSearchedRole || 'opportunities'}`,
           html: `
             <h2>You have a new lead from AmIUnderpaid!</h2>
-            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Name:</strong> ${safeName}</p>
             <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Searched Role:</strong> ${searchedRole || 'N/A'}</p>
-            <p><strong>Location:</strong> ${location || 'N/A'}</p>
+            <p><strong>Searched Role:</strong> ${safeSearchedRole || 'N/A'}</p>
+            <p><strong>Location:</strong> ${safeLocation || 'N/A'}</p>
             <br/>
             <p>Log in to your dashboard to manage this lead.</p>
           `,
-          text: `You have a new lead from AmIUnderpaid!\n\nName: ${name}\nEmail: ${email}\nSearched Role: ${searchedRole || 'N/A'}\nLocation: ${location || 'N/A'}\n\nLog in to your dashboard to manage this lead.`
+          text: `You have a new lead from AmIUnderpaid!\n\nName: ${safeName}\nEmail: ${email}\nSearched Role: ${safeSearchedRole || 'N/A'}\nLocation: ${safeLocation || 'N/A'}\n\nLog in to your dashboard to manage this lead.`
         }
       });
     }
@@ -63,13 +82,13 @@ export default defineEventHandler(async (event) => {
         subject: `Your details have been sent to ${agencyName}`,
         html: `
           <h2>Thanks for reaching out!</h2>
-          <p>Hi ${name},</p>
+          <p>Hi ${safeName},</p>
           <p>We have successfully passed your contact details over to the team at <strong>${agencyName}</strong>.</p>
-          <p>One of their hiring experts will be in touch with you shortly at this email address to discuss opportunities regarding your search for <strong>${searchedRole || 'roles'}</strong> in <strong>${location || 'your area'}</strong>.</p>
+          <p>One of their hiring experts will be in touch with you shortly at this email address to discuss opportunities regarding your search for <strong>${safeSearchedRole || 'roles'}</strong> in <strong>${safeLocation || 'your area'}</strong>.</p>
           <br/>
           <p>Best regards,<br/>The AmIUnderpaid Team</p>
         `,
-        text: `Thanks for reaching out!\n\nHi ${name},\n\nWe have successfully passed your contact details over to the team at ${agencyName}.\n\nOne of their hiring experts will be in touch with you shortly at this email address to discuss opportunities regarding your search for ${searchedRole || 'roles'} in ${location || 'your area'}.\n\nBest regards,\nThe AmIUnderpaid Team`
+        text: `Thanks for reaching out!\n\nHi ${safeName},\n\nWe have successfully passed your contact details over to the team at ${agencyName}.\n\nOne of their hiring experts will be in touch with you shortly at this email address to discuss opportunities regarding your search for ${safeSearchedRole || 'roles'} in ${safeLocation || 'your area'}.\n\nBest regards,\nThe AmIUnderpaid Team`
       }
     });
 

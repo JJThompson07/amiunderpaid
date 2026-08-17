@@ -4,7 +4,7 @@ You are an autonomous AI coding agent operating in the Am I Underpaid & Benchmar
 
 ## 1. Project Context & Boundaries
 
-- **Core Stack:** Nuxt 3 (Nitro), Vue 3 (Composition API), Tailwind CSS v3, and TypeScript.
+- **Core Stack:** Nuxt 4 (Nitro), Vue 3 (Composition API), Tailwind CSS v4, and TypeScript.
 - **Package Manager:** You MUST strictly use `pnpm` for all dependency management and script execution. Never run `npm` or `yarn`.
 - **Database & Auth:** Firebase (Firestore, Auth) using `vuefire` on the client and `firebase-admin` on the server.
 - **Strict Guidelines:** You MUST consult and obey the `CODE_STANDARDS.md` file before proposing or applying any changes.

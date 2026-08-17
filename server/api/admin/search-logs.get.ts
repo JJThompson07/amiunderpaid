@@ -1,5 +1,7 @@
 // server/api/user/search-logs.get.ts
 import { getFirestore } from 'firebase-admin/firestore';
+import { defineEventHandler, getQuery, createError } from 'h3';
+import { verifyAdmin } from '../../utils/firebase';
 
 export type SearchLog = {
   id: string;
@@ -21,6 +23,8 @@ export type SearchLog = {
 };
 
 export default defineEventHandler(async (event) => {
+  await verifyAdmin(event);
+  
   const db = getFirestore();
   const query = getQuery(event);
 

@@ -20,15 +20,18 @@ export default defineEventHandler(async (event) => {
   let userId = 'anonymous';
   let userEmail = '';
 
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.split('Bearer ')[1] || '';
-    try {
-      const decodedToken = await getAuth().verifyIdToken(token);
-      userId = decodedToken.uid;
-      userEmail = decodedToken.email || '';
-    } catch (error) {
-      console.warn('Stripe checkout auth warning:', error);
-    }
+  if (!authHeader?.startsWith('Bearer ')) {
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized: Missing auth token' });
+  }
+
+  const token = authHeader.split('Bearer ')[1] || '';
+  try {
+    const decodedToken = await getAuth().verifyIdToken(token);
+    userId = decodedToken.uid;
+    userEmail = decodedToken.email || '';
+  } catch (error) {
+    console.warn('Stripe checkout auth warning:', error);
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized: Invalid token' });
   }
 
   const currency = (body.currency || 'gbp').toLowerCase();

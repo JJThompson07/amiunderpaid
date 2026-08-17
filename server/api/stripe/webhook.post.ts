@@ -55,79 +55,98 @@ export default defineEventHandler(async (event) => {
       console.log('🔍 2. PARSED ITEMS:', JSON.stringify(purchasedItems, null, 2));
 
       const db = getFirestore();
-      const batch = db.batch();
-      let writeCount = 0;
 
-      // GET THE USER'S CURRENT PROFILE
-      const userRef = db.collection('users').doc(userId);
-      const userDoc = await userRef.get();
-      const userData = userDoc.data() || {};
+      await db.runTransaction(async (t) => {
+        // GET THE USER'S CURRENT PROFILE
+        const userRef = db.collection('users').doc(userId);
+        const userDoc = await t.get(userRef);
+        const userData = userDoc.data() || {};
 
-      const existingTerritories = userData.activeTerritories || [];
-      const updatedTerritories = [...existingTerritories];
+        const existingTerritories = userData.activeTerritories || [];
+        const updatedTerritories = [...existingTerritories];
 
-      for (const item of purchasedItems) {
-        // --- UPDATE 1: THE USER'S PROFILE DATA ---
-        const existingIndex = updatedTerritories.findIndex(
-          (t) => t.territoryId === item.territoryId && t.categoryValue === item.categoryValue
-        );
-
-        if (existingIndex > -1) {
-          // Upgrade existing territory
-          updatedTerritories[existingIndex].isBasic =
-            item.isBasic || updatedTerritories[existingIndex].isBasic;
-          const combinedMonths = new Set([
-            ...(updatedTerritories[existingIndex].exclusiveMonths || []),
-            ...item.exclusiveMonths
-          ]);
-          updatedTerritories[existingIndex].exclusiveMonths = Array.from(combinedMonths);
-        } else {
-          // Brand new territory
-          updatedTerritories.push(item);
+        // PRE-FETCH ALL CLAIM DOCUMENTS
+        const claimRefs: Record<string, any> = {};
+        const claimDocs: Record<string, any> = {};
+        for (const item of purchasedItems) {
+          if (item.exclusiveMonths && item.exclusiveMonths.length > 0) {
+            const claimDocId = `${item.territoryId}_${item.categoryValue}`;
+            if (!claimRefs[claimDocId]) {
+              claimRefs[claimDocId] = db.collection('territory_claims').doc(claimDocId);
+            }
+          }
         }
 
-        // --- UPDATE 2: THE GLOBAL LOCK ---
-        if (item.exclusiveMonths && item.exclusiveMonths.length > 0) {
-          const claimDocId = `${item.territoryId}_${item.categoryValue}`;
-          const claimRef = db.collection('territory_claims').doc(claimDocId);
+        const refsArray = Object.values(claimRefs);
+        if (refsArray.length > 0) {
+          const snapshots = await t.getAll(...refsArray);
+          snapshots.forEach(snap => {
+            claimDocs[snap.id] = snap.exists ? snap.data() : null;
+          });
+        }
 
-          const newExclusiveLocks: Record<string, string> = {};
-          for (const month of item.exclusiveMonths) {
-            newExclusiveLocks[month] = userId;
+        for (const item of purchasedItems) {
+          // --- UPDATE 1: THE USER'S PROFILE DATA ---
+          const existingIndex = updatedTerritories.findIndex(
+            (tItem) => tItem.territoryId === item.territoryId && tItem.categoryValue === item.categoryValue
+          );
+
+          if (existingIndex > -1) {
+            // Upgrade existing territory
+            updatedTerritories[existingIndex].isBasic =
+              item.isBasic || updatedTerritories[existingIndex].isBasic;
+            const combinedMonths = new Set([
+              ...(updatedTerritories[existingIndex].exclusiveMonths || []),
+              ...item.exclusiveMonths
+            ]);
+            updatedTerritories[existingIndex].exclusiveMonths = Array.from(combinedMonths);
+          } else {
+            // Brand new territory
+            updatedTerritories.push(item);
           }
 
-          console.log(`📝 3. QUEUING WRITE FOR ${claimDocId}:`, newExclusiveLocks);
+          // --- UPDATE 2: THE GLOBAL LOCK ---
+          if (item.exclusiveMonths && item.exclusiveMonths.length > 0) {
+            const claimDocId = `${item.territoryId}_${item.categoryValue}`;
+            const existingClaimData = claimDocs[claimDocId] || {};
+            const takenMonths = existingClaimData.takenExclusiveMonths || {};
 
-          batch.set(
-            claimRef,
-            {
-              territoryId: item.territoryId,
-              categoryValue: item.categoryValue,
-              takenExclusiveMonths: newExclusiveLocks,
-              updatedAt: new Date().toISOString()
-            },
-            { merge: true }
-          );
-          writeCount++;
+            const newExclusiveLocks: Record<string, string> = {};
+            for (const month of item.exclusiveMonths) {
+              if (takenMonths[month] && takenMonths[month] !== userId) {
+                throw new Error(`Territory ${claimDocId} is already taken for month ${month}`);
+              }
+              newExclusiveLocks[month] = userId;
+            }
+
+            console.log(`📝 3. QUEUING TRANSACTION WRITE FOR ${claimDocId}:`, newExclusiveLocks);
+
+            t.set(
+              claimRefs[claimDocId],
+              {
+                territoryId: item.territoryId,
+                categoryValue: item.categoryValue,
+                takenExclusiveMonths: newExclusiveLocks,
+                updatedAt: new Date().toISOString()
+              },
+              { merge: true }
+            );
+          }
         }
-      }
 
-      // Add the updated user profile array to the batch
-      batch.set(
-        userRef,
-        {
-          activeTerritories: updatedTerritories,
-          // Optional: Save the subscription ID if this was a recurring checkout
-          ...(session.subscription ? { stripeSubscriptionId: session.subscription as string } : {}),
-          updatedAt: new Date().toISOString()
-        },
-        { merge: true }
-      );
-      writeCount++;
+        // Add the updated user profile array to the transaction
+        t.set(
+          userRef,
+          {
+            activeTerritories: updatedTerritories,
+            ...(session.subscription ? { stripeSubscriptionId: session.subscription as string } : {}),
+            updatedAt: new Date().toISOString()
+          },
+          { merge: true }
+        );
+      });
 
-      // COMMIT EVERYTHING AT ONCE
-      await batch.commit();
-      console.log(`✅ 4. SUCCESSFULLY COMMITTED ${writeCount} WRITES FOR USER ${userId}`);
+      console.log(`✅ 4. SUCCESSFULLY COMMITTED TRANSACTION FOR USER ${userId}`);
     } catch (error) {
       console.error('🔥 Error fulfilling Stripe order:', error);
       throw createError({ statusCode: 500, message: 'Database fulfillment failed' });
