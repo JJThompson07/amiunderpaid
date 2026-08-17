@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change storage-rules-and-pricing-defaults. Update Purpose after archive.
+Defines the default Stripe pricing tiers and the associated Firebase storage rules.
 
 ## Requirements
 

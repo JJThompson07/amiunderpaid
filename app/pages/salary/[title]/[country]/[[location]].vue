@@ -324,9 +324,9 @@ const recruiterSectionTitle = computed(() => {
   if (recruiterCards.value?.[0]?.isExclusive) {
     const cat = adzunaCategory.value || 'your industry';
     const loc = location.value || country.value || 'your region';
-    return $t('recruiter.search-results.exclusive-subtitle', { category: cat, location: loc });
+    return t('recruiter.search-results.exclusive-subtitle', { category: cat, location: loc });
   }
-  return $t('recruiter.search-results.basic-subtitle', 'Speak to an expert to improve your MCA');
+  return t('recruiter.search-results.basic-subtitle', 'Speak to an expert to improve your MCA');
 });
 
 const getFloatingButtonText = (card: any) => {

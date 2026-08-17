@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change add-lead-email-copy. Update Purpose after archive.
+Adds convenient copy to clipboard functionality for lead email addresses.
 
 ## Requirements
 

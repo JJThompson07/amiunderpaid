@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change codebase-sanity-check. Update Purpose after archive.
+Ensures Stripe billing cancellations are accurately synchronized with local territory claims.
 
 ## Requirements
 

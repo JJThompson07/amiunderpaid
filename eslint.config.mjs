@@ -17,7 +17,14 @@ export default withNuxt(
         { terms: ['todo', 'fixme'], location: 'anywhere', decoration: ['/', '*'] }
       ],
       'require-await': 'off',
-      'sort-imports': ['error', { ignoreCase: true, ignoreDeclarationSort: true }]
+      'sort-imports': ['error', { ignoreCase: true, ignoreDeclarationSort: true }],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "ReturnStatement > CallExpression[callee.name='createError']",
+          message: 'Do not use `return createError`. Use `throw createError` instead to ensure proper HTTP status codes.'
+        }
+      ]
     }
   },
   {
@@ -77,8 +84,7 @@ export default withNuxt(
         'error',
         { argsIgnorePattern: '^_$', varsIgnorePattern: '^_$', caughtErrorsIgnorePattern: '^_$' }
       ],
-      'no-unused-vars': 'off',
-      'no-undef': 'off'
+      'no-unused-vars': 'off'
     }
   },
   {

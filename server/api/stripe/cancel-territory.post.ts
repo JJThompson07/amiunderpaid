@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   // 1. VERIFY USER
   const authHeader = getRequestHeader(event, 'authorization');
   if (!authHeader?.startsWith('Bearer ')) {
-    return createError({ statusCode: 401, message: 'Unauthorized' });
+    throw createError({ statusCode: 401, message: 'Unauthorized' });
   }
 
   const token = authHeader.split('Bearer ')[1];
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   const userData = userDoc.data();
 
   if (!userData) {
-    return createError({ statusCode: 404, message: 'User not found' });
+    throw createError({ statusCode: 404, message: 'User not found' });
   }
 
   const currentTerritories = userData.activeTerritories || [];
@@ -116,7 +116,7 @@ export default defineEventHandler(async (event) => {
       }
     } catch (stripeError) {
       console.error('Stripe update failed:', stripeError);
-      return createError({ statusCode: 500, message: 'Failed to update billing with Stripe.' });
+      throw createError({ statusCode: 500, message: 'Failed to update billing with Stripe.' });
     }
   }
 

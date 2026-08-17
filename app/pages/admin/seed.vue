@@ -258,7 +258,7 @@ const { loading, batchDelete, batchSeed } = useAdminClient(log);
 const targetScope = ref('national'); // 'national' | 'regional'
 const targetCountry = ref('UK');
 const targetPeriod = ref('year');
-const targetYear = ref(2026);
+const targetYear = ref(new Date().getFullYear());
 const selectedFile = ref<File | null>(null);
 const fileName = ref('');
 const parsedData = ref<(SalaryRecord & { period: string })[]>([]);
@@ -277,7 +277,7 @@ const fetchSummary = async () => {
 
   // Generate last 5 years dynamically
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i + 1);
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   const results: { country: string; year: number; period: string; count: number; scope: string }[] =
     [];

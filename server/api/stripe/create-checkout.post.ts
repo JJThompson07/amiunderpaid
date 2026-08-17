@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
 
   if (!countryPricing) {
     console.error(`Pricing object for ${countryKey} missing in Firestore!`);
-    return createError({ statusCode: 500, message: `Pricing bands for ${countryKey} not found.` });
+    throw createError({ statusCode: 500, message: `Pricing bands for ${countryKey} not found.` });
   }
 
   // ==========================================
@@ -156,7 +156,7 @@ export default defineEventHandler(async (event) => {
           name: 'Basic Target Access (Monthly)',
           description: `Monthly subscription for ${basicCount} target combination(s).`
         },
-        unit_amount: monthlyTotal * 100, // Stripe expects pence/cents
+        unit_amount: Math.round(monthlyTotal * 100), // Stripe expects pence/cents
         recurring: { interval: 'month' }
       },
       quantity: 1
@@ -171,14 +171,14 @@ export default defineEventHandler(async (event) => {
           name: 'Exclusive Target Access (Upfront)',
           description: `${exclusiveMonthsTotal} exclusive months secured across your territories.`
         },
-        unit_amount: upfrontTotal * 100
+        unit_amount: Math.round(upfrontTotal * 100)
       },
       quantity: 1
     });
   }
 
   if (lineItems.length === 0) {
-    return createError({ statusCode: 400, message: 'No items selected in cart.' });
+    throw createError({ statusCode: 400, message: 'No items selected in cart.' });
   }
 
   // ==========================================
@@ -252,6 +252,6 @@ export default defineEventHandler(async (event) => {
     return { url: session.url };
   } catch (error: any) {
     console.error('Stripe Error:', error.message);
-    return createError({ statusCode: 500, message: error.message });
+    throw createError({ statusCode: 500, message: error.message });
   }
 });

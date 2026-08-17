@@ -37,6 +37,7 @@ export const useMicroData = () => {
         } else {
           // UK usually treats SOC codes as numbers
           baseNationalFilter += ` AND id_code:${cleanId}`;
+          baseRegionalFilter += ` AND id_code:${cleanId}`;
         }
       } else {
         // FALLBACK: TEXT MATCH (If no ID was resolved)
@@ -56,7 +57,7 @@ export const useMicroData = () => {
       // For regional, we grab all regions for this specific job
       const regionalQuery = regionalIndex.search('', {
         filters: baseRegionalFilter,
-        hitsPerPage: 1000
+        hitsPerPage: 100
       });
 
       // ==========================================

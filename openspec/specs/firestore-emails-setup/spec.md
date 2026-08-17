@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change setup-firestore-emails. Update Purpose after archive.
+Defines the configuration and collections for triggering outbound emails via Firestore.
 
 ## Requirements
 

@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const category = String(query.category);
 
   if (!territoryId || !category) {
-    return createError({ statusCode: 400, message: 'Missing territoryId or category' });
+    throw createError({ statusCode: 400, message: 'Missing territoryId or category' });
   }
 
   const db = getFirestore();

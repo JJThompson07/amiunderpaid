@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change admin-search-log-update. Update Purpose after archive.
+Defines the metrics and capabilities for the admin search log dashboard.
 
 ## Requirements
 

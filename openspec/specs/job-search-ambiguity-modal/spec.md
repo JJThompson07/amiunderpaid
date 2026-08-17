@@ -1,7 +1,7 @@
 # job-search-ambiguity-modal
 
 ## Purpose
-TBD - This capability handles the modal for resolving ambiguous job search terms.
+Defines the UI and logic for resolving ambiguous job search queries via a modal.
 
 ## Requirements
 

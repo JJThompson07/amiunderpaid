@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by syncing change add-unit-tests. Update Purpose after archive.
+Establishes the Vitest configuration and base patterns for unit testing the application.
 
 ## Requirements
 

@@ -251,7 +251,7 @@ class="text-2xl font-black text-slate-300 animate-pulse mt-1"
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { Search } from 'lucide-vue-next';
-import type { SearchLog } from '../../../server/api/user/search-logs.get';
+import type { SearchLog } from '../../../server/api/admin/search-logs.get';
 
 definePageMeta({ middleware: 'admin' });
 

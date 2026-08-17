@@ -51,8 +51,8 @@ describe('useMicroData', () => {
 
     // Second call (regional)
     expect(mockSearch).toHaveBeenNthCalledWith(2, '', {
-      filters: 'country:UK',
-      hitsPerPage: 1000
+      filters: 'country:UK AND id_code:2136',
+      hitsPerPage: 100
     });
 
     expect(result.officialGroupTitle).toBe('Software Developer');
