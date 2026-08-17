@@ -112,7 +112,7 @@ export default defineEventHandler(async (event) => {
       logsRaw = latestSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
       if (latestSnapshot.docs.length === limitCount) {
-        nextCursor = latestSnapshot.docs[latestSnapshot.docs.length - 1].id;
+        nextCursor = latestSnapshot.docs[latestSnapshot.docs.length - 1]!.id;
       }
     }
 

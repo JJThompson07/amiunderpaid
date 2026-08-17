@@ -136,7 +136,7 @@ const loadAndDrawMap = async () => {
     // Initialize fresh
     chart.value = echarts.init(mapContainer.value);
 
-    chart.value.on('click', (params: EChartsMapEvent) => {
+    chart.value.on('click', (params: any) => {
       const clickedName = normalizeName(params.name);
       const matchedTerritory = territoryLookup.value.get(clickedName);
 

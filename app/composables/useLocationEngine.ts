@@ -99,8 +99,8 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
       }
 
       // Strip large collections out to prevent massive hydration bloat
-      if (macro.allRegionalData) {delete macro.allRegionalData;}
-      if (micro.allRegionalMicroData) {delete micro.allRegionalMicroData;}
+      if (macro.allRegionalData) {delete (macro as any).allRegionalData;}
+      if (micro.allRegionalMicroData) {delete (micro as any).allRegionalMicroData;}
 
       return {
         macro,
