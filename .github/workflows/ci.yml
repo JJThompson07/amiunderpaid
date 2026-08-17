@@ -54,8 +54,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Setup Java (for Firebase Emulator)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
       - name: Run Unit Tests & Enforce 80% Coverage
         run: pnpm run test:coverage
+
+      - name: Run Firebase Rules Tests
+        run: pnpm run test:rules
 
   e2e-tests:
     runs-on: ubuntu-latest

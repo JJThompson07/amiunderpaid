@@ -39,14 +39,21 @@ export default defineNuxtConfig({
 
   // ** 1. ENABLE SERVER-SIDE RENDERING **
   // This must be true for SEO and Caching to work
-  ssr: !process.env.E2E,
+  ssr: true,
 
-  // ** 2. CONFIGURE CACHING (Route Rules) **
+  // ** 2. CONFIGURE CACHING & HYBRID RENDERING (Route Rules) **
   routeRules: isDev
-    ? {}
+    ? {
+        // In E2E dev, we must disable SSR for protected routes to ensure Firebase auth stability
+        '/recruiter/**': { ssr: false },
+        '/admin/**': { ssr: false }
+      }
     : {
-        '/salary/**': { swr: DAY_IN_S },
-        '/benchmark/**': { swr: DAY_IN_S }
+        '/salary/**': { swr: DAY_IN_S, ssr: true },
+        '/benchmark/**': { swr: DAY_IN_S, ssr: true },
+        // Always disable SSR for highly dynamic, user-specific auth routes
+        '/recruiter/**': { ssr: false },
+        '/admin/**': { ssr: false }
       },
 
   css: ['~/assets/css/main.css'],

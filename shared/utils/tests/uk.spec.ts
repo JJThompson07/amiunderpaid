@@ -35,7 +35,7 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       40000
     );
     // Should use WEIGHTS.UK.HIGH_CONFIDENCE logic
-    expect(result.score).toBeGreaterThan(0);
+    expect(result.score).toBe(77);
     expect(result.breakdown.livePercentile).toBeDefined();
     expect(result.breakdown.modifier).toBe(1.25); // 50k / 40k
   });
@@ -54,7 +54,7 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
       40000
     );
     // Should use WEIGHTS.UK.LOW_CONFIDENCE logic
-    expect(result.score).toBeGreaterThan(0);
+    expect(result.score).toBe(66);
   });
 
   it('Scenario B: Missing Location (microRegionalData is null) -> Rebalances Macro/Live', () => {
@@ -72,7 +72,7 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
     );
     // Without Micro data, it rebalances. It should NOT return the generic 50 as actual weight.
     expect(result.breakdown.microPercentile).toBe(null); // UI Fallback is null
-    expect(result.score).toBeDefined(); // Math succeeds via rebalancing
+    expect(result.score).toBe(88); // Math succeeds via rebalancing
   });
 
   it('Scenario C: Missing Live Data (0 jobs) -> Retreats to Macro/Micro fallbacks', () => {
@@ -90,7 +90,7 @@ describe('UK Engine: calculateUKBenchmarkScore', () => {
     );
     // Live Percentile should be null, scoring uses NO_LIVE_DATA weights
     expect(result.breakdown.livePercentile).toBeNull();
-    expect(result.score).toBeDefined();
+    expect(result.score).toBe(56);
   });
 
   it('Scenario D: Absolute Fallback (Missing Live AND Missing Micro)', () => {

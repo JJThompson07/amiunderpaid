@@ -1,3 +1,3 @@
 export const useDevProviderOverride = () => {
-  return useState<string>('devProviderOverride', () => 'auto');
+  return useCookie<string>('devProviderOverride', { default: () => 'auto' });
 };

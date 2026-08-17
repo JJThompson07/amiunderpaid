@@ -1,6 +1,12 @@
 // tests/math.spec.ts
 import { describe, expect, it } from 'vitest';
-import { calculateLivePercentile, calculatePercentile, calculateRegionalModifier } from '../math';
+import {
+  buildHistogramBuckets,
+  calculateConfidenceScore,
+  calculateLivePercentile,
+  calculatePercentile,
+  calculateRegionalModifier
+} from '../math';
 
 describe('Math Engine: calculatePercentile', () => {
   const mockGovData = {
@@ -88,5 +94,59 @@ describe('Math Engine: calculateLivePercentile', () => {
 
   it('Scenario 5: Returns null if no live jobs or buckets exist', () => {
     expect(calculateLivePercentile(50000, [], 0, 0)).toBe(null);
+  });
+});
+
+describe('Math Engine: calculateConfidenceScore', () => {
+  it('Scenario 1: Baseline Macro (Score 2)', () => {
+    expect(calculateConfidenceScore(0, false, false, false)).toBe(2);
+  });
+
+  it('Scenario 2: Adds Micro Regional (+4)', () => {
+    expect(calculateConfidenceScore(0, true, false, false)).toBe(6);
+  });
+
+  it('Scenario 3: Adds Micro National (+1)', () => {
+    expect(calculateConfidenceScore(0, false, true, false)).toBe(3);
+  });
+
+  it('Scenario 4: Adds Live Percentile based on jobs (Linear up to 4 points at 150 jobs)', () => {
+    expect(calculateConfidenceScore(75, false, false, true)).toBe(4); // 2 + (75/150)*4
+    expect(calculateConfidenceScore(150, false, false, true)).toBe(6); // 2 + (150/150)*4
+    expect(calculateConfidenceScore(300, false, false, true)).toBe(6); // Caps at 4 points (2 + 4)
+  });
+  
+  it('Scenario 5: Perfect Score (10)', () => {
+    // 2 (base) + 4 (Regional) + 4 (Live > 150)
+    expect(calculateConfidenceScore(200, true, true, true)).toBe(10);
+  });
+});
+
+describe('Math Engine: buildHistogramBuckets', () => {
+  it('Scenario 1: Builds standard buckets with nice intervals', () => {
+    const salaries = [30000, 32000, 45000, 50000, 75000];
+    const buckets = buildHistogramBuckets(salaries, 5);
+    // Min 30000, max 75000. Diff = 45000. 45000/5 = 9000 -> nice interval = 10000.
+    // Bucket min = 30000.
+    // Buckets should be 30k, 40k, 50k, 60k, 70k.
+    expect(buckets[30000]).toBe(2); // 30k, 32k
+    expect(buckets[40000]).toBe(1); // 45k
+    expect(buckets[50000]).toBe(1); // 50k
+    expect(buckets[70000]).toBe(1); // 75k
+  });
+
+  it('Scenario 2: Handles edge case min === max', () => {
+    const salaries = [50000, 50000, 50000];
+    const buckets = buildHistogramBuckets(salaries, 5);
+    expect(Object.keys(buckets).length).toBe(1);
+    expect(buckets[50000]).toBe(3);
+  });
+
+  it('Scenario 3: Ignores negative salaries and zeroes', () => {
+    const salaries = [-10000, 0, 40000, 40000];
+    const buckets = buildHistogramBuckets(salaries, 5);
+    expect(buckets[40000]).toBe(2);
+    expect(buckets[-10000]).toBeUndefined();
+    expect(buckets[0]).toBeUndefined();
   });
 });

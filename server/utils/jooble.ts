@@ -85,7 +85,31 @@ export const fetchJoobleData = async (
   // Credentials are read from private runtimeConfig (server-only).
   const apiKey = config.joobleApiKey;
 
+  const isDevOrE2e = process.dev || process.env.E2E === 'true';
+
   if (!apiKey) {
+    if (isDevOrE2e) {
+      return {
+        provider: 'jooble',
+        count: 1,
+        mean: 60000,
+        histogram: { '60000': 1 },
+        results: [{
+          id: 1,
+          title: 'Software Engineer (Mocked Jooble)',
+          description: 'Mock Jooble description',
+          category: { label: 'IT', tag: 'it' },
+          redirect_url: 'http://jooble.org',
+          company: { display_name: 'Jooble Corp' },
+          location: { display_name: 'New York', area: ['New York'] },
+          salary_min: 50000,
+          salary_max: 70000,
+          contract_time: 'full_time',
+          contract_type: 'permanent',
+          provider: 'jooble'
+        }]
+      };
+    }
     throw createError({ statusCode: 500, statusMessage: 'Market data service is misconfigured.' });
   }
 

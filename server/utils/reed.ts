@@ -28,7 +28,31 @@ export const fetchReedData = async (
   // Never access via process.env directly — this bypasses Nuxt's validation layer.
   const apiKey = config.reedApiKey;
 
+  const isDevOrE2e = process.dev || process.env.E2E === 'true';
+
   if (!apiKey) {
+    if (isDevOrE2e) {
+      return {
+        provider: 'reed',
+        count: 1,
+        mean: 50000,
+        histogram: { '50000': 1 },
+        results: [{
+          id: 1,
+          title: 'Software Engineer (Mocked Reed)',
+          description: 'Mock Reed description',
+          category: { label: 'IT', tag: 'it' },
+          redirect_url: 'http://reed.co.uk',
+          company: { display_name: 'Reed Corp' },
+          location: { display_name: 'London', area: ['London'] },
+          salary_min: 40000,
+          salary_max: 60000,
+          contract_time: 'full_time',
+          contract_type: 'permanent',
+          provider: 'reed'
+        }]
+      };
+    }
     throw createError({ statusCode: 500, statusMessage: 'Market data service is misconfigured.' });
   }
 

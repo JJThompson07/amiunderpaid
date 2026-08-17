@@ -23,6 +23,7 @@
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
+    "test:rules": "npx -y firebase-tools@latest emulators:exec \"vitest run tests/firestore.spec.ts\"",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -42,6 +43,7 @@
     "xlsx": "file:./vendor/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@intlify/utils": "^1.0.1",
     "@nuxt/eslint": "^0.7.6",
     "@nuxtjs/i18n": "^10.2.3",

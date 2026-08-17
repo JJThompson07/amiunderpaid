@@ -63,6 +63,7 @@ When a change is fully verified and approved:
 - **Test Verification:** Before concluding ANY task, proposing a change, or asking the user to push a branch, you MUST run both `pnpm test` (Unit Tests) and `pnpm test:e2e` (Playwright tests).
 - **Hard Blocker:** If ANY test fails during execution, this blocks further execution. You must fix the regression before proceeding or explicitly ask the user for guidance if you are stuck.
 - **Coverage Enforcement:** The repository strictly requires **80% minimum coverage** on all four metrics (statements, branches, functions, and lines) on a per-file basis. You MUST run `pnpm run test:coverage` to verify this criteria is met for any modified or new files before concluding a task. PRs will fail if any file drops below 80% coverage.
+  - *Note:* Server API routes (`server/**`) currently have a relaxed starting threshold of 0%. When modifying or adding new server endpoints, you MUST write corresponding unit tests to establish coverage.
 
 ## 5. Coding Standards & Linting
 

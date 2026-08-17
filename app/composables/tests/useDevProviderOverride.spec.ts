@@ -2,18 +2,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useDevProviderOverride } from '../useDevProviderOverride';
 
-const stateCache: Record<string, any> = {};
-vi.stubGlobal('useState', (key: string, init: any) => {
-  if (!(key in stateCache)) {
-    stateCache[key] = { value: init ? init() : null };
+const cookieCache: Record<string, any> = {};
+vi.stubGlobal('useCookie', (key: string, options: any) => {
+  if (!(key in cookieCache)) {
+    cookieCache[key] = { value: options?.default ? options.default() : null };
   }
-  return stateCache[key];
+  return cookieCache[key];
 });
 
 describe('useDevProviderOverride', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.keys(stateCache).forEach((key) => delete stateCache[key]);
+    Object.keys(cookieCache).forEach((key) => delete cookieCache[key]);
   });
 
   it('initializes to auto', () => {

@@ -51,6 +51,8 @@ You can then access the different apps at e.g., `http://ami-us.localhost:3000`.
 
 This project maintains strict test coverage requirements (80% minimum) using **Vitest** for unit testing and **Playwright** for End-to-End (E2E) testing. All code changes must pass validation before merging.
 
+*Note: Server API routes (`server/**`) currently have a relaxed starting threshold of 0%. When modifying or adding new server endpoints, developers MUST write corresponding unit tests to establish coverage.*
+
 ```bash
 # Run unit tests
 pnpm test

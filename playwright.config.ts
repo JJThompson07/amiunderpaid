@@ -32,12 +32,22 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /.*ssr\.spec\.ts/
     },
 
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] }
+      use: { ...devices['Desktop Firefox'] },
+      testIgnore: /.*ssr\.spec\.ts/
+    },
+    {
+      name: 'ssr',
+      use: { 
+        ...devices['Desktop Chrome'],
+        javaScriptEnabled: false
+      },
+      testMatch: /.*ssr\.spec\.ts/
     }
   ],
 

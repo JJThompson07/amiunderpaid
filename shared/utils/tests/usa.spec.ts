@@ -74,7 +74,7 @@ describe('USA Engine: calculateUSABenchmarkScore', () => {
     );
     // Should complete math without throwing errors and return null for microPercentile since no location data is available
     expect(result.breakdown.microPercentile).toBe(null); // UI Fallback is null since no micro data
-    expect(result.score).toBeGreaterThan(0);
+    expect(result.score).toBe(89);
   });
 
   it('Scenario D: Handles Zero Live Jobs securely', () => {

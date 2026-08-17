@@ -159,7 +159,7 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
     () => adzuna.jobsData.value?.results?.[0]?.category?.label
   );
 
-  /* v8 ignore start */
+
   const mcaScore = computed(() => {
     if (!pageData.value?.macro?.macroNationalData) {
       return null;
@@ -204,7 +204,6 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
       t
     );
   });
-  /* v8 ignore stop */
 
   // 6. Shared Methods
   const handleAmbiguitySelect = async (match: any) => {
@@ -240,7 +239,6 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
   // 7. Shared Watchers
   watch(marketData.resolving, (newLoading) => {
     if (newLoading === false) {
-      /* v8 ignore start */
       if (
         import.meta.client &&
         hasGovernmentData.value &&
@@ -262,7 +260,6 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
           }
         }).catch(() => {});
       }
-      /* v8 ignore stop */
 
       if (
         location.value &&

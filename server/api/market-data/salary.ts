@@ -42,8 +42,9 @@ export default defineEventHandler(async (event) => {
   const cacheKey = generateCacheKey(titleStr, locationStr, countryCode);
   const cacheRef = db.collection('adzuna_distribution_cache').doc(cacheKey);
 
-  const devProviderOverride = process.dev ? (query.devProvider as string) : undefined;
-  const skipCache = process.dev && !!devProviderOverride;
+  const isDevOrE2e = process.dev || process.env.E2E === 'true';
+  const devProviderOverride = isDevOrE2e ? (query.devProvider as string) : undefined;
+  const skipCache = isDevOrE2e && !!devProviderOverride;
 
   if (!skipCache) {
     try {
@@ -124,10 +125,10 @@ export default defineEventHandler(async (event) => {
 
   // 3. Fetch from Adzuna API
   try {
-    if (import.meta.dev && devProviderOverride === 'reed') {
+    if (isDevOrE2e && devProviderOverride === 'reed') {
       throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
     }
-    if (import.meta.dev && devProviderOverride === 'jooble') {
+    if (isDevOrE2e && devProviderOverride === 'jooble') {
       throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
     }
 
