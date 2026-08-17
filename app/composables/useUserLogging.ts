@@ -17,9 +17,13 @@ export const useUserLogging = () => {
     
     if (import.meta.client) {
       try {
-        const response = await $fetch<{ success: boolean; id?: string }>('/api/user/track-search', {
+        // We use the native browser 'fetch' API here instead of Nuxt's '$fetch'
+        // because we need the 'keepalive: true' flag. This ensures the search log
+        // is recorded even if the user immediately navigates to a new page or tab.
+        const response = await fetch('/api/user/track-search', {
           method: 'POST',
-          body: {
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             title,
             country,
             location,
@@ -27,11 +31,13 @@ export const useUserLogging = () => {
             schedule,
             contract,
             brand: $siteBrand
-          }
+          }),
+          keepalive: true
         });
         
-        if (response.success && response.id) {
-          return response.id;
+        const data = await response.json();
+        if (data.success && data.id) {
+          return data.id;
         }
       } catch {
         // Silently fail
