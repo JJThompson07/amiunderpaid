@@ -251,18 +251,18 @@ export default defineEventHandler(async (event) => {
           is_admin_verified: isAdminVerified
         };
       } catch (fallbackErr) {
+        console.error('Jobs Fallback Error:', fallbackErr);
         throw createError({
           statusCode: 503,
-          statusMessage: 'Market data temporarily unavailable. Please try again later.',
-          data: fallbackErr
+          statusMessage: 'Market data temporarily unavailable. Please try again later.'
         });
       }
     }
 
+    console.error('Jobs Primary Error:', e);
     throw createError({
       statusCode: 503,
-      statusMessage: 'Market data temporarily unavailable. Please try again later.',
-      data: e?.message || e
+      statusMessage: 'Market data temporarily unavailable. Please try again later.'
     });
   }
 });
