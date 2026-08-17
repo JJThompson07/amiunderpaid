@@ -9,7 +9,6 @@ vi.stubGlobal('useRoute', () => mockRoute);
 vi.stubGlobal('useTerritories', () => ({ allTerritories: mockTerritories }));
 
 vi.stubGlobal('useAsyncData', async (key: string, fetcher: any) => {
-
   const result = await fetcher();
   return {
     data: { value: result },
@@ -69,7 +68,12 @@ describe('useRecruiterCards', () => {
   it('fetches cards when territoryId and adzunaCategory are present', async () => {
     location.value = 'London';
     adzunaCategory.value = 'IT';
-    const { recruiterCards } = await useRecruiterCards(location, matchedLocation, adzunaCategory, 'custom-prefix');
+    const { recruiterCards } = await useRecruiterCards(
+      location,
+      matchedLocation,
+      adzunaCategory,
+      'custom-prefix'
+    );
 
     expect((globalThis as any).$fetch).toHaveBeenCalledWith('/api/user/search/recruiter-card', {
       query: { territoryId: 1, category: 'IT' }

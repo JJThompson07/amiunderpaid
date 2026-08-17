@@ -7,32 +7,40 @@ Dynamically adjusts frontend UI elements, including job listings and section tit
 ## Requirements
 
 ### Requirement: Dynamic Job Section Titles
+
 The frontend SHALL determine the data provider from the API response and display the appropriate title for the job listings section. In local development environments, a toggle control MUST be provided to manually switch the data provider.
 
 #### Scenario: Displaying Adzuna title
+
 - **WHEN** the jobs data indicates it was sourced from Adzuna
 - **THEN** the section title SHALL be "Jobs by adzuna" and link to Adzuna.
 
 #### Scenario: Displaying Reed title
+
 - **WHEN** the jobs data indicates it was sourced from Reed
 - **THEN** the section title SHALL be "Jobs By Reed" and link to Reed.co.uk.
 
 #### Scenario: Displaying Developer Toggle
+
 - **WHEN** the application is running in development mode (`import.meta.dev` is true)
 - **THEN** the search results UI SHALL display a toggle button allowing the developer to switch the provider override between 'Auto', 'Adzuna', and 'Reed'.
 - **AND** selecting an option SHALL trigger a re-fetch of the data using the newly selected provider mode.
 
 ### Requirement: Reed Job Listing Rendering
+
 The frontend SHALL render a specific component for Reed job listings that displays the top 10 highest-salary jobs from the search results.
 
 #### Scenario: Rendering Reed jobs
+
 - **WHEN** the provider is Reed and job listings are available
 - **THEN** the system SHALL display up to 10 jobs with the highest salaries, formatted correctly and linking directly to the Reed job URL.
 
 ### Requirement: Data Sources Page Update
+
 The "Data sources" page SHALL be updated to combine Adzuna and Reed into a single unified intelligence tile, while retaining existing tiles like "Crowdsourced".
 
 #### Scenario: Updating data source tiles
+
 - **WHEN** a user visits the "Data sources" page
 - **THEN** the system SHALL display a combined "Adzuna & Reed Intelligence" tile.
 - **AND** the description SHALL state that real-time market shifts and active job listings are sourced from both Adzuna and Reed.co.uk.

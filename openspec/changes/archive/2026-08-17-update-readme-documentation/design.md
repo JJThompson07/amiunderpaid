@@ -5,11 +5,13 @@ The current README and documentation contain internal details that are unnecessa
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Present a professional public face for the project.
 - Provide clear setup instructions.
 - Hide sensitive security and internal orchestration logic from the main README.
 
 **Non-Goals:**
+
 - We are not deleting `AGENTS.md` or `COUNTRY_GUIDELINES.md`, only ensuring they are referenced appropriately or internal details are kept out of `README.md`.
 - No code changes.
 

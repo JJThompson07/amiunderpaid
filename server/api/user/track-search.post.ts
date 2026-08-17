@@ -35,7 +35,10 @@ export default defineEventHandler(async (event) => {
 
     // Security Remediation: Mint an HMAC token to authenticate future updates to this specific search record
     const config = useRuntimeConfig();
-    const token = generateSearchToken(docRef.id, config.stripeWebhookSecret || 'fallback-secret-for-dev');
+    const token = generateSearchToken(
+      docRef.id,
+      config.stripeWebhookSecret || 'fallback-secret-for-dev'
+    );
 
     return { success: true, id: docRef.id, token };
   } catch {

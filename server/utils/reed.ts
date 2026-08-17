@@ -1,9 +1,9 @@
 import { REED_LOCATION_MAP } from '../constants/locations';
-import { type JobSearchResponse } from '~~/shared/utils/market-data';
+import type { JobSearchResponse } from '~~/shared/utils/market-data';
 import { buildHistogramBuckets } from '~~/shared/utils/math';
 
-export interface ReedJobResponse {
-  results: Array<{
+export type ReedJobResponse = {
+  results: {
     jobId: number;
     employerName: string;
     jobTitle: string;
@@ -13,7 +13,7 @@ export interface ReedJobResponse {
     currency: string;
     jobDescription: string;
     jobUrl: string;
-  }>;
+  }[];
   totalResults: number;
 }
 
@@ -28,7 +28,7 @@ export const fetchReedData = async (
   // Never access via process.env directly — this bypasses Nuxt's validation layer.
   const apiKey = config.reedApiKey;
 
-  const isDevOrE2e = process.dev || process.env.E2E === 'true';
+  const isDevOrE2e = import.meta.dev || process.env.E2E === 'true';
 
   if (!apiKey) {
     if (isDevOrE2e) {
@@ -37,20 +37,22 @@ export const fetchReedData = async (
         count: 1,
         mean: 50000,
         histogram: { '50000': 1 },
-        results: [{
-          id: 1,
-          title: 'Software Engineer (Mocked Reed)',
-          description: 'Mock Reed description',
-          category: { label: 'IT', tag: 'it' },
-          redirect_url: 'http://reed.co.uk',
-          company: { display_name: 'Reed Corp' },
-          location: { display_name: 'London', area: ['London'] },
-          salary_min: 40000,
-          salary_max: 60000,
-          contract_time: 'full_time',
-          contract_type: 'permanent',
-          provider: 'reed' as const
-        }]
+        results: [
+          {
+            id: 1,
+            title: 'Software Engineer (Mocked Reed)',
+            description: 'Mock Reed description',
+            category: { label: 'IT', tag: 'it' },
+            redirect_url: 'http://reed.co.uk',
+            company: { display_name: 'Reed Corp' },
+            location: { display_name: 'London', area: ['London'] },
+            salary_min: 40000,
+            salary_max: 60000,
+            contract_time: 'full_time',
+            contract_type: 'permanent',
+            provider: 'reed' as const
+          }
+        ]
       };
     }
     throw createError({ statusCode: 500, statusMessage: 'Market data service is misconfigured.' });
@@ -70,12 +72,12 @@ export const fetchReedData = async (
     params.locationName = cleanLocation;
   }
 
-  if (jobType === 'full-time') params.fullTime = true;
-  if (jobType === 'part-time') params.partTime = true;
-  
-  if (contractType === 'permanent') params.permanent = true;
-  if (contractType === 'contract') params.contract = true;
-  if (contractType === 'temp') params.temp = true;
+  if (jobType === 'full-time') {params.fullTime = true;}
+  if (jobType === 'part-time') {params.partTime = true;}
+
+  if (contractType === 'permanent') {params.permanent = true;}
+  if (contractType === 'contract') {params.contract = true;}
+  if (contractType === 'temp') {params.temp = true;}
 
   // Basic Auth: key as username, empty password
   const authHeader = 'Basic ' + btoa(`${apiKey}:`);
@@ -98,9 +100,13 @@ export const fetchReedData = async (
   }
 };
 
-export const processReedData = (response: ReedJobResponse, jobType: string, contractType: string): JobSearchResponse => {
+export const processReedData = (
+  response: ReedJobResponse,
+  jobType: string,
+  contractType: string
+): JobSearchResponse => {
   const jobs = response.results || [];
-  
+
   let totalSalary = 0;
   let validSalaryCount = 0;
   const rawSalaries: number[] = [];

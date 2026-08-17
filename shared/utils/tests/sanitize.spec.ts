@@ -45,16 +45,8 @@ describe('sanitizeAdzunaData', () => {
   });
 
   it('recursively processes elements in an array', () => {
-    const input = [
-      'string',
-      { __bad__: 1, good: 2 },
-      [{ __nested_bad__: 3, nested_good: 4 }]
-    ];
-    expect(sanitizeAdzunaData(input)).toEqual([
-      'string',
-      { good: 2 },
-      [{ nested_good: 4 }]
-    ]);
+    const input = ['string', { __bad__: 1, good: 2 }, [{ __nested_bad__: 3, nested_good: 4 }]];
+    expect(sanitizeAdzunaData(input)).toEqual(['string', { good: 2 }, [{ nested_good: 4 }]]);
   });
 });
 

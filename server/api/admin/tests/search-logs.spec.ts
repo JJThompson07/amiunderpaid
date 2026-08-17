@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { H3Event } from 'h3';
 import { verifyAdmin } from '../../../utils/firebase';
+
+import handler from '../search-logs.get';
 vi.stubGlobal('defineEventHandler', (fn: any) => fn);
 vi.stubGlobal('getQuery', () => ({}));
 vi.stubGlobal('createError', (err: any) => new Error(err.message));
-
-import handler from '../search-logs.get';
 
 vi.mock('../../../utils/firebase', () => ({
   verifyAdmin: vi.fn(),
@@ -37,7 +37,7 @@ vi.mock('firebase-admin/firestore', () => ({
 describe('Admin Search Logs Endpoint', () => {
   it('should enforce admin authorization via verifyAdmin', async () => {
     const event = { context: {} } as unknown as H3Event;
-    
+
     // Simulate verifyAdmin throwing an error (e.g. 403)
     const error = new Error('Forbidden');
     (verifyAdmin as any).mockRejectedValueOnce(error);

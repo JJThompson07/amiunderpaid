@@ -10,12 +10,15 @@ describe('useUserLogging', () => {
     vi.stubGlobal('useNuxtApp', () => ({ $siteBrand: 'test-brand' }));
 
     // Mock fetch
-    mockFetch = vi.fn(() => Promise.resolve({ 
-      ok: true,
-      json: () => Promise.resolve({ success: true, id: 'server-minted-uuid', token: 'mock-hmac-token' })
-    }));
+    mockFetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({ success: true, id: 'server-minted-uuid', token: 'mock-hmac-token' })
+      })
+    );
     vi.stubGlobal('fetch', mockFetch);
-    
+
     // Mock crypto.randomUUID (still used or not? Not used in logSearch anymore)
     vi.stubGlobal('crypto', {
       randomUUID: vi.fn(() => 'mock-uuid-1234')
@@ -25,9 +28,16 @@ describe('useUserLogging', () => {
   describe('logSearch', () => {
     it('returns a string ID and calls fetch', async () => {
       const { logSearch } = useUserLogging();
-      
-      const result = await logSearch('Software Engineer', 'US', 'New York', '100000', 'part-time', 'contract');
-      
+
+      const result = await logSearch(
+        'Software Engineer',
+        'US',
+        'New York',
+        '100000',
+        'part-time',
+        'contract'
+      );
+
       // If import.meta.client is mocked/true, it should call fetch
       if (mockFetch.mock.calls.length > 0) {
         expect(result).toBe('server-minted-uuid');
@@ -51,9 +61,9 @@ describe('useUserLogging', () => {
 
     it('uses default schedule and contract if not provided', async () => {
       const { logSearch } = useUserLogging();
-      
+
       await logSearch('Title', 'Country', 'Location', 'Salary');
-      
+
       if (mockFetch.mock.calls.length > 0) {
         const [, options] = mockFetch.mock.calls[0]!;
         const body = JSON.parse(options.body);
@@ -66,25 +76,25 @@ describe('useUserLogging', () => {
   describe('updateSearchLog', () => {
     it('does not fetch when searchId is falsy', () => {
       const { updateSearchLog } = useUserLogging();
-      
+
       updateSearchLog('', { searchSuccess: true });
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
     it('calls fetch with updated data when conditions are met', async () => {
       const { logSearch, updateSearchLog } = useUserLogging();
-      
+
       // First log a search to populate the token in useState
       await logSearch('Title', 'Country', 'Location', 'Salary');
-      
+
       // Clear the mock calls so we only inspect the update
       mockFetch.mockClear();
 
-      updateSearchLog('mock-uuid-1234', { 
+      updateSearchLog('mock-uuid-1234', {
         mcaScore: 85,
-        searchSuccess: true 
+        searchSuccess: true
       });
-      
+
       if (mockFetch.mock.calls.length > 0) {
         expect(mockFetch).toHaveBeenCalledTimes(1);
         const [url, options] = mockFetch.mock.calls[0]!;

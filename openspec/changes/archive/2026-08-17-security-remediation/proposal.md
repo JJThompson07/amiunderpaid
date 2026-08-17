@@ -18,10 +18,12 @@ A recent security audit identified 10 critical ship-blockers (Phase 1) in the cu
 ## Capabilities
 
 ### New Capabilities
+
 - `rate-limiting`: Middleware to enforce API rate limits on public write endpoints.
 - `admin-provisioning`: A dedicated API and script for securely provisioning admin access.
 
 ### Modified Capabilities
+
 - `firestore-rules`: Expanding rule coverage to all client-touched collections and protecting additional user fields.
 - `stripe-checkout-security`: Enforcing discount bounds and webhook conflict handling.
 - `admin-guard`: Removing the wildcard bypass exception.

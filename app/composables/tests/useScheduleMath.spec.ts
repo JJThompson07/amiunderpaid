@@ -148,13 +148,13 @@ describe('useScheduleMath', () => {
   it('calculates getMonthDisplayPrice correctly', () => {
     mockUserProfile.value = { billingCountry: 'UK', activeTerritories: [], claims: [] };
     mockPricingData.value = { UK: { band1: { basic: 100, exclusive: 500 } } };
-    
+
     const { getMonthDisplayPrice, toggleBasic, toggleMonth } = useScheduleMath(props, emitMock);
     const rowId = '1|IT';
-    
+
     // Toggle basic on
     toggleBasic(rowId);
-    // Index 0 should be 0 because it's the current month which is free for basic? 
+    // Index 0 should be 0 because it's the current month which is free for basic?
     // Wait, index === 0 => 0 for basic in getMonthDisplayPrice
     expect(getMonthDisplayPrice(rowId, '2025-01', 0, 1)).toBe(0);
     expect(getMonthDisplayPrice(rowId, '2025-01', 1, 1)).toBe(100);
@@ -162,7 +162,7 @@ describe('useScheduleMath', () => {
     // Toggle exclusive month
     toggleMonth(rowId, '2025-01');
     // If it is first month (index 0) and isBasic, upgrade cost is 500-100=400
-    // Past halfway logic is mocked? isPastHalfway depends on actual Date. 
+    // Past halfway logic is mocked? isPastHalfway depends on actual Date.
     // Let's just expect it to be a number.
     expect(typeof getMonthDisplayPrice(rowId, '2025-01', 0, 1)).toBe('number');
   });
@@ -174,13 +174,13 @@ describe('useScheduleMath', () => {
         { territoryId: 1, categoryValue: 'IT', isBasic: true, exclusiveMonths: ['2025-01'] }
       ]
     };
-    
+
     const { isBasicLocked, isMonthLocked, toggleBasic } = useScheduleMath(props, emitMock);
     const rowId = '1|IT';
-    
+
     expect(isBasicLocked(rowId)).toBe(true);
     expect(isMonthLocked(rowId, '2025-01')).toBe(true);
-    
+
     // Should not toggle if locked
     toggleBasic(rowId);
     expect(isBasicLocked(rowId)).toBe(true);
@@ -223,10 +223,10 @@ describe('useScheduleMath', () => {
   it('calculates calcPayNow correctly for selected months that are not locked', () => {
     mockUserProfile.value = { billingCountry: 'UK', activeTerritories: [], claims: [] };
     mockPricingData.value = { UK: { band1: { basic: 100, exclusive: 500 } } };
-    
+
     const { toggleMonth, payNowTotal, upcomingMonths } = useScheduleMath(props, emitMock);
     const rowId = '1|IT';
-    
+
     // Toggle exclusive month (which adds it to selectedMonths but not lockedMonths)
     // We must select the first month (index 0) so that calcPayNow registers the upfront cost
     const firstMonth = upcomingMonths.value[0]!.value;

@@ -9,7 +9,7 @@
       <SectionBenchmarkRoleSearch
         :initial-country="isUSA ? 'USA' : 'UK'"
         @country-change="($event: string) => (isUSA = $event === 'USA')" />
-        
+
       <SectionAmITrendingSearches />
 
       <SectionSharedTrustBadges />

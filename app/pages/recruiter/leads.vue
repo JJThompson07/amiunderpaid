@@ -58,8 +58,15 @@
           </template>
         </AmITable>
 
-        <div v-if="rawLeadsData && rawLeadsData.length >= leadsLimit" class="mt-6 flex justify-center">
-          <AmIButton @click="leadsLimit += 50" bg-colour="bg-white" text-colour="text-slate-700" animation-colour="bg-slate-50" class="border border-slate-200 shadow-none">
+        <div
+          v-if="rawLeadsData && rawLeadsData.length >= leadsLimit"
+          class="mt-6 flex justify-center">
+          <AmIButton
+            bg-colour="bg-white"
+            text-colour="text-slate-700"
+            animation-colour="bg-slate-50"
+            class="border border-slate-200 shadow-none"
+            @click="leadsLimit += 50">
             {{ $t('recruiter.leads.load-more', 'Load More') }}
           </AmIButton>
         </div>
@@ -368,7 +375,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { ChevronDown, Copy } from 'lucide-vue-next';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
-import { collection, orderBy, query, where, limit } from 'firebase/firestore';
+import { collection, limit, orderBy, query, where } from 'firebase/firestore';
 import { useCollection, useCurrentUser, useFirestore } from 'vuefire';
 
 definePageMeta({ middleware: 'recruiters' });

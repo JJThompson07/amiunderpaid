@@ -1,7 +1,11 @@
 import Stripe from 'stripe';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 
-async function queueRefundAndAlert(stripe: Stripe, session: Stripe.Checkout.Session, reason: string) {
+async function queueRefundAndAlert(
+  stripe: Stripe,
+  session: Stripe.Checkout.Session,
+  reason: string
+) {
   console.error(`🚨 ALERT: Needs manual refund! Session ${session.id}. Reason: ${reason}`);
   // In a real system, you'd trigger an alert or automatically refund via stripe.refunds.create()
 }
@@ -35,7 +39,7 @@ export default defineEventHandler(async (event) => {
   if (stripeEvent.type === 'checkout.session.completed') {
     const session = stripeEvent.data.object as Stripe.Checkout.Session;
     const db = getFirestore();
-    
+
     // Security Remediation: Deduplicate webhook events to prevent double processing
     const seen = db.collection('stripe_events').doc(stripeEvent.id);
     if ((await seen.get()).exists) {
@@ -89,7 +93,7 @@ export default defineEventHandler(async (event) => {
         const refsArray = Object.values(claimRefs);
         if (refsArray.length > 0) {
           const snapshots = await t.getAll(...refsArray);
-          snapshots.forEach(snap => {
+          snapshots.forEach((snap) => {
             claimDocs[snap.id] = snap.exists ? snap.data() : null;
           });
         }
@@ -97,7 +101,8 @@ export default defineEventHandler(async (event) => {
         for (const item of purchasedItems) {
           // --- UPDATE 1: THE USER'S PROFILE DATA ---
           const existingIndex = updatedTerritories.findIndex(
-            (tItem) => tItem.territoryId === item.territoryId && tItem.categoryValue === item.categoryValue
+            (tItem) =>
+              tItem.territoryId === item.territoryId && tItem.categoryValue === item.categoryValue
           );
 
           if (existingIndex > -1) {
@@ -150,7 +155,9 @@ export default defineEventHandler(async (event) => {
           userRef,
           {
             activeTerritories: updatedTerritories,
-            ...(session.subscription ? { stripeSubscriptionId: session.subscription as string } : {}),
+            ...(session.subscription
+              ? { stripeSubscriptionId: session.subscription as string }
+              : {}),
             updatedAt: new Date().toISOString()
           },
           { merge: true }
@@ -165,7 +172,11 @@ export default defineEventHandler(async (event) => {
         // Business conflict: acknowledge so Stripe stops retrying, then refund and alert.
         console.error('Territory conflict on fulfilment', { eventId: stripeEvent.id, error });
         await queueRefundAndAlert(stripe, session, error.message);
-        await seen.set({ type: stripeEvent.type, outcome: 'conflict', processedAt: FieldValue.serverTimestamp() });
+        await seen.set({
+          type: stripeEvent.type,
+          outcome: 'conflict',
+          processedAt: FieldValue.serverTimestamp()
+        });
         return { received: true };
       }
       console.error('🔥 Error fulfilling Stripe order:', error);

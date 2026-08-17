@@ -14,8 +14,21 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'], // 'text' prints in terminal, 'html' gives you a visual dashboard
-      include: ['shared/utils/**/*.ts', 'app/composables/**/*.ts', 'app/helpers/**/*.ts', 'utils/**/*.ts', 'server/**/*.ts'],
-      exclude: ['shared/utils/types.ts', 'shared/utils/market-data.ts', 'shared/utils/tests/**', 'app/helpers/tests/**', 'utils/tests/**', 'utils/seedData.ts'],
+      include: [
+        'shared/utils/**/*.ts',
+        'app/composables/**/*.ts',
+        'app/helpers/**/*.ts',
+        'utils/**/*.ts',
+        'server/**/*.ts'
+      ],
+      exclude: [
+        'shared/utils/types.ts',
+        'shared/utils/market-data.ts',
+        'shared/utils/tests/**',
+        'app/helpers/tests/**',
+        'utils/tests/**',
+        'utils/seedData.ts'
+      ],
       thresholds: {
         perFile: true,
         '*': {

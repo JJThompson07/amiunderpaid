@@ -61,8 +61,8 @@ export const levenshteinDistance = (a: string, b: string): number => {
   const strA = a.slice(0, 100);
   const strB = b.slice(0, 100);
 
-  if (strA.length === 0) return strB.length;
-  if (strB.length === 0) return strA.length;
+  if (strA.length === 0) {return strB.length;}
+  if (strB.length === 0) {return strA.length;}
 
   // 2. Memory-optimized O(N) allocation
   let prevRow: number[] = Array.from({ length: strA.length + 1 }, (_, i) => i);
@@ -73,9 +73,9 @@ export const levenshteinDistance = (a: string, b: string): number => {
     for (let j = 1; j <= strA.length; j++) {
       const cost = strB.charAt(i - 1) === strA.charAt(j - 1) ? 0 : 1;
       currRow[j] = Math.min(
-        currRow[j - 1]! + 1,       // insertion
-        prevRow[j]! + 1,           // deletion
-        prevRow[j - 1]! + cost     // substitution
+        currRow[j - 1]! + 1, // insertion
+        prevRow[j]! + 1, // deletion
+        prevRow[j - 1]! + cost // substitution
       );
     }
     [prevRow, currRow] = [currRow, prevRow];

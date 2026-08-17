@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAdminAuth } from '../useAdminAuth';
 
-vi.mock('firebase/firestore', () => ({ doc: vi.fn(), collection: vi.fn(), getFirestore: vi.fn(), Timestamp: { now: vi.fn() } }));
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(),
+  collection: vi.fn(),
+  getFirestore: vi.fn(),
+  Timestamp: { now: vi.fn() }
+}));
 vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(),
   signInWithEmailAndPassword: vi.fn(),
@@ -54,7 +59,9 @@ describe('useAdminAuth', () => {
   });
 
   it('handles auth/invalid-credential error', async () => {
-    vi.mocked(signInWithEmailAndPassword).mockRejectedValueOnce({ code: 'auth/invalid-credential' });
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValueOnce({
+      code: 'auth/invalid-credential'
+    });
     const { login, error } = useAdminAuth();
     const result = await login('email', 'password', 'valid-key');
     expect(result).toBe(false);

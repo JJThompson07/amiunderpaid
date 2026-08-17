@@ -21,21 +21,24 @@ export default defineEventHandler(async (event) => {
 
   // Security Remediation: Explicitly validate the input limits server-side to prevent negative or > 100 values
   if (!Number.isFinite(bDiscount) || bDiscount < 0 || bDiscount > 100) {
-    throw createError({ statusCode: 400, statusMessage: 'Basic discount must be between 0 and 100.' });
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Basic discount must be between 0 and 100.'
+    });
   }
   if (!Number.isFinite(eDiscount) || eDiscount < 0 || eDiscount > 100) {
-    throw createError({ statusCode: 400, statusMessage: 'Exclusive discount must be between 0 and 100.' });
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Exclusive discount must be between 0 and 100.'
+    });
   }
 
   const db = getFirestore();
-  await db
-    .collection('users')
-    .doc(uid)
-    .update({
-      basicDiscount: bDiscount,
-      exclusiveDiscount: eDiscount,
-      updatedAt: new Date().toISOString()
-    });
+  await db.collection('users').doc(uid).update({
+    basicDiscount: bDiscount,
+    exclusiveDiscount: eDiscount,
+    updatedAt: new Date().toISOString()
+  });
 
   return { success: true };
 });

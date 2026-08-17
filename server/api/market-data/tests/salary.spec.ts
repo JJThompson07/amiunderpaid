@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('firebase-admin/firestore', () => ({
   FieldValue: {
@@ -10,13 +10,19 @@ const mockConfig = { adzunaAppId: 'test-id', adzunaAppKey: 'test-key' };
 vi.stubGlobal('useRuntimeConfig', () => mockConfig);
 vi.stubGlobal('defineEventHandler', (fn: any) => fn);
 vi.stubGlobal('useAdminFirestore', vi.fn());
-vi.stubGlobal('generateCacheKey', vi.fn(() => 'cache-key'));
+vi.stubGlobal(
+  'generateCacheKey',
+  vi.fn(() => 'cache-key')
+);
 vi.stubGlobal('createError', (err: any) => {
   const e = new Error(err.statusMessage) as any;
   e.statusCode = err.statusCode;
   return e;
 });
-vi.stubGlobal('sanitizeAdzunaData', vi.fn((data: any) => data));
+vi.stubGlobal(
+  'sanitizeAdzunaData',
+  vi.fn((data: any) => data)
+);
 const $fetchMock = vi.fn();
 vi.stubGlobal('$fetch', $fetchMock);
 const getQueryMock = vi.fn();
@@ -49,7 +55,7 @@ describe('Adzuna Salary API - 429 Fallback', () => {
     if (!salaryHandler) {
       salaryHandler = (await import('../salary')).default;
     }
-    
+
     mockDocRef = {
       get: vi.fn().mockResolvedValue({ exists: false }),
       set: vi.fn()
@@ -82,11 +88,11 @@ describe('Adzuna Salary API - 429 Fallback', () => {
     const result = await salaryHandler({} as any);
 
     expect($fetchMock).toHaveBeenCalledTimes(1);
-    
+
     // Expect Reed fallback data
     expect(result.provider).toBe('reed');
     expect(result.histogram).toEqual({ '50000': 1 });
-    
+
     // Verify fallback data is cached
     expect(mockDocRef.set).toHaveBeenCalledWith(
       expect.objectContaining({

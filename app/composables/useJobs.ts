@@ -9,7 +9,13 @@ import type {
 export type HistogramData = Record<number, number>;
 
 // Re-export so consumers don't need two import paths
-export type { JobCategoryEntry, JobListing, JobSearchResponse, MarketDataProvider, SalaryDistributionResponse } from '~~/shared/utils/market-data';
+export type {
+  JobCategoryEntry,
+  JobListing,
+  JobSearchResponse,
+  MarketDataProvider,
+  SalaryDistributionResponse
+} from '~~/shared/utils/market-data';
 
 /**
  * useJobs Composable
@@ -20,12 +26,18 @@ export type { JobCategoryEntry, JobListing, JobSearchResponse, MarketDataProvide
  * remains completely agnostic to which provider was used.
  */
 export const useJobs = () => {
-  const distributionData = useState<SalaryDistributionResponse | null>('market_data_distribution', () => null);
+  const distributionData = useState<SalaryDistributionResponse | null>(
+    'market_data_distribution',
+    () => null
+  );
   const jobsData = useState<JobSearchResponse | null>('market_data_jobs', () => null);
   const categories = useState<JobCategoryEntry[]>('market_data_categories', () => []);
   const activeRequests = useState<number>('market_data_loading_count', () => 0);
   const loading = computed(() => activeRequests.value > 0);
-  const cachedGovIdCode = useState<string | undefined>('market_data_cached_gov_id', () => undefined);
+  const cachedGovIdCode = useState<string | undefined>(
+    'market_data_cached_gov_id',
+    () => undefined
+  );
 
   const meanSalary = computed<number>(() => jobsData.value?.mean || 0);
   const jobsCount = computed<number>(() => jobsData.value?.count || 0);
@@ -85,19 +97,18 @@ export const useJobs = () => {
       .trim();
 
     try {
-      const rawData = await $fetch<JobSearchResponse & { gov_id_code?: string; is_admin_verified?: boolean }>(
-        '/api/market-data/jobs',
-        {
-          params: {
-            title: cleanTitle,
-            location,
-            country,
-            jobType,
-            contractType,
-            devProvider: devProviderOverride === 'auto' ? undefined : devProviderOverride
-          }
+      const rawData = await $fetch<
+        JobSearchResponse & { gov_id_code?: string; is_admin_verified?: boolean }
+      >('/api/market-data/jobs', {
+        params: {
+          title: cleanTitle,
+          location,
+          country,
+          jobType,
+          contractType,
+          devProvider: devProviderOverride === 'auto' ? undefined : devProviderOverride
         }
-      );
+      });
 
       // ONLY use the cached ID if an admin has explicitly verified it
       if (rawData.gov_id_code && rawData.is_admin_verified) {
@@ -168,8 +179,8 @@ export const useJobs = () => {
     return salary < meanSalary.value;
   };
 
-  const dataProvider = computed<MarketDataProvider>(() =>
-    jobsData.value?.provider || distributionData.value?.provider || 'adzuna'
+  const dataProvider = computed<MarketDataProvider>(
+    () => jobsData.value?.provider || distributionData.value?.provider || 'adzuna'
   );
 
   return {

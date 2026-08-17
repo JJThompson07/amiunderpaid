@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
   // 2. Fetch Dynamic Salary Data
   // We'll fetch titles and countries to build the /salary/[title]/[country] URLs
   let query: any = db.collection('jobs').select('title', 'country', 'location');
-  
+
   if (!isBenchmark) {
     if (isAmIUnderpaidUS) {
       query = query.where('country', '==', 'USA');

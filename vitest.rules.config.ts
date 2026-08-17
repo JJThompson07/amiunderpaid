@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+// vitest.rules.config.ts
 import baseConfig from './vitest.config.ts';
 
 // Create a copy of the config and override exclude

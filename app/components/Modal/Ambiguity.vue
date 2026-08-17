@@ -12,13 +12,12 @@
             </template>
           </i18n-t>
         </p>
-        
-        <AmIInputGeneric 
-          v-model="localSearchQuery" 
-          placeholder="Search other roles..." 
-          :icon="Search" 
-          :loading="isSearching"
-        />
+
+        <AmIInputGeneric
+          v-model="localSearchQuery"
+          placeholder="Search other roles..."
+          :icon="Search"
+          :loading="isSearching" />
       </div>
 
       <div class="max-h-[50vh] overflow-y-auto p-2">
@@ -98,7 +97,7 @@ const performSearch = useDebounceFn(async (query: string) => {
       removeWordsIfNoResults: 'allOptional',
       hitsPerPage: 10
     });
-    
+
     searchResults.value = hits.map((h: any) => ({
       id_code: h.gov_id,
       group_name: h.group_name

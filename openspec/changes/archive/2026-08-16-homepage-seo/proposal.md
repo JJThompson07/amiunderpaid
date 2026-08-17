@@ -12,6 +12,7 @@ Currently, the homepage consists primarily of static text and a search form. Sea
 ## Capabilities
 
 ### New Capabilities
+
 - `homepage-seo`: Enhancing the homepage with semantic SEO heading optimisations and an internal linking component (Trending Searches) to provide crawl paths for search engines.
 
 ### Modified Capabilities

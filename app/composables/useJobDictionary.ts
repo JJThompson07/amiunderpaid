@@ -93,7 +93,8 @@ export const useJobDictionary = (): {
         const normQuery = normalize(query);
 
         // 1. Did they exactly type the official Group Name?
-        const isExactGroup = topHit.group_name.toLowerCase() === query || normalize(topHit.group_name) === normQuery;
+        const isExactGroup =
+          topHit.group_name.toLowerCase() === query || normalize(topHit.group_name) === normQuery;
 
         // 2. Did they exactly type one of your mapped Synonyms?
         const isExactSynonym = topHit.titles?.some(
@@ -108,7 +109,9 @@ export const useJobDictionary = (): {
           isCloseFuzzyMatch = groupDist <= 2;
 
           if (!isCloseFuzzyMatch && topHit.titles) {
-            isCloseFuzzyMatch = topHit.titles.some((title) => levenshteinDistance(normQuery, normalize(title)) <= 2);
+            isCloseFuzzyMatch = topHit.titles.some(
+              (title) => levenshteinDistance(normQuery, normalize(title)) <= 2
+            );
           }
         }
 

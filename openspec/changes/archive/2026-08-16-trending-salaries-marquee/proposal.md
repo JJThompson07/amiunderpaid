@@ -14,6 +14,7 @@ The static "Trending Searches" grid on the homepage provides good SEO value, but
 ### New Capabilities
 
 ### Modified Capabilities
+
 - `homepage-seo`: The "Trending Searches grid on the homepage" requirement is being modified from a static grid to a continuous scrolling marquee that displays salary figures.
 
 ## Impact

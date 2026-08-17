@@ -1,6 +1,6 @@
 // server/api/user/search-logs.get.ts
 import { getFirestore } from 'firebase-admin/firestore';
-import { defineEventHandler, getQuery, createError } from 'h3';
+import { createError, defineEventHandler, getQuery } from 'h3';
 import { verifyAdmin } from '../../utils/firebase';
 
 export type SearchLog = {
@@ -24,7 +24,7 @@ export type SearchLog = {
 
 export default defineEventHandler(async (event) => {
   await verifyAdmin(event);
-  
+
   const db = getFirestore();
   const query = getQuery(event);
 
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     let nextCursor: string | undefined;
 
     const collectionRef = db.collection('search_history');
-    
+
     // Get start boundaries for today and yesterday
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -65,29 +65,34 @@ export default defineEventHandler(async (event) => {
       if (!config.algoliaApplicationId || !config.algoliaAdminApiKey) {
         throw createError({ statusCode: 500, message: 'Algolia credentials missing for search' });
       }
-      
+
       const algoliasearch = await import('algoliasearch').then((m) => m.default || m);
       const client = algoliasearch(config.algoliaApplicationId, config.algoliaAdminApiKey);
       const index = client.initIndex('search_history');
-      
-      // Page is 0-indexed in Algolia. 
+
+      // Page is 0-indexed in Algolia.
       // If cursor is passed as a page number in search mode, we'd need to handle it.
-      // But the frontend is passing `cursor` as a timestamp now. 
+      // But the frontend is passing `cursor` as a timestamp now.
       // To keep it simple, if searchTerm is active, we just use the cursor as a page number (stringified integer)
       const algoliaPage = query.cursor ? parseInt(String(query.cursor), 10) : 0;
-      
-      const { hits, nbHits, page: resultPage, nbPages } = await index.search(searchTerm, {
+
+      const {
+        hits,
+        nbHits,
+        page: resultPage,
+        nbPages
+      } = await index.search(searchTerm, {
         page: algoliaPage,
         hitsPerPage: limitCount
       });
-      
+
       logsRaw = hits.map((hit: any) => ({
         ...hit,
         id: hit.objectID,
         // Algolia stores dates as timestamps or strings, reconstruct it for the frontend
         timestamp: hit.timestamp ? { toDate: () => new Date(hit.timestamp) } : null
       }));
-      
+
       displayTotalCount = nbHits;
       if (resultPage + 1 < nbPages) {
         nextCursor = String(resultPage + 1);
@@ -95,17 +100,17 @@ export default defineEventHandler(async (event) => {
     } else {
       // Native Pagination with Cursors
       let logsQuery = collectionRef.orderBy('timestamp', 'desc');
-      
+
       if (query.cursor) {
         const cursorDoc = await collectionRef.doc(String(query.cursor)).get();
         if (cursorDoc.exists) {
           logsQuery = logsQuery.startAfter(cursorDoc);
         }
       }
-      
+
       const latestSnapshot = await logsQuery.limit(limitCount).get();
       logsRaw = latestSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      
+
       if (latestSnapshot.docs.length === limitCount) {
         nextCursor = latestSnapshot.docs[latestSnapshot.docs.length - 1].id;
       }

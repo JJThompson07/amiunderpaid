@@ -10,7 +10,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 2. Dynamically route to the correct Master Dictionary
-    const targetCollection = country === 'USA' || country === 'US' ? 'usa_job_groups' : 'uk_job_groups';
+    const targetCollection =
+      country === 'USA' || country === 'US' ? 'usa_job_groups' : 'uk_job_groups';
 
     const groupRef = db.collection(targetCollection).doc(targetIdCode);
 

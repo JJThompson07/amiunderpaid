@@ -126,7 +126,7 @@
   --text-3xs: 0.5rem;
 
   --animate-marquee: marquee 40s linear infinite;
-  
+
   @keyframes marquee {
     from {
       transform: translateX(0);

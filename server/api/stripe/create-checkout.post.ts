@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
   // ==========================================
   const userDoc = await db.collection('users').doc(userId).get();
   const userData = userDoc.data() || {};
-  
+
   // Security Remediation: Clamp discounts so they can't be set > 100 or negative via client-side manipulation.
   const clampPercent = (v: unknown): number => {
     const n = Number(v);

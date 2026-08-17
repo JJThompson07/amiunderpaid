@@ -43,7 +43,7 @@ export default defineConfig({
     },
     {
       name: 'ssr',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         javaScriptEnabled: false
       },

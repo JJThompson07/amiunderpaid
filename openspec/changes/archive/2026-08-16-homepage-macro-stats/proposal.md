@@ -11,6 +11,7 @@ Providing users with a national baseline salary for "All Roles" establishes imme
 ## Capabilities
 
 ### Modified Capabilities
+
 - `homepage-seo`: The trending searches section will now include a national baseline statistics bar below the marquee.
 
 ## Impact

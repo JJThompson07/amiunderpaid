@@ -58,7 +58,6 @@ try {
       `Expected AGENTS.md to mention Tailwind CSS v${tailwindVersion} matching package.json, but it does not.`
     );
   }
-
 } catch (error) {
   console.error('Error running check-standards:', error);
   process.exit(1);

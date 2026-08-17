@@ -14,7 +14,7 @@ export const useUserLogging = () => {
     if (import.meta.dev) {
       return '';
     }
-    
+
     if (import.meta.client) {
       try {
         // We use the native browser 'fetch' API here instead of Nuxt's '$fetch'
@@ -34,7 +34,7 @@ export const useUserLogging = () => {
           }),
           keepalive: true
         });
-        
+
         const data = await response.json();
         if (data.success && data.id) {
           if (data.token) {

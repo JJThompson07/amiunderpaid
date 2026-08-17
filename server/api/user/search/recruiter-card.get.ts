@@ -1,4 +1,4 @@
-import { getFirestore, FieldPath } from 'firebase-admin/firestore';
+import { FieldPath, getFirestore } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -44,9 +44,12 @@ export default defineEventHandler(async (event) => {
 
   // 3. Fetch the selected user profiles
   // We can fetch up to 10 in an 'in' query, and we only select up to 3!
-  const usersSnap = await db.collection('users').where(FieldPath.documentId(), 'in', selectedOwnerUids).get();
-  
-  const selectedOwners = usersSnap.docs.map(doc => ({
+  const usersSnap = await db
+    .collection('users')
+    .where(FieldPath.documentId(), 'in', selectedOwnerUids)
+    .get();
+
+  const selectedOwners = usersSnap.docs.map((doc) => ({
     uid: doc.id,
     data: doc.data(),
     isExclusive: doc.id === exclusiveOwnerUid

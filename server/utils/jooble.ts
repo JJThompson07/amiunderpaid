@@ -1,9 +1,9 @@
-import { type JobSearchResponse } from '~~/shared/utils/market-data';
+import type { JobSearchResponse } from '~~/shared/utils/market-data';
 import { buildHistogramBuckets } from '~~/shared/utils/math';
 
-export interface JoobleJobResponse {
+export type JoobleJobResponse = {
   totalCount: number;
-  jobs: Array<{
+  jobs: {
     title: string;
     location: string;
     snippet: string;
@@ -14,7 +14,7 @@ export interface JoobleJobResponse {
     company: string;
     updated: string;
     id: number | string;
-  }>;
+  }[];
 }
 
 /**
@@ -22,12 +22,15 @@ export interface JoobleJobResponse {
  * - Ranges (e.g., "$97k - $206k") -> uses top/maximum value.
  * - Monthly (e.g., "$5,000 per month") -> multiplied by 12.
  * - Annual/Singular (e.g., "$200k") -> extracts the numeric equivalent.
- * 
+ *
  * Returns { min: number, max: number, raw: string }
  */
-export const parseJoobleSalary = (salaryStr: string | undefined, jobType: string = 'full-time'): { min: number, max: number, raw: string } => {
+export const parseJoobleSalary = (
+  salaryStr: string | undefined,
+  jobType: string = 'full-time'
+): { min: number; max: number; raw: string } => {
   const raw = salaryStr || '';
-  if (!raw) return { min: 0, max: 0, raw };
+  if (!raw) {return { min: 0, max: 0, raw };}
 
   const str = raw.toLowerCase().trim();
 
@@ -55,8 +58,8 @@ export const parseJoobleSalary = (salaryStr: string | undefined, jobType: string
     return num;
   };
 
-  const nums = matches.map(parseNumber).filter(n => !isNaN(n));
-  if (nums.length === 0) return { min: 0, max: 0, raw };
+  const nums = matches.map(parseNumber).filter((n) => !isNaN(n));
+  if (nums.length === 0) {return { min: 0, max: 0, raw };}
 
   let min = nums[0] as number;
   let max = (nums.length > 1 ? nums[nums.length - 1] : nums[0]) as number;
@@ -85,7 +88,7 @@ export const fetchJoobleData = async (
   // Credentials are read from private runtimeConfig (server-only).
   const apiKey = config.joobleApiKey;
 
-  const isDevOrE2e = process.dev || process.env.E2E === 'true';
+  const isDevOrE2e = import.meta.dev || process.env.E2E === 'true';
 
   if (!apiKey) {
     if (isDevOrE2e) {
@@ -94,27 +97,29 @@ export const fetchJoobleData = async (
         count: 1,
         mean: 60000,
         histogram: { '60000': 1 },
-        results: [{
-          id: 1,
-          title: 'Software Engineer (Mocked Jooble)',
-          description: 'Mock Jooble description',
-          category: { label: 'IT', tag: 'it' },
-          redirect_url: 'http://jooble.org',
-          company: { display_name: 'Jooble Corp' },
-          location: { display_name: 'New York', area: ['New York'] },
-          salary_min: 50000,
-          salary_max: 70000,
-          contract_time: 'full_time',
-          contract_type: 'permanent',
-          provider: 'jooble' as const
-        }]
+        results: [
+          {
+            id: 1,
+            title: 'Software Engineer (Mocked Jooble)',
+            description: 'Mock Jooble description',
+            category: { label: 'IT', tag: 'it' },
+            redirect_url: 'http://jooble.org',
+            company: { display_name: 'Jooble Corp' },
+            location: { display_name: 'New York', area: ['New York'] },
+            salary_min: 50000,
+            salary_max: 70000,
+            contract_time: 'full_time',
+            contract_type: 'permanent',
+            provider: 'jooble' as const
+          }
+        ]
       };
     }
     throw createError({ statusCode: 500, statusMessage: 'Market data service is misconfigured.' });
   }
 
   const url = `https://jooble.org/api/${apiKey}`;
-  
+
   const params: Record<string, any> = {
     keywords: title,
     location: location,
@@ -140,9 +145,13 @@ export const fetchJoobleData = async (
   }
 };
 
-export const processJoobleData = (response: JoobleJobResponse, jobType: string, contractType: string): JobSearchResponse => {
+export const processJoobleData = (
+  response: JoobleJobResponse,
+  jobType: string,
+  contractType: string
+): JobSearchResponse => {
   const jobs = response.jobs || [];
-  
+
   let totalSalary = 0;
   let validSalaryCount = 0;
   const rawSalaries: number[] = [];

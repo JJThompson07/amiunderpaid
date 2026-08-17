@@ -31,7 +31,6 @@ describe('UI Formatter: formatOrdinal', () => {
   it('Scenario 5: Defaults to th for unknown plural rules', () => {
     const originalPluralRules = Intl.PluralRules;
     (Intl as any).PluralRules = class {
-      constructor() {}
       select() {
         return 'unknown';
       }
@@ -111,11 +110,11 @@ describe('UI Formatter: formatMcaScoreForUi', () => {
         ...mockResult.breakdown,
         microPercentile: 50, // mid for micro (45-75)
         macroPercentile: 20, // low for macro (<40)
-        livePercentile: 50   // mid for live (40-60)
+        livePercentile: 50 // mid for live (40-60)
       }
     };
     const uiData = formatMcaScoreForUi(midLowResult, 'Dev', 'London', mockT);
-    
+
     expect(uiData.comparisonPoints).toContain('mca.points.micro.mid');
     expect(uiData.comparisonPoints).toContain('mca.points.macro.low');
     expect(uiData.comparisonPoints).toContain('mca.points.live.mid');
@@ -126,7 +125,7 @@ describe('UI Formatter: formatMcaScoreForUi', () => {
         ...mockResult.breakdown,
         microPercentile: 10, // low
         macroPercentile: 50, // mid
-        livePercentile: 10   // low
+        livePercentile: 10 // low
       }
     };
     const lowUiData = formatMcaScoreForUi(lowLowResult, 'Dev', 'London', mockT);

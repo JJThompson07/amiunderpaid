@@ -1,5 +1,8 @@
 <template>
-  <BaseSearchForm mode="benchmark" :initial-country="initialCountry" @country-change="emit('country-change', $event)" />
+  <BaseSearchForm
+    mode="benchmark"
+    :initial-country="initialCountry"
+    @country-change="emit('country-change', $event)" />
 </template>
 
 <script setup lang="ts">

@@ -16,12 +16,12 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, shallowRef, watch, computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import * as echarts from 'echarts';
 import type { CountryCode } from '../../pages/recruiter/territories/index.vue';
-import type { Territory, ONSMatch } from '~~/utils/locations/uk';
+import type { ONSMatch, Territory } from '~~/utils/locations/uk';
 
-export interface MapTerritory {
+export type MapTerritory = {
   id: number;
   name: string;
   ons_matches?: ONSMatch[];
@@ -36,7 +36,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'territory-clicked', territory: MapTerritory): void
+  (e: 'territory-clicked', territory: MapTerritory): void;
 }>();
 
 const mapContainer = ref<HTMLElement | null>(null);
@@ -83,12 +83,12 @@ const normalizeName = (name: string) => {
     .toLowerCase();
 };
 
-interface EChartsMapEvent {
+type EChartsMapEvent = {
   name: string;
   value?: number;
 }
 
-interface MapPolygonData {
+type MapPolygonData = {
   name: string;
   value: number;
   itemStyle: {
@@ -187,14 +187,14 @@ const updateMapData = () => {
 
   const nameProp = props.country === 'UK' ? 'ctyua18nm' : 'name';
 
-interface GeoJSONFeature {
-  properties: Record<string, string>;
-}
+  type GeoJSONFeature = {
+    properties: Record<string, string>;
+  }
 
-interface EChartsTooltipParams {
-  data?: unknown;
-  name: string;
-}
+  type EChartsTooltipParams = {
+    data?: unknown;
+    name: string;
+  }
 
   // 2. Loop through every single polygon on the actual map
   mapObj.geoJSON.features.forEach((feature: GeoJSONFeature) => {

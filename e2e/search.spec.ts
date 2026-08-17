@@ -18,7 +18,10 @@ test.describe('Search Flows', () => {
     await expect(searchInput).toHaveValue('Software Engineer');
 
     // 5. Verify the submit button is present and visible
-    const submitButton = page.getByRole('button').filter({ hasText: /Check salary/i }).first();
+    const submitButton = page
+      .getByRole('button')
+      .filter({ hasText: /Check salary/i })
+      .first();
     await expect(submitButton).toBeVisible();
   });
 });

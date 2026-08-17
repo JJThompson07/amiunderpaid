@@ -1,4 +1,4 @@
-import type { BenchmarkResult, HistogramBucket, PercentileData, EngineContext } from './types';
+import type { BenchmarkResult, EngineContext } from './types';
 import {
   calculateBenchmarkScore,
   calculateConfidenceScore,

@@ -26,10 +26,13 @@ vi.stubGlobal('useUserProfile', () => ({
 
 const mockClaimsData = ref<any[] | null>(null);
 const mockPending = ref(false);
-vi.stubGlobal('useCollection', vi.fn(() => ({
-  data: mockClaimsData,
-  pending: mockPending
-})));
+vi.stubGlobal(
+  'useCollection',
+  vi.fn(() => ({
+    data: mockClaimsData,
+    pending: mockPending
+  }))
+);
 
 describe('useTerritoryClaims', () => {
   beforeEach(() => {
@@ -46,25 +49,25 @@ describe('useTerritoryClaims', () => {
 
   it('limits query to first 10 territoryIds and returns correct query', () => {
     // Variables removed because they are unused
-    
+
     // Create an array of 12 ids
     const ids = Array.from({ length: 12 }, (_, i) => i + 1);
     const territoryIds = ref<number[]>(ids);
-    
+
     // Call composable
     const { claimsLimitExceeded } = useTerritoryClaims(territoryIds);
-    
+
     // useCollection is called with a computed. To evaluate it, we just access the computed value inside the mock
     // Wait, useCollection receives a computed Ref or getter.
     // The composable: const { data } = useCollection(claimsQuery);
-    
+
     expect(claimsLimitExceeded.value).toBe(true);
-    
+
     // We can evaluate the computed by checking what useCollection was called with
     const useCollectionMock = vi.mocked((globalThis as any).useCollection);
     const claimsQueryComputed = useCollectionMock.mock.calls[0][0];
     const queryResult = claimsQueryComputed.value;
-    
+
     expect(queryResult).toEqual({
       coll: 'collection-territory_claims',
       condition: {
@@ -78,26 +81,26 @@ describe('useTerritoryClaims', () => {
   it('returns null query and limits not exceeded when territoryIds is empty', () => {
     const territoryIds = ref<number[]>([]);
     const { claimsLimitExceeded } = useTerritoryClaims(territoryIds);
-    
+
     expect(claimsLimitExceeded.value).toBe(false);
-    
+
     const useCollectionMock = vi.mocked((globalThis as any).useCollection);
     const claimsQueryComputed = useCollectionMock.mock.calls[0][0];
-    
+
     expect(claimsQueryComputed.value).toBe(null);
   });
 
   it('calculates globalTakenMonths correctly locking only months owned by others', () => {
     const territoryIds = ref<number[]>([1, 2]);
     const { globalTakenMonths } = useTerritoryClaims(territoryIds);
-    
+
     mockClaimsData.value = [
       {
         territoryId: 1,
         categoryValue: 'CatA',
         takenExclusiveMonths: {
           '2026-01': 'current-user-123', // Owned by me (should not be locked)
-          '2026-02': 'other-user-456'    // Owned by other (should be locked)
+          '2026-02': 'other-user-456' // Owned by other (should be locked)
         }
       },
       {
@@ -118,7 +121,7 @@ describe('useTerritoryClaims', () => {
   it('returns empty locks if no claimsData', () => {
     const territoryIds = ref<number[]>([1]);
     const { globalTakenMonths } = useTerritoryClaims(territoryIds);
-    
+
     mockClaimsData.value = null;
     expect(globalTakenMonths.value).toEqual({});
   });
@@ -126,7 +129,7 @@ describe('useTerritoryClaims', () => {
   it('returns empty locks if no userProfile', () => {
     const territoryIds = ref<number[]>([1]);
     const { globalTakenMonths } = useTerritoryClaims(territoryIds);
-    
+
     mockUserProfile.value = null;
     mockClaimsData.value = [
       {
@@ -137,7 +140,7 @@ describe('useTerritoryClaims', () => {
         }
       }
     ];
-    
+
     expect(globalTakenMonths.value).toEqual({});
   });
 });

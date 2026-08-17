@@ -121,13 +121,25 @@
       <div v-if="jobListings.length" class="w-full flex flex-col gap-3 min-w-0">
         <h3 class="relative text-xl md:text-2xl text-slate-900 font-bold sm:whitespace-nowrap px-1">
           <a
-            :href="dataProvider === 'reed' ? 'https://www.reed.co.uk' : dataProvider === 'jooble' ? 'https://jooble.org' : $t(`sections.jobs.href.${country.toLowerCase()}`)"
+            :href="
+              dataProvider === 'reed'
+                ? 'https://www.reed.co.uk'
+                : dataProvider === 'jooble'
+                  ? 'https://jooble.org'
+                  : $t(`sections.jobs.href.${country.toLowerCase()}`)
+            "
             target="_blank"
             rel="noopener noreferrer"
             class="text-primary-500 hover:text-primary-700 transition-colors duration-500 ease-in-out"
             >{{ $t('sections.jobs.jobs') }}</a
           >
-          {{ dataProvider === 'reed' ? $t('sections.jobs.by-reed') : dataProvider === 'jooble' ? $t('sections.jobs.by-jooble') : $t('sections.jobs.by-adzuna') }}
+          {{
+            dataProvider === 'reed'
+              ? $t('sections.jobs.by-reed')
+              : dataProvider === 'jooble'
+                ? $t('sections.jobs.by-jooble')
+                : $t('sections.jobs.by-adzuna')
+          }}
         </h3>
 
         <span class="text-slate-500 text-2xs uppercase">
@@ -212,13 +224,15 @@
           :country="country" />
       </div>
 
-      <div class="flex flex-col items-center justify-center gap-1 mt-4 lg:mt-12 text-2xs text-center text-slate-400">
+      <div
+        class="flex flex-col items-center justify-center gap-1 mt-4 lg:mt-12 text-2xs text-center text-slate-400">
         <p class="flex items-center gap-1">
           <Info class="w-3 h-3" />
           {{ $t('common.data.disclaimer') }}
         </p>
         <span class="font-medium opacity-80">
-          Data as of {{ new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) }}
+          Data as of
+          {{ new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) }}
         </span>
       </div>
     </div>

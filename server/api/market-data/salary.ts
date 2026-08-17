@@ -1,10 +1,10 @@
 /**
  * Market Data Endpoint (Salary)
- * 
- * This endpoint acts as an API gateway. It attempts to fetch data from the 
- * primary provider (Adzuna). If the primary provider returns a 429 Rate Limit error, 
- * this endpoint catches the error and seamlessly falls back to a secondary provider (Reed), 
- * mapping the response to a unified schema. 
+ *
+ * This endpoint acts as an API gateway. It attempts to fetch data from the
+ * primary provider (Adzuna). If the primary provider returns a 429 Rate Limit error,
+ * this endpoint catches the error and seamlessly falls back to a secondary provider (Reed),
+ * mapping the response to a unified schema.
  * The client does not need to know which provider was ultimately used.
  */
 import { FieldValue } from 'firebase-admin/firestore';
@@ -12,54 +12,57 @@ import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 import { ADZUNA_LOCATION_MAP } from '../../constants/locations';
 
 // Define the cached fetcher outside the event handler
-const fetchFromProviders = defineCachedFunction(async (
-  params: Record<string, any>,
-  countryCode: string,
-  titleStr: string,
-  locationStr: string,
-  isDevOrE2e: boolean,
-  devProviderOverride?: string
-) => {
-  try {
-    if (isDevOrE2e && devProviderOverride === 'reed') {
-      throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
-    }
-    if (isDevOrE2e && devProviderOverride === 'jooble') {
-      throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
-    }
+const fetchFromProviders = defineCachedFunction(
+  async (
+    params: Record<string, any>,
+    countryCode: string,
+    titleStr: string,
+    locationStr: string,
+    isDevOrE2e: boolean,
+    devProviderOverride?: string
+  ) => {
+    try {
+      if (isDevOrE2e && devProviderOverride === 'reed') {
+        throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
+      }
+      if (isDevOrE2e && devProviderOverride === 'jooble') {
+        throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
+      }
 
-    const rawData = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/histogram`, {
-      params
-    });
+      const rawData = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/histogram`, {
+        params
+      });
 
-    const cleanData = sanitizeAdzunaData(rawData);
-    const hasData = cleanData?.histogram && Object.keys(cleanData.histogram).length > 0;
-    
-    if (hasData) {
-      cleanData.provider = 'adzuna';
-      return cleanData;
-    } else {
-      throw createError({ statusCode: 404, statusMessage: 'Zero results from Adzuna' });
+      const cleanData = sanitizeAdzunaData(rawData);
+      const hasData = cleanData?.histogram && Object.keys(cleanData.histogram).length > 0;
+
+      if (hasData) {
+        cleanData.provider = 'adzuna';
+        return cleanData;
+      } else {
+        throw createError({ statusCode: 404, statusMessage: 'Zero results from Adzuna' });
+      }
+    } catch (e: any) {
+      const statusCode = e?.response?.status || e?.statusCode;
+      if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
+        const { executeMarketFallback } = await import('../../utils/fallback');
+        const fallbackRaw = await executeMarketFallback(titleStr, locationStr, countryCode, '', '');
+
+        return {
+          histogram: fallbackRaw.histogram,
+          provider: fallbackRaw.provider
+        };
+      }
+      throw e;
     }
-  } catch (e: any) {
-    const statusCode = e?.response?.status || e?.statusCode;
-    if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
-      const { executeMarketFallback } = await import('../../utils/fallback');
-      const fallbackRaw = await executeMarketFallback(titleStr, locationStr, countryCode, '', '');
-      
-      return {
-        histogram: fallbackRaw.histogram,
-        provider: fallbackRaw.provider
-      };
-    }
-    throw e;
+  },
+  {
+    maxAge: 60 * 60, // Keep in memory for 1 hour to prevent stampedes
+    name: 'marketSalaryProviderFetch',
+    getKey: (params, countryCode, titleStr, locationStr) =>
+      `${titleStr}-${locationStr}-${countryCode}`
   }
-}, {
-  maxAge: 60 * 60, // Keep in memory for 1 hour to prevent stampedes
-  name: 'marketSalaryProviderFetch',
-  getKey: (params, countryCode, titleStr, locationStr) => 
-    `${titleStr}-${locationStr}-${countryCode}`
-});
+);
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -92,49 +95,49 @@ export default defineEventHandler(async (event) => {
   const cacheKey = generateCacheKey(titleStr, locationStr, countryCode);
   const cacheRef = db.collection('adzuna_distribution_cache').doc(cacheKey);
 
-  const isDevOrE2e = process.dev || process.env.E2E === 'true';
+  const isDevOrE2e = import.meta.dev || process.env.E2E === 'true';
   const devProviderOverride = isDevOrE2e ? (query.devProvider as string) : undefined;
   const skipCache = isDevOrE2e && !!devProviderOverride;
 
   if (!skipCache) {
     try {
       const docSnap = await cacheRef.get();
-    if (docSnap.exists) {
-      const data = docSnap.data();
-      const now = new Date().getTime();
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        const now = new Date().getTime();
 
-      // --- OPTIMIZED CACHE CHECK ---
-      if (data?.expiresAt) {
-        if (now < data.expiresAt.toMillis()) {
-          return {
-            ...data?.data,
-            gov_id_code: data?.gov_id_code || null
-          };
-        }
-      } else {
-        // --- LEGACY CACHE CHECK (Backwards compatibility for old cache) ---
-        const cachedTime = data?.timestamp?.toMillis() || 0;
-        const categoryTag = data?.categoryTag || data?.data?.categoryTag || '';
-        let categoryCacheMilli = 120 * 24 * 60 * 60 * 1000;
+        // --- OPTIMIZED CACHE CHECK ---
+        if (data?.expiresAt) {
+          if (now < data.expiresAt.toMillis()) {
+            return {
+              ...data?.data,
+              gov_id_code: data?.gov_id_code || null
+            };
+          }
+        } else {
+          // --- LEGACY CACHE CHECK (Backwards compatibility for old cache) ---
+          const cachedTime = data?.timestamp?.toMillis() || 0;
+          const categoryTag = data?.categoryTag || data?.data?.categoryTag || '';
+          let categoryCacheMilli = 120 * 24 * 60 * 60 * 1000;
 
-        if (categoryTag) {
-          const categoryCacheRef = db.collection('adzuna_category').doc(categoryTag);
-          const categorySnap = await categoryCacheRef.get();
-          if (categorySnap.exists) {
-            const categoryData = categorySnap.data();
-            const categoryCacheDays = Number(categoryData?.cache || 120);
-            categoryCacheMilli = categoryCacheDays * 24 * 60 * 60 * 1000;
+          if (categoryTag) {
+            const categoryCacheRef = db.collection('adzuna_category').doc(categoryTag);
+            const categorySnap = await categoryCacheRef.get();
+            if (categorySnap.exists) {
+              const categoryData = categorySnap.data();
+              const categoryCacheDays = Number(categoryData?.cache || 120);
+              categoryCacheMilli = categoryCacheDays * 24 * 60 * 60 * 1000;
+            }
+          }
+
+          if (now - cachedTime < categoryCacheMilli) {
+            return {
+              ...data?.data,
+              gov_id_code: data?.gov_id_code || null
+            };
           }
         }
-
-        if (now - cachedTime < categoryCacheMilli) {
-          return {
-            ...data?.data,
-            gov_id_code: data?.gov_id_code || null
-          };
-        }
       }
-    }
     } catch {
       // Silently ignore cache read errors and fall back to fetching from the Adzuna API
     }
@@ -170,9 +173,14 @@ export default defineEventHandler(async (event) => {
   // 3. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
   try {
     const cleanData: any = await fetchFromProviders(
-      params, countryCode, titleStr, locationStr, isDevOrE2e, devProviderOverride
+      params,
+      countryCode,
+      titleStr,
+      locationStr,
+      isDevOrE2e,
+      devProviderOverride
     );
-    
+
     // FIX 2: Adzuna histogram data doesn't contain categories!
     // Let's try to steal the category tag from the jobs cache for this exact search.
     let categoryTag = 'unknown';

@@ -23,7 +23,9 @@ export default defineEventHandler(async (event) => {
 
   // Security Remediation: Verify the HMAC token before allowing the update
   const config = useRuntimeConfig();
-  if (!verifySearchToken(body.id, body.token, config.stripeWebhookSecret || 'fallback-secret-for-dev')) {
+  if (
+    !verifySearchToken(body.id, body.token, config.stripeWebhookSecret || 'fallback-secret-for-dev')
+  ) {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
   }
 

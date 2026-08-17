@@ -30,7 +30,7 @@ export const useJobAutocomplete = (
       const cleanGroup = hit.group ? hit.group.replace(/\s*\(.*\)$/, '') : '';
       const label = cleanGroup ? `${hit.title} (${cleanGroup})` : hit.title;
       if (hit.soc) {
-        if (Object.keys(labelToIdMap.value).length > 200) labelToIdMap.value = {};
+        if (Object.keys(labelToIdMap.value).length > 200) {labelToIdMap.value = {};}
         labelToIdMap.value[label] = hit.soc;
       }
       results.add(label);
@@ -55,7 +55,7 @@ export const useJobAutocomplete = (
     hits.forEach((hit: any) => {
       const id = hit.id_code || hit.objectID;
       if (id) {
-        if (Object.keys(labelToIdMap.value).length > 200) labelToIdMap.value = {};
+        if (Object.keys(labelToIdMap.value).length > 200) {labelToIdMap.value = {};}
         labelToIdMap.value[hit.title] = id;
       }
       results.add(hit.title);
@@ -92,21 +92,21 @@ export const useJobAutocomplete = (
   };
 
   const fetchTitles = useDebounceFn(async (val: string) => {
-    if (titleAbortController) titleAbortController.abort();
-    
+    if (titleAbortController) {titleAbortController.abort();}
+
     if (!val || val.length < 2) {
       titleOptions.value = [];
       return;
     }
-    
+
     titleAbortController = new AbortController();
     const signal = titleAbortController.signal;
-    
+
     const term = val.trim();
     // Cache key must include country and contextual location filter to prevent stale bleed
     const locKey = locationOptions.value.length > 0 ? currentLocation.value : '';
     const cacheKey = `${country.value}:${term}:${locKey}`;
-    
+
     if (titleCache.has(cacheKey)) {
       titleOptions.value = titleCache.get(cacheKey)!;
       return;
@@ -114,37 +114,38 @@ export const useJobAutocomplete = (
 
     fetching.value = true;
     try {
-      const results = country.value === 'UK' ? await fetchUKTitles(term) : await fetchUSATitles(term);
-      if (signal.aborted) return;
-      
+      const results =
+        country.value === 'UK' ? await fetchUKTitles(term) : await fetchUSATitles(term);
+      if (signal.aborted) {return;}
+
       titleOptions.value = results;
-      if (titleCache.size > 200) titleCache.clear();
+      if (titleCache.size > 200) {titleCache.clear();}
       titleCache.set(cacheKey, titleOptions.value);
     } catch (err: any) {
       if (err.name !== 'AbortError') {
         // Silent fail for autocomplete
       }
     } finally {
-      if (!signal.aborted) fetching.value = false;
+      if (!signal.aborted) {fetching.value = false;}
     }
   }, 500);
 
   const fetchLocations = useDebounceFn(async (val: string) => {
-    if (locationAbortController) locationAbortController.abort();
-    
+    if (locationAbortController) {locationAbortController.abort();}
+
     if (!val || val.length < 2) {
       locationOptions.value = [];
       return;
     }
-    
+
     locationAbortController = new AbortController();
     const signal = locationAbortController.signal;
-    
+
     const term = val.trim();
     // Cache key must include country and contextual title filter to prevent stale bleed
     const titleKey = titleOptions.value.length > 0 ? currentTitle.value : '';
     const cacheKey = `${country.value}:${term}:${titleKey}`;
-    
+
     if (locationCache.has(cacheKey)) {
       locationOptions.value = locationCache.get(cacheKey)!;
       return;
@@ -152,20 +153,19 @@ export const useJobAutocomplete = (
 
     fetching.value = true;
     try {
-      const results = country.value === 'UK'
-          ? await fetchUKLocations(term)
-          : await fetchUSALocations(term);
-      if (signal.aborted) return;
-      
+      const results =
+        country.value === 'UK' ? await fetchUKLocations(term) : await fetchUSALocations(term);
+      if (signal.aborted) {return;}
+
       locationOptions.value = results;
-      if (locationCache.size > 200) locationCache.clear();
+      if (locationCache.size > 200) {locationCache.clear();}
       locationCache.set(cacheKey, locationOptions.value);
     } catch (err: any) {
       if (err.name !== 'AbortError') {
         // Silent fail for autocomplete
       }
     } finally {
-      if (!signal.aborted) fetching.value = false;
+      if (!signal.aborted) {fetching.value = false;}
     }
   }, 500);
 

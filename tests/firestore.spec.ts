@@ -1,8 +1,10 @@
+import type {
+  RulesTestEnvironment
+} from '@firebase/rules-unit-testing';
 import {
   assertFails,
   assertSucceeds,
-  initializeTestEnvironment,
-  RulesTestEnvironment
+  initializeTestEnvironment
 } from '@firebase/rules-unit-testing';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -50,7 +52,11 @@ describe('Firestore Security Rules', () => {
     it('allows a user to update allowed fields on their profile', async () => {
       const alice = testEnv.authenticatedContext('alice');
       await assertSucceeds(
-        alice.firestore().collection('users').doc('alice').set({ name: 'Alice', agency_name: 'Agency' })
+        alice
+          .firestore()
+          .collection('users')
+          .doc('alice')
+          .set({ name: 'Alice', agency_name: 'Agency' })
       );
     });
 
@@ -59,10 +65,14 @@ describe('Firestore Security Rules', () => {
       await assertFails(
         alice.firestore().collection('users').doc('alice').set({ name: 'Alice', role: 'admin' })
       );
-      
+
       // Seed an existing doc via unauthenticated admin context
       await testEnv.withSecurityRulesDisabled(async (context) => {
-        await context.firestore().collection('users').doc('bob').set({ name: 'Bob', status: 'active' });
+        await context
+          .firestore()
+          .collection('users')
+          .doc('bob')
+          .set({ name: 'Bob', status: 'active' });
       });
 
       const bob = testEnv.authenticatedContext('bob');
@@ -76,15 +86,17 @@ describe('Firestore Security Rules', () => {
     it('denies all client writes and reads to search_history', async () => {
       const alice = testEnv.authenticatedContext('alice');
       const admin = testEnv.authenticatedContext('admin', { admin: true });
-      
+
       await assertFails(alice.firestore().collection('search_history').doc('1').get());
       await assertFails(admin.firestore().collection('search_history').doc('1').get());
-      await assertFails(alice.firestore().collection('search_history').doc('1').set({ foo: 'bar' }));
+      await assertFails(
+        alice.firestore().collection('search_history').doc('1').set({ foo: 'bar' })
+      );
     });
 
     it('denies all client writes and reads to mail', async () => {
       const alice = testEnv.authenticatedContext('alice');
-      
+
       await assertFails(alice.firestore().collection('mail').doc('1').get());
       await assertFails(alice.firestore().collection('mail').doc('1').set({ to: 'x@x.com' }));
     });
@@ -93,7 +105,11 @@ describe('Firestore Security Rules', () => {
   describe('Leads Collection', () => {
     it('allows a recruiter to read leads assigned to them', async () => {
       await testEnv.withSecurityRulesDisabled(async (context) => {
-        await context.firestore().collection('leads').doc('lead1').set({ recruiterId: 'recruiter_uid' });
+        await context
+          .firestore()
+          .collection('leads')
+          .doc('lead1')
+          .set({ recruiterId: 'recruiter_uid' });
       });
       const recruiter = testEnv.authenticatedContext('recruiter_uid');
       await assertSucceeds(recruiter.firestore().collection('leads').doc('lead1').get());
@@ -101,7 +117,11 @@ describe('Firestore Security Rules', () => {
 
     it('denies a recruiter from reading leads not assigned to them', async () => {
       await testEnv.withSecurityRulesDisabled(async (context) => {
-        await context.firestore().collection('leads').doc('lead2').set({ recruiterId: 'other_uid' });
+        await context
+          .firestore()
+          .collection('leads')
+          .doc('lead2')
+          .set({ recruiterId: 'other_uid' });
       });
       const recruiter = testEnv.authenticatedContext('recruiter_uid');
       await assertFails(recruiter.firestore().collection('leads').doc('lead2').get());
@@ -109,7 +129,9 @@ describe('Firestore Security Rules', () => {
 
     it('denies a recruiter from writing to leads (server-only)', async () => {
       const recruiter = testEnv.authenticatedContext('recruiter_uid');
-      await assertFails(recruiter.firestore().collection('leads').doc('lead3').set({ recruiterId: 'recruiter_uid' }));
+      await assertFails(
+        recruiter.firestore().collection('leads').doc('lead3').set({ recruiterId: 'recruiter_uid' })
+      );
     });
   });
 });

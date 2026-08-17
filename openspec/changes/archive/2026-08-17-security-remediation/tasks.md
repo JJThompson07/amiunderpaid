@@ -22,4 +22,4 @@
 
 - [x] 4.1 Run local verification `pnpm vitest run` to ensure all existing and new tests pass.
 - [x] 4.2 Run `pnpm test:coverage` to ensure 80% coverage on all modified files.
-- [x] 4.3 Add comprehensive inline comments to all modified files (especially rules, middleware, and API endpoints) explaining *why* the remediation was necessary and *how* the new secure approach benefits the system. This will guide future human and AI reviewers.
+- [x] 4.3 Add comprehensive inline comments to all modified files (especially rules, middleware, and API endpoints) explaining _why_ the remediation was necessary and _how_ the new secure approach benefits the system. This will guide future human and AI reviewers.

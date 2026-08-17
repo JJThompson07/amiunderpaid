@@ -24,7 +24,7 @@ describe('useDevProviderOverride', () => {
   it('updates the state', () => {
     const override = useDevProviderOverride();
     override.value = 'reed';
-    
+
     const checkOverride = useDevProviderOverride();
     expect(checkOverride.value).toBe('reed');
   });

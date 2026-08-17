@@ -422,7 +422,6 @@ export const ONS_LOCATIONS: ONSLocation[] = [
   { id: 396, gov_name: 'Not Classified', name: 'Not Classified' }
 ];
 
-
 export const RECRUITER_TERRITORIES_UK: Territory[] = [
   {
     id: 1,

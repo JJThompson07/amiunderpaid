@@ -148,7 +148,10 @@ export default defineNuxtConfig({
     reedApiKey: process.env.REED_API_KEY,
     joobleApiKey: process.env.JOOBLE_API_KEY,
     algoliaApplicationId: process.env.ALGOLIA_APPLICATION_ID,
-    algoliaAdminApiKey: process.env.ALGOLIA_ADMIN_KEY || process.env.ALGOLIA_ADMIN_API_KEY || process.env.ALGOLIA_API_KEY,
+    algoliaAdminApiKey:
+      process.env.ALGOLIA_ADMIN_KEY ||
+      process.env.ALGOLIA_ADMIN_API_KEY ||
+      process.env.ALGOLIA_API_KEY,
 
     public: {
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,

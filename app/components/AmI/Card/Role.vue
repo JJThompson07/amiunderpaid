@@ -16,7 +16,9 @@
       <div class="flex flex-col">
         <span class="uppercase text-2xs text-slate-400">{{ $t('card.role.salary') }}</span>
         <div class="flex flex-row items-center justify-between min-h-7">
-          <span :class="isSalaryProvided ? 'text-xl font-bold' : 'text-slate-400 text-xs italic'">{{ salaryRange }}</span>
+          <span :class="isSalaryProvided ? 'text-xl font-bold' : 'text-slate-400 text-xs italic'">{{
+            salaryRange
+          }}</span>
           <div>
             <div
               v-if="userSalary && isSalaryProvided"
@@ -152,7 +154,7 @@ const hasRange = computed<boolean>(() => {
 });
 
 const isSalaryProvided = computed<boolean>(() => {
-  if (props.rawSalary) return true;
+  if (props.rawSalary) {return true;}
   return Boolean(props.salaryMin) || Boolean(props.salaryMax);
 });
 

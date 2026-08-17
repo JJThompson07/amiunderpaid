@@ -1,10 +1,13 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchJoobleData, parseJoobleSalary, processJoobleData } from '../jooble';
 
 describe('Jooble Provider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({ joobleApiKey: 'test-key' })));
+    vi.stubGlobal(
+      'useRuntimeConfig',
+      vi.fn(() => ({ joobleApiKey: 'test-key' }))
+    );
     vi.stubGlobal('createError', (err: any) => new Error(err.statusMessage));
     vi.stubGlobal('$fetch', vi.fn());
   });
@@ -140,7 +143,7 @@ describe('Jooble Provider', () => {
 
       // Verify mean calculation (only includes jobs with valid salaries)
       expect(result.mean).toBe(110000); // Average of 100k and 120k
-      
+
       // Verify histogram buckets
       // 110000 rounds down to nearest 5000 -> 110000
       expect(result.histogram![110000]).toBe(1);

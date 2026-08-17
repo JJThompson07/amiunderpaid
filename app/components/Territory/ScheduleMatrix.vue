@@ -227,7 +227,7 @@ import {
 
 export type Territory = { id: number; name: string; band?: number };
 
-export interface ScheduleSelection {
+export type ScheduleSelection = {
   territoryId: number;
   territoryName: string;
   band: number;
@@ -237,7 +237,7 @@ export interface ScheduleSelection {
   rowCost: number;
 }
 
-export interface UpcomingMonth {
+export type UpcomingMonth = {
   value: string;
   label: string;
   year: number;

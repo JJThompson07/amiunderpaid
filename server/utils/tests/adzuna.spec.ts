@@ -53,16 +53,8 @@ describe('adzuna utils', () => {
     });
 
     it('recursively processes elements in an array', () => {
-      const input = [
-        'string',
-        { __bad__: 1, good: 2 },
-        [{ __nested_bad__: 3, nested_good: 4 }]
-      ];
-      const expected = [
-        'string',
-        { good: 2 },
-        [{ nested_good: 4 }]
-      ];
+      const input = ['string', { __bad__: 1, good: 2 }, [{ __nested_bad__: 3, nested_good: 4 }]];
+      const expected = ['string', { good: 2 }, [{ nested_good: 4 }]];
       expect(sanitizeAdzunaData(input)).toEqual(expected);
     });
   });
@@ -82,7 +74,7 @@ describe('adzuna utils', () => {
       const key1 = generateCacheKey('C++ Developer', 'London', 'us');
       const key2 = generateCacheKey('C# Engineer', 'Remote', 'gb');
       const key3 = generateCacheKey('.NET Developer', 'UK', 'gb');
-      
+
       expect(key1).toBe('us-london-c++-developer');
       expect(key2).toBe('gb-remote-c#-engineer');
       expect(key3).toBe('gb-uk-.net-developer');
@@ -97,7 +89,7 @@ describe('adzuna utils', () => {
       const longTitle = 'a'.repeat(150);
       const longLocation = 'b'.repeat(100);
       const key = generateCacheKey(longTitle, longLocation, 'gb');
-      
+
       expect(key.length).toBeLessThanOrEqual(200);
       expect(key.length).toBe(197); // 180 chars + '-' + 16 char hash
       expect(key.startsWith(`gb-${'b'.repeat(100)}-${'a'.repeat(76)}`)).toBe(true);

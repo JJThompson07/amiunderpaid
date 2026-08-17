@@ -1,10 +1,10 @@
 /**
  * Market Data Endpoint (Jobs)
- * 
- * This endpoint acts as an API gateway. It attempts to fetch data from the 
- * primary provider (Adzuna). If the primary provider returns a 429 Rate Limit error, 
- * this endpoint catches the error and seamlessly falls back to a secondary provider (Reed), 
- * mapping the response to a unified schema. 
+ *
+ * This endpoint acts as an API gateway. It attempts to fetch data from the
+ * primary provider (Adzuna). If the primary provider returns a 429 Rate Limit error,
+ * this endpoint catches the error and seamlessly falls back to a secondary provider (Reed),
+ * mapping the response to a unified schema.
  * The client does not need to know which provider was ultimately used.
  */
 import { FieldValue } from 'firebase-admin/firestore';
@@ -12,58 +12,67 @@ import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 import { ADZUNA_LOCATION_MAP } from '../../constants/locations';
 
 // Define the cached fetcher outside the event handler
-const fetchFromProviders = defineCachedFunction(async (
-  params: Record<string, any>,
-  countryCode: string,
-  titleStr: string,
-  locationStr: string,
-  typeStr: string,
-  contractStr: string,
-  limit: number,
-  isDevOrE2e: boolean,
-  devProviderOverride?: string
-) => {
-  try {
-    if (isDevOrE2e && devProviderOverride === 'reed') {
-      throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
-    }
-    if (isDevOrE2e && devProviderOverride === 'jooble') {
-      throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
-    }
+const fetchFromProviders = defineCachedFunction(
+  async (
+    params: Record<string, any>,
+    countryCode: string,
+    titleStr: string,
+    locationStr: string,
+    typeStr: string,
+    contractStr: string,
+    limit: number,
+    isDevOrE2e: boolean,
+    devProviderOverride?: string
+  ) => {
+    try {
+      if (isDevOrE2e && devProviderOverride === 'reed') {
+        throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
+      }
+      if (isDevOrE2e && devProviderOverride === 'jooble') {
+        throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
+      }
 
-    const rawData = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1`, {
-      params
-    });
+      const rawData = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1`, {
+        params
+      });
 
-    const cleanData = sanitizeAdzunaData(rawData);
-    
-    if (cleanData.count && cleanData.count > 0) {
-      cleanData.provider = 'adzuna';
-      return cleanData;
-    } else {
-      throw createError({ statusCode: 404, statusMessage: 'Zero results from Adzuna' });
+      const cleanData = sanitizeAdzunaData(rawData);
+
+      if (cleanData.count && cleanData.count > 0) {
+        cleanData.provider = 'adzuna';
+        return cleanData;
+      } else {
+        throw createError({ statusCode: 404, statusMessage: 'Zero results from Adzuna' });
+      }
+    } catch (e: any) {
+      const statusCode = e?.response?.status || e?.statusCode;
+      if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
+        const { executeMarketFallback } = await import('../../utils/fallback');
+        const fallbackRaw = await executeMarketFallback(
+          titleStr,
+          locationStr,
+          countryCode,
+          typeStr,
+          contractStr
+        );
+
+        return {
+          mean: fallbackRaw.mean,
+          count: fallbackRaw.count,
+          results: fallbackRaw.results.slice(0, limit),
+          provider: fallbackRaw.provider
+        };
+      }
+      throw e;
     }
-  } catch (e: any) {
-    const statusCode = e?.response?.status || e?.statusCode;
-    if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
-      const { executeMarketFallback } = await import('../../utils/fallback');
-      const fallbackRaw = await executeMarketFallback(titleStr, locationStr, countryCode, typeStr, contractStr);
-      
-      return {
-        mean: fallbackRaw.mean,
-        count: fallbackRaw.count,
-        results: fallbackRaw.results.slice(0, limit),
-        provider: fallbackRaw.provider
-      };
-    }
-    throw e;
+  },
+  {
+    maxAge: 60 * 60, // Keep in memory for 1 hour to prevent stampedes
+    name: 'marketJobsProviderFetch',
+    getKey: (params, countryCode, titleStr, locationStr, typeStr, contractStr, limit) =>
+      `${titleStr}-${locationStr}-${countryCode}-${typeStr}-${contractStr}-${limit}`
   }
-}, {
-  maxAge: 60 * 60, // Keep in memory for 1 hour to prevent stampedes
-  name: 'marketJobsProviderFetch',
-  getKey: (params, countryCode, titleStr, locationStr, typeStr, contractStr, limit) => 
-    `${titleStr}-${locationStr}-${countryCode}-${typeStr}-${contractStr}-${limit}`
-});
+);
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -103,7 +112,7 @@ export default defineEventHandler(async (event) => {
   let existingGovIdCode: string | undefined = undefined;
   let isAdminVerified: boolean = false;
 
-  const isDevOrE2e = process.dev || process.env.E2E === 'true';
+  const isDevOrE2e = import.meta.dev || process.env.E2E === 'true';
   const devProviderOverride = isDevOrE2e ? (query.devProvider as string) : undefined;
   const skipCache = isDevOrE2e && !!devProviderOverride;
 
@@ -208,13 +217,21 @@ export default defineEventHandler(async (event) => {
   // 3. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
   try {
     const cleanData: any = await fetchFromProviders(
-      params, countryCode, titleStr, locationStr, typeStr, contractStr, limit, isDevOrE2e, devProviderOverride
+      params,
+      countryCode,
+      titleStr,
+      locationStr,
+      typeStr,
+      contractStr,
+      limit,
+      isDevOrE2e,
+      devProviderOverride
     );
 
     // --- CALCULATE EXPIRES AT ---
     let cacheDays = 30; // Reduced from 120
     const categoryTag = cleanData.results?.[0]?.category?.tag || 'unknown';
-    
+
     if (categoryTag !== 'unknown') {
       try {
         const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();

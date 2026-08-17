@@ -12,7 +12,8 @@
       </div>
     </div>
 
-    <div class="p-3 bg-white/90 backdrop-blur-2xl shadow-2xl rounded-3xl ring-1 ring-slate-900/5 border border-white/60">
+    <div
+      class="p-3 bg-white/90 backdrop-blur-2xl shadow-2xl rounded-3xl ring-1 ring-slate-900/5 border border-white/60">
       <form class="flex flex-col gap-3" @submit.prevent="handleSearch">
         <div class="flex-1">
           <AmIInputAutocomplete
@@ -102,7 +103,7 @@
         {{ $t('search.ami.switch-site') }}
         <ArrowRightIcon class="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
       </a>
-      
+
       <button
         type="button"
         class="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors flex items-center gap-1.5"
@@ -146,7 +147,9 @@ const { logSearch } = useUserLogging();
 const { currentCountry, alternateSiteUrl } = useRegion();
 const route = useRoute();
 
-const internalCountry = ref(props.mode === 'benchmark' ? (props.initialCountry || 'USA') : currentCountry.value);
+const internalCountry = ref(
+  props.mode === 'benchmark' ? props.initialCountry || 'USA' : currentCountry.value
+);
 
 const scheduleOptions = [
   { label: t('search.time.full-time'), value: 'full-time' },
@@ -174,7 +177,9 @@ const showAmbiguityModal = ref<boolean>(false);
 const ambiguityOptions = ref<any[]>([]);
 const cleanSearchTitle = ref<string>('');
 
-const activeCountry = computed(() => props.mode === 'benchmark' ? internalCountry.value : currentCountry.value);
+const activeCountry = computed(() =>
+  props.mode === 'benchmark' ? internalCountry.value : currentCountry.value
+);
 
 const { fetching, titleOptions, locationOptions, labelToIdMap, fetchTitles, fetchLocations } =
   useJobAutocomplete(activeCountry, location, title);
@@ -182,8 +187,14 @@ const { fetching, titleOptions, locationOptions, labelToIdMap, fetchTitles, fetc
 const contractOptions = computed(() => {
   if (props.mode === 'benchmark') {
     return [
-      { label: t(`search.benchmark.contract.${internalCountry.value.toLowerCase()}.permanent`), value: 'permanent' },
-      { label: t(`search.benchmark.contract.${internalCountry.value.toLowerCase()}.contract`), value: 'contract' },
+      {
+        label: t(`search.benchmark.contract.${internalCountry.value.toLowerCase()}.permanent`),
+        value: 'permanent'
+      },
+      {
+        label: t(`search.benchmark.contract.${internalCountry.value.toLowerCase()}.contract`),
+        value: 'contract'
+      },
       { label: t('common.all'), value: 'all' }
     ];
   }
@@ -200,26 +211,39 @@ const periodOptions = computed(() => {
   return [{ label: '/ yr', value: 'year' }];
 });
 
-const titleLabel = computed(() => props.mode === 'benchmark' ? t('search.benchmark.title.label') : t('search.title.label'));
-const titleHelper = computed(() => props.mode === 'benchmark' ? t('search.benchmark.title.helper') : t('search.title.helper'));
-const titlePlaceholder = computed(() => props.mode === 'benchmark' ? t('search.benchmark.title.placeholder') : t('search.title.placeholder'));
+const titleLabel = computed(() =>
+  props.mode === 'benchmark' ? t('search.benchmark.title.label') : t('search.title.label')
+);
+const titleHelper = computed(() =>
+  props.mode === 'benchmark' ? t('search.benchmark.title.helper') : t('search.title.helper')
+);
+const titlePlaceholder = computed(() =>
+  props.mode === 'benchmark'
+    ? t('search.benchmark.title.placeholder')
+    : t('search.title.placeholder')
+);
 
 const locationLabel = computed(() => {
   if (props.mode === 'benchmark') {
-    return internalCountry.value === 'USA' ? t('search.benchmark.location.label.usa') : t('search.benchmark.location.label.uk');
+    return internalCountry.value === 'USA'
+      ? t('search.benchmark.location.label.usa')
+      : t('search.benchmark.location.label.uk');
   }
   return t('search.location.label');
 });
 
 const locationPlaceholder = computed(() => {
   if (props.mode === 'benchmark') {
-    return internalCountry.value === 'USA' ? t('search.benchmark.location.placeholder.usa') : t('search.benchmark.location.placeholder.uk');
+    return internalCountry.value === 'USA'
+      ? t('search.benchmark.location.placeholder.usa')
+      : t('search.benchmark.location.placeholder.uk');
   }
   return t('search.location.placeholder');
 });
 
-const salaryLabel = computed(() => props.mode === 'benchmark' ? t('search.benchmark.salary.label') : t('search.salary.label'));
-
+const salaryLabel = computed(() =>
+  props.mode === 'benchmark' ? t('search.benchmark.salary.label') : t('search.salary.label')
+);
 
 if (props.mode === 'benchmark') {
   watch(internalCountry, (newVal) => {
@@ -254,7 +278,11 @@ const handleSearch = async () => {
   let cleaned = title.value.replace(/\s*\(.*\)$/, '');
 
   if (exactGovId) {
-    cleaned = cleaned.split(',').map((word) => word.trim()).reverse().join(' ');
+    cleaned = cleaned
+      .split(',')
+      .map((word) => word.trim())
+      .reverse()
+      .join(' ');
   }
 
   cleanSearchTitle.value = cleaned;

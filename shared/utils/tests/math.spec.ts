@@ -115,7 +115,7 @@ describe('Math Engine: calculateConfidenceScore', () => {
     expect(calculateConfidenceScore(150, false, false, true)).toBe(6); // 2 + (150/150)*4
     expect(calculateConfidenceScore(300, false, false, true)).toBe(6); // Caps at 4 points (2 + 4)
   });
-  
+
   it('Scenario 5: Perfect Score (10)', () => {
     // 2 (base) + 4 (Regional) + 4 (Live > 150)
     expect(calculateConfidenceScore(200, true, true, true)).toBe(10);

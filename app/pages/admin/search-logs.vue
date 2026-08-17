@@ -307,11 +307,15 @@ const { data, pending, refresh } = await useFetch<{
   watch: [currentPage, searchQuery]
 });
 
-watch(data, (newData) => {
-  if (newData?.nextCursor) {
-    cursors.value[currentPage.value + 1] = newData.nextCursor;
-  }
-}, { immediate: true });
+watch(
+  data,
+  (newData) => {
+    if (newData?.nextCursor) {
+      cursors.value[currentPage.value + 1] = newData.nextCursor;
+    }
+  },
+  { immediate: true }
+);
 
 // --- BACKFILL STATE ---
 const backfillLoading = ref(false);

@@ -12,8 +12,7 @@
     :currency-symbol="currencySymbol"
     :url="sanitizeUrl(listing.redirect_url)"
     :raw-salary="listing.raw_salary"
-    data-provider="jooble"
-  />
+    data-provider="jooble" />
 </template>
 
 <script setup lang="ts">

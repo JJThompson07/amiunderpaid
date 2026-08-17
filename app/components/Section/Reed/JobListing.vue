@@ -11,8 +11,7 @@
     :market-average="marketAverage"
     :currency-symbol="currencySymbol"
     :url="sanitizeUrl(listing.redirect_url)"
-    data-provider="reed"
-  />
+    data-provider="reed" />
 </template>
 
 <script setup lang="ts">

@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useMacroData } from '../useMacroData';
 
-vi.mock('firebase/firestore', () => ({ doc: vi.fn(), collection: vi.fn(), getFirestore: vi.fn(), Timestamp: { now: vi.fn() } }));
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(),
+  collection: vi.fn(),
+  getFirestore: vi.fn(),
+  Timestamp: { now: vi.fn() }
+}));
 vi.mock('firebase/auth', () => ({ getAuth: vi.fn() }));
 
 const mockNationalSearch = vi.fn();
@@ -20,8 +25,8 @@ const mockInitIndex = vi.fn((indexName: string) => {
 
 vi.stubGlobal('useNuxtApp', () => ({
   $algolia: {
-    initIndex: mockInitIndex,
-  },
+    initIndex: mockInitIndex
+  }
 }));
 
 // Mock refs
@@ -85,9 +90,7 @@ describe('useMacroData', () => {
     });
 
     mockRegionalSearch.mockResolvedValueOnce({
-      hits: [
-        { searchLocation: 'New York', avg_salary: 60000, salary: 60000 },
-      ]
+      hits: [{ searchLocation: 'New York', avg_salary: 60000, salary: 60000 }]
     });
 
     const composable = useMacroData();
@@ -158,10 +161,10 @@ describe('useMacroData', () => {
 
     expect(result.macroNationalData.mean).toBe(32000);
     expect(result.macroNationalData.p50).toBe(32000);
-    
+
     expect(result.userRegionalData?.mean).toBe(42000);
     expect(result.userRegionalData?.p50).toBe(42000);
-    
+
     expect(result.allRegionalData['north']).toBeDefined();
     expect(result.allRegionalData['north']!.mean).toBe(0);
     expect(result.allRegionalData['north']!.p50).toBe(0);

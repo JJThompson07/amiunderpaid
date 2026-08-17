@@ -22,7 +22,8 @@ export default withNuxt(
         'error',
         {
           selector: "ReturnStatement > CallExpression[callee.name='createError']",
-          message: 'Do not use `return createError`. Use `throw createError` instead to ensure proper HTTP status codes.'
+          message:
+            'Do not use `return createError`. Use `throw createError` instead to ensure proper HTTP status codes.'
         }
       ]
     }

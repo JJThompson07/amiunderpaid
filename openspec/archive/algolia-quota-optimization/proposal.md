@@ -5,6 +5,7 @@ The platform relies on Algolia for real-time autocomplete suggestions (job title
 ## What Changes
 
 Optimize the `useJobAutocomplete` composable to drastically reduce outbound Algolia requests while maintaining a snappy user experience. We will:
+
 - Increase the typing debounce from 300ms to 500ms to allow users to finish their word before triggering a search.
 - Implement a client-side in-memory cache (`Map`) for autocomplete results, preventing duplicate Algolia API calls when a user deletes characters or repeats a search in the same browser session.
 

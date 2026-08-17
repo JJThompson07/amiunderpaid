@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { getPercentage, getUncappedPercentage, getDiff, getDiffPercentage, getRawDiffPercentage, getRawUncappedDiffPercentage, slugify, levenshteinDistance } from '../utility';
+import {
+  getDiff,
+  getDiffPercentage,
+  getPercentage,
+  getRawDiffPercentage,
+  getRawUncappedDiffPercentage,
+  getUncappedPercentage,
+  levenshteinDistance,
+  slugify
+} from '../utility';
 
 describe('utility', () => {
   it('getPercentage', () => {

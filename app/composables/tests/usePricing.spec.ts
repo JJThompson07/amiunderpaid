@@ -4,14 +4,14 @@ import { usePricing } from '../usePricing';
 
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn(),
-  setDoc: vi.fn(),
+  setDoc: vi.fn()
 }));
 
 vi.stubGlobal('useFirestore', () => 'mock-db');
 
 vi.stubGlobal('useDocument', (_ref: any) => ({
   data: { value: { price: 10 } },
-  pending: { value: false },
+  pending: { value: false }
 }));
 
 describe('usePricing', () => {
@@ -27,9 +27,9 @@ describe('usePricing', () => {
 
   it('initializes and provides pricingData and loadingPricing', () => {
     (doc as any).mockReturnValue('mock-doc-ref');
-    
+
     const { pricingData, loadingPricing } = usePricing();
-    
+
     expect(doc).toHaveBeenCalledWith('mock-db', 'platform_settings', 'pricing');
     expect(pricingData).toEqual({ value: { price: 10 } });
     expect(loadingPricing).toEqual({ value: false });
@@ -41,7 +41,7 @@ describe('usePricing', () => {
 
     const { updatePricing } = usePricing();
     const result = await updatePricing({ price: 20 });
-    
+
     expect(result).toBe(true);
     expect(setDoc).toHaveBeenCalledWith(
       'mock-doc-ref',

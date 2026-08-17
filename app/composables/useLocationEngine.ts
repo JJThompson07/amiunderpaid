@@ -48,7 +48,8 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
 
   // 4. The Orchestrator
   const asyncDataKey = computed<string>(
-    () => `${mode}-${country.value}-${location.value}-${searchTitle.value}-${devProviderOverride.value}`
+    () =>
+      `${mode}-${country.value}-${location.value}-${searchTitle.value}-${devProviderOverride.value}`
   );
 
   const {
@@ -67,7 +68,14 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
           contractType.value,
           devProviderOverride.value
         ),
-        adzuna.fetchHistogram(searchTitle.value, location.value, country.value, jobType.value, contractType.value, devProviderOverride.value)
+        adzuna.fetchHistogram(
+          searchTitle.value,
+          location.value,
+          country.value,
+          jobType.value,
+          contractType.value,
+          devProviderOverride.value
+        )
       ]);
 
       const targetGovId = govId.value || adzuna.cachedGovIdCode.value;
@@ -91,8 +99,8 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
       }
 
       // Strip large collections out to prevent massive hydration bloat
-      if (macro.allRegionalData) delete macro.allRegionalData;
-      if (micro.allRegionalMicroData) delete micro.allRegionalMicroData;
+      if (macro.allRegionalData) {delete macro.allRegionalData;}
+      if (micro.allRegionalMicroData) {delete micro.allRegionalMicroData;}
 
       return {
         macro,
@@ -162,7 +170,6 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
   const adzunaCategory = computed<string | undefined>(
     () => adzuna.jobsData.value?.results?.[0]?.category?.label
   );
-
 
   const mcaScore = computed(() => {
     if (!pageData.value?.macro?.macroNationalData) {

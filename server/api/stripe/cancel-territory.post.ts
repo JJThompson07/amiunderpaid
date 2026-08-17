@@ -140,7 +140,9 @@ export default defineEventHandler(async (event) => {
   // If the territory is completely removed or just basic was cancelled, we might need to remove from basicOwners.
   // Wait, if it was just downgraded (isBasic = false), we must remove it from basicOwners.
   // If it was completely removed (not in updatedTerritories), it means isBasic was also removed.
-  const isStillBasic = updatedTerritories.find((t: any) => t.territoryId === territoryIdToCancel)?.isBasic;
+  const isStillBasic = updatedTerritories.find(
+    (t: any) => t.territoryId === territoryIdToCancel
+  )?.isBasic;
   const shouldRemoveBasic = wasBasic && !isStillBasic;
 
   if (removedExclusiveMonths.length > 0 || shouldRemoveBasic) {
@@ -157,8 +159,8 @@ export default defineEventHandler(async (event) => {
       const remainingMonths = Object.entries(takenMonths).filter(
         ([month, ownerId]) => ownerId !== userId || !removedExclusiveMonths.includes(month)
       );
-      
-      const remainingBasic = basicOwners.filter(id => id !== userId);
+
+      const remainingBasic = basicOwners.filter((id) => id !== userId);
 
       if (remainingMonths.length === 0 && remainingBasic.length === 0) {
         // No months left AND no basic owners left — delete the entire claim document
@@ -166,7 +168,7 @@ export default defineEventHandler(async (event) => {
       } else {
         // Surgically remove only this user's cancelled properties
         const updates: any = {};
-        
+
         if (removedExclusiveMonths.length > 0) {
           for (const month of removedExclusiveMonths) {
             if (takenMonths[month] === userId) {
@@ -174,7 +176,7 @@ export default defineEventHandler(async (event) => {
             }
           }
         }
-        
+
         if (shouldRemoveBasic) {
           updates.basicOwners = FieldValue.arrayRemove(userId);
         }

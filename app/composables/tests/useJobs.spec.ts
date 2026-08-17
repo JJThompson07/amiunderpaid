@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useJobs } from '../useJobs';
 
-vi.mock('firebase/firestore', () => ({ doc: vi.fn(), collection: vi.fn(), getFirestore: vi.fn(), Timestamp: { now: vi.fn() } }));
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(),
+  collection: vi.fn(),
+  getFirestore: vi.fn(),
+  Timestamp: { now: vi.fn() }
+}));
 vi.mock('firebase/auth', () => ({ getAuth: vi.fn() }));
 
 const stateCache: Record<string, any> = {};
@@ -41,7 +46,14 @@ describe('useJobs', () => {
     await composable.fetchJobs('Developer', 'London', 'gb');
 
     expect(mock$fetch).toHaveBeenCalledWith('/api/market-data/jobs', {
-      params: { title: 'Developer', location: 'London', country: 'gb', jobType: 'full-time', contractType: 'permanent', devProvider: undefined }
+      params: {
+        title: 'Developer',
+        location: 'London',
+        country: 'gb',
+        jobType: 'full-time',
+        contractType: 'permanent',
+        devProvider: undefined
+      }
     });
     expect(composable.jobsData.value).toEqual({
       mean: 50000,
@@ -55,10 +67,10 @@ describe('useJobs', () => {
 
   it('fetchJobs error clears jobsData', async () => {
     mock$fetch.mockRejectedValueOnce(new Error('Failed'));
-    
+
     const composable = useJobs();
     await composable.fetchJobs('Developer', 'London', 'gb');
-    
+
     expect(composable.jobsData.value).toBe(null);
     expect(composable.hasJobsData.value).toBe(false);
   });
@@ -67,9 +79,16 @@ describe('useJobs', () => {
     mock$fetch.mockResolvedValueOnce({ mean: 10, count: 1, results: [] });
     const composable = useJobs();
     await composable.fetchJobs('Developer', 'London', 'gb', 'full-time', 'permanent', 'reed');
-    
+
     expect(mock$fetch).toHaveBeenCalledWith('/api/market-data/jobs', {
-      params: { title: 'Developer', location: 'London', country: 'gb', jobType: 'full-time', contractType: 'permanent', devProvider: 'reed' }
+      params: {
+        title: 'Developer',
+        location: 'London',
+        country: 'gb',
+        jobType: 'full-time',
+        contractType: 'permanent',
+        devProvider: 'reed'
+      }
     });
   });
 
@@ -79,7 +98,14 @@ describe('useJobs', () => {
     await composable.fetchJobs('Developer', 'London', 'gb', 'full-time', 'permanent', 'auto');
 
     expect(mock$fetch).toHaveBeenCalledWith('/api/market-data/jobs', {
-      params: { title: 'Developer', location: 'London', country: 'gb', jobType: 'full-time', contractType: 'permanent', devProvider: undefined }
+      params: {
+        title: 'Developer',
+        location: 'London',
+        country: 'gb',
+        jobType: 'full-time',
+        contractType: 'permanent',
+        devProvider: undefined
+      }
     });
   });
 
@@ -165,7 +191,12 @@ describe('useJobs', () => {
   it('fetchCategories success applies sanitizeAdzunaData correctly', async () => {
     mock$fetch.mockResolvedValueOnce({
       results: [
-        { label: 'IT', tag: 'it-jobs', __hidden__: 'secret', nested: { __internal__: 1, valid: true } },
+        {
+          label: 'IT',
+          tag: 'it-jobs',
+          __hidden__: 'secret',
+          nested: { __internal__: 1, valid: true }
+        },
         null,
         'string'
       ],

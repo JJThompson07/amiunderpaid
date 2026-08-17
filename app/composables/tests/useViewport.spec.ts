@@ -4,9 +4,19 @@ import { useViewport } from '../useViewport';
 
 let mockWidth = 1000;
 vi.mock('@vueuse/core', () => ({
-  useWindowSize: vi.fn(() => ({ width: { get value() { return mockWidth; } } }))
+  useWindowSize: vi.fn(() => ({
+    width: {
+      get value() {
+        return mockWidth;
+      }
+    }
+  }))
 }));
-vi.stubGlobal('computed', (fn: any) => ({ get value() { return fn(); } }));
+vi.stubGlobal('computed', (fn: any) => ({
+  get value() {
+    return fn();
+  }
+}));
 
 describe('useViewport', () => {
   it('initializes without throwing', () => {
@@ -20,7 +30,7 @@ describe('useViewport', () => {
     expect(isDesktop.value).toBe(false);
     expect(isXl.value).toBe(false);
   });
-  
+
   it('correctly identifies tablet viewport', () => {
     mockWidth = 800;
     const { isMobile, isDesktop, isXl } = useViewport();
@@ -28,7 +38,7 @@ describe('useViewport', () => {
     expect(isDesktop.value).toBe(false);
     expect(isXl.value).toBe(false);
   });
-  
+
   it('correctly identifies desktop viewport', () => {
     mockWidth = 1100;
     const { isMobile, isDesktop, isXl } = useViewport();
@@ -36,7 +46,7 @@ describe('useViewport', () => {
     expect(isDesktop.value).toBe(true);
     expect(isXl.value).toBe(false);
   });
-  
+
   it('correctly identifies xl viewport', () => {
     mockWidth = 1300;
     const { isMobile, isDesktop, isXl } = useViewport();

@@ -2,9 +2,9 @@ name: CI Pipeline
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
   push:
-    branches: [ "main" ]
+    branches: ['main']
 
 jobs:
   lint:
@@ -97,10 +97,10 @@ jobs:
 
       - name: Install Playwright Browsers
         run: pnpm exec playwright install chromium firefox --with-deps
-      
+
       - name: Build Application for E2E
         run: E2E=true pnpm run build
-      
+
       - name: Run Playwright E2E Tests
         run: |
           set -a
