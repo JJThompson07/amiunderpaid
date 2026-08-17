@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (Object.keys(updateData).length > 0) {
-      await db.collection('search_history').doc(body.id).set(updateData, { merge: true });
+      await db.collection('search_history').doc(body.id).update(updateData);
     }
 
     return { success: true };

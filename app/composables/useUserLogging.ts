@@ -2,51 +2,44 @@ export const useUserLogging = () => {
   // Track whenever a user performs a search
   const { $siteBrand } = useNuxtApp();
 
-  const logSearch = (
+  const logSearch = async (
     title: string,
     country: string,
     location: string,
     salary: string,
     schedule: string = 'full-time',
     contract: string = 'permanent'
-  ): string => {
+  ): Promise<string> => {
     /* v8 ignore start */
     if (import.meta.dev) {
-      // do not log dev searches
       return '';
     }
-    /* v8 ignore stop */
-
-    const searchId = crypto.randomUUID();
-
-    /* v8 ignore start */
+    
     if (import.meta.client) {
-      // We use the native browser 'fetch' API here instead of $fetch
-      // because we need the 'keepalive: true' flag. This tells the browser:
-      // "Even if the user navigates to a new page right now, finish sending this data to the database!"
-      fetch('/api/user/track-search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          id: searchId,
-          title,
-          country,
-          location,
-          salary,
-          schedule,
-          contract,
-          brand: $siteBrand
-        }),
-        keepalive: true
-      }).catch(() => {
-        // Silently fail if they are completely offline
-      });
+      try {
+        const response = await $fetch<{ success: boolean; id?: string }>('/api/user/track-search', {
+          method: 'POST',
+          body: {
+            title,
+            country,
+            location,
+            salary,
+            schedule,
+            contract,
+            brand: $siteBrand
+          }
+        });
+        
+        if (response.success && response.id) {
+          return response.id;
+        }
+      } catch {
+        // Silently fail
+      }
     }
     /* v8 ignore stop */
 
-    return searchId;
+    return '';
   };
 
   const updateSearchLog = (

@@ -31,13 +31,9 @@ export default defineEventHandler(async (event) => {
       timestamp: FieldValue.serverTimestamp()
     };
 
-    if (body.id) {
-      await db.collection('search_history').doc(body.id).set(docData);
-    } else {
-      await db.collection('search_history').add(docData);
-    }
+    const docRef = await db.collection('search_history').add(docData);
 
-    return { success: true };
+    return { success: true, id: docRef.id };
   } catch {
     // silent fail so not to disrupt the user
     return { success: false };
