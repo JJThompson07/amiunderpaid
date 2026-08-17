@@ -34,3 +34,10 @@ The system SHALL validate any request to delete or wipe collections via the admi
 #### Scenario: Attempting to delete without filters
 - **WHEN** an admin requests to delete an allowed collection but provides an empty or missing filter object
 - **THEN** the system rejects the request with a 400 Bad Request error to prevent accidental full-collection wipes
+
+### Requirement: Strict route protection
+The system SHALL apply `verifyAdmin` strictly to all `/api/admin/` routes without substring exemptions.
+
+#### Scenario: Attacker tries bypass
+- **WHEN** a request hits `/api/admin/migrate-claims-bypass`
+- **THEN** the middleware intercepts and requires the admin token

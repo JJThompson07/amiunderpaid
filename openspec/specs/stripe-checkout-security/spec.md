@@ -26,3 +26,17 @@ The system SHALL process webhook fulfillment for exclusive territory purchases i
 #### Scenario: Exclusive month was purchased by someone else concurrently
 - **WHEN** the webhook receives a successful payment for an exclusive month that was just assigned to a different user
 - **THEN** the transaction aborts, an error is logged (e.g., `month_taken`), and the fulfillment is halted to trigger a manual review or refund
+
+### Requirement: Server-side discount clamping
+The system SHALL strictly bound all applied discounts between 0 and 100 on the server.
+
+#### Scenario: User attempts negative discount
+- **WHEN** a user somehow bypasses rules to set `exclusiveDiscount` to -50
+- **THEN** the server clamps it to 0 before calculating the Stripe price
+
+### Requirement: Safe conflict retries
+The system SHALL detect Stripe webhook transaction conflicts and return 200 without throwing 500 errors.
+
+#### Scenario: Webhook processes a double-booking
+- **WHEN** the webhook encounters a territory conflict error during transaction
+- **THEN** it refunds the customer, logs the conflict, and returns a success response to Stripe to prevent retries
