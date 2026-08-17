@@ -69,8 +69,8 @@ const fetchFromProviders = defineCachedFunction(
   {
     maxAge: 60 * 60, // Keep in memory for 1 hour to prevent stampedes
     name: 'marketJobsProviderFetch',
-    getKey: (params, countryCode, titleStr, locationStr, typeStr, contractStr, limit) =>
-      `${titleStr}-${locationStr}-${countryCode}-${typeStr}-${contractStr}-${limit}`
+    getKey: (params, countryCode, titleStr, locationStr, typeStr, contractStr, limit, isDevOrE2e, devProviderOverride) =>
+      `${titleStr}-${locationStr}-${countryCode}-${typeStr}-${contractStr}-${limit}-${devProviderOverride || 'none'}`
   }
 );
 

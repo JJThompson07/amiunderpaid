@@ -114,7 +114,7 @@ const handleLogout = async () => {
 
 useHead({
   htmlAttrs: {
-    lang: computed(() => i18nHead.value.htmlAttrs?.lang),
+    lang: computed(() => locale.value || i18nHead.value.htmlAttrs?.lang),
     dir: computed(() => i18nHead.value.htmlAttrs?.dir as 'ltr' | 'rtl' | 'auto' | undefined)
   },
   link: computed(() => {
