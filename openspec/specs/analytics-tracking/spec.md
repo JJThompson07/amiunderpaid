@@ -3,9 +3,10 @@
 ### `app/app.vue`
 
 - **Behavior**: On client mount, check if `import.meta.dev` is true. If so, abort tracking immediately (do not log local development sessions).
-- **Behavior**: If not in dev, check if `sessionStorage.getItem('session_logged')` exists.
-- **Behavior**: If it does not exist, send a non-blocking `POST` request to `/api/analytics/session`.
-- **Behavior**: Set `sessionStorage.setItem('session_logged', 'true')` immediately to prevent duplicates on rapid reloads.
+- **Behavior**: If not in dev, get the current UTC date string (e.g. `YYYY-MM-DD`).
+- **Behavior**: Check if `localStorage.getItem('last_session_logged')` equals the current date.
+- **Behavior**: If it does not equal, send a non-blocking `POST` request to `/api/analytics/session`.
+- **Behavior**: Set `localStorage.setItem('last_session_logged', today)` immediately to prevent duplicates on rapid reloads or new tabs within the same day.
 
 ### `server/api/analytics/session.post.ts`
 
