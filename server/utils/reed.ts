@@ -33,7 +33,7 @@ export const fetchReedData = async (
   if (!apiKey) {
     if (isDevOrE2e) {
       return {
-        provider: 'reed',
+        provider: 'reed' as const,
         count: 1,
         mean: 50000,
         histogram: { '50000': 1 },
@@ -49,7 +49,7 @@ export const fetchReedData = async (
           salary_max: 60000,
           contract_time: 'full_time',
           contract_type: 'permanent',
-          provider: 'reed'
+          provider: 'reed' as const
         }]
       };
     }

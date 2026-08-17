@@ -21,15 +21,22 @@ import * as echarts from 'echarts';
 import type { CountryCode } from '../../pages/recruiter/territories/index.vue';
 import type { Territory, ONSMatch } from '~~/utils/locations/uk';
 
+export interface MapTerritory {
+  id: number;
+  name: string;
+  ons_matches?: ONSMatch[];
+  [key: string]: any;
+}
+
 const props = defineProps<{
   country: CountryCode;
   claimedIds: number[];
-  territories: Territory[];
+  territories: MapTerritory[];
   selectedIds: number[];
 }>();
 
 const emit = defineEmits<{
-  (e: 'territory-clicked', territory: Territory): void
+  (e: 'territory-clicked', territory: MapTerritory): void
 }>();
 
 const mapContainer = ref<HTMLElement | null>(null);
@@ -37,7 +44,7 @@ const loading = ref(true);
 const chart = shallowRef<echarts.ECharts | null>(null);
 
 const territoryLookup = computed(() => {
-  const lookup = new Map<string, Territory>();
+  const lookup = new Map<string, MapTerritory>();
 
   props.territories.forEach((t) => {
     // Index the main territory name

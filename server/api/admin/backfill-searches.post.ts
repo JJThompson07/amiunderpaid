@@ -259,35 +259,35 @@ export default defineEventHandler(async (event) => {
 
           if (hasMicro || hasLive) {
             if (countryCode === 'gb') {
-              const res = calculateUKBenchmarkScore(
+              const res = calculateUKBenchmarkScore({
                 userSalary,
-                macroData.macroNationalData,
-                formattedMicroData,
-                microData?.title || '',
-                null,
-                macroData.regionalMedianAllRoles,
-                macroData.nationalMedianAllRoles,
-                histData,
-                jobsCount,
-                marketAverage || 0
-              );
+                macroNationalData: macroData.macroNationalData,
+                microNationalData: formattedMicroData,
+                microNationalOfficialTitle: microData?.title || '',
+                microRegionalData: null,
+                regionalMedianAllRoles: macroData.regionalMedianAllRoles,
+                nationalMedianAllRoles: macroData.nationalMedianAllRoles,
+                liveBuckets: histData,
+                totalLiveJobs: jobsCount,
+                meanLiveSalary: marketAverage || 0
+              });
               mcaScore = res.score;
               microPercentile = res.breakdown.microPercentile;
               macroPercentile = res.breakdown.macroPercentile;
               livePercentile = res.breakdown.livePercentile;
             } else {
-              const res = calculateUSABenchmarkScore(
+              const res = calculateUSABenchmarkScore({
                 userSalary,
-                macroData.macroNationalData,
-                null, // regional macro
-                formattedMicroData,
-                null, // regional micro
-                macroData.regionalMedianAllRoles,
-                macroData.nationalMedianAllRoles,
-                histData,
-                jobsCount,
-                marketAverage || 0
-              );
+                macroNationalData: macroData.macroNationalData,
+                microNationalData: formattedMicroData,
+                microNationalOfficialTitle: microData?.title || '',
+                microRegionalData: null,
+                regionalMedianAllRoles: macroData.regionalMedianAllRoles,
+                nationalMedianAllRoles: macroData.nationalMedianAllRoles,
+                liveBuckets: histData,
+                totalLiveJobs: jobsCount,
+                meanLiveSalary: marketAverage || 0
+              });
               mcaScore = res.score;
               microPercentile = res.breakdown.microPercentile;
               macroPercentile = res.breakdown.macroPercentile;

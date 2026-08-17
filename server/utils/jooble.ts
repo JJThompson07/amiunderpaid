@@ -90,7 +90,7 @@ export const fetchJoobleData = async (
   if (!apiKey) {
     if (isDevOrE2e) {
       return {
-        provider: 'jooble',
+        provider: 'jooble' as const,
         count: 1,
         mean: 60000,
         histogram: { '60000': 1 },
@@ -106,7 +106,7 @@ export const fetchJoobleData = async (
           salary_max: 70000,
           contract_time: 'full_time',
           contract_type: 'permanent',
-          provider: 'jooble'
+          provider: 'jooble' as const
         }]
       };
     }

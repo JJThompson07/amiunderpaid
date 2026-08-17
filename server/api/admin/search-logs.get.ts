@@ -111,8 +111,8 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const todayCount = todaySnapshot.data().count;
-    const yesterdayCount = yesterdaySnapshot.data().count;
+    const todayCount = todaySnapshot.data()?.count || 0;
+    const yesterdayCount = yesterdaySnapshot.data()?.count || 0;
 
     let oldestDate = 'the beginning';
     let averagePerDay = 0;
