@@ -41,14 +41,22 @@
           <span class="font-bold text-slate-900">{{ row.id }}</span>
         </template>
         <template #locations="{ row }">
-          <div class="flex flex-col gap-1 py-2">
-            <div v-for="(cities, country) in row.locations" :key="country" class="text-xs">
-              <span class="font-bold text-slate-700">{{ country }}:</span>
-              <span class="text-slate-500 ml-1">
-                {{ Object.entries(cities).map(([city, count]) => `${city}: ${count}`).join(', ') }}
-              </span>
+          <div v-if="row.locations && Object.keys(row.locations).length" class="flex flex-col gap-3 py-3">
+            <div v-for="(cities, country) in row.locations" :key="country" class="flex flex-col gap-1.5">
+              <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">{{ country }}</span>
+              <div class="flex flex-wrap gap-1.5">
+                <span 
+                  v-for="(count, city) in cities" 
+                  :key="city"
+                  class="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/60 shadow-sm"
+                >
+                  {{ city }}
+                  <span class="bg-white text-slate-500 px-1.5 rounded border border-slate-200 font-bold leading-tight">{{ count }}</span>
+                </span>
+              </div>
             </div>
           </div>
+          <div v-else class="text-xs text-slate-400 italic py-3">No geolocation data</div>
         </template>
         <template #total="{ row }">
           <span class="font-black text-slate-900 text-lg">{{ row.total }}</span>
