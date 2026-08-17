@@ -3,6 +3,10 @@ import type { Ref } from 'vue';
 import type { SearchClient } from 'algoliasearch';
 import type { AutocompleteOption } from '~/components/AmI/Input/Autocomplete.vue';
 
+// Define cache maps outside the composable so they persist for the lifetime of the SPA session
+const titleCache = new Map<string, AutocompleteOption[]>();
+const locationCache = new Map<string, AutocompleteOption[]>();
+
 export const useJobAutocomplete = (
   country: Ref<string>,
   currentLocation: Ref<string>,
@@ -87,34 +91,58 @@ export const useJobAutocomplete = (
       titleOptions.value = [];
       return;
     }
+    
+    const term = val.trim();
+    // Cache key must include country and contextual location filter to prevent stale bleed
+    const cacheKey = `${country.value}:${term}:${currentLocation.value}`;
+    
+    if (titleCache.has(cacheKey)) {
+      titleOptions.value = titleCache.get(cacheKey)!;
+      return;
+    }
+
     fetching.value = true;
     try {
       titleOptions.value =
-        country.value === 'UK' ? await fetchUKTitles(val.trim()) : await fetchUSATitles(val.trim());
+        country.value === 'UK' ? await fetchUKTitles(term) : await fetchUSATitles(term);
+      if (titleCache.size > 200) titleCache.clear();
+      titleCache.set(cacheKey, titleOptions.value);
     } catch {
       // Silent fail for autocomplete
     } finally {
       fetching.value = false;
     }
-  }, 300);
+  }, 500);
 
   const fetchLocations = useDebounceFn(async (val: string) => {
     if (!val || val.length < 2) {
       locationOptions.value = [];
       return;
     }
+    
+    const term = val.trim();
+    // Cache key must include country and contextual title filter to prevent stale bleed
+    const cacheKey = `${country.value}:${term}:${currentTitle.value}`;
+    
+    if (locationCache.has(cacheKey)) {
+      locationOptions.value = locationCache.get(cacheKey)!;
+      return;
+    }
+
     fetching.value = true;
     try {
       locationOptions.value =
         country.value === 'UK'
-          ? await fetchUKLocations(val.trim())
-          : await fetchUSALocations(val.trim());
+          ? await fetchUKLocations(term)
+          : await fetchUSALocations(term);
+      if (locationCache.size > 200) locationCache.clear();
+      locationCache.set(cacheKey, locationOptions.value);
     } catch {
       // Silent fail for autocomplete
     } finally {
       fetching.value = false;
     }
-  }, 300);
+  }, 500);
 
   return {
     fetching,
