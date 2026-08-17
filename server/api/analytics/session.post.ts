@@ -7,17 +7,26 @@ export default defineEventHandler(async (event) => {
     return { status: 200, message: 'Local development session skipped' };
   }
 
+  const decodeSafe = (val: string) => {
+    try {
+      return decodeURIComponent(val);
+    } catch {
+      return val;
+    }
+  };
+
   // Get geolocation headers
-  const countryRaw =
-    (getHeader(event, 'x-vercel-ip-country') || getHeader(event, 'cf-ipcountry') || 'Unknown') as string;
+  const countryRaw = decodeSafe(
+    (getHeader(event, 'x-vercel-ip-country') || getHeader(event, 'cf-ipcountry') || 'Unknown') as string
+  );
   let country = countryRaw.replace(/[^a-zA-Z0-9 -]/g, '').trim().substring(0, 50) || 'Unknown';
 
-  const cityRaw = (getHeader(event, 'x-vercel-ip-city') || 'Unknown') as string;
+  const cityRaw = decodeSafe((getHeader(event, 'x-vercel-ip-city') || 'Unknown') as string);
   let city = cityRaw.replace(/[^a-zA-Z0-9 -]/g, '').trim().substring(0, 100) || 'Unknown';
 
   // YYYY-MM-DD UTC
   const now = new Date();
-  const dateStr = now.toISOString().split('T')[0];
+  const dateStr = now.toISOString().split('T')[0]!;
 
   const db = getFirestore();
   const docRef = db.collection('user_sessions').doc(dateStr);
@@ -26,7 +35,11 @@ export default defineEventHandler(async (event) => {
     await docRef.set(
       {
         total: FieldValue.increment(1),
-        [`locations.${country}.${city}`]: FieldValue.increment(1),
+        locations: {
+          [country]: {
+            [city]: FieldValue.increment(1)
+          }
+        }
       },
       { merge: true }
     );

@@ -45,7 +45,11 @@ describe('Analytics Session API', () => {
     expect(setMock).toHaveBeenCalledWith(
       {
         total: 'increment(1)',
-        'locations.GB.London': 'increment(1)',
+        locations: {
+          GB: {
+            London: 'increment(1)'
+          }
+        }
       },
       { merge: true }
     );
@@ -55,9 +59,9 @@ describe('Analytics Session API', () => {
     const event = {
       node: {
         req: {
-          headers: {},
-        },
-      },
+          headers: {}
+        }
+      }
     } as any;
 
     await sessionEndpoint(event);
@@ -65,7 +69,11 @@ describe('Analytics Session API', () => {
     expect(setMock).toHaveBeenCalledWith(
       {
         total: 'increment(1)',
-        'locations.Unknown.Unknown': 'increment(1)',
+        locations: {
+          Unknown: {
+            Unknown: 'increment(1)'
+          }
+        }
       },
       { merge: true }
     );
@@ -76,10 +84,10 @@ describe('Analytics Session API', () => {
       node: {
         req: {
           headers: {
-            'cf-ipcountry': 'US',
-          },
-        },
-      },
+            'cf-ipcountry': 'US'
+          }
+        }
+      }
     } as any;
 
     await sessionEndpoint(event);
@@ -87,7 +95,11 @@ describe('Analytics Session API', () => {
     expect(setMock).toHaveBeenCalledWith(
       {
         total: 'increment(1)',
-        'locations.US.Unknown': 'increment(1)',
+        locations: {
+          US: {
+            Unknown: 'increment(1)'
+          }
+        }
       },
       { merge: true }
     );
