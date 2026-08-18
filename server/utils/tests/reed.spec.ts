@@ -90,7 +90,10 @@ describe('Reed Utility', () => {
         'useRuntimeConfig',
         vi.fn(() => ({ reedApiKey: null }))
       );
-      vi.stubGlobal('createError', (err: any) => new Error(err.statusMessage));
+      vi.stubGlobal(
+        'createError',
+        (err: { statusMessage?: string }) => new Error(err.statusMessage)
+      );
 
       await expect(fetchReedData('Dev', '', 'full-time', 'permanent')).rejects.toThrow(
         'Market data service is misconfigured.'
@@ -168,7 +171,10 @@ describe('Reed Utility', () => {
         'useRuntimeConfig',
         vi.fn(() => ({ reedApiKey: 'test-key' }))
       );
-      vi.stubGlobal('createError', (err: any) => new Error(err.statusMessage));
+      vi.stubGlobal(
+        'createError',
+        (err: { statusMessage?: string }) => new Error(err.statusMessage)
+      );
       vi.stubGlobal('$fetch', vi.fn().mockRejectedValue(new Error('Network error')));
 
       await expect(fetchReedData('Dev', '', 'full-time', 'permanent')).rejects.toThrow(

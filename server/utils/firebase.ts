@@ -1,5 +1,5 @@
-import { type App, cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { type App, cert, getApps, initializeApp, type ServiceAccount } from 'firebase-admin/app';
+import { type Firestore, getFirestore, type Query } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import type { H3Event } from 'h3';
 
@@ -10,7 +10,7 @@ export const useAdminApp = (): App => {
     return apps[0]!;
   }
 
-  let serviceAccount: any;
+  let serviceAccount: ServiceAccount | undefined;
   const b64Env = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
 
   if (b64Env) {
@@ -29,11 +29,11 @@ export const useAdminApp = (): App => {
   return initializeApp(serviceAccount ? { credential: cert(serviceAccount) } : undefined);
 };
 
-export const useAdminFirestore = () => {
+export const useAdminFirestore = (): Firestore => {
   return getFirestore(useAdminApp());
 };
 
-export const verifyAdmin = async (event: H3Event) => {
+export const verifyAdmin = async (event: H3Event): Promise<void> => {
   const auth = getAuth(useAdminApp());
   let decodedToken = null;
 
@@ -44,6 +44,8 @@ export const verifyAdmin = async (event: H3Event) => {
     try {
       decodedToken = await auth.verifyIdToken(idToken);
     } catch {
+      // Intentional diagnostic log: no server-side logging utility exists yet for this path.
+      // eslint-disable-next-line no-console
       console.warn('ID Token invalid, falling back to cookie check...');
     }
   }
@@ -79,9 +81,12 @@ export const verifyAdmin = async (event: H3Event) => {
   }
 };
 
-export const batchDelete = async (collectionName: string, filters: Record<string, any>) => {
+export const batchDelete = async (
+  collectionName: string,
+  filters: Record<string, unknown>
+): Promise<number> => {
   const db = useAdminFirestore();
-  let query: any = db.collection(collectionName);
+  let query: Query = db.collection(collectionName);
 
   for (const [key, value] of Object.entries(filters)) {
     query = query.where(key, '==', value);
@@ -98,7 +103,7 @@ export const batchDelete = async (collectionName: string, filters: Record<string
   for (let i = 0; i < docs.length; i += 500) {
     const chunk = docs.slice(i, i + 500);
     const batch = db.batch();
-    chunk.forEach((doc: any) => batch.delete(doc.ref));
+    chunk.forEach((doc) => batch.delete(doc.ref));
     await batch.commit();
     count += chunk.length;
   }
@@ -106,7 +111,16 @@ export const batchDelete = async (collectionName: string, filters: Record<string
   return count;
 };
 
-export const batchSeed = async (collectionName: string, data: any[]) => {
+type SeedableDocument = {
+  objectID?: string;
+  updatedAt?: string | number | Date;
+  [key: string]: unknown;
+};
+
+export const batchSeed = async (
+  collectionName: string,
+  data: SeedableDocument[]
+): Promise<number> => {
   const db = useAdminFirestore();
   let count = 0;
 

@@ -17,12 +17,23 @@ export type ReedJobResponse = {
   totalResults: number;
 };
 
+type ReedSearchParams = {
+  keywords: string;
+  resultsToTake: number;
+  locationName?: string;
+  fullTime?: boolean;
+  partTime?: boolean;
+  permanent?: boolean;
+  contract?: boolean;
+  temp?: boolean;
+};
+
 export const fetchReedData = async (
   title: string,
   location: string,
   jobType: string,
   contractType: string
-) => {
+): Promise<JobSearchResponse> => {
   const config = useRuntimeConfig();
   // Credentials are always read from private runtimeConfig (server-only).
   // Never access via process.env directly — this bypasses Nuxt's validation layer.
@@ -58,7 +69,7 @@ export const fetchReedData = async (
     throw createError({ statusCode: 500, statusMessage: 'Market data service is misconfigured.' });
   }
 
-  const params: Record<string, any> = {
+  const params: ReedSearchParams = {
     keywords: title,
     resultsToTake: 100 // Fetch a good sample size to calculate statistics
   };

@@ -1,16 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Event } from 'h3';
 import { verifyAdmin } from '../../utils/firebase';
+import type AdminGuardHandler from '../admin-guard';
 
-vi.stubGlobal('defineEventHandler', (fn: any) => fn);
-vi.stubGlobal('getRequestURL', (event: any) => new URL(event.path, 'http://localhost'));
+vi.stubGlobal(
+  'defineEventHandler',
+  (fn: (event: H3Event) => Promise<void>): ((event: H3Event) => Promise<void>) => fn
+);
+vi.stubGlobal('getRequestURL', (event: H3Event) => new URL(event.path, 'http://localhost'));
 
 vi.mock('../../utils/firebase', () => ({
   verifyAdmin: vi.fn()
 }));
 
 describe('Admin Guard Middleware', () => {
-  let handler: any;
+  let handler: typeof AdminGuardHandler;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -46,7 +50,7 @@ describe('Admin Guard Middleware', () => {
     const event = { path: '/api/admin/settings' } as unknown as H3Event;
 
     const error = new Error('Forbidden');
-    (verifyAdmin as any).mockRejectedValueOnce(error);
+    vi.mocked(verifyAdmin).mockRejectedValueOnce(error);
 
     await expect(handler(event)).rejects.toThrow('Forbidden');
   });

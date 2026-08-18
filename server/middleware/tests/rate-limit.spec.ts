@@ -1,13 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Event } from 'h3';
 
-vi.stubGlobal('defineEventHandler', (fn: any) => fn);
-vi.stubGlobal('getRequestURL', (event: any) => new URL(event.path, 'http://localhost'));
-vi.stubGlobal('getRequestIP', (event: any) => event.ip);
-vi.stubGlobal('createError', (err: any) => new Error(err.statusMessage));
+import type RateLimitHandler from '../rate-limit';
+
+type MockEvent = H3Event & { ip?: string };
+
+vi.stubGlobal(
+  'defineEventHandler',
+  (fn: (event: MockEvent) => void): ((event: MockEvent) => void) => fn
+);
+vi.stubGlobal('getRequestURL', (event: MockEvent) => new URL(event.path, 'http://localhost'));
+vi.stubGlobal('getRequestIP', (event: MockEvent) => event.ip);
+vi.stubGlobal('createError', (err: { statusMessage?: string }) => new Error(err.statusMessage));
 
 describe('Rate Limit Middleware', () => {
-  let handler: any;
+  let handler: typeof RateLimitHandler;
 
   beforeEach(async () => {
     vi.clearAllMocks();

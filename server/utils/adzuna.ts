@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-export const generateCacheKey = (title: string, location: string, country: string) => {
+export const generateCacheKey = (title: string, location: string, country: string): string => {
   // Allow alphanumeric, plus +, #, . (for C++, C#, .NET)
   // Replace other characters with -
   const t = title

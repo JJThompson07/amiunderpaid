@@ -82,6 +82,12 @@ export const parseJoobleSalary = (
   return { min, max, raw };
 };
 
+type JoobleSearchParams = {
+  keywords: string;
+  location: string;
+  page: number;
+};
+
 export const fetchJoobleData = async (
   title: string,
   location: string,
@@ -124,7 +130,7 @@ export const fetchJoobleData = async (
 
   const url = `https://jooble.org/api/${apiKey}`;
 
-  const params: Record<string, any> = {
+  const params: JoobleSearchParams = {
     keywords: title,
     location: location,
     page: 1
