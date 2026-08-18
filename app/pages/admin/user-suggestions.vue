@@ -100,7 +100,11 @@ const tableColumns = [
 ];
 
 // 1. Fetch the Queue
-const { data, pending, refresh } = await useFetch('/api/admin/suggestions');
+const { data, pending, refresh } = useAsyncData(
+  'admin-suggestions',
+  () => adminFetch<{ suggestions: Suggestion[] }>('/api/admin/suggestions'),
+  { server: false }
+);
 
 const suggestions = computed<Suggestion[]>(() => {
   return (data.value?.suggestions as Suggestion[]) || [];
