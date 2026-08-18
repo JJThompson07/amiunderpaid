@@ -219,10 +219,14 @@ const tableColumns = [
 ];
 
 // 1. Fetch Data
-const { data, pending, refresh } = await useFetch('/api/admin/job-groups', {
-  query: computed(() => ({ country: activeCountry.value })),
-  watch: [activeCountry]
-});
+const { data, pending, refresh } = useAsyncData(
+  'admin-job-groups',
+  () =>
+    adminFetch<{ groups: JobGroup[] }>('/api/admin/job-groups', {
+      query: { country: activeCountry.value }
+    }),
+  { server: false, watch: [activeCountry] }
+);
 
 const groups = computed<JobGroup[]>(() => {
   return (data.value?.groups as JobGroup[]) || [];

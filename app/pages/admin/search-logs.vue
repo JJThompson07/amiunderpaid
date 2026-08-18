@@ -281,23 +281,29 @@ const itemsPerPage = 50;
 // Maintain cursors for each page
 const cursors = ref<Record<number, string>>({});
 
-const { data, pending, refresh } = await useFetch<{
-  success: boolean;
-  totalCount: number;
-  todayCount: number;
-  yesterdayCount: number;
-  oldestDate: string;
-  averagePerDay: number;
-  logs: SearchLog[];
-  nextCursor?: string;
-}>('/api/admin/search-logs', {
-  query: computed(() => ({
-    limit: itemsPerPage,
-    search: searchQuery.value, // Passed directly to the server
-    cursor: currentPage.value > 1 ? cursors.value[currentPage.value] : undefined
-  })),
-  watch: [currentPage, searchQuery]
-});
+const adminFetch = useAdminFetch();
+
+const { data, pending, refresh } = useAsyncData(
+  'admin-search-logs',
+  () =>
+    adminFetch<{
+      success: boolean;
+      totalCount: number;
+      todayCount: number;
+      yesterdayCount: number;
+      oldestDate: string;
+      averagePerDay: number;
+      logs: SearchLog[];
+      nextCursor?: string;
+    }>('/api/admin/search-logs', {
+      query: {
+        limit: itemsPerPage,
+        search: searchQuery.value, // Passed directly to the server
+        cursor: currentPage.value > 1 ? cursors.value[currentPage.value] : undefined
+      }
+    }),
+  { server: false, watch: [currentPage, searchQuery] }
+);
 
 watch(
   data,
