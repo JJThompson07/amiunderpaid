@@ -26,6 +26,7 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
 }
 
 const isDev = process.env.NODE_ENV !== 'production';
+const isE2E = process.env.E2E === 'true';
 const DAY_IN_S = 86400;
 
 export default defineNuxtConfig({
@@ -45,20 +46,28 @@ export default defineNuxtConfig({
   ssr: true,
 
   // ** 2. CONFIGURE CACHING & HYBRID RENDERING (Route Rules) **
-  routeRules: isDev
-    ? {
-        // In E2E dev, we must disable SSR for protected routes to ensure Firebase auth stability
-        '/recruiter/**': { ssr: false },
-        '/admin/**': { ssr: false }
-      }
-    : {
-        '/salary/**': { swr: DAY_IN_S, ssr: true },
-        '/benchmark/**': { swr: DAY_IN_S, ssr: true },
-        '/sitemap.xml': { swr: 86400 },
-        // Always disable SSR for highly dynamic, user-specific auth routes
-        '/recruiter/**': { ssr: false },
-        '/admin/**': { ssr: false }
-      },
+  // SWR caching on /salary/**|/benchmark/** doesn't vary by cookie, so it
+  // would silently ignore the devProviderOverride cookie (see
+  // useDevProviderOverride.ts) — the first request to a given URL/build
+  // populates the cache and every subsequent request gets served that same
+  // response regardless of cookie. Disable it during e2e runs so the
+  // fallback-provider tests (and local dev toggling) see the override
+  // rather than a stale/unrelated cached render.
+  routeRules:
+    isDev || isE2E
+      ? {
+          // In E2E dev, we must disable SSR for protected routes to ensure Firebase auth stability
+          '/recruiter/**': { ssr: false },
+          '/admin/**': { ssr: false }
+        }
+      : {
+          '/salary/**': { swr: DAY_IN_S, ssr: true },
+          '/benchmark/**': { swr: DAY_IN_S, ssr: true },
+          '/sitemap.xml': { swr: 86400 },
+          // Always disable SSR for highly dynamic, user-specific auth routes
+          '/recruiter/**': { ssr: false },
+          '/admin/**': { ssr: false }
+        },
 
   css: ['~/assets/css/main.css'],
 

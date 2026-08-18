@@ -41,6 +41,16 @@ const fetchFromProviders = defineCachedFunction(
     devProviderOverride?: string
   ) => {
     try {
+      // e2e runs never hit the real Reed/Jooble APIs — return a static fixture
+      // directly. The manual local-dev provider toggle (import.meta.dev, not
+      // process.env.E2E) still falls through to the real fake-429 path below
+      // so a developer can verify real fallback-provider integration.
+      const isE2E = process.env.E2E === 'true';
+      if (isE2E && (devProviderOverride === 'reed' || devProviderOverride === 'jooble')) {
+        const { getMockFallbackHistogram } = await import('../../utils/fallback');
+        return getMockFallbackHistogram(devProviderOverride);
+      }
+
       if (isDevOrE2e && devProviderOverride === 'reed') {
         throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
       }
