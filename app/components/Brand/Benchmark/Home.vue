@@ -44,7 +44,7 @@ useHead({
   script: [
     {
       type: 'application/ld+json',
-      innerHTML: () =>
+      innerHTML: (): string =>
         JSON.stringify({
           '@context': 'https://schema.org',
           '@type': 'WebSite',

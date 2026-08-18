@@ -73,7 +73,9 @@ defineProps({
   }
 });
 
-defineEmits(['select', 'close']);
+defineEmits<{
+  (e: 'select' | 'close'): void;
+}>();
 
 const wage = ref<number>(25);
 const hoursPerWeek = ref<number>(40);

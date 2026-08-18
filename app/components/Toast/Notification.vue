@@ -42,7 +42,9 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void;
+}>();
 
 // Sync the local v-model with the generic toast
 const isOpen = computed({

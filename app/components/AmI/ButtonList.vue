@@ -52,17 +52,15 @@ const props = defineProps({
     type: String,
     default: 'border-primary-200'
   },
-  hoverColour: {
-    type: String,
-    default: 'hover:bg-primary-100'
-  },
   maxHeight: {
     type: String,
     default: 'max-h-48'
   }
 });
 
-defineEmits(['remove']);
+defineEmits<{
+  (e: 'remove', value: string | number): void;
+}>();
 
 const filteredOptions = computed(() => {
   return props.options.filter((option) =>

@@ -34,17 +34,27 @@ import { AlertCircle, Search } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import type { SearchClient } from 'algoliasearch';
 
+// Shape of a hit from the 'salary_benchmarks' / 'regional_salary_benchmarks' Algolia indices,
+// matching the fields consumed by useLocationEngine's handleAmbiguitySelect(match).
+type GovBenchmarkHit = {
+  objectID: string;
+  id_code?: string;
+  soc?: string;
+  title: string;
+  group?: string;
+};
+
 const props = defineProps<{
   adzunaCategory?: string;
   country: string;
 }>();
 
 const emit = defineEmits<{
-  (e: 'select', match: any): void;
+  (e: 'select', match: GovBenchmarkHit): void;
 }>();
 
 const searchQuery = ref('');
-const hits = ref<any[]>([]);
+const hits = ref<GovBenchmarkHit[]>([]);
 const loading = ref(false);
 
 const options = computed(() => {
@@ -68,7 +78,7 @@ const performSearch = useDebounceFn(async (val: string) => {
     const indexName = props.country === 'USA' ? 'regional_salary_benchmarks' : 'salary_benchmarks';
     const index = ($algolia as SearchClient).initIndex(indexName);
 
-    const { hits: results } = await index.search(val, {
+    const { hits: results } = await index.search<GovBenchmarkHit>(val, {
       filters: `country:${props.country}`,
       hitsPerPage: 50
     });
@@ -82,7 +92,7 @@ const performSearch = useDebounceFn(async (val: string) => {
   }
 }, 300);
 
-const handleSearch = (val: string) => {
+const handleSearch = (val: string): void => {
   // Check if selected
   const selected = hits.value.find((hit) => {
     const cleanGroup = hit.group ? hit.group.replace(/\s*\(.*\)$/, '') : '';

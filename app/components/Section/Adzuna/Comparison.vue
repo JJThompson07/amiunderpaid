@@ -140,7 +140,7 @@ const comparison = computed<number>(() => {
   }
 });
 
-const toggleHistogram = () => {
+const toggleHistogram = (): void => {
   trackDistribution(props.displayTitle, props.country, props.location, !hasData.value);
 
   showHistogram.value = !showHistogram.value;

@@ -132,18 +132,21 @@ defineProps({
   error: { type: String, default: '' }
 });
 
-const emit = defineEmits(['login', 'signup', 'clearError']);
+const emit = defineEmits<{
+  (e: 'login' | 'signup', credentials: { email: string; password: string }): void;
+  (e: 'clearError'): void;
+}>();
 const email = ref<string>('');
 const password = ref<string>('');
 const isLogin = ref<boolean>(true);
 const showResetModal = ref<boolean>(false);
 
-const toggleMode = () => {
+const toggleMode = (): void => {
   isLogin.value = !isLogin.value;
   emit('clearError');
 };
 
-const handleSubmit = () => {
+const handleSubmit = (): void => {
   if (isLogin.value) {
     emit('login', { email: email.value, password: password.value });
   } else {

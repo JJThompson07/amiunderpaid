@@ -70,10 +70,11 @@ const { t } = useI18n();
 
 // 1. Group the sections dynamically by looping over the JSON keys (general, tool, etc.)
 const sections = computed(() => {
-  const sectionData = faqJson.questions?.section || {};
+  // Cast the imported JSON's section map to a generic string-keyed record so we can
+  // iterate over arbitrary section ids (general, tool, mca, ...) without strict indexing errors.
+  const sectionData = (faqJson.questions?.section || {}) as Record<string, Record<string, unknown>>;
   return Object.keys(sectionData).map((sectionId) => {
-    // Cast to any to avoid strict indexing errors on the imported JSON
-    const sectionContent = (sectionData as any)[sectionId] || {};
+    const sectionContent = sectionData[sectionId] || {};
     return {
       id: sectionId, // 'general', 'tool'
       keys: Object.keys(sectionContent).filter((k) => k !== 'title') // ['underpaid', 'fairPay', ...]
@@ -84,7 +85,7 @@ const sections = computed(() => {
 // Track which accordions are open. We'll open the first general question by default.
 const openItems = ref<Set<string>>(new Set(['general-underpaid']));
 
-const toggleItem = (id: string) => {
+const toggleItem = (id: string): void => {
   if (openItems.value.has(id)) {
     openItems.value.delete(id);
   } else {
@@ -95,8 +96,17 @@ const toggleItem = (id: string) => {
 // ---------------------------------------------------------
 // SEO: Automatically generate standard FAQ Schema
 // ---------------------------------------------------------
+type FaqSchemaQuestion = {
+  '@type': 'Question';
+  name: string;
+  acceptedAnswer: {
+    '@type': 'Answer';
+    text: string;
+  };
+};
+
 const faqSchema = computed(() => {
-  const mainEntity: any[] = [];
+  const mainEntity: FaqSchemaQuestion[] = [];
 
   // Loop through all sections and their respective keys cleanly
   sections.value.forEach((section) => {

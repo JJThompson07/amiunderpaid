@@ -52,6 +52,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { Building2, Mail } from 'lucide-vue-next';
+import { FetchError } from 'ofetch';
 
 const props = defineProps({
   modelValue: {
@@ -60,7 +61,9 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void;
+}>();
 
 const { showToast } = useSystemToast();
 
@@ -80,7 +83,7 @@ watch(
   }
 );
 
-const submitRequest = async () => {
+const submitRequest = async (): Promise<void> => {
   if (!agencyName.value.trim() || !email.value.trim()) {
     showToast('Missing Fields', 'Please provide both your agency name and email address.', 'error');
     return;
@@ -117,8 +120,11 @@ const submitRequest = async () => {
         'error'
       );
     }
-  } catch (err: any) {
-    const errMsg = err.data?.message || 'Failed to submit request. Please try again later.';
+  } catch (err) {
+    const errMsg =
+      err instanceof FetchError && err.data?.message
+        ? err.data.message
+        : 'Failed to submit request. Please try again later.';
     showToast('Error', errMsg, 'error');
   } finally {
     loading.value = false;

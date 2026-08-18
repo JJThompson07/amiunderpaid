@@ -57,7 +57,9 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void;
+}>();
 
 const { resetPassword } = useRecruiterAuth();
 const { showToast } = useSystemToast();
@@ -77,7 +79,7 @@ watch(
   }
 );
 
-const submitPasswordReset = async () => {
+const submitPasswordReset = async (): Promise<void> => {
   if (!resetEmail.value) {
     showToast(
       t('account.forgot-password.email-required.title'),

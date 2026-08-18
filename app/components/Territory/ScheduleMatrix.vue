@@ -23,25 +23,26 @@
       <template #target="{ row }">
         <div class="flex justify-between items-center gap-2">
           <div class="flex flex-col">
-            <span class="font-bold text-slate-800 text-sm">{{ row.categoryLabel }}</span>
+            <span class="font-bold text-slate-800 text-sm">{{ asRow(row).categoryLabel }}</span>
             <span class="text-slate-500 text-xs flex items-center gap-1 mb-1.5">
               <MapPinIcon class="w-3 h-3" />
-              {{ row.territory.name }}
+              {{ asRow(row).territory.name }}
             </span>
           </div>
           <div class="flex flex-wrap gap-2 items-center">
             <span
               class="text-xs font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0 mt-0.5">
-              Band {{ row.territory.band || 1 }}
+              Band {{ asRow(row).territory.band || 1 }}
             </span>
             <div class="flex flex-col items-center gap-1.5 mt-0.5">
               <span
                 class="text-3xs font-bold text-secondary-500 bg-secondary-100 px-1.5 py-0.5 rounded-md border border-secondary-200">
-                Basic: {{ currencySymbol }}{{ getRowPricing(row.territory.band).basic }}/mo
+                Basic: {{ currencySymbol }}{{ getRowPricing(asRow(row).territory.band).basic }}/mo
               </span>
               <span
                 class="text-3xs font-bold text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded-md border border-primary-100">
-                Excl: {{ currencySymbol }}{{ getRowPricing(row.territory.band).exclusive }}/mo
+                Excl: {{ currencySymbol
+                }}{{ getRowPricing(asRow(row).territory.band).exclusive }}/mo
               </span>
             </div>
           </div>
@@ -51,31 +52,31 @@
       <template #basic="{ row }">
         <button
           type="button"
-          :disabled="isBasicLocked(row.id)"
+          :disabled="isBasicLocked(asRow(row).id)"
           :class="[
             'px-3 py-2 rounded-xl font-bold text-xs transition-all duration-200 flex flex-col items-center justify-center gap-1 mx-auto w-full max-w-25',
-            isBasicLocked(row.id)
+            isBasicLocked(asRow(row).id)
               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm cursor-not-allowed opacity-90'
-              : isBasic(row.id)
+              : isBasic(asRow(row).id)
                 ? 'bg-secondary-700 text-white shadow-md ring-2'
                 : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-secondary-700'
           ]"
-          @click="toggleBasic(row.id)">
+          @click="toggleBasic(asRow(row).id)">
           <div class="flex items-center gap-1.5">
             <CheckCircle2Icon
-              v-if="isBasic(row.id) || isBasicLocked(row.id)"
+              v-if="isBasic(asRow(row).id) || isBasicLocked(asRow(row).id)"
               class="w-3.5 h-3.5"
-              :class="isBasicLocked(row.id) ? 'text-emerald-500' : 'text-positive-400'" />
+              :class="isBasicLocked(asRow(row).id) ? 'text-emerald-500' : 'text-positive-400'" />
             <CircleIcon v-else class="w-3.5 h-3.5 text-slate-400" />
-            <span v-if="isBasicLocked(row.id)" class="uppercase tracking-wider text-2xs">{{
+            <span v-if="isBasicLocked(asRow(row).id)" class="uppercase tracking-wider text-2xs">{{
               $t('recruiter.schedule.owned')
             }}</span>
             <span v-else>{{ $t('recruiter.schedule.ongoing') }}</span>
           </div>
           <span
-            v-if="!isBasicLocked(row.id)"
-            :class="isBasic(row.id) ? 'text-slate-300' : 'text-slate-400 font-medium'">
-            {{ currencySymbol }}{{ getRowPricing(row.territory.band).basic }}/mo
+            v-if="!isBasicLocked(asRow(row).id)"
+            :class="isBasic(asRow(row).id) ? 'text-slate-300' : 'text-slate-400 font-medium'">
+            {{ currencySymbol }}{{ getRowPricing(asRow(row).territory.band).basic }}/mo
           </span>
         </button>
       </template>
@@ -87,37 +88,39 @@
         <div class="flex flex-col items-center justify-start gap-1.5">
           <button
             type="button"
-            :disabled="isMonthLocked(row.id, month.value) || isMonthTaken(row.id, month.value)"
+            :disabled="
+              isMonthLocked(asRow(row).id, month.value) || isMonthTaken(asRow(row).id, month.value)
+            "
             :title="
-              isMonthLocked(row.id, month.value) || isMonthTaken(row.id, month.value)
+              isMonthLocked(asRow(row).id, month.value) || isMonthTaken(asRow(row).id, month.value)
                 ? $t('recruiter.schedule.already-owned')
-                : isMonthSelected(row.id, month.value)
+                : isMonthSelected(asRow(row).id, month.value)
                   ? $t('recruiter.schedule.downgrade')
                   : $t('recruiter.schedule.upgrade-tooltip', {
-                      price: `${currencySymbol}${getRowPricing(row.territory.band).exclusive}`
+                      price: `${currencySymbol}${getRowPricing(asRow(row).territory.band).exclusive}`
                     })
             "
             :class="[
               'w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200',
-              isMonthLocked(row.id, month.value)
+              isMonthLocked(asRow(row).id, month.value)
                 ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 cursor-not-allowed opacity-90'
-                : isMonthTaken(row.id, month.value)
+                : isMonthTaken(asRow(row).id, month.value)
                   ? 'bg-slate-50 text-slate-600 border border-slate-200 cursor-not-allowed opacity-90'
-                  : isMonthSelected(row.id, month.value)
+                  : isMonthSelected(asRow(row).id, month.value)
                     ? 'bg-primary-50 text-primary-600 border border-primary-200 shadow-inner'
                     : 'bg-white border border-slate-200 text-slate-300 hover:border-primary-300 hover:text-primary-400 shadow-sm'
             ]"
-            @click="toggleMonth(row.id, month.value)">
-            <CheckCircle2Icon v-if="isMonthLocked(row.id, month.value)" class="w-5 h-5" />
-            <CrownIcon v-else-if="isMonthSelected(row.id, month.value)" class="w-5 h-5" />
+            @click="toggleMonth(asRow(row).id, month.value)">
+            <CheckCircle2Icon v-if="isMonthLocked(asRow(row).id, month.value)" class="w-5 h-5" />
+            <CrownIcon v-else-if="isMonthSelected(asRow(row).id, month.value)" class="w-5 h-5" />
             <LockIcon
-              v-else-if="isMonthTaken(row.id, month.value)"
+              v-else-if="isMonthTaken(asRow(row).id, month.value)"
               class="w-5 h-5 text-slate-400" />
             <PlusIcon v-else class="w-4 h-4" />
           </button>
 
           <div class="h-4 flex items-center justify-center">
-            <template v-if="isMonthTaken(row.id, month.value)">
+            <template v-if="isMonthTaken(asRow(row).id, month.value)">
               <span class="text-2xs font-black text-slate-400 uppercase tracking-tighter">
                 {{ $t('recruiter.schedule.taken') }}
               </span>
@@ -125,17 +128,27 @@
 
             <template
               v-else-if="
-                getMonthDisplayPrice(row.id, month.value, index, row.territory.band) !== null
+                getMonthDisplayPrice(
+                  asRow(row).id,
+                  month.value,
+                  index,
+                  asRow(row).territory.band
+                ) !== null
               ">
               <span
-                v-if="isMonthLocked(row.id, month.value)"
+                v-if="isMonthLocked(asRow(row).id, month.value)"
                 class="text-2xs font-black text-emerald-500 uppercase tracking-tighter">
                 {{ $t('recruiter.schedule.owned') }}
               </span>
 
               <span
                 v-else-if="
-                  getMonthDisplayPrice(row.id, month.value, index, row.territory.band) === 0
+                  getMonthDisplayPrice(
+                    asRow(row).id,
+                    month.value,
+                    index,
+                    asRow(row).territory.band
+                  ) === 0
                 "
                 class="text-2xs font-black text-positive-600 uppercase tracking-wider bg-positive-50 px-1.5 py-0.5 rounded-md border border-positive-100">
                 {{ $t('recruiter.schedule.free') }}
@@ -144,14 +157,21 @@
                 v-else
                 class="text-2xs font-black px-1.5 py-0.5 rounded-md flex items-center gap-1"
                 :class="
-                  isMonthSelected(row.id, month.value)
+                  isMonthSelected(asRow(row).id, month.value)
                     ? 'bg-primary-50 text-primary-700'
                     : 'bg-slate-100 text-slate-500'
                 ">
                 {{ currencySymbol
-                }}{{ getMonthDisplayPrice(row.id, month.value, index, row.territory.band) || 0 }}
+                }}{{
+                  getMonthDisplayPrice(
+                    asRow(row).id,
+                    month.value,
+                    index,
+                    asRow(row).territory.band
+                  ) || 0
+                }}
                 <span
-                  v-if="index === 0 && isPastHalfway && isMonthSelected(row.id, month.value)"
+                  v-if="index === 0 && isPastHalfway && isMonthSelected(asRow(row).id, month.value)"
                   class="text-3xs text-primary-400 whitespace-nowrap">
                   (50%)
                 </span>
@@ -243,6 +263,21 @@ export type UpcomingMonth = {
   year: number;
 };
 
+type MatrixRow = {
+  id: string;
+  territory: Territory;
+  categoryValue: string;
+  categoryLabel: string;
+};
+
+// AmITable's slot-scoped `row` is typed as Record<string, unknown> (it's a
+// generic reusable table), but every row here is always a MatrixRow built by
+// useScheduleMath's matrixRows computed.
+const asRow = (row: Record<string, unknown>): MatrixRow => row as unknown as MatrixRow;
+
+/* eslint-disable vue/no-unused-properties -- these props are forwarded wholesale into
+   useScheduleMath(props, emit) and read there via props.territories/categories/categoryOptions/
+   takenMonths (see app/composables/useScheduleMath.ts); the rule can't see that cross-file usage. */
 const props = defineProps({
   territories: { type: Array as PropType<Territory[]>, required: true },
   categories: { type: Array as PropType<string[]>, required: true },
@@ -255,6 +290,7 @@ const props = defineProps({
     default: () => ({})
   }
 });
+/* eslint-enable vue/no-unused-properties */
 
 const emit = defineEmits<{
   (e: 'update:selections', payload: ScheduleSelection[]): void;

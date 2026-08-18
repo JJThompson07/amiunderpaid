@@ -2,7 +2,7 @@
   <BaseSearchForm
     mode="benchmark"
     :initial-country="initialCountry"
-    @country-change="emit('country-change', $event)" />
+    @country-change="emit('countryChange', $event)" />
 </template>
 
 <script setup lang="ts">
@@ -10,5 +10,7 @@ defineProps<{
   initialCountry?: string;
 }>();
 
-const emit = defineEmits(['country-change']);
+const emit = defineEmits<{
+  (e: 'countryChange', country: string): void;
+}>();
 </script>

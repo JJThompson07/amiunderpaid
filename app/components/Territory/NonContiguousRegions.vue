@@ -62,9 +62,14 @@
 import { NON_CONTIGUOUS_TERRITORIES_USA } from '../../../utils/locations/usa';
 import type { PropType } from 'vue';
 
+// The array items rendered here always carry at least an id + name, whether they come from the
+// master territories list (Territory / USATerritory) or a raw NON_CONTIGUOUS_TERRITORIES_USA entry.
+type SelectedTerritory = { id: number; name: string };
+type NonContiguousState = (typeof NON_CONTIGUOUS_TERRITORIES_USA)[number];
+
 const props = defineProps({
   selectedTerritories: {
-    type: Array as PropType<any[]>,
+    type: Array as PropType<SelectedTerritory[]>,
     required: true
   },
   claimedIds: {
@@ -73,13 +78,15 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['territory-clicked']);
+const emit = defineEmits<{
+  (e: 'territoryClicked', territory: SelectedTerritory | NonContiguousState): void;
+}>();
 
 // 1. Bring in our global master list helper
 const { getTerritoryById } = useTerritories();
 
 // 2. Create a smarter click handler
-const handleRegionClick = (state: any) => {
+const handleRegionClick = (state: NonContiguousState): void => {
   // Double-check they don't already own it
   if (props.claimedIds.includes(state.id)) {
     return;
@@ -89,6 +96,6 @@ const handleRegionClick = (state: any) => {
   const fullTerritory = getTerritoryById(state.id);
 
   // Emit the rich object back to the parent cart
-  emit('territory-clicked', fullTerritory || state);
+  emit('territoryClicked', fullTerritory || state);
 };
 </script>

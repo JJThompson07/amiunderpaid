@@ -23,9 +23,7 @@
             <div
               v-if="userSalary && isSalaryProvided"
               class="flex flex-col items-end gap-1 text-sm text-right relative">
-              <AmIChip v-bind="comparisonChipAttributes" text-size="text-sm" compact
-                >{{ salaryMaxComparison }}%</AmIChip
-              >
+              <AmIChip v-bind="comparisonChipAttributes">{{ salaryMaxComparison }}%</AmIChip>
               <span
                 class="text-2xs absolute top-full right-1/2 translate-x-1/2 w-max"
                 :class="
@@ -126,10 +124,6 @@ const props = defineProps({
     type: Number,
     default: 0
   },
-  marketAverage: {
-    type: Number,
-    default: 0
-  },
   currencySymbol: {
     type: String,
     required: true
@@ -192,7 +186,9 @@ const comparisonChipAttributes = computed(() => {
   return {
     bgColour: background,
     textColour: text,
-    icon
+    icon,
+    textSize: 'text-sm',
+    compact: true
   };
 });
 
@@ -215,7 +211,7 @@ const salaryRange = computed(() => {
       );
 });
 
-const handleViewRole = () => {
+const handleViewRole = (): void => {
   trackViewRole(props.title, props.company, props.location, props.url);
 
   const safeUrl = sanitizeUrl(props.url);

@@ -25,7 +25,9 @@ defineProps({
   label: { type: String, default: '' }
 });
 
-defineEmits(['update:modelValue']);
+defineEmits<{
+  (e: 'update:modelValue', value: string): void;
+}>();
 </script>
 
 <style scoped>

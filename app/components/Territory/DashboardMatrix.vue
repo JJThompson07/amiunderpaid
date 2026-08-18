@@ -23,25 +23,28 @@
         <div class="flex justify-between items-center gap-2">
           <div class="flex flex-col">
             <span class="font-bold text-slate-800 text-sm">{{
-              getCategoryLabel(row.categoryValue)
+              getCategoryLabel(asTerritory(row).categoryValue)
             }}</span>
             <div class="flex items-center gap-1 mt-0.5 mb-1.5">
               <MapPinIcon class="w-3 h-3 text-slate-400" />
-              <span class="text-slate-500 text-xs">{{ getTerritoryName(row.territoryId) }}</span>
+              <span class="text-slate-500 text-xs">{{
+                getTerritoryName(asTerritory(row).territoryId)
+              }}</span>
             </div>
             <span
               class="text-2xs font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0 w-max">
-              Band {{ getTerritoryBand(row.territoryId) }}
+              Band {{ getTerritoryBand(asTerritory(row).territoryId) }}
             </span>
           </div>
           <div class="flex flex-col items-center gap-1 mt-0.5">
             <span
               class="text-2xs font-bold text-secondary-500 bg-secondary-100 px-1.5 py-0.5 rounded-md border border-secondary-200">
-              Basic: {{ currencySymbol }}{{ getRowPricing(row.territoryId).basic }}/mo
+              Basic: {{ currencySymbol }}{{ getRowPricing(asTerritory(row).territoryId).basic }}/mo
             </span>
             <span
               class="text-2xs font-bold text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded-md border border-primary-100">
-              Excl: {{ currencySymbol }}{{ getRowPricing(row.territoryId).exclusive }}/mo
+              Excl: {{ currencySymbol
+              }}{{ getRowPricing(asTerritory(row).territoryId).exclusive }}/mo
             </span>
           </div>
         </div>
@@ -53,14 +56,14 @@
         #[`month-${month.value}`]="{ row }">
         <div class="flex flex-col items-center justify-center gap-1">
           <div
-            v-if="isExclusive(row, month.value)"
+            v-if="isExclusive(asTerritory(row), month.value)"
             class="bg-primary-100 text-primary-800 border border-primary-400 px-2 py-1 rounded-md flex items-center justify-center gap-1.5 text-2xs uppercase tracking-wider font-bold shadow-inner w-full max-w-22.5">
             <CrownIcon class="w-3.5 h-3.5" />
             <span class="hidden sm:inline">Excl</span>
           </div>
 
           <div
-            v-else-if="row.isBasic"
+            v-else-if="asTerritory(row).isBasic"
             class="bg-secondary-50 text-secondary-800 border border-secondary-400 px-2 py-1 rounded-md flex items-center justify-center gap-1.5 text-2xs uppercase tracking-wider font-bold w-full max-w-22.5">
             <CheckSquareIcon class="w-3 h-3" />
             <span class="hidden sm:inline">Basic</span>
@@ -69,10 +72,15 @@
           <div v-else class="text-slate-300 text-xs font-medium">--</div>
 
           <span
-            v-if="isExclusive(row, month.value) || row.isBasic"
+            v-if="isExclusive(asTerritory(row), month.value) || asTerritory(row).isBasic"
             class="text-2xs font-bold"
-            :class="isExclusive(row, month.value) ? 'text-primary-600' : 'text-secondary-600'">
-            {{ currencySymbol }}{{ getCellPrice(row.territoryId, isExclusive(row, month.value)) }}
+            :class="
+              isExclusive(asTerritory(row), month.value) ? 'text-primary-600' : 'text-secondary-600'
+            ">
+            {{ currencySymbol
+            }}{{
+              getCellPrice(asTerritory(row).territoryId, isExclusive(asTerritory(row), month.value))
+            }}
           </span>
         </div>
       </template>
@@ -84,7 +92,7 @@
             bg-colour="bg-transparent"
             bg-hover-colour="hover:bg-primary-100"
             text-colour="text-primary-600"
-            @click="$emit('edit', row.territoryId)">
+            @click="$emit('edit', asTerritory(row).territoryId)">
             <PencilIcon class="w-4 h-4" />
           </AmIIconButton>
 
@@ -94,8 +102,8 @@
             bg-hover-colour="hover:bg-negative-100"
             text-colour="text-negative-600"
             spinner-colour="border-negative-500/30 border-t-negative-500"
-            :loading="isCancelling === row.territoryId"
-            @click="$emit('cancel', row.territoryId)">
+            :loading="isCancelling === asTerritory(row).territoryId"
+            @click="$emit('cancel', asTerritory(row).territoryId)">
             <TrashIcon class="w-4 h-4" />
           </AmIIconButton>
         </div>
@@ -109,9 +117,17 @@ import { computed } from 'vue';
 import type { PropType } from 'vue';
 import { CheckSquareIcon, CrownIcon, MapPinIcon, PencilIcon, TrashIcon } from 'lucide-vue-next';
 
+import type { CountryPricingBands } from '~/composables/usePricing';
+import type { TerritoryClaim } from '~~/shared/utils/types';
+
+// AmITable's slot-scoped `row` is typed as Record<string, unknown> (it's a
+// generic reusable table), but every row here is always a TerritoryClaim.
+const asTerritory = (row: Record<string, unknown>): TerritoryClaim =>
+  row as unknown as TerritoryClaim;
+
 defineProps({
   territories: {
-    type: Array as PropType<Record<string, unknown>[]>,
+    type: Array as PropType<TerritoryClaim[]>,
     required: true
   },
   isCancelling: {
@@ -185,14 +201,14 @@ const getRowPricing = (territoryId: number): { basic: string; exclusive: string 
   }
 
   const band = getTerritoryBand(territoryId);
-  const billingCountry = userProfile.value.billingCountry || 'UK';
+  const billingCountry: 'UK' | 'USA' = userProfile.value.billingCountry === 'USA' ? 'USA' : 'UK';
   const countryPricing = pricingData.value[billingCountry];
 
   if (!countryPricing) {
     return { basic: '--', exclusive: '--' };
   }
 
-  const bandKey = `band${band}`;
+  const bandKey = `band${band}` as keyof CountryPricingBands;
   const bandData = countryPricing[bandKey];
   if (!bandData) {
     return { basic: '--', exclusive: '--' };
@@ -216,14 +232,14 @@ const getCellPrice = (territoryId: number, isExcl: boolean): string => {
   const t = getTerritoryById(territoryId);
   const band = t ? t.band : 1;
 
-  const billingCountry = userProfile.value.billingCountry || 'UK';
+  const billingCountry: 'UK' | 'USA' = userProfile.value.billingCountry === 'USA' ? 'USA' : 'UK';
   const countryPricing = pricingData.value[billingCountry];
 
   if (!countryPricing) {
     return '--';
   }
 
-  const bandKey = `band${band}`;
+  const bandKey = `band${band}` as keyof CountryPricingBands;
   const bandData = countryPricing[bandKey];
   if (!bandData) {
     return '--';

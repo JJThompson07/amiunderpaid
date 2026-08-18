@@ -76,6 +76,16 @@ import { Search, SearchX } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import type { SearchClient } from 'algoliasearch';
 
+// A salary-benchmark record, as indexed in the `salary_benchmarks`/
+// `regional_salary_benchmarks` Algolia indices
+type SalaryBenchmarkHit = {
+  objectID: string;
+  title: string;
+  group?: string;
+  id_code?: string;
+  soc?: string;
+};
+
 const { $siteBrand } = useNuxtApp();
 
 const props = defineProps<{
@@ -85,12 +95,12 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'select', match: any): void;
+  (e: 'select', match: SalaryBenchmarkHit): void;
 }>();
 
 const route = useRoute();
 const searchQuery = ref('');
-const hits = ref<any[]>([]);
+const hits = ref<SalaryBenchmarkHit[]>([]);
 const loading = ref(false);
 
 const options = computed(() => {
@@ -114,7 +124,7 @@ const performSearch = useDebounceFn(async (val: string) => {
     const indexName = props.country === 'USA' ? 'regional_salary_benchmarks' : 'salary_benchmarks';
     const index = ($algolia as SearchClient).initIndex(indexName);
 
-    const { hits: results } = await index.search(val, {
+    const { hits: results } = await index.search<SalaryBenchmarkHit>(val, {
       filters: `country:${props.country}`,
       hitsPerPage: 20
     });
@@ -127,7 +137,7 @@ const performSearch = useDebounceFn(async (val: string) => {
   }
 }, 300);
 
-const handleSearch = (val: string) => {
+const handleSearch = (val: string): void => {
   // Check if selected
   const selected = hits.value.find((hit) => {
     const cleanGroup = hit.group ? hit.group.replace(/\s*\(.*\)$/, '') : '';
@@ -148,7 +158,7 @@ const handleSearch = (val: string) => {
   performSearch(val);
 };
 
-const broadenSearch = async () => {
+const broadenSearch = async (): Promise<void> => {
   const urlStart = $siteBrand === 'benchmarkmyrole' ? '/benchmark' : '/salary';
   const newPath = `${urlStart}/${route.params.title}/${route.params.country}`;
 

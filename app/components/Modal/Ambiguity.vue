@@ -57,13 +57,25 @@ import type { PropType } from 'vue';
 import { computed, ref, watch } from 'vue';
 import type { SearchClient } from 'algoliasearch';
 
+// A job-group match option, as returned by useJobDictionary's ambiguous result
+type AmbiguityOption = {
+  id_code: string;
+  group_name: string;
+};
+
+// The raw shape of a hit returned by the Algolia job-group indices
+type JobGroupHit = {
+  gov_id: string;
+  group_name: string;
+};
+
 const props = defineProps({
   searchTerm: {
     type: String,
     required: true
   },
   options: {
-    type: Array as PropType<any[]>,
+    type: Array as PropType<AmbiguityOption[]>,
     default: () => []
   },
   // Added this to catch the prop passed from Search.vue
@@ -82,7 +94,7 @@ defineEmits<{
 const { $algolia } = useNuxtApp();
 const localSearchQuery = ref('');
 const isSearching = ref(false);
-const searchResults = ref<any[]>([]);
+const searchResults = ref<AmbiguityOption[]>([]);
 
 const performSearch = useDebounceFn(async (query: string) => {
   if (!query || query.length < 2) {
@@ -93,17 +105,17 @@ const performSearch = useDebounceFn(async (query: string) => {
   try {
     const indexName = props.country === 'USA' ? 'usa_job_groups' : 'uk_job_groups';
     const index = ($algolia as SearchClient).initIndex(indexName);
-    const { hits } = await index.search(query, {
+    const { hits } = await index.search<JobGroupHit>(query, {
       removeWordsIfNoResults: 'allOptional',
       hitsPerPage: 10
     });
 
-    searchResults.value = hits.map((h: any) => ({
+    searchResults.value = hits.map((h) => ({
       id_code: h.gov_id,
       group_name: h.group_name
     }));
-  } catch (err) {
-    console.error('Failed to search dictionary:', err);
+  } catch {
+    // Fail silently for autocomplete so it doesn't disrupt the user
   } finally {
     isSearching.value = false;
   }

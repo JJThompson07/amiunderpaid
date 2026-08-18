@@ -58,7 +58,7 @@
           bg-colour="bg-amber-600"
           text-colour="text-white"
           animation-colour="bg-amber-700"
-          @click="$emit('user-select')"
+          @click="$emit('userSelect')"
           >{{ $t('buttons.not-best-match') }}</AmIButton
         >
       </div>
@@ -71,9 +71,7 @@ import { Landmark } from 'lucide-vue-next';
 
 const props = defineProps<{
   isFallback: boolean;
-  displayTitle: string;
   location: string;
-  country: string;
   userSalary: number;
   marketAverage: number;
   currencySymbol: string;
@@ -88,7 +86,9 @@ const props = defineProps<{
   isVerified: boolean;
 }>();
 
-defineEmits(['user-select']);
+defineEmits<{
+  (e: 'userSelect'): void;
+}>();
 
 const comparison = computed<number>(() => {
   if (props.diffPercent > 2.5) {

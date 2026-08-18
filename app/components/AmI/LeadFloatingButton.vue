@@ -14,5 +14,7 @@ defineProps({
   textColour: { type: String, default: '#ffffff' }
 });
 
-defineEmits(['click']);
+defineEmits<{
+  (e: 'click'): void;
+}>();
 </script>

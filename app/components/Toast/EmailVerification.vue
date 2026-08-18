@@ -60,14 +60,14 @@ watchEffect(() => {
   }
 });
 
-const handleResend = async () => {
+const handleResend = async (): Promise<void> => {
   const success = await resendVerificationEmail();
   if (success) {
     showToast(t('toast.type.success'), t('toast.verify-email.action.sent'), 'success');
   }
 };
 
-const refreshVerificationStatus = async () => {
+const refreshVerificationStatus = async (): Promise<void> => {
   if (user.value) {
     const auth = getAuth();
     await auth.currentUser?.reload();

@@ -99,7 +99,7 @@ const circleStyle = computed(() => {
 });
 
 // Helper function: cleaner logic using sort() and find()
-const getBreakdownMatch = () => {
+const getBreakdownMatch = (): AmIChartRangeBreakdown | undefined => {
   // Sort descending so we can just find the first threshold we are greater than
   const sortedBreakdowns = [...props.breakdown].sort((a, b) => b.value - a.value);
   return sortedBreakdowns.find((b) => props.percentile >= b.value);

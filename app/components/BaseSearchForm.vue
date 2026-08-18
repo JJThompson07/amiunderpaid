@@ -133,13 +133,16 @@
 import { computed, ref, watch } from 'vue';
 import { ArrowRightIcon, CalculatorIcon, MapPin, Search, Wallet } from 'lucide-vue-next';
 import { slugify } from '~/helpers/utility';
+import type { JobMatchAmbiguous } from '~/composables/useJobDictionary';
 
 const props = defineProps<{
   mode: 'salary' | 'benchmark';
   initialCountry?: string; // Only used in benchmark mode
 }>();
 
-const emit = defineEmits(['country-change']);
+const emit = defineEmits<{
+  (e: 'countryChange', country: string): void;
+}>();
 
 const { setLocale, locale, t } = useI18n();
 const { trackSearch, trackAmbiguousSearch } = useAnalytics();
@@ -174,7 +177,7 @@ const showCalc = ref<boolean>(false);
 // --- NEW DICTIONARY & MODAL STATE ---
 const { resolveJobId } = useJobDictionary();
 const showAmbiguityModal = ref<boolean>(false);
-const ambiguityOptions = ref<any[]>([]);
+const ambiguityOptions = ref<JobMatchAmbiguous['options']>([]);
 const cleanSearchTitle = ref<string>('');
 
 const activeCountry = computed(() =>
@@ -265,14 +268,14 @@ if (props.mode === 'benchmark') {
   );
 }
 
-const switchLocale = () => {
+const switchLocale = (): void => {
   if (props.mode === 'benchmark') {
     setLocale(internalCountry.value === 'USA' ? 'en-US' : 'en-GB');
-    emit('country-change', internalCountry.value);
+    emit('countryChange', internalCountry.value);
   }
 };
 
-const handleSearch = async () => {
+const handleSearch = async (): Promise<void> => {
   loading.value = true;
   let exactGovId = labelToIdMap.value[title.value];
   let cleaned = title.value.replace(/\s*\(.*\)$/, '');
@@ -314,7 +317,7 @@ const handleSearch = async () => {
   await executeNavigation(cleanSearchTitle.value, exactGovId);
 };
 
-const onAmbiguityResolved = async (resolvedGovId: string) => {
+const onAmbiguityResolved = async (resolvedGovId: string): Promise<void> => {
   showAmbiguityModal.value = false;
   loading.value = true;
 
@@ -329,7 +332,9 @@ const onAmbiguityResolved = async (resolvedGovId: string) => {
         target_group_name: selectedMatch.group_name,
         country: activeCountry.value
       }
-    }).catch((err) => console.error('Failed to save suggestion tracking', err));
+    }).catch(() => {
+      // Silently fail: suggestion tracking is best-effort and non-critical
+    });
 
     trackAmbiguousSearch(cleanSearchTitle.value, selectedMatch.group_name);
   }
@@ -337,7 +342,7 @@ const onAmbiguityResolved = async (resolvedGovId: string) => {
   await executeNavigation(cleanSearchTitle.value, resolvedGovId);
 };
 
-const executeNavigation = async (finalTitle: string, finalGovId?: string) => {
+const executeNavigation = async (finalTitle: string, finalGovId?: string): Promise<void> => {
   const titleSlug = slugify(finalTitle);
   const countrySlug = activeCountry.value.toLowerCase();
   const locationSlug = location.value ? slugify(location.value) : '';

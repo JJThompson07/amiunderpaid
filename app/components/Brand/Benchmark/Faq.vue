@@ -68,12 +68,18 @@ import faqJson from '../../../../i18n/locales/en-GB/faq.json';
 
 const { t } = useI18n();
 
+// Shape of a single FAQ entry within a section (question/answer pair)
+type FaqEntry = { question: string; answer: string };
+// A section groups a title with several FaqEntry (or nested string) values
+type FaqSection = { title: string } & Record<string, FaqEntry | string>;
+type FaqSectionMap = Record<string, FaqSection>;
+
 // 1. Group the sections dynamically by looping over the JSON keys (general, tool, etc.)
 const sections = computed(() => {
-  const sectionData = faqJson.benchmark.questions?.section || {};
+  // Cast the imported JSON to a known shape to avoid strict indexing errors
+  const sectionData = (faqJson.benchmark.questions?.section || {}) as FaqSectionMap;
   return Object.keys(sectionData).map((sectionId) => {
-    // Cast to any to avoid strict indexing errors on the imported JSON
-    const sectionContent = (sectionData as any)[sectionId] || {};
+    const sectionContent = sectionData[sectionId] || {};
     return {
       id: sectionId, // 'general', 'tool'
       keys: Object.keys(sectionContent).filter((k) => k !== 'title') // ['underpaid', 'fairPay', ...]
@@ -84,7 +90,7 @@ const sections = computed(() => {
 // Track which accordions are open. We'll open the first general question by default.
 const openItems = ref<Set<string>>(new Set(['general-underpaid']));
 
-const toggleItem = (id: string) => {
+const toggleItem = (id: string): void => {
   if (openItems.value.has(id)) {
     openItems.value.delete(id);
   } else {
@@ -95,8 +101,14 @@ const toggleItem = (id: string) => {
 // ---------------------------------------------------------
 // SEO: Automatically generate standard FAQ Schema
 // ---------------------------------------------------------
+type FaqSchemaQuestion = {
+  '@type': 'Question';
+  name: string;
+  acceptedAnswer: { '@type': 'Answer'; text: string };
+};
+
 const faqSchema = computed(() => {
-  const mainEntity: any[] = [];
+  const mainEntity: FaqSchemaQuestion[] = [];
 
   // Loop through all sections and their respective keys cleanly
   sections.value.forEach((section) => {

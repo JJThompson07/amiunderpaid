@@ -51,11 +51,12 @@ const props = defineProps({
     type: String,
     default: 'right', // 'right' or 'bottom'
     validator: (value: string) => ['right', 'bottom'].includes(value)
-  },
-  zIndexClass: { type: String, default: 'z-[100]' }
+  }
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void;
+}>();
 
 // 1. Dynamic Positioning Classes
 const containerClasses = computed(() => {

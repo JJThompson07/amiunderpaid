@@ -19,13 +19,15 @@
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import * as echarts from 'echarts';
 import type { CountryCode } from '../../pages/recruiter/territories/index.vue';
-import type { ONSMatch, Territory } from '~~/utils/locations/uk';
+import type { ONSMatch } from '~~/utils/locations/uk';
 
+// A minimal, country-agnostic territory shape: only the fields this map
+// component actually reads. UK `Territory` and USA `USATerritory` objects
+// (which carry additional fields such as `band`/`region`) both satisfy this.
 export type MapTerritory = {
   id: number;
   name: string;
   ons_matches?: ONSMatch[];
-  [key: string]: any;
 };
 
 const props = defineProps<{
@@ -36,7 +38,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'territory-clicked', territory: MapTerritory): void;
+  (e: 'territoryClicked', territory: MapTerritory): void;
 }>();
 
 const mapContainer = ref<HTMLElement | null>(null);
@@ -61,7 +63,7 @@ const territoryLookup = computed(() => {
   return lookup;
 });
 
-const getThemeColor = (cssVar: string, fallback: string) => {
+const getThemeColor = (cssVar: string, fallback: string): string => {
   if (!import.meta.client) {
     return fallback;
   }
@@ -69,7 +71,7 @@ const getThemeColor = (cssVar: string, fallback: string) => {
   return val || fallback;
 };
 
-const normalizeName = (name: string) => {
+const normalizeName = (name: string): string => {
   if (!name) {
     return '';
   }
@@ -81,11 +83,6 @@ const normalizeName = (name: string) => {
     .replace(/&/g, 'and')
     .trim()
     .toLowerCase();
-};
-
-type EChartsMapEvent = {
-  name: string;
-  value?: number;
 };
 
 type MapPolygonData = {
@@ -108,7 +105,12 @@ type MapPolygonData = {
   cursor: string;
 };
 
-const loadAndDrawMap = async () => {
+// The subset of ECharts' click-event payload this handler reads
+type EChartsClickEvent = {
+  name: string;
+};
+
+const loadAndDrawMap = async (): Promise<void> => {
   if (!mapContainer.value) {
     return;
   }
@@ -119,7 +121,6 @@ const loadAndDrawMap = async () => {
     const response = await fetch(fileName);
 
     if (!response.ok) {
-      console.error(`ERROR: Could not find ${fileName} in your public folder!`);
       loading.value = false;
       return;
     }
@@ -136,7 +137,7 @@ const loadAndDrawMap = async () => {
     // Initialize fresh
     chart.value = echarts.init(mapContainer.value);
 
-    chart.value.on('click', (params: any) => {
+    chart.value.on('click', (params: EChartsClickEvent) => {
       const clickedName = normalizeName(params.name);
       const matchedTerritory = territoryLookup.value.get(clickedName);
 
@@ -146,22 +147,19 @@ const loadAndDrawMap = async () => {
           return;
         }
 
-        emit('territory-clicked', matchedTerritory);
-      } else {
-        console.warn(`No match found in constants for map shape: ${params.name}`);
+        emit('territoryClicked', matchedTerritory);
       }
     });
 
     loading.value = false;
 
     updateMapData();
-  } catch (error) {
-    console.error(`Failed to load ${props.country} map data:`, error);
+  } catch {
     loading.value = false;
   }
 };
 
-const updateMapData = () => {
+const updateMapData = (): void => {
   // RACE CONDITION SHIELD
   if (!chart.value || loading.value) {
     return;

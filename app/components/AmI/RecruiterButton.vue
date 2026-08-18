@@ -42,15 +42,16 @@
 <script setup lang="ts">
 import { BriefcaseBusiness } from 'lucide-vue-next';
 import { computed, type PropType } from 'vue';
+import type { RecruiterCard } from '~~/shared/utils/types';
 
 const props = defineProps({
-  card: { type: Object as PropType<any>, required: true },
+  card: { type: Object as PropType<RecruiterCard>, required: true },
   location: { type: String, default: 'their location' }
 });
 
 const route = useRoute();
 
-const replaceWildcards = (text: string) => {
+const replaceWildcards = (text: string): string => {
   if (!text) {
     return '';
   }
@@ -65,5 +66,7 @@ const replaceWildcards = (text: string) => {
 const displayTitle = computed(() => replaceWildcards(props.card.title || 'Get in touch'));
 const displayButtonText = computed(() => replaceWildcards(props.card.buttonText || 'Contact Us'));
 
-defineEmits(['click']);
+defineEmits<{
+  (e: 'click', card: RecruiterCard): void;
+}>();
 </script>

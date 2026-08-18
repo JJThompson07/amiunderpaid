@@ -16,11 +16,12 @@
 
 <script setup lang="ts">
 import type { PropType } from 'vue';
+import type { JobListing } from '~~/shared/utils/market-data';
 import { sanitizeUrl } from '~~/shared/utils/sanitize';
 
 defineProps({
   listing: {
-    type: Object as PropType<any>,
+    type: Object as PropType<JobListing>,
     required: true
   },
   userSalary: {

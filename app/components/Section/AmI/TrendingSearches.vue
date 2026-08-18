@@ -108,20 +108,24 @@ type MacroStats = {
 };
 
 const trendingRoles = computed<TrendingRole[]>(() => {
-  const roles: any = tm('landing.trending.roles');
+  // tm() returns the raw locale message tree, which we know from the JSON
+  // source to be an array of { title, salary } objects for this key.
+  const roles = tm('landing.trending.roles') as unknown as TrendingRole[];
   return Array.isArray(roles) ? roles : [];
 });
 
 const macroStats = computed<MacroStats | null>(() => {
-  const stats: any = tm('landing.trending.macro_stats');
+  // tm() returns the raw locale message tree, which we know from the JSON
+  // source to be a { mean, p10, p90 } object for this key.
+  const stats = tm('landing.trending.macro_stats') as unknown as MacroStats | undefined;
   return stats || null;
 });
 
-const getRoleUrl = (role: string) => {
+const getRoleUrl = (role: string): string => {
   return `/salary/${slugify(role)}/${currentCountry.value}`;
 };
 
-const formatSalary = (salary: number) => {
+const formatSalary = (salary: number): string => {
   return new Intl.NumberFormat(currentCountry.value === 'UK' ? 'en-GB' : 'en-US', {
     style: 'currency',
     currency: currentCountry.value === 'UK' ? 'GBP' : 'USD',
