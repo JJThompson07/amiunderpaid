@@ -29,14 +29,15 @@ describe('UI Formatter: formatOrdinal', () => {
   });
 
   it('Scenario 5: Defaults to th for unknown plural rules', () => {
-    const originalPluralRules = Intl.PluralRules;
-    (Intl as any).PluralRules = class {
-      select() {
+    const mutableIntl = Intl as { PluralRules: typeof Intl.PluralRules };
+    const originalPluralRules = mutableIntl.PluralRules;
+    mutableIntl.PluralRules = class {
+      select(): string {
         return 'unknown';
       }
-    };
+    } as unknown as typeof Intl.PluralRules;
     expect(formatOrdinal(1)).toBe('1th');
-    (Intl as any).PluralRules = originalPluralRules;
+    mutableIntl.PluralRules = originalPluralRules;
   });
 });
 

@@ -10,19 +10,21 @@
  * to client state. Strips keys that both start AND end with `__` since
  * these are reserved by Firestore and can cause write errors.
  */
-export const sanitizeAdzunaData = (data: any): any => {
+export const sanitizeAdzunaData = <T>(data: T): T => {
   if (Array.isArray(data)) {
-    return data.map(sanitizeAdzunaData);
+    return (data as unknown[]).map((item) => sanitizeAdzunaData(item)) as T;
   }
   if (data !== null && typeof data === 'object') {
-    return Object.keys(data).reduce((acc, key) => {
+    const obj = data as Record<string, unknown>;
+    const result: Record<string, unknown> = {};
+    for (const key of Object.keys(obj)) {
       // Remove keys that start AND end with '__' (reserved by Firestore).
       // Uses || so that a key only needs to fail ONE side to be kept.
       if (!key.startsWith('__') || !key.endsWith('__')) {
-        acc[key] = sanitizeAdzunaData(data[key]);
+        result[key] = sanitizeAdzunaData(obj[key]);
       }
-      return acc;
-    }, {} as any);
+    }
+    return result as T;
   }
   return data;
 };

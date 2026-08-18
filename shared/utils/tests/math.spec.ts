@@ -7,6 +7,7 @@ import {
   calculatePercentile,
   calculateRegionalModifier
 } from '../math';
+import type { PercentileData } from '../types';
 
 describe('Math Engine: calculatePercentile', () => {
   const mockGovData = {
@@ -42,7 +43,13 @@ describe('Math Engine: calculatePercentile', () => {
   });
 
   it('Scenario 5: Returns 50 as a fallback if data has less than 2 valid points', () => {
-    const badData = { p10: 30000, p25: null, p50: undefined, p75: null, p90: null } as any;
+    const badData = {
+      p10: 30000,
+      p25: null,
+      p50: undefined,
+      p75: null,
+      p90: null
+    } as unknown as PercentileData;
     expect(calculatePercentile(60000, badData)).toBe(50);
   });
 });

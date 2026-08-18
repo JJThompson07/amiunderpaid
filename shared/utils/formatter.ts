@@ -28,7 +28,7 @@ export const formatMcaScoreForUi = (
   result: BenchmarkResult,
   jobTitle: string,
   location: string | null,
-  t: (key: string, params?: Record<string, any>) => string
+  t: (key: string, params?: Record<string, unknown>) => string
 ): McaUiData => {
   const { score, breakdown } = result;
   const points: string[] = [];
