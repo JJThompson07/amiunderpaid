@@ -8,13 +8,32 @@
  * The client does not need to know which provider was ultimately used.
  */
 import { FieldValue } from 'firebase-admin/firestore';
+import type { MarketDataProvider } from '~~/shared/utils/market-data';
 import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 import { ADZUNA_LOCATION_MAP } from '../../constants/locations';
+
+type AdzunaHistogramParams = {
+  app_id: string;
+  app_key: string;
+  what: string;
+  'content-type': string;
+  where?: string;
+};
+
+// Loosely typed: sanitizeAdzunaData strips reserved keys from whatever the
+// upstream provider (Adzuna or the Reed/Jooble fallback) returned, so the
+// exact shape varies beyond the fields this endpoint relies on.
+type MarketSalaryResult = {
+  histogram?: Record<string, number>;
+  provider: MarketDataProvider;
+  categoryTag?: string;
+  [key: string]: unknown;
+};
 
 // Define the cached fetcher outside the event handler
 const fetchFromProviders = defineCachedFunction(
   async (
-    params: Record<string, any>,
+    params: AdzunaHistogramParams,
     countryCode: string,
     titleStr: string,
     locationStr: string,
@@ -33,7 +52,7 @@ const fetchFromProviders = defineCachedFunction(
         params
       });
 
-      const cleanData = sanitizeAdzunaData(rawData);
+      const cleanData = sanitizeAdzunaData(rawData) as MarketSalaryResult;
       const hasData = cleanData?.histogram && Object.keys(cleanData.histogram).length > 0;
 
       if (hasData) {
@@ -42,8 +61,10 @@ const fetchFromProviders = defineCachedFunction(
       } else {
         throw createError({ statusCode: 404, statusMessage: 'Zero results from Adzuna' });
       }
-    } catch (e: any) {
-      const statusCode = e?.response?.status || e?.statusCode;
+    } catch (e) {
+      const statusCode =
+        (e as { response?: { status?: number }; statusCode?: number })?.response?.status ||
+        (e as { statusCode?: number })?.statusCode;
       if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
         const { executeMarketFallback } = await import('../../utils/fallback');
         const fallbackRaw = await executeMarketFallback(titleStr, locationStr, countryCode, '', '');
@@ -154,7 +175,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const params: Record<string, any> = {
+  const params: AdzunaHistogramParams = {
     app_id: appId,
     app_key: appKey,
     what: titleStr,
@@ -172,7 +193,7 @@ export default defineEventHandler(async (event) => {
 
   // 3. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
   try {
-    const cleanData: any = await fetchFromProviders(
+    const cleanData: MarketSalaryResult = await fetchFromProviders(
       params,
       countryCode,
       titleStr,
@@ -220,8 +241,7 @@ export default defineEventHandler(async (event) => {
     });
 
     return cleanData;
-  } catch (e: any) {
-    console.error('Salary Endpoint Error:', e);
+  } catch {
     throw createError({
       statusCode: 503,
       statusMessage: 'Salary data temporarily unavailable. Please try again later.'

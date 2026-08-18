@@ -4,6 +4,18 @@ import { generateCacheKey } from '../../utils/adzuna';
 import { calculateUKBenchmarkScore } from '~~/shared/utils/uk';
 import { calculateUSABenchmarkScore } from '~~/shared/utils/usa';
 
+type BackfillUpdatePayload = {
+  historical_fetched_MCA: boolean;
+  historical_fetched_MCA_v2: boolean;
+  searchSuccess?: boolean;
+  mcaScore?: number | null;
+  marketAverage?: number | null;
+  governmentAverage?: number | null;
+  microPercentile?: number;
+  macroPercentile?: number;
+  livePercentile?: number;
+};
+
 export default defineEventHandler(async (event) => {
   const authHeader = getRequestHeader(event, 'authorization');
   if (!authHeader?.startsWith('Bearer ')) {
@@ -122,8 +134,10 @@ export default defineEventHandler(async (event) => {
 
           if (results.length > 0) {
             marketAverage =
-              results.reduce((acc: number, curr: any) => acc + (curr.salary_max || 0), 0) /
-              results.length;
+              results.reduce(
+                (acc: number, curr: { salary_max?: number }) => acc + (curr.salary_max || 0),
+                0
+              ) / results.length;
           }
         }
 
@@ -296,7 +310,7 @@ export default defineEventHandler(async (event) => {
           }
         }
 
-        const updatePayload: Record<string, any> = {
+        const updatePayload: BackfillUpdatePayload = {
           historical_fetched_MCA: true,
           historical_fetched_MCA_v2: true
         };
@@ -321,9 +335,9 @@ export default defineEventHandler(async (event) => {
 
         await db.collection('search_history').doc(docId).set(updatePayload, { merge: true });
         updated++;
-      } catch (err: any) {
+      } catch (err) {
         failed++;
-        failReasons.push(err.message || 'Unknown error');
+        failReasons.push(err instanceof Error ? err.message : 'Unknown error');
       }
     }
 

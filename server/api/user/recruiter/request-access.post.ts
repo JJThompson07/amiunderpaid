@@ -38,9 +38,10 @@ export default defineEventHandler(async (event) => {
     });
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces recruiter access-request failures for debugging; no dedicated server-side error-logging utility exists
     console.error('🔥 Error requesting recruiter access:', error);
-    if (error.statusCode) {
+    if (isError(error)) {
       throw error;
     }
     throw createError({

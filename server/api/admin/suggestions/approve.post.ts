@@ -40,6 +40,7 @@ export default defineEventHandler(async (event) => {
 
     return { success: true };
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces suggestion approval failures for admin debugging; no dedicated server-side error-logging utility exists
     console.error('Error approving suggestion:', error);
     throw createError({ statusCode: 500, message: 'Approval failed' });
   }

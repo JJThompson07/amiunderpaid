@@ -3,6 +3,32 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { createError, defineEventHandler, getQuery } from 'h3';
 import { verifyAdmin } from '../../utils/firebase';
 
+// A Firestore document's raw field shape for a `search_history` entry, plus the
+// synthetic `id` we attach when reading it from Firestore or Algolia.
+type RawSearchLogEntry = {
+  id: string;
+  title?: string;
+  country?: string;
+  location?: string | null;
+  salary?: number | null;
+  schedule?: string | null;
+  contract?: string | null;
+  brand?: string | null;
+  mcaScore?: string | null;
+  marketAverage?: number | null;
+  governmentAverage?: number | null;
+  searchSuccess?: boolean | null;
+  historical_fetched_MCA?: boolean | null;
+  provider?: string | null;
+  timestamp?: { toDate: () => Date; toMillis?: () => number } | null;
+};
+
+// The shape of a `search_history` record as indexed in Algolia.
+type AlgoliaSearchLogHit = Omit<RawSearchLogEntry, 'id' | 'timestamp'> & {
+  objectID: string;
+  timestamp?: number | null;
+};
+
 export type SearchLog = {
   id: string;
   title: string;
@@ -29,13 +55,11 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event);
 
   // Pagination & Search params
-  const page = Number(query.page) || 1;
   const limitCount = Number(query.limit) || 50;
-  const offsetCount = (page - 1) * limitCount;
   const searchTerm = query.search ? String(query.search).toLowerCase().trim() : '';
 
   try {
-    let logsRaw: any[] = [];
+    let logsRaw: RawSearchLogEntry[] = [];
     let displayTotalCount = 0;
     let nextCursor: string | undefined;
 
@@ -81,17 +105,20 @@ export default defineEventHandler(async (event) => {
         nbHits,
         page: resultPage,
         nbPages
-      } = await index.search(searchTerm, {
+      } = await index.search<AlgoliaSearchLogHit>(searchTerm, {
         page: algoliaPage,
         hitsPerPage: limitCount
       });
 
-      logsRaw = hits.map((hit: any) => ({
-        ...hit,
-        id: hit.objectID,
-        // Algolia stores dates as timestamps or strings, reconstruct it for the frontend
-        timestamp: hit.timestamp ? { toDate: () => new Date(hit.timestamp) } : null
-      }));
+      logsRaw = hits.map((hit): RawSearchLogEntry => {
+        const { timestamp, ...rest } = hit;
+        return {
+          ...rest,
+          id: hit.objectID,
+          // Algolia stores dates as timestamps or strings, reconstruct it for the frontend
+          timestamp: timestamp ? { toDate: () => new Date(timestamp) } : null
+        };
+      });
 
       displayTotalCount = nbHits;
       if (resultPage + 1 < nbPages) {
@@ -139,7 +166,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const logs: SearchLog[] = logsRaw.map((data: any) => {
+    const logs: SearchLog[] = logsRaw.map((data): SearchLog => {
       const dateObj = data.timestamp?.toDate ? data.timestamp.toDate() : null;
       return {
         id: data.id,

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { H3Error, H3Event } from 'h3';
 
 vi.mock('firebase-admin/firestore', () => ({
   FieldValue: {
@@ -8,26 +9,27 @@ vi.mock('firebase-admin/firestore', () => ({
 
 const mockConfig = { adzunaAppId: 'test-id', adzunaAppKey: 'test-key' };
 vi.stubGlobal('useRuntimeConfig', () => mockConfig);
-vi.stubGlobal('defineEventHandler', (fn: any) => fn);
-vi.stubGlobal('useAdminFirestore', vi.fn());
+vi.stubGlobal('defineEventHandler', <T>(fn: T): T => fn);
+const useAdminFirestoreMock = vi.fn();
+vi.stubGlobal('useAdminFirestore', useAdminFirestoreMock);
 vi.stubGlobal(
   'generateCacheKey',
   vi.fn(() => 'cache-key')
 );
-vi.stubGlobal('createError', (err: any) => {
-  const e = new Error(err.statusMessage) as any;
+vi.stubGlobal('createError', (err: Partial<H3Error>) => {
+  const e = new Error(err.statusMessage) as Error & { statusCode?: number };
   e.statusCode = err.statusCode;
   return e;
 });
 vi.stubGlobal(
   'sanitizeAdzunaData',
-  vi.fn((data: any) => data)
+  vi.fn(<T>(data: T): T => data)
 );
 const $fetchMock = vi.fn();
 vi.stubGlobal('$fetch', $fetchMock);
 const getQueryMock = vi.fn();
 vi.stubGlobal('getQuery', getQueryMock);
-vi.stubGlobal('defineCachedFunction', (fn: any) => fn);
+vi.stubGlobal('defineCachedFunction', <T>(fn: T): T => fn);
 
 // Mock `../../utils/reed` used in the fallback block
 vi.mock('../../../utils/reed', () => ({
@@ -44,11 +46,27 @@ vi.mock('../../../utils/jooble', () => ({
   })
 }));
 
-let salaryHandler: any;
+type MockDocRef = {
+  get: ReturnType<typeof vi.fn>;
+  set: ReturnType<typeof vi.fn>;
+};
+
+type MockCollection = {
+  doc: ReturnType<typeof vi.fn>;
+};
+
+// Mirrors the (unexported) `MarketSalaryResult` shape returned by ../salary,
+// scoped down to the fields these tests actually assert on.
+type SalaryApiResult = {
+  histogram?: Record<string, number>;
+  provider: string;
+};
+
+let salaryHandler: (event: H3Event) => Promise<SalaryApiResult>;
 
 describe('Adzuna Salary API - 429 Fallback', () => {
-  let mockDocRef: any;
-  let mockCollection: any;
+  let mockDocRef: MockDocRef;
+  let mockCollection: MockCollection;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -69,7 +87,7 @@ describe('Adzuna Salary API - 429 Fallback', () => {
       collection: vi.fn(() => mockCollection)
     };
 
-    vi.mocked((globalThis as any).useAdminFirestore).mockReturnValue(mockDb);
+    useAdminFirestoreMock.mockReturnValue(mockDb);
   });
 
   it('should fall back to Reed API if Adzuna returns 429 for gb', async () => {
@@ -85,7 +103,7 @@ describe('Adzuna Salary API - 429 Fallback', () => {
       response: { status: 429 }
     });
 
-    const result = await salaryHandler({} as any);
+    const result = await salaryHandler({} as unknown as H3Event);
 
     expect($fetchMock).toHaveBeenCalledTimes(1);
 
@@ -115,7 +133,7 @@ describe('Adzuna Salary API - 429 Fallback', () => {
     });
 
     // Expect successful fallback to Jooble for USA!
-    const result = await salaryHandler({} as any);
+    const result = await salaryHandler({} as unknown as H3Event);
     expect(result.provider).toBe('jooble');
     expect(result.histogram).toEqual({ '100000': 2 });
   });
@@ -133,7 +151,7 @@ describe('Adzuna Salary API - 429 Fallback', () => {
     });
 
     // Expect successful fallback to Jooble for USA!
-    const result = await salaryHandler({} as any);
+    const result = await salaryHandler({} as unknown as H3Event);
     expect(result.provider).toBe('jooble');
     expect(result.histogram).toEqual({ '100000': 2 });
   });

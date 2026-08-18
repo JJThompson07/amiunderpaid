@@ -19,6 +19,7 @@ export default defineEventHandler(async () => {
 
     return { success: true, suggestions };
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces suggestion fetch failures for admin debugging; no dedicated server-side error-logging utility exists
     console.error('Error fetching suggestions:', error);
     throw createError({ statusCode: 500, message: 'Failed to fetch suggestions' });
   }

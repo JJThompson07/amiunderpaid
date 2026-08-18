@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
       removeStopWords: true
     });
     return { success: true };
-  } catch (error: any) {
+  } catch {
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to configure search index.'

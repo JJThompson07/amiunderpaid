@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
   const db = getFirestore();
 
   try {
-    const updateData: Record<string, any> = {};
+    const updateData: Partial<Omit<UpdateSearchBody, 'id' | 'token'>> = {};
 
     if (body.mcaScore !== undefined) {
       updateData.mcaScore = body.mcaScore;

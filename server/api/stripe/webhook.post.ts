@@ -1,11 +1,16 @@
 import Stripe from 'stripe';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import type { TerritoryClaim } from '~~/shared/utils/types';
 
 async function queueRefundAndAlert(
   stripe: Stripe,
   session: Stripe.Checkout.Session,
   reason: string
-) {
+): Promise<void> {
+  // This is the only record of a territory conflict that fulfilment silently
+  // swallows (the webhook still returns 200 so Stripe stops retrying), so it
+  // must stay logged for ops to catch and manually refund/alert on.
+  // eslint-disable-next-line no-console
   console.error(`🚨 ALERT: Needs manual refund! Session ${session.id}. Reason: ${reason}`);
   // In a real system, you'd trigger an alert or automatically refund via stripe.refunds.create()
 }
@@ -30,8 +35,7 @@ export default defineEventHandler(async (event) => {
       stripeSignature as string,
       config.stripeWebhookSecret
     );
-  } catch (err: any) {
-    console.error('⚠️ Webhook signature verification failed.', err.message);
+  } catch {
     throw createError({ statusCode: 400, message: 'Invalid signature' });
   }
 
@@ -54,20 +58,16 @@ export default defineEventHandler(async (event) => {
         throw new Error('Missing metadata in Stripe session');
       }
 
-      console.log('🔍 1. RAW CART FROM STRIPE:', rawCart);
-
       // UN-COMPRESS THE CART
-      const purchasedItems = rawCart.split(',').map((itemStr) => {
+      const purchasedItems: TerritoryClaim[] = rawCart.split(',').map((itemStr) => {
         const [tId, catCode, hasBasic, excMonths] = itemStr.split(':');
         return {
           territoryId: Number(tId),
-          categoryValue: catCode,
+          categoryValue: catCode || '',
           isBasic: hasBasic === '1',
           exclusiveMonths: !excMonths || excMonths === 'none' ? [] : excMonths.split('~')
         };
       });
-
-      console.log('🔍 2. PARSED ITEMS:', JSON.stringify(purchasedItems, null, 2));
 
       const db = getFirestore();
 
@@ -77,12 +77,12 @@ export default defineEventHandler(async (event) => {
         const userDoc = await t.get(userRef);
         const userData = userDoc.data() || {};
 
-        const existingTerritories = userData.activeTerritories || [];
+        const existingTerritories: TerritoryClaim[] = userData.activeTerritories || [];
         const updatedTerritories = [...existingTerritories];
 
         // PRE-FETCH ALL CLAIM DOCUMENTS
-        const claimRefs: Record<string, any> = {};
-        const claimDocs: Record<string, any> = {};
+        const claimRefs: Record<string, FirebaseFirestore.DocumentReference> = {};
+        const claimDocs: Record<string, FirebaseFirestore.DocumentData | null> = {};
         for (const item of purchasedItems) {
           const claimDocId = `${item.territoryId}_${item.categoryValue}`;
           if (!claimRefs[claimDocId]) {
@@ -94,7 +94,7 @@ export default defineEventHandler(async (event) => {
         if (refsArray.length > 0) {
           const snapshots = await t.getAll(...refsArray);
           snapshots.forEach((snap) => {
-            claimDocs[snap.id] = snap.exists ? snap.data() : null;
+            claimDocs[snap.id] = snap.exists ? (snap.data() ?? null) : null;
           });
         }
 
@@ -107,13 +107,13 @@ export default defineEventHandler(async (event) => {
 
           if (existingIndex > -1) {
             // Upgrade existing territory
-            updatedTerritories[existingIndex].isBasic =
-              item.isBasic || updatedTerritories[existingIndex].isBasic;
+            const existingTerritory = updatedTerritories[existingIndex]!;
+            existingTerritory.isBasic = item.isBasic || existingTerritory.isBasic;
             const combinedMonths = new Set([
-              ...(updatedTerritories[existingIndex].exclusiveMonths || []),
+              ...(existingTerritory.exclusiveMonths || []),
               ...item.exclusiveMonths
             ]);
-            updatedTerritories[existingIndex].exclusiveMonths = Array.from(combinedMonths);
+            existingTerritory.exclusiveMonths = Array.from(combinedMonths);
           } else {
             // Brand new territory
             updatedTerritories.push(item);
@@ -122,7 +122,13 @@ export default defineEventHandler(async (event) => {
           // --- UPDATE 2: THE GLOBAL LOCK & BASIC OWNERS ---
           const claimDocId = `${item.territoryId}_${item.categoryValue}`;
           const existingClaimData = claimDocs[claimDocId] || {};
-          const updates: any = {};
+          const updates: {
+            takenExclusiveMonths?: Record<string, string>;
+            basicOwners?: FirebaseFirestore.FieldValue;
+            territoryId?: number;
+            categoryValue?: string;
+            updatedAt?: string;
+          } = {};
 
           if (item.exclusiveMonths && item.exclusiveMonths.length > 0) {
             const takenMonths = existingClaimData.takenExclusiveMonths || {};
@@ -145,8 +151,7 @@ export default defineEventHandler(async (event) => {
             updates.categoryValue = item.categoryValue;
             updates.updatedAt = new Date().toISOString();
 
-            console.log(`📝 3. QUEUING TRANSACTION WRITE FOR ${claimDocId}:`, updates);
-            t.set(claimRefs[claimDocId], updates, { merge: true });
+            t.set(claimRefs[claimDocId]!, updates, { merge: true });
           }
         }
 
@@ -166,10 +171,12 @@ export default defineEventHandler(async (event) => {
 
       // Write the success marker to the seen document
       await seen.set({ type: stripeEvent.type, processedAt: FieldValue.serverTimestamp() });
-      console.log(`✅ 4. SUCCESSFULLY COMMITTED TRANSACTION FOR USER ${userId}`);
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof Error && error.message.startsWith('Territory ')) {
         // Business conflict: acknowledge so Stripe stops retrying, then refund and alert.
+        // This is swallowed from the caller's perspective (200 response below), so it
+        // must stay logged for ops to catch and manually refund/alert on.
+        // eslint-disable-next-line no-console
         console.error('Territory conflict on fulfilment', { eventId: stripeEvent.id, error });
         await queueRefundAndAlert(stripe, session, error.message);
         await seen.set({
@@ -179,7 +186,6 @@ export default defineEventHandler(async (event) => {
         });
         return { received: true };
       }
-      console.error('🔥 Error fulfilling Stripe order:', error);
       throw createError({ statusCode: 500, message: 'Database fulfillment failed' }); // transient: let Stripe retry
     }
   }

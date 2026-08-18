@@ -1,3 +1,5 @@
+import { FetchError } from 'ofetch';
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const query = getQuery(event);
@@ -26,11 +28,12 @@ export default defineEventHandler(async (event) => {
       }
     );
     return response;
-  } catch (e: any) {
+  } catch (e) {
+    const isFetchError = e instanceof FetchError;
     throw createError({
-      statusCode: e.response?.status || 500,
+      statusCode: (isFetchError && e.response?.status) || 500,
       statusMessage: `Failed to fetch Adzuna categories for ${targetCountry}`,
-      data: e.data
+      data: isFetchError ? e.data : undefined
     });
   }
 });

@@ -1,5 +1,5 @@
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
-import { defineEventHandler, getHeader, getRequestHeader } from 'h3';
+import { defineEventHandler, getHeader } from 'h3';
 
 export default defineEventHandler(async (event) => {
   // If in local development (but not testing), abort
@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     return { status: 200, message: 'Local development session skipped' };
   }
 
-  const decodeSafe = (val: string) => {
+  const decodeSafe = (val: string): string => {
     try {
       return decodeURIComponent(val);
     } catch {
@@ -55,6 +55,7 @@ export default defineEventHandler(async (event) => {
     );
   } catch (err) {
     // Fail silently so client isn't impacted
+    // eslint-disable-next-line no-console -- surfaces session-logging failures for debugging; no dedicated server-side error-logging utility exists
     console.error('Failed to log user session:', err);
   }
 

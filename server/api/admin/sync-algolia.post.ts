@@ -1,8 +1,13 @@
 import { createError, defineEventHandler, readBody } from 'h3';
 import algoliasearch from 'algoliasearch';
 
+type SyncAlgoliaRequestBody = {
+  data: Record<string, unknown>[];
+  indexName: string;
+};
+
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
+  const body = await readBody<SyncAlgoliaRequestBody>(event);
   const { data, indexName } = body;
 
   if (!data || !Array.isArray(data)) {
@@ -45,10 +50,10 @@ export default defineEventHandler(async (event) => {
       count: objectIDs.length,
       message: `Synced ${objectIDs.length} records to Algolia index '${indexName}'`
     };
-  } catch (error: any) {
+  } catch (error) {
     throw createError({
       statusCode: 500,
-      message: error.message || 'Error syncing algolia index',
+      message: error instanceof Error ? error.message : 'Error syncing algolia index',
       cause: error
     });
   }

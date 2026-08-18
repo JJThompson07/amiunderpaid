@@ -65,6 +65,7 @@ export default defineEventHandler(async (event) => {
         try {
           settings = JSON.parse(settings);
         } catch {
+          // eslint-disable-next-line no-console -- surfaces malformed contactSettings JSON for debugging; no dedicated server-side error-logging utility exists
           console.error(`Failed to parse contactSettings for user ${owner.uid}`);
         }
       }

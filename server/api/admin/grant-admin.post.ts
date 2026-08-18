@@ -25,8 +25,7 @@ export default defineEventHandler(async (event) => {
     await db.collection('users').doc(uid).set({ role: 'admin' }, { merge: true });
 
     return { success: true };
-  } catch (err: any) {
-    console.error(`Failed to grant admin claim to ${uid}:`, err);
+  } catch {
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to provision admin access.'

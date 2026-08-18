@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Event } from 'h3';
 
+type WebhookHandler = (event: H3Event) => Promise<{ received: boolean }>;
+
 // 1. Stub Globals
-vi.stubGlobal('defineEventHandler', (fn: any) => fn);
+vi.stubGlobal('defineEventHandler', (fn: WebhookHandler) => fn);
 vi.stubGlobal('useRuntimeConfig', () => ({
   stripeSecretKey: 'sk_test_123',
   // cspell:disable-next-line
@@ -10,7 +12,10 @@ vi.stubGlobal('useRuntimeConfig', () => ({
 }));
 vi.stubGlobal('readRawBody', async () => 'raw_body_string');
 vi.stubGlobal('getHeader', () => 'signature_123');
-vi.stubGlobal('createError', (err: any) => new Error(err.message));
+vi.stubGlobal(
+  'createError',
+  (err: { message: string; statusCode?: number }) => new Error(err.message)
+);
 
 // 2. Mock external dependencies
 const {
@@ -62,9 +67,9 @@ vi.mock('firebase-admin/firestore', () => ({
 }));
 
 describe('Stripe Webhook', () => {
-  let handler: any;
+  let handler: WebhookHandler;
 
-  beforeEach(async () => {
+  beforeEach(async (): Promise<void> => {
     vi.clearAllMocks();
     const mod = await import('../webhook.post');
     handler = mod.default;
@@ -87,7 +92,10 @@ describe('Stripe Webhook', () => {
     mockCollection.mockImplementation((path) => {
       if (path === 'stripe_events') {
         return {
-          doc: () => ({ get: mockSeenGet, set: mockSeenSet })
+          doc: (): { get: typeof mockSeenGet; set: typeof mockSeenSet } => ({
+            get: mockSeenGet,
+            set: mockSeenSet
+          })
         };
       }
       return { doc: mockDoc };
@@ -144,7 +152,7 @@ describe('Stripe Webhook', () => {
       {
         id: '1_dev',
         exists: true,
-        data: () => ({
+        data: (): { takenExclusiveMonths: Record<string, string> } => ({
           takenExclusiveMonths: { '2024-01': 'other_user' }
         })
       }

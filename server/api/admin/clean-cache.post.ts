@@ -1,3 +1,5 @@
+import type { Query } from 'firebase-admin/firestore';
+
 export default defineEventHandler(async (event) => {
   await verifyAdmin(event);
 
@@ -8,7 +10,7 @@ export default defineEventHandler(async (event) => {
   let deletedDistributions = 0;
 
   // Helper function to delete documents in batches to avoid Firestore limits
-  const deleteInBatches = async (query: any) => {
+  const deleteInBatches = async (query: Query): Promise<number> => {
     let deletedCount = 0;
 
     // Process in chunks of 500 (Firestore batch limit)
@@ -16,7 +18,7 @@ export default defineEventHandler(async (event) => {
 
     while (!snapshot.empty) {
       const batch = db.batch();
-      snapshot.docs.forEach((doc: any) => batch.delete(doc.ref));
+      snapshot.docs.forEach((doc) => batch.delete(doc.ref));
 
       await batch.commit();
       deletedCount += snapshot.size;
@@ -50,11 +52,11 @@ export default defineEventHandler(async (event) => {
         deletedDistributions
       }
     };
-  } catch (e: any) {
+  } catch (e) {
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to clean cache',
-      data: e.message
+      data: e instanceof Error ? e.message : 'Unknown error'
     });
   }
 });

@@ -1,3 +1,4 @@
+import type { H3Event } from 'h3';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import sessionEndpoint from '../session.post';
@@ -36,7 +37,7 @@ describe('Analytics Session API', () => {
           }
         }
       }
-    } as any;
+    } as unknown as H3Event;
 
     await sessionEndpoint(event);
 
@@ -62,7 +63,7 @@ describe('Analytics Session API', () => {
           headers: {}
         }
       }
-    } as any;
+    } as unknown as H3Event;
 
     await sessionEndpoint(event);
 
@@ -88,7 +89,7 @@ describe('Analytics Session API', () => {
           }
         }
       }
-    } as any;
+    } as unknown as H3Event;
 
     await sessionEndpoint(event);
 

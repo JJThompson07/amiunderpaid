@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { H3Event } from 'h3';
+import type { H3Error, H3Event } from 'h3';
 import { verifyAdmin } from '../../../utils/firebase';
 
 import handler from '../search-logs.get';
-vi.stubGlobal('defineEventHandler', (fn: any) => fn);
+vi.stubGlobal('defineEventHandler', <T>(fn: T): T => fn);
 vi.stubGlobal('getQuery', () => ({}));
-vi.stubGlobal('createError', (err: any) => new Error(err.message));
+vi.stubGlobal('createError', (err: Partial<H3Error>) => new Error(err.message));
 
 vi.mock('../../../utils/firebase', () => ({
   verifyAdmin: vi.fn(),
@@ -27,7 +27,7 @@ vi.mock('firebase-admin/firestore', () => ({
         }))
       })),
       count: vi.fn(() => ({
-        get: vi.fn(() => ({ data: () => ({ count: 0 }) }))
+        get: vi.fn(() => ({ data: (): { count: number } => ({ count: 0 }) }))
       })),
       where: vi.fn().mockReturnThis()
     }))
@@ -35,12 +35,12 @@ vi.mock('firebase-admin/firestore', () => ({
 }));
 
 describe('Admin Search Logs Endpoint', () => {
-  it('should enforce admin authorization via verifyAdmin', async () => {
+  it('should enforce admin authorization via verifyAdmin', async (): Promise<void> => {
     const event = { context: {} } as unknown as H3Event;
 
     // Simulate verifyAdmin throwing an error (e.g. 403)
     const error = new Error('Forbidden');
-    (verifyAdmin as any).mockRejectedValueOnce(error);
+    vi.mocked(verifyAdmin).mockRejectedValueOnce(error);
 
     await expect(handler(event)).rejects.toThrow('Forbidden');
     expect(verifyAdmin).toHaveBeenCalledWith(event);

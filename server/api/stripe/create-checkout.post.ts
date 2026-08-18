@@ -4,6 +4,14 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { RECRUITER_TERRITORIES_UK } from '~~/utils/locations/uk';
 import { RECRUITER_TERRITORIES_USA } from '~~/utils/locations/usa';
+import type { TerritoryClaim } from '~~/shared/utils/types';
+
+// The `platform_settings/pricing` Firestore doc keys bands dynamically
+// (`band${1-5}`), so this stays index-signature based rather than reusing
+// the client-side `CountryPricingBands` type from app/composables/usePricing.ts.
+type PricingBand = { basic: number; exclusive: number };
+type CountryPricingBands = Record<string, PricingBand>;
+type PricingByCountry = Record<string, CountryPricingBands>;
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -30,6 +38,7 @@ export default defineEventHandler(async (event) => {
     userId = decodedToken.uid;
     userEmail = decodedToken.email || '';
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces token-verification failures for debugging; no dedicated server-side error-logging utility exists
     console.warn('Stripe checkout auth warning:', error);
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized: Invalid token' });
   }
@@ -42,7 +51,7 @@ export default defineEventHandler(async (event) => {
   const db = getFirestore();
   const pricingDoc = await db.collection('platform_settings').doc('pricing').get();
 
-  const DEFAULT_PRICING: Record<string, any> = {
+  const DEFAULT_PRICING: PricingByCountry = {
     UK: {
       band1: { basic: 50, exclusive: 250 },
       band2: { basic: 30, exclusive: 150 },
@@ -59,13 +68,18 @@ export default defineEventHandler(async (event) => {
     }
   };
 
-  const platformPricing = pricingDoc.exists ? pricingDoc.data() || {} : DEFAULT_PRICING;
+  // Firestore documents are inherently untyped (any) — this cast reflects that
+  // the admin panel (usePricing.ts) is the sole writer and always saves this shape.
+  const platformPricing: PricingByCountry = pricingDoc.exists
+    ? (pricingDoc.data() as PricingByCountry | undefined) || {}
+    : DEFAULT_PRICING;
 
   // Use the exact keys your admin panel saves ('UK' or 'USA')
   const countryKey = currency === 'usd' ? 'USA' : 'UK';
   const countryPricing = platformPricing[countryKey];
 
   if (!countryPricing) {
+    // eslint-disable-next-line no-console -- surfaces missing pricing configuration for debugging; no dedicated server-side error-logging utility exists
     console.error(`Pricing object for ${countryKey} missing in Firestore!`);
     throw createError({ statusCode: 500, message: `Pricing bands for ${countryKey} not found.` });
   }
@@ -104,7 +118,7 @@ export default defineEventHandler(async (event) => {
     now.getDate() > new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() / 2;
 
   // Loop through every item in the user's cart
-  territories.forEach((t: any) => {
+  territories.forEach((t: TerritoryClaim) => {
     // SERVER-SIDE BAND LOOKUP: Don't trust the client payload for the band!
     const foundTerritory = allTerritories.find((tt) => tt.id === t.territoryId);
     const safeBand = foundTerritory ? foundTerritory.band || 1 : 1;
@@ -146,7 +160,13 @@ export default defineEventHandler(async (event) => {
   // ==========================================
   // 4. BUILD STRIPE LINE ITEMS
   // ==========================================
-  const lineItems: any[] = [];
+  // Indexed access instead of `Stripe.Checkout.SessionCreateParams.LineItem` — the
+  // top-level `Checkout` namespace only re-exports `SessionCreateParams` as a type
+  // alias, which drops the nested `LineItem` namespace member from that alias's name.
+  type StripeCheckoutLineItem = NonNullable<
+    Stripe.Checkout.SessionCreateParams['line_items']
+  >[number];
+  const lineItems: StripeCheckoutLineItem[] = [];
 
   if (monthlyTotal > 0) {
     lineItems.push({
@@ -186,7 +206,7 @@ export default defineEventHandler(async (event) => {
   // ==========================================
   // Format: "ID:Category:BasicBoolean:ExclusiveMonthCount" (e.g. "29:IT:1:1,40:IT:1:2")
   const compressedCart = territories
-    .map((t: any) => {
+    .map((t: TerritoryClaim) => {
       // Remove the .substring(0, 4) so we keep the full category code!
       const catCode = t.categoryValue || 'ALL';
       const hasBasic = t.isBasic ? '1' : '0';
@@ -250,8 +270,10 @@ export default defineEventHandler(async (event) => {
     });
 
     return { url: session.url };
-  } catch (error: any) {
-    console.error('Stripe Error:', error.message);
-    throw createError({ statusCode: 500, message: error.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to create checkout session.';
+    // eslint-disable-next-line no-console -- surfaces Stripe checkout failures for debugging; no dedicated server-side error-logging utility exists
+    console.error('Stripe Error:', message);
+    throw createError({ statusCode: 500, message });
   }
 });

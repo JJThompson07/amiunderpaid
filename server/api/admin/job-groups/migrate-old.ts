@@ -105,8 +105,7 @@ export default defineEventHandler(async (event) => {
       success: true,
       message: `Successfully migrated ${totalCount} base groups into ${targetCollection}!`
     };
-  } catch (error) {
-    console.error(`Migration failed for ${country}:`, error);
+  } catch {
     throw createError({ statusCode: 500, message: 'Migration failed' });
   }
 });

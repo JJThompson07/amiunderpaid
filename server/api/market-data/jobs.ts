@@ -10,11 +10,35 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 import { ADZUNA_LOCATION_MAP } from '../../constants/locations';
+import type { JobSearchResponse } from '~~/shared/utils/market-data';
+
+// Query params sent to the Adzuna search API.
+type AdzunaSearchParams = {
+  app_id: string;
+  app_key: string;
+  results_per_page: number;
+  what: string;
+  'content-type': string;
+  part_time?: number;
+  full_time?: number;
+  contract?: number;
+  permanent?: number;
+  where?: string;
+  distance?: number;
+};
+
+// Duck-typed shape covering both an ofetch `FetchError` (`.response.status`)
+// and an h3 error thrown via `createError` (`.statusCode`), without requiring
+// the caught value to actually be an instance of either class.
+type FetchLikeError = {
+  response?: { status?: number };
+  statusCode?: number;
+};
 
 // Define the cached fetcher outside the event handler
 const fetchFromProviders = defineCachedFunction(
   async (
-    params: Record<string, any>,
+    params: AdzunaSearchParams,
     countryCode: string,
     titleStr: string,
     locationStr: string,
@@ -36,7 +60,7 @@ const fetchFromProviders = defineCachedFunction(
         params
       });
 
-      const cleanData = sanitizeAdzunaData(rawData);
+      const cleanData = sanitizeAdzunaData(rawData) as JobSearchResponse;
 
       if (cleanData.count && cleanData.count > 0) {
         cleanData.provider = 'adzuna';
@@ -44,8 +68,9 @@ const fetchFromProviders = defineCachedFunction(
       } else {
         throw createError({ statusCode: 404, statusMessage: 'Zero results from Adzuna' });
       }
-    } catch (e: any) {
-      const statusCode = e?.response?.status || e?.statusCode;
+    } catch (e) {
+      const err = e as FetchLikeError;
+      const statusCode = err?.response?.status || err?.statusCode;
       if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
         const { executeMarketFallback } = await import('../../utils/fallback');
         const fallbackRaw = await executeMarketFallback(
@@ -186,7 +211,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: 'Market data service is misconfigured.' });
   }
 
-  const params: Record<string, any> = {
+  const params: AdzunaSearchParams = {
     app_id: appId,
     app_key: appKey,
     results_per_page: limit,
@@ -226,7 +251,7 @@ export default defineEventHandler(async (event) => {
 
   // 3. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
   try {
-    const cleanData: any = await fetchFromProviders(
+    const cleanData: JobSearchResponse = await fetchFromProviders(
       params,
       countryCode,
       titleStr,
@@ -277,7 +302,8 @@ export default defineEventHandler(async (event) => {
       gov_id_code: existingGovIdCode,
       is_admin_verified: isAdminVerified
     };
-  } catch (e: any) {
+  } catch (e) {
+    // eslint-disable-next-line no-console -- surfaces market-data fetch failures for debugging; no dedicated server-side error-logging utility exists
     console.error('Jobs Endpoint Error:', e);
     throw createError({
       statusCode: 503,

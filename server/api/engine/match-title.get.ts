@@ -30,6 +30,7 @@ export default defineEventHandler(async (event) => {
 
     return { success: true, matches };
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces title-match failures for debugging; no dedicated server-side error-logging utility exists
     console.error('Error matching synonym:', error);
     throw createError({ statusCode: 500, message: 'Failed to match title' });
   }

@@ -1,5 +1,6 @@
-import { getAuth } from 'firebase-admin/auth';
+import { getAuth, type UserRecord } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import type { TerritoryClaim } from '~~/shared/utils/types';
 
 export default defineEventHandler(async (event) => {
   const authHeader = getRequestHeader(event, 'authorization');
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
     return status !== 'requested' && status !== 'rejected';
   });
   const uids = recruitersToFetch.map((doc) => ({ uid: doc.id }));
-  const authUsers: any[] = [];
+  const authUsers: UserRecord[] = [];
 
   for (let i = 0; i < uids.length; i += 100) {
     const chunk = uids.slice(i, i + 100);
@@ -38,7 +39,7 @@ export default defineEventHandler(async (event) => {
     const status = data.status || 'active'; // Default to active for legacy recruiters
 
     let monthlyTotal = 0;
-    activeTerritories.forEach((t: any) => {
+    activeTerritories.forEach((t: TerritoryClaim) => {
       if (t.isBasic) {
         const bandPricing = countryPricing[`band${t.band || 1}`];
         let basicPrice = bandPricing?.basic || 0;

@@ -51,14 +51,13 @@ export default defineEventHandler(async (event) => {
     });
 
     return { success: true };
-  } catch (error: any) {
-    console.error('🔥 Error rejecting recruiter:', error);
-    if (error.statusCode) {
+  } catch (error) {
+    if (isError(error)) {
       throw error;
     }
     throw createError({
       statusCode: 500,
-      message: error.message || 'Failed to reject recruiter.'
+      message: error instanceof Error ? error.message : 'Failed to reject recruiter.'
     });
   }
 });
