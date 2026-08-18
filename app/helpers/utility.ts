@@ -46,7 +46,7 @@ export const getRawUncappedDiffPercentage = (value: number, target: number): num
   return getUncappedPercentage(getDiff(value, target, true), target, true);
 };
 
-export const slugify = (text: string) =>
+export const slugify = (text: string): string =>
   text
     .toString()
     .toLowerCase()

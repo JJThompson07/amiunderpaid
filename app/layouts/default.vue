@@ -107,7 +107,7 @@ const isMobile = computed(() => isMounted.value && viewportIsMobile.value);
 
 const openMenu = ref<boolean>(false);
 
-const handleLogout = async () => {
+const handleLogout = async (): Promise<void> => {
   await logout();
   await navigateTo('/');
 };
@@ -117,6 +117,9 @@ useHead({
     lang: computed(() => locale.value || i18nHead.value.htmlAttrs?.lang),
     dir: computed(() => i18nHead.value.htmlAttrs?.dir as 'ltr' | 'rtl' | 'auto' | undefined)
   },
+  // @ts-expect-error -- @nuxtjs/i18n types `i18nHead.value.link` as the untyped `MetaAttrs`
+  // (Record<string, string>) shape, which cannot structurally satisfy unhead's strict
+  // per-`rel` discriminated `Link` union; the runtime shape is verified correct below.
   link: computed(() => {
     // 1. Extract the links Nuxt i18n generates, but filter out rogue canonicals
     let i18nLinks = (i18nHead.value.link || []).filter((l) => l.rel !== 'canonical');
@@ -124,7 +127,7 @@ useHead({
     const cleanPath = route.path === '/' ? '' : route.path;
 
     // ✨ 2. Build a rock-solid SSR base URL (No more localhost leaks!)
-    const getBaseUrl = () => {
+    const getBaseUrl = (): string => {
       if (import.meta.dev) {
         return 'http://localhost:3000';
       }
@@ -165,9 +168,11 @@ useHead({
       // ✨ 4. Force the absolute, correct Canonical URL using our bulletproof baseUrl
       { rel: 'canonical', href: `${baseUrl}${cleanPath || '/'}` },
       { rel: 'icon', type: 'image/x-icon', href: `/${String($siteBrand)}-favicon.ico` }
-    ] as any;
+    ];
   }),
-  meta: computed(() => [...(i18nHead.value.meta || [])] as any)
+  // @ts-expect-error -- same untyped `MetaAttrs` (Record<string, string>) shape from
+  // @nuxtjs/i18n cannot structurally satisfy unhead's strict per-`name`/`property` `Meta` union.
+  meta: computed(() => [...(i18nHead.value.meta || [])])
 });
 </script>
 

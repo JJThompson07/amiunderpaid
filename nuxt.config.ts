@@ -18,6 +18,9 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
     const singleLineJson = JSON.stringify(JSON.parse(decoded));
     process.env.GOOGLE_APPLICATION_CREDENTIALS = singleLineJson;
   } catch (error) {
+    // Intentional diagnostic log: this runs at build/server startup, before any
+    // app-level logging utility is available.
+    // eslint-disable-next-line no-console
     console.error('⚠️ Failed to decode FIREBASE_SERVICE_ACCOUNT_BASE64', error);
   }
 }
@@ -167,7 +170,7 @@ export default defineNuxtConfig({
 
   // ** 6. Vite / Tailwind **
   vite: {
-    plugins: [tailwindcss() as any],
+    plugins: [tailwindcss()],
     build: {
       rollupOptions: {
         output: {

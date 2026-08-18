@@ -7,7 +7,7 @@ import { resolve } from 'path';
 // Load .env
 dotenv.config({ path: resolve(process.cwd(), '.env') });
 
-async function grantAdmin() {
+async function grantAdmin(): Promise<void> {
   const uid = process.argv[2];
   if (!uid) {
     console.error('Usage: pnpm tsx scripts/grant-admin.ts <uid>');

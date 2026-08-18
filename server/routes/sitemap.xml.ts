@@ -1,8 +1,16 @@
 // server/routes/sitemap.xml.ts
 import { defineEventHandler, getRequestURL, setHeader } from 'h3';
+import type { Query, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { useAdminFirestore } from '../utils/firebase';
 
-export default defineEventHandler(async (event) => {
+// Narrow shape of a `jobs` document as selected below (title/country/location only).
+type SitemapJobFields = {
+  title: string;
+  country?: string;
+  location?: string;
+};
+
+export default defineEventHandler(async (event): Promise<string> => {
   const url = getRequestURL(event);
   const origin = url.origin;
   const isBenchmark = origin.includes('benchmarkmyrole');
@@ -11,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const isAmIUnderpaidUS = origin.includes('amiunderpaid.com');
   const isAmIUnderpaidUK = origin.includes('amiunderpaid.co.uk');
 
-  const slugify = (text: string) =>
+  const slugify = (text: string): string =>
     text
       .toString()
       .toLowerCase()
@@ -33,7 +41,9 @@ export default defineEventHandler(async (event) => {
 
   // 2. Fetch Dynamic Salary Data
   // We'll fetch titles and countries to build the /salary/[title]/[country] URLs
-  let query: any = db.collection('jobs').select('title', 'country', 'location');
+  let query: Query<SitemapJobFields> = db
+    .collection('jobs')
+    .select('title', 'country', 'location') as Query<SitemapJobFields>;
 
   if (!isBenchmark) {
     if (isAmIUnderpaidUS) {
@@ -45,7 +55,7 @@ export default defineEventHandler(async (event) => {
 
   const jobsSnapshot = await query.limit(5000).get();
 
-  const dynamicRoutes = jobsSnapshot.docs.map((doc: any) => {
+  const dynamicRoutes = jobsSnapshot.docs.map((doc: QueryDocumentSnapshot<SitemapJobFields>) => {
     const data = doc.data();
     const country = data.country || 'UK'; // Default if missing
 

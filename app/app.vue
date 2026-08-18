@@ -39,7 +39,7 @@ onMounted(() => {
     if (lastLogged !== today) {
       localStorage.setItem('last_session_logged', today);
       // Fire and forget
-      $fetch('/api/analytics/session', { method: 'POST' }).catch(() => {});
+      $fetch('/api/analytics/session', { method: 'POST' }).catch(() => undefined);
     }
   }, 2000);
 });

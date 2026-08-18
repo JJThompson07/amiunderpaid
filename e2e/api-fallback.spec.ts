@@ -42,7 +42,7 @@ test.describe('API Fallback (Reed)', () => {
     // Navigate via client-side router
     await page.evaluate(() => {
       const nuxtRoot = document.querySelector('#__nuxt');
-      // @ts-ignore
+      // @ts-expect-error -- __vue_app__ is Vue's internal dev-only hook, not a typed DOM property
       const router = nuxtRoot?.__vue_app__?.config?.globalProperties?.$router;
       if (router) {
         router.push('/salary/software-engineer/gb');
@@ -109,7 +109,7 @@ test.describe('API Fallback (Reed)', () => {
     // Navigate via client-side router
     await page.evaluate(() => {
       const nuxtRoot = document.querySelector('#__nuxt');
-      // @ts-ignore
+      // @ts-expect-error -- __vue_app__ is Vue's internal dev-only hook, not a typed DOM property
       const router = nuxtRoot?.__vue_app__?.config?.globalProperties?.$router;
       if (router) {
         router.push('/salary/software-engineer/us/new-york');
