@@ -9,21 +9,12 @@ if (!process.env.FIREBASE_API_KEY && !process.env.CI && process.env.NODE_ENV !==
   );
 }
 
-if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
-  try {
-    const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString(
-      'utf-8'
-    );
-    // Parse and stringify to guarantee it is a single-line string
-    const singleLineJson = JSON.stringify(JSON.parse(decoded));
-    process.env.GOOGLE_APPLICATION_CREDENTIALS = singleLineJson;
-  } catch (error) {
-    // Intentional diagnostic log: this runs at build/server startup, before any
-    // app-level logging utility is available.
-    // eslint-disable-next-line no-console
-    console.error('⚠️ Failed to decode FIREBASE_SERVICE_ACCOUNT_BASE64', error);
-  }
-}
+// NOTE: GOOGLE_APPLICATION_CREDENTIALS (needed by vuefire's own admin app —
+// see server/plugins/1.firebaseInit.ts) is deliberately NOT set here. This
+// top-level nuxt.config.ts code only runs during `nuxt build`; on serverless
+// platforms (Vercel) the build and the deployed runtime function are separate
+// processes/containers, so a process.env mutation here never reaches request
+// handling at runtime. It must be set at Nitro runtime startup instead.
 
 const isDev = process.env.NODE_ENV !== 'production';
 const isE2E = process.env.E2E === 'true';
