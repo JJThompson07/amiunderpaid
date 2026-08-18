@@ -1,6 +1,10 @@
+import type { Ref } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useRecruiterCards } from '../useRecruiterCards';
+
+const mockRef = (value: string | null): Ref<string | null> =>
+  ({ value }) as unknown as Ref<string | null>;
 
 const mockRoute = { fullPath: '/test-path' };
 const mockTerritories = [{ id: 1, name: 'London' }];
@@ -8,7 +12,7 @@ const mockTerritories = [{ id: 1, name: 'London' }];
 vi.stubGlobal('useRoute', () => mockRoute);
 vi.stubGlobal('useTerritories', () => ({ allTerritories: mockTerritories }));
 
-vi.stubGlobal('useAsyncData', async (key: string, fetcher: any) => {
+vi.stubGlobal('useAsyncData', async (key: string, fetcher: () => Promise<unknown>) => {
   const result = await fetcher();
   return {
     data: { value: result },
@@ -16,23 +20,24 @@ vi.stubGlobal('useAsyncData', async (key: string, fetcher: any) => {
   };
 });
 
-vi.stubGlobal('$fetch', vi.fn().mockResolvedValue({ success: true, cards: [{ id: '123' }] }));
+const fetchMock = vi.fn().mockResolvedValue({ success: true, cards: [{ id: '123' }] });
+vi.stubGlobal('$fetch', fetchMock);
 
-vi.stubGlobal('computed', (fn: any) => ({
-  get value() {
+vi.stubGlobal('computed', <T>(fn: () => T) => ({
+  get value(): T {
     return fn();
   }
 }));
 
 describe('useRecruiterCards', () => {
-  let location: any;
-  let matchedLocation: any;
-  let adzunaCategory: any;
+  let location: Ref<string | null>;
+  let matchedLocation: Ref<string | null>;
+  let adzunaCategory: Ref<string | null>;
 
   beforeEach(() => {
-    location = { value: null };
-    matchedLocation = { value: null };
-    adzunaCategory = { value: null };
+    location = mockRef(null);
+    matchedLocation = mockRef(null);
+    adzunaCategory = mockRef(null);
 
     vi.clearAllMocks();
   });
@@ -54,7 +59,7 @@ describe('useRecruiterCards', () => {
     location.value = 'National';
     const { recruiterCards } = await useRecruiterCards(location, matchedLocation, adzunaCategory);
     expect(recruiterCards.value).toEqual([]);
-    expect((globalThis as any).$fetch).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('returns empty cards if adzunaCategory is null', async () => {
@@ -62,7 +67,7 @@ describe('useRecruiterCards', () => {
     adzunaCategory.value = null;
     const { recruiterCards } = await useRecruiterCards(location, matchedLocation, adzunaCategory);
     expect(recruiterCards.value).toEqual([]);
-    expect((globalThis as any).$fetch).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('fetches cards when territoryId and adzunaCategory are present', async () => {
@@ -75,7 +80,7 @@ describe('useRecruiterCards', () => {
       'custom-prefix'
     );
 
-    expect((globalThis as any).$fetch).toHaveBeenCalledWith('/api/user/search/recruiter-card', {
+    expect(fetchMock).toHaveBeenCalledWith('/api/user/search/recruiter-card', {
       query: { territoryId: 1, category: 'IT' }
     });
     expect(recruiterCards.value).toEqual([{ id: '123' }]);

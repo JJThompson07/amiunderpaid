@@ -3,7 +3,6 @@ import { useUserLogging } from '../useUserLogging';
 
 describe('useUserLogging', () => {
   let mockFetch: ReturnType<typeof vi.fn>;
-  let mock$fetch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     // Stub useNuxtApp

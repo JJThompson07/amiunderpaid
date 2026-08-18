@@ -1,3 +1,4 @@
+import type { Ref } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useJobAutocomplete } from '../useJobAutocomplete';
@@ -11,12 +12,15 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('firebase/auth', () => ({ getAuth: vi.fn() }));
 
 // Mock refs
-vi.stubGlobal('ref', (val: any) => ({ value: val }));
+vi.stubGlobal('ref', <T>(val: T) => ({ value: val }));
 
 // Mock useDebounceFn - just call the function directly
-vi.stubGlobal('useDebounceFn', (fn: Function) => {
-  return (...args: any[]) => fn(...args);
+vi.stubGlobal('useDebounceFn', (fn: (...args: unknown[]) => unknown) => {
+  return (...args: unknown[]): unknown => fn(...args);
 });
+
+// Builds a fake `Ref<string>` for tests that don't run through the real `ref()` composable.
+const mockRef = (value: string): Ref<string> => ({ value }) as unknown as Ref<string>;
 
 const mockSearch = vi.fn();
 const mockSearchForFacetValues = vi.fn();
@@ -44,11 +48,11 @@ describe('useJobAutocomplete', () => {
       ]
     });
 
-    const country = { value: 'UK' };
-    const location = { value: '' };
-    const title = { value: '' };
+    const country = mockRef('UK');
+    const location = mockRef('');
+    const title = mockRef('');
 
-    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    const composable = useJobAutocomplete(country, location, title);
     await composable.fetchTitles('soft');
 
     expect(mockInitIndex).toHaveBeenCalledWith('job_titles');
@@ -67,11 +71,11 @@ describe('useJobAutocomplete', () => {
       hits: [{ title: 'Teacher', id_code: '456' }]
     });
 
-    const country = { value: 'USA' };
-    const location = { value: 'New York' };
-    const title = { value: '' };
+    const country = mockRef('USA');
+    const location = mockRef('New York');
+    const title = mockRef('');
 
-    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    const composable = useJobAutocomplete(country, location, title);
     composable.locationOptions.value = [{ label: 'New York', value: 'New York' }];
     await composable.fetchTitles('teach');
 
@@ -87,10 +91,10 @@ describe('useJobAutocomplete', () => {
   });
 
   it('does not fetch if search term is less than 2 chars', async () => {
-    const country = { value: 'UK' };
-    const location = { value: '' };
-    const title = { value: '' };
-    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    const country = mockRef('UK');
+    const location = mockRef('');
+    const title = mockRef('');
+    const composable = useJobAutocomplete(country, location, title);
     composable.titleOptions.value = [{ label: 'test', value: 'test' }];
 
     await composable.fetchTitles('a');
@@ -103,11 +107,11 @@ describe('useJobAutocomplete', () => {
       facetHits: [{ value: 'London' }]
     });
 
-    const country = { value: 'UK' };
-    const location = { value: '' };
-    const title = { value: '' };
+    const country = mockRef('UK');
+    const location = mockRef('');
+    const title = mockRef('');
 
-    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    const composable = useJobAutocomplete(country, location, title);
     await composable.fetchLocations('lon');
 
     expect(mockInitIndex).toHaveBeenCalledWith('regional_salary_benchmarks');
@@ -123,11 +127,11 @@ describe('useJobAutocomplete', () => {
       facetHits: [{ value: 'New York' }]
     });
 
-    const country = { value: 'USA' };
-    const location = { value: '' };
-    const title = { value: 'Teacher' };
+    const country = mockRef('USA');
+    const location = mockRef('');
+    const title = mockRef('Teacher');
 
-    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    const composable = useJobAutocomplete(country, location, title);
     composable.titleOptions.value = [{ label: 'Teacher', value: 'Teacher' }];
     await composable.fetchLocations('new');
 
@@ -143,11 +147,11 @@ describe('useJobAutocomplete', () => {
       facetHits: [{ value: 'Texas' }]
     });
 
-    const country = { value: 'USA' };
-    const location = { value: '' };
-    const title = { value: '' };
+    const country = mockRef('USA');
+    const location = mockRef('');
+    const title = mockRef('');
 
-    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    const composable = useJobAutocomplete(country, location, title);
     await composable.fetchLocations('tex');
 
     expect(mockSearchForFacetValues).toHaveBeenCalledWith('location', 'tex', {
@@ -158,12 +162,8 @@ describe('useJobAutocomplete', () => {
 
   it('fetchTitles ignores error', async () => {
     mockSearch.mockRejectedValueOnce(new Error('Failed'));
-    const country = { value: 'UK' };
-    const composable = useJobAutocomplete(
-      country as any,
-      { value: '' } as any,
-      { value: '' } as any
-    );
+    const country = mockRef('UK');
+    const composable = useJobAutocomplete(country, mockRef(''), mockRef(''));
     await composable.fetchTitles('error-dev');
     expect(composable.titleOptions.value).toEqual([]);
     expect(composable.fetching.value).toBe(false);
@@ -171,23 +171,15 @@ describe('useJobAutocomplete', () => {
 
   it('fetchLocations ignores error', async () => {
     mockSearchForFacetValues.mockRejectedValueOnce(new Error('Failed'));
-    const country = { value: 'UK' };
-    const composable = useJobAutocomplete(
-      country as any,
-      { value: '' } as any,
-      { value: '' } as any
-    );
+    const country = mockRef('UK');
+    const composable = useJobAutocomplete(country, mockRef(''), mockRef(''));
     await composable.fetchLocations('error-lon');
     expect(composable.locationOptions.value).toEqual([]);
     expect(composable.fetching.value).toBe(false);
   });
 
   it('does not fetch locations if search term is less than 2 chars', async () => {
-    const composable = useJobAutocomplete(
-      { value: 'UK' } as any,
-      { value: '' } as any,
-      { value: '' } as any
-    );
+    const composable = useJobAutocomplete(mockRef('UK'), mockRef(''), mockRef(''));
     composable.locationOptions.value = [{ label: 'test', value: 'test' }];
 
     await composable.fetchLocations('a');
@@ -199,10 +191,10 @@ describe('useJobAutocomplete', () => {
       hits: [{ title: 'Unique Title' }]
     });
 
-    const country = { value: 'UK' };
-    const location = { value: '' };
-    const title = { value: '' };
-    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    const country = mockRef('UK');
+    const location = mockRef('');
+    const title = mockRef('');
+    const composable = useJobAutocomplete(country, location, title);
 
     // First call
     await composable.fetchTitles('unique-search');
@@ -219,10 +211,10 @@ describe('useJobAutocomplete', () => {
       hits: [{ title: 'Another Title' }]
     });
 
-    const country = { value: 'USA' };
-    const location = { value: '' };
-    const title = { value: '' };
-    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    const country = mockRef('USA');
+    const location = mockRef('');
+    const title = mockRef('');
+    const composable = useJobAutocomplete(country, location, title);
 
     // First call (location is empty)
     await composable.fetchTitles('another-search');
@@ -243,10 +235,10 @@ describe('useJobAutocomplete', () => {
       facetHits: [{ value: 'Unique Location' }]
     });
 
-    const country = { value: 'UK' };
-    const location = { value: '' };
-    const title = { value: '' };
-    const composable = useJobAutocomplete(country as any, location as any, title as any);
+    const country = mockRef('UK');
+    const location = mockRef('');
+    const title = mockRef('');
+    const composable = useJobAutocomplete(country, location, title);
 
     // First call
     await composable.fetchLocations('unique-loc');

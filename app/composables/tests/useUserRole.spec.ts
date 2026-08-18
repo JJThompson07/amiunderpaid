@@ -8,7 +8,7 @@ vi.stubGlobal('ref', ref);
 vi.stubGlobal('watch', watch);
 
 // Mock Nuxt useState
-vi.stubGlobal('useState', (key: string, init: () => any) => {
+vi.stubGlobal('useState', (key: string, init: () => unknown) => {
   const state = ref(init ? init() : null);
   return state;
 });

@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAdminClient } from '../useAdminClient';
@@ -12,14 +13,14 @@ vi.mock('firebase/auth', () => ({ getAuth: vi.fn() }));
 
 const mockAdminFetch = vi.fn();
 vi.stubGlobal('useAdminFetch', () => mockAdminFetch);
-vi.stubGlobal('ref', (val: any) => ({ value: val }));
+vi.stubGlobal('ref', <T>(val: T) => ({ value: val }));
 
 describe('useAdminClient', () => {
-  let logMock: any;
+  let logMock: Mock<(msg: string) => void>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    logMock = vi.fn();
+    logMock = vi.fn<(msg: string) => void>();
   });
 
   describe('batchDelete', () => {

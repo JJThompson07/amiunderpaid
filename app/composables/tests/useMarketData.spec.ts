@@ -12,8 +12,8 @@ vi.stubGlobal('useNuxtApp', () => ({
   }
 }));
 
-const stateCache: Record<string, any> = {};
-vi.stubGlobal('useState', (key: string, init: () => any) => {
+let stateCache: Record<string, { value: unknown }> = {};
+vi.stubGlobal('useState', <T>(key: string, init: () => T) => {
   if (!stateCache[key]) {
     stateCache[key] = { value: init ? init() : null };
   }
@@ -23,7 +23,7 @@ vi.stubGlobal('useState', (key: string, init: () => any) => {
 describe('useMarketData', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.keys(stateCache).forEach((key) => delete stateCache[key]);
+    stateCache = {};
   });
 
   it('initializes without throwing and provides default state', () => {

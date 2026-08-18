@@ -10,18 +10,24 @@ vi.mock('firebase/firestore', () => ({
 }));
 vi.mock('firebase/auth', () => ({ getAuth: vi.fn() }));
 
-const mockRoute = { query: {} as any, params: {} as any };
+const mockRoute: { query: Record<string, string>; params: Record<string, string> } = {
+  query: {},
+  params: {}
+};
 vi.stubGlobal('useRoute', () => mockRoute);
-vi.stubGlobal('useI18n', () => ({ t: (k: string) => k }));
+vi.stubGlobal('useI18n', (): { t: (k: string) => string } => ({ t: (k: string) => k }));
 
 const mockAnalytics = { trackAmbiguousSearch: vi.fn() };
 vi.stubGlobal('useAnalytics', () => mockAnalytics);
 
+type MockJobListing = { category?: { label: string }; salary_max?: number };
+type MockJobsData = { results?: MockJobListing[] } | null;
+
 const mockAdzuna = {
   fetchJobs: vi.fn(),
   fetchHistogram: vi.fn(),
-  cachedGovIdCode: { value: null as any },
-  jobsData: { value: null as any },
+  cachedGovIdCode: { value: null as string | null },
+  jobsData: { value: null as MockJobsData },
   histogramTotalCount: { value: 0 },
   histogramBuckets: { value: [] },
   histogramRange: { value: {} },
@@ -56,7 +62,7 @@ vi.stubGlobal('useMicroData', () => mockMicroData);
 
 vi.stubGlobal('useDevProviderOverride', () => ({ value: 'auto' }));
 
-vi.stubGlobal('useAsyncData', async (key: string, fetcher: Function) => {
+vi.stubGlobal('useAsyncData', async (key: string, fetcher: () => Promise<unknown>) => {
   const data = await fetcher();
   return {
     data: { value: data },
@@ -65,23 +71,24 @@ vi.stubGlobal('useAsyncData', async (key: string, fetcher: Function) => {
   };
 });
 
-vi.stubGlobal('ref', (val: any) => {
+vi.stubGlobal('ref', <T>(val: T) => {
   return {
-    get value() {
+    get value(): T {
       return val;
     },
-    set value(v) {
+    set value(v: T) {
       val = v;
     }
   };
 });
-vi.stubGlobal('computed', (fn: any) => ({
-  get value() {
+vi.stubGlobal('computed', <T>(fn: () => T) => ({
+  get value(): T {
     return fn();
   }
 }));
-const watchCallbacks: any[] = [];
-vi.stubGlobal('watch', (source: any, cb: any) => {
+type WatchCallback = (value: unknown) => void;
+const watchCallbacks: WatchCallback[] = [];
+vi.stubGlobal('watch', (source: unknown, cb: WatchCallback) => {
   watchCallbacks.push(cb);
 });
 const mockNavigateTo = vi.fn();

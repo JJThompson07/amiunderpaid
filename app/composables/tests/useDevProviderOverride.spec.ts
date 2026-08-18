@@ -1,19 +1,22 @@
+import type { CookieOptions } from '#app';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useDevProviderOverride } from '../useDevProviderOverride';
 
-const cookieCache: Record<string, any> = {};
-vi.stubGlobal('useCookie', (key: string, options: any) => {
-  if (!(key in cookieCache)) {
-    cookieCache[key] = { value: options?.default ? options.default() : null };
+type FakeCookieRef = { value: string | null };
+
+const cookieCache = new Map<string, FakeCookieRef>();
+vi.stubGlobal('useCookie', (key: string, options?: CookieOptions<string>) => {
+  if (!cookieCache.has(key)) {
+    cookieCache.set(key, { value: options?.default ? (options.default() as string) : null });
   }
-  return cookieCache[key];
+  return cookieCache.get(key);
 });
 
 describe('useDevProviderOverride', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.keys(cookieCache).forEach((key) => delete cookieCache[key]);
+    cookieCache.clear();
   });
 
   it('initializes to auto', () => {

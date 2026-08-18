@@ -18,12 +18,16 @@ describe('useCarousel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     widthRef.value = 1000;
-    vi.mocked(useElementSize).mockReturnValue({ width: widthRef } as any);
+    vi.mocked(useElementSize).mockReturnValue({
+      width: widthRef,
+      height: ref(0),
+      stop: vi.fn()
+    });
   });
 
   it('computes card width and maxItemsToShow correctly for different widths', async () => {
     widthRef.value = 1000;
-    const { cardWidth, trackRef } = useCarousel();
+    const { cardWidth } = useCarousel();
     expect(cardWidth.value).toBe('calc((100% - 16px) / 2)');
 
     widthRef.value = 500; // < 640
@@ -41,10 +45,9 @@ describe('useCarousel', () => {
 
   it('computes actualItemsToShow correctly when itemCount > 0', async () => {
     widthRef.value = 1200; // max is 3
-    const { cardWidth, trackRef } = useCarousel();
 
     // Mount to trigger updateItemCount which sets itemCount
-    const TestComponent = defineComponent({
+    const testComponent = defineComponent({
       template: '<div ref="trackRef"><div>c1</div><div>c2</div></div>',
       setup() {
         const { trackRef, cardWidth } = useCarousel();
@@ -52,7 +55,7 @@ describe('useCarousel', () => {
       }
     });
 
-    const wrapper = mount(TestComponent);
+    const wrapper = mount(testComponent);
     await nextTick();
 
     // itemCount should be 2 now, min(3, 2) = 2
@@ -79,7 +82,9 @@ describe('useCarousel', () => {
     mockTrack.appendChild(child1);
 
     const originalGetComputedStyle = window.getComputedStyle;
-    window.getComputedStyle = vi.fn().mockReturnValue({ gap: '16px' } as any);
+    window.getComputedStyle = vi
+      .fn()
+      .mockReturnValue({ gap: '16px' } as unknown as CSSStyleDeclaration);
     mockTrack.scrollBy = vi.fn();
     trackRef.value = mockTrack;
 
@@ -108,7 +113,7 @@ describe('useCarousel', () => {
 
   it('triggers lifecycle hooks and updates itemCount', async () => {
     vi.useFakeTimers();
-    const TestComponent = defineComponent({
+    const testComponent = defineComponent({
       props: ['testProp'],
       template: '<div ref="trackRef"><div>c1</div><div>c2</div></div>',
       setup() {
@@ -117,7 +122,7 @@ describe('useCarousel', () => {
       }
     });
 
-    const wrapper = mount(TestComponent);
+    const wrapper = mount(testComponent);
     vi.runAllTimers();
 
     // Trigger onUpdated

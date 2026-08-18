@@ -1,4 +1,14 @@
-export const useRegion = () => {
+import type { ComputedRef } from 'vue';
+
+type UseRegionReturn = {
+  isUKSite: ComputedRef<boolean>;
+  isUSSite: ComputedRef<boolean>;
+  currentCountry: ComputedRef<'UK' | 'USA'>;
+  currencySymbol: ComputedRef<'£' | '$'>;
+  alternateSiteUrl: ComputedRef<string>;
+};
+
+export const useRegion = (): UseRegionReturn => {
   const { locale } = useI18n();
   const url = useRequestURL();
 

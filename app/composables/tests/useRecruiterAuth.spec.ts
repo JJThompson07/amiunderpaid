@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { UserCredential } from 'firebase/auth';
 import {
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -15,8 +16,9 @@ vi.mock('firebase/auth', () => ({
 }));
 
 const mockAuth = { currentUser: { uid: '123' } };
-vi.stubGlobal('useFirebaseAuth', () => mockAuth);
-vi.stubGlobal('useI18n', () => ({ t: (k: string) => k }));
+const mockUseFirebaseAuth = vi.fn((): { currentUser: { uid: string } | null } | null => mockAuth);
+vi.stubGlobal('useFirebaseAuth', mockUseFirebaseAuth);
+vi.stubGlobal('useI18n', () => ({ t: (k: string): string => k }));
 
 const mockShowToast = vi.fn();
 vi.stubGlobal('useSystemToast', () => ({ showToast: mockShowToast }));
@@ -24,8 +26,18 @@ vi.stubGlobal('useSystemToast', () => ({ showToast: mockShowToast }));
 const mockCookie = { value: 'session-token' as string | null };
 vi.stubGlobal('useCookie', () => mockCookie);
 
-vi.stubGlobal('ref', (val: any) => ({ value: val }));
-vi.stubGlobal('navigateTo', vi.fn());
+vi.stubGlobal('ref', <T>(val: T) => ({ value: val }));
+const mockNavigateTo = vi.fn();
+vi.stubGlobal('navigateTo', mockNavigateTo);
+
+// `useFirebaseAuth` is a Nuxt auto-import stubbed onto globalThis per-test (not a real
+// ambient global), so TypeScript has no declaration for it — this narrow cast reads back
+// whichever stub the current test installed, matching the runtime dynamic-global pattern.
+type RecruiterAuthGlobals = {
+  useFirebaseAuth: () => { currentUser: { uid: string } | null } | null;
+};
+const getGlobalUseFirebaseAuth = (): RecruiterAuthGlobals['useFirebaseAuth'] =>
+  (globalThis as unknown as RecruiterAuthGlobals).useFirebaseAuth;
 
 describe('useRecruiterAuth', () => {
   beforeEach(() => {
@@ -41,7 +53,7 @@ describe('useRecruiterAuth', () => {
 
   describe('login', () => {
     it('successfully logs in', async () => {
-      (signInWithEmailAndPassword as any).mockResolvedValue(undefined);
+      vi.mocked(signInWithEmailAndPassword).mockResolvedValue({} as unknown as UserCredential);
       const { login, loading } = useRecruiterAuth();
 
       const promise = login('test@test.com', 'password');
@@ -58,7 +70,7 @@ describe('useRecruiterAuth', () => {
     });
 
     it('handles login errors', async () => {
-      (signInWithEmailAndPassword as any).mockRejectedValue({ code: 'auth/wrong-password' });
+      vi.mocked(signInWithEmailAndPassword).mockRejectedValue({ code: 'auth/wrong-password' });
       const { login, error } = useRecruiterAuth();
 
       const result = await login('test@test.com', 'wrong');
@@ -69,20 +81,20 @@ describe('useRecruiterAuth', () => {
 
   describe('logout', () => {
     it('logs out and clears session', async () => {
-      (signOut as any).mockResolvedValue(undefined);
+      vi.mocked(signOut).mockResolvedValue(undefined);
       const { logout } = useRecruiterAuth();
 
       await logout();
 
       expect(signOut).toHaveBeenCalledWith(mockAuth);
       expect(mockCookie.value).toBeNull();
-      expect((globalThis as any).navigateTo).toHaveBeenCalledWith('/recruiter/login');
+      expect(mockNavigateTo).toHaveBeenCalledWith('/recruiter/login');
     });
   });
 
   describe('resetPassword', () => {
     it('sends password reset email', async () => {
-      (sendPasswordResetEmail as any).mockResolvedValue(undefined);
+      vi.mocked(sendPasswordResetEmail).mockResolvedValue(undefined);
       const { resetPassword, loading } = useRecruiterAuth();
 
       const result = await resetPassword('test@test.com');
@@ -93,7 +105,7 @@ describe('useRecruiterAuth', () => {
     });
 
     it('handles reset errors', async () => {
-      (sendPasswordResetEmail as any).mockRejectedValue({ code: 'auth/user-not-found' });
+      vi.mocked(sendPasswordResetEmail).mockRejectedValue({ code: 'auth/user-not-found' });
 
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
       const { resetPassword, error } = useRecruiterAuth();
@@ -108,7 +120,7 @@ describe('useRecruiterAuth', () => {
 
   describe('resendVerificationEmail', () => {
     it('resends verification email', async () => {
-      (sendEmailVerification as any).mockResolvedValue(undefined);
+      vi.mocked(sendEmailVerification).mockResolvedValue(undefined);
       const { resendVerificationEmail } = useRecruiterAuth();
 
       const result = await resendVerificationEmail();
@@ -118,7 +130,7 @@ describe('useRecruiterAuth', () => {
     });
 
     it('handles too many requests error', async () => {
-      (sendEmailVerification as any).mockRejectedValue({ code: 'auth/too-many-requests' });
+      vi.mocked(sendEmailVerification).mockRejectedValue({ code: 'auth/too-many-requests' });
 
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
       const { resendVerificationEmail } = useRecruiterAuth();
@@ -135,7 +147,7 @@ describe('useRecruiterAuth', () => {
     });
 
     it('handles generic resend error', async () => {
-      (sendEmailVerification as any).mockRejectedValue({ code: 'auth/generic-error' });
+      vi.mocked(sendEmailVerification).mockRejectedValue({ code: 'auth/generic-error' });
 
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
       const { resendVerificationEmail } = useRecruiterAuth();
@@ -147,7 +159,7 @@ describe('useRecruiterAuth', () => {
     });
 
     it('returns false if no auth or no current user', async () => {
-      const oldAuth = vi.mocked((globalThis as any).useFirebaseAuth)();
+      const oldAuth = getGlobalUseFirebaseAuth()();
       vi.stubGlobal('useFirebaseAuth', () => null);
 
       const { resendVerificationEmail } = useRecruiterAuth();
@@ -165,7 +177,7 @@ describe('useRecruiterAuth', () => {
 
   describe('Additional Error Branches', () => {
     it('handles login without auth', async () => {
-      const oldAuth = vi.mocked((globalThis as any).useFirebaseAuth)();
+      const oldAuth = getGlobalUseFirebaseAuth()();
       vi.stubGlobal('useFirebaseAuth', () => null);
 
       const { login, error } = useRecruiterAuth();
@@ -178,7 +190,7 @@ describe('useRecruiterAuth', () => {
     });
 
     it('handles login too-many-requests', async () => {
-      (signInWithEmailAndPassword as any).mockRejectedValue({ code: 'auth/too-many-requests' });
+      vi.mocked(signInWithEmailAndPassword).mockRejectedValue({ code: 'auth/too-many-requests' });
       const { login, error } = useRecruiterAuth();
 
       const result = await login('a', 'b');
@@ -187,7 +199,7 @@ describe('useRecruiterAuth', () => {
     });
 
     it('handles login unknown error', async () => {
-      (signInWithEmailAndPassword as any).mockRejectedValue({ code: 'auth/unknown' });
+      vi.mocked(signInWithEmailAndPassword).mockRejectedValue({ code: 'auth/unknown' });
       const { login, error } = useRecruiterAuth();
 
       const result = await login('a', 'b');
@@ -196,7 +208,7 @@ describe('useRecruiterAuth', () => {
     });
 
     it('handles resetPassword without auth', async () => {
-      const oldAuth = vi.mocked((globalThis as any).useFirebaseAuth)();
+      const oldAuth = getGlobalUseFirebaseAuth()();
       vi.stubGlobal('useFirebaseAuth', () => null);
 
       const { resetPassword, error } = useRecruiterAuth();
@@ -209,7 +221,7 @@ describe('useRecruiterAuth', () => {
     });
 
     it('handles resetPassword invalid-email', async () => {
-      (sendPasswordResetEmail as any).mockRejectedValue({ code: 'auth/invalid-email' });
+      vi.mocked(sendPasswordResetEmail).mockRejectedValue({ code: 'auth/invalid-email' });
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       const { resetPassword, error } = useRecruiterAuth();
@@ -221,7 +233,7 @@ describe('useRecruiterAuth', () => {
     });
 
     it('handles resetPassword default error', async () => {
-      (sendPasswordResetEmail as any).mockRejectedValue({ code: 'auth/unknown' });
+      vi.mocked(sendPasswordResetEmail).mockRejectedValue({ code: 'auth/unknown' });
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       const { resetPassword, error } = useRecruiterAuth();

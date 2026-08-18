@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref } from 'vue';
+import type { ComputedRef } from 'vue';
+import type { DocumentReference } from 'firebase/firestore';
 
 import { useUserProfile } from '../useUserProfile';
+import type { UserProfile } from '~~/shared/utils/types';
 
 // Mock Vue's ref and computed to use actual Vue functions so reactivity works
 vi.stubGlobal('computed', computed);
@@ -25,15 +28,13 @@ vi.stubGlobal('useFirestore', () => mockDb);
 const mockUser = ref<{ uid: string } | null>(null);
 vi.stubGlobal('useCurrentUser', () => mockUser);
 
-const mockUserProfile = ref<any>(null);
+const mockUserProfile = ref<UserProfile | null>(null);
 const mockLoadingProfile = ref(false);
-vi.stubGlobal(
-  'useDocument',
-  vi.fn(() => ({
-    data: mockUserProfile,
-    pending: mockLoadingProfile
-  }))
-);
+const mockUseDocument = vi.fn((_: ComputedRef<DocumentReference<UserProfile> | null>) => ({
+  data: mockUserProfile,
+  pending: mockLoadingProfile
+}));
+vi.stubGlobal('useDocument', mockUseDocument);
 
 describe('useUserProfile', () => {
   beforeEach(() => {
@@ -47,11 +48,11 @@ describe('useUserProfile', () => {
     const { userProfile, loadingProfile } = useUserProfile();
 
     // Check that useDocument was called
-    const useDocumentMock = vi.mocked((globalThis as any).useDocument);
+    const useDocumentMock = mockUseDocument;
     expect(useDocumentMock).toHaveBeenCalledTimes(1);
 
     // Evaluate the computed userDocRef
-    const userDocRefComputed = useDocumentMock.mock.calls[0][0];
+    const userDocRefComputed = useDocumentMock.mock.calls[0]![0];
     expect(userDocRefComputed.value).toBe('doc-users-user-123');
 
     // Ensure it returns the values from useDocument
@@ -63,8 +64,8 @@ describe('useUserProfile', () => {
     mockUser.value = null;
     useUserProfile();
 
-    const useDocumentMock = vi.mocked((globalThis as any).useDocument);
-    const userDocRefComputed = useDocumentMock.mock.calls[0][0];
+    const useDocumentMock = mockUseDocument;
+    const userDocRefComputed = useDocumentMock.mock.calls[0]![0];
     expect(userDocRefComputed.value).toBe(null);
   });
 

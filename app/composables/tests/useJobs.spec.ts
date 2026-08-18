@@ -10,17 +10,17 @@ vi.mock('firebase/firestore', () => ({
 }));
 vi.mock('firebase/auth', () => ({ getAuth: vi.fn() }));
 
-const stateCache: Record<string, any> = {};
-vi.stubGlobal('useState', (key: string, init: any) => {
-  if (!(key in stateCache)) {
-    stateCache[key] = { value: init ? init() : null };
+const stateCache = new Map<string, { value: unknown }>();
+vi.stubGlobal('useState', (key: string, init?: () => unknown) => {
+  if (!stateCache.has(key)) {
+    stateCache.set(key, { value: init ? init() : null });
   }
-  return stateCache[key];
+  return stateCache.get(key);
 });
 
-vi.stubGlobal('computed', (fn: any) => {
+vi.stubGlobal('computed', (fn: () => unknown) => {
   return {
-    get value() {
+    get value(): unknown {
       return fn();
     }
   };
@@ -32,7 +32,7 @@ vi.stubGlobal('$fetch', mock$fetch);
 describe('useJobs', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.keys(stateCache).forEach((key) => delete stateCache[key]);
+    stateCache.clear();
   });
 
   it('fetchJobs success populates jobsData', async () => {
@@ -215,7 +215,7 @@ describe('useJobs', () => {
   });
 
   it('isUnderpaid returns true if salary is less than mean', () => {
-    stateCache['market_data_jobs'] = { value: { mean: 60000, count: 5 } };
+    stateCache.set('market_data_jobs', { value: { mean: 60000, count: 5 } });
     const composable = useJobs();
     expect(composable.hasJobsData.value).toBe(true);
     expect(composable.isUnderpaid(50000)).toBe(true);
@@ -228,21 +228,21 @@ describe('useJobs', () => {
   });
 
   it('dataProvider returns provider from jobsData when available', () => {
-    stateCache['market_data_jobs'] = { value: { mean: 50000, count: 5, provider: 'reed' } };
+    stateCache.set('market_data_jobs', { value: { mean: 50000, count: 5, provider: 'reed' } });
     const composable = useJobs();
     expect(composable.dataProvider.value).toBe('reed');
   });
 
   it('dataProvider falls back to distributionData provider when jobsData has none', () => {
-    stateCache['market_data_jobs'] = { value: null };
-    stateCache['market_data_distribution'] = { value: { histogram: {}, provider: 'reed' } };
+    stateCache.set('market_data_jobs', { value: null });
+    stateCache.set('market_data_distribution', { value: { histogram: {}, provider: 'reed' } });
     const composable = useJobs();
     expect(composable.dataProvider.value).toBe('reed');
   });
 
   it('dataProvider defaults to adzuna when neither source has a provider', () => {
-    stateCache['market_data_jobs'] = { value: null };
-    stateCache['market_data_distribution'] = { value: null };
+    stateCache.set('market_data_jobs', { value: null });
+    stateCache.set('market_data_distribution', { value: null });
     const composable = useJobs();
     expect(composable.dataProvider.value).toBe('adzuna');
   });

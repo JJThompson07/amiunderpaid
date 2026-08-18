@@ -30,7 +30,7 @@ vi.stubGlobal('useNuxtApp', () => ({
 }));
 
 // Mock refs
-vi.stubGlobal('ref', (val: any) => ({ value: val }));
+vi.stubGlobal('ref', <T>(val: T) => ({ value: val }));
 
 describe('useMacroData', () => {
   beforeEach(() => {

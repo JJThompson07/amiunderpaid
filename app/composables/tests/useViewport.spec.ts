@@ -6,14 +6,14 @@ let mockWidth = 1000;
 vi.mock('@vueuse/core', () => ({
   useWindowSize: vi.fn(() => ({
     width: {
-      get value() {
+      get value(): number {
         return mockWidth;
       }
     }
   }))
 }));
-vi.stubGlobal('computed', (fn: any) => ({
-  get value() {
+vi.stubGlobal('computed', <T>(fn: () => T) => ({
+  get value(): T {
     return fn();
   }
 }));

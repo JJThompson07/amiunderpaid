@@ -12,7 +12,7 @@ vi.stubGlobal('useNuxtApp', () => ({
   }
 }));
 
-vi.stubGlobal('ref', (val: any) => ({ value: val }));
+vi.stubGlobal('ref', <T>(val: T) => ({ value: val }));
 
 describe('useMicroData', () => {
   beforeEach(() => {

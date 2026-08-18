@@ -1,32 +1,52 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useScheduleMath } from '../useScheduleMath';
+import type { Territory } from '~/components/Territory/ScheduleMatrix.vue';
 
-const mockPricingData = { value: null } as any;
-const mockUserProfile = { value: null } as any;
+import type { TerritoryClaim } from '~~/shared/utils/types';
+
+import { type ScheduleMathEmit, useScheduleMath } from '../useScheduleMath';
+
+type MockPricing = Record<string, Record<string, { basic: number; exclusive: number }>>;
+
+type MockUserProfile = {
+  billingCountry?: string;
+  basicDiscount?: number;
+  exclusiveDiscount?: number;
+  activeTerritories?: TerritoryClaim[];
+  claims?: TerritoryClaim[];
+};
+
+type TestProps = {
+  territories: Territory[];
+  categories: string[];
+  categoryOptions: { label: string; value: string }[];
+  takenMonths?: Record<string, string[]>;
+};
+
+const mockPricingData: { value: MockPricing | null } = { value: null };
+const mockUserProfile: { value: MockUserProfile | null } = { value: null };
 
 vi.stubGlobal('usePricing', () => ({ pricingData: mockPricingData }));
 vi.stubGlobal('useUserProfile', () => ({ userProfile: mockUserProfile }));
 
-vi.stubGlobal('ref', (val: any) => {
-  return { value: val };
-});
-vi.stubGlobal('computed', (fn: any) => {
-  return {
-    get value() {
-      return fn();
-    }
-  };
-});
-vi.stubGlobal('watch', (source: any, cb: any, options: any) => {
-  if (options?.immediate) {
-    cb();
+vi.stubGlobal('ref', <T>(val: T): { value: T } => ({ value: val }));
+vi.stubGlobal('computed', <T>(fn: () => T): { readonly value: T } => ({
+  get value(): T {
+    return fn();
   }
-});
+}));
+vi.stubGlobal(
+  'watch',
+  (source: unknown[], cb: () => void, options: { immediate?: boolean; deep?: boolean }): void => {
+    if (options?.immediate) {
+      cb();
+    }
+  }
+);
 
 describe('useScheduleMath', () => {
-  let emitMock: any;
-  let props: any;
+  let emitMock: ScheduleMathEmit;
+  let props: TestProps;
 
   beforeEach(() => {
     emitMock = vi.fn();
@@ -194,7 +214,7 @@ describe('useScheduleMath', () => {
   it('handles category labels with fallback', () => {
     props.categories.push('UNKNOWN');
     const { matrixRows } = useScheduleMath(props, emitMock);
-    const unknownRow = matrixRows.value.find((r: any) => r.categoryValue === 'UNKNOWN');
+    const unknownRow = matrixRows.value.find((r) => r.categoryValue === 'UNKNOWN');
     expect(unknownRow?.categoryLabel).toBe('UNKNOWN');
   });
 

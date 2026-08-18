@@ -89,7 +89,7 @@ export const useJobDictionary = (): {
       if (hits.length > 0 && hits[0]) {
         const topHit = hits[0];
         const query = cleanTitle.toLowerCase().trim();
-        const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normalize = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '');
         const normQuery = normalize(query);
 
         // 1. Did they exactly type the official Group Name?

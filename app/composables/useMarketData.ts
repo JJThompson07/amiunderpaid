@@ -1,4 +1,5 @@
 import type { SearchClient } from 'algoliasearch';
+import type { Ref } from 'vue';
 
 export type SalaryBenchmark = {
   title: string;
@@ -23,7 +24,15 @@ export type ResolvedJobIdentity = {
   objectID?: string; // Default Algolia ID
 };
 
-export const useMarketData = () => {
+export const useMarketData = (): {
+  resolving: Ref<boolean>;
+  matchedTitle: Ref<string>;
+  matchedIdCode: Ref<string | undefined>;
+  ambiguousMatches: Ref<SalaryBenchmark[]>;
+  isGenericFallback: Ref<boolean>;
+  resolveUkIdentity: (title: string, idCode?: string) => Promise<void>;
+  resolveUsaIdentity: (title: string, idCode?: string) => Promise<void>;
+} => {
   const { $algolia } = useNuxtApp();
   const searchClient = $algolia as SearchClient;
 
@@ -34,10 +43,10 @@ export const useMarketData = () => {
   // These are the only variables we need to keep! They define "Who" the user is.
   const matchedTitle = useState<string>('market_matched_title', () => '');
   const matchedIdCode = useState<string | undefined>('market_matched_id_code', () => undefined);
-  const ambiguousMatches = useState<any[]>('market_ambiguous_matches', () => []);
+  const ambiguousMatches = useState<SalaryBenchmark[]>('market_ambiguous_matches', () => []);
   const isGenericFallback = useState<boolean>('market_generic_fallback', () => false);
 
-  const resetIdentity = () => {
+  const resetIdentity = (): void => {
     matchedTitle.value = '';
     matchedIdCode.value = undefined;
     ambiguousMatches.value = [];
@@ -78,7 +87,7 @@ export const useMarketData = () => {
           .replace(/\s+/g, ' ')
           .trim();
 
-        const { hits: titleHits } = await jobTitlesIndex.search<any>(sanitizedQuery, {
+        const { hits: titleHits } = await jobTitlesIndex.search<SalaryBenchmark>(sanitizedQuery, {
           filters: `country:UK`,
           hitsPerPage: 10
         });
@@ -87,13 +96,13 @@ export const useMarketData = () => {
 
         if (targetGroup) {
           bestTitleMatch = titleHits.find(
-            (h: any) => h.group?.toLowerCase() === targetGroup.toLowerCase()
+            (h) => h.group?.toLowerCase() === targetGroup.toLowerCase()
           );
         }
 
         if (!bestTitleMatch && titleHits.length > 0) {
           if (titleHits.length > 1) {
-            const groups = new Set(titleHits.map((h: any) => h.group).filter(Boolean));
+            const groups = new Set(titleHits.map((h) => h.group).filter(Boolean));
             if (groups.size > 1) {
               ambiguousMatches.value = titleHits; // Trigger your UI modal!
             }
@@ -110,20 +119,22 @@ export const useMarketData = () => {
 
         // 4. FALLBACK: DIRECT BENCHMARK SEARCH
         // If the SOC dictionary lookup completely fails, try searching the benchmarks index directly.
-        const { hits } = await nationalIndex.search<any>(searchTitle, {
+        const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
           filters: `country:UK`,
           hitsPerPage: 1
         });
 
-        if (hits.length > 0) {
-          matchedIdCode.value = hits[0].id_code;
-          matchedTitle.value = hits[0].title;
+        const [bestBenchmarkMatch] = hits;
+        if (bestBenchmarkMatch) {
+          matchedIdCode.value = bestBenchmarkMatch.id_code;
+          matchedTitle.value = bestBenchmarkMatch.title;
         } else {
           // Absolute worst case: Fallback to generic professional
           isGenericFallback.value = true;
           matchedTitle.value = 'Professional (Generic)';
         }
       } catch (error) {
+        // eslint-disable-next-line no-console -- surfaces Algolia fetch failures for server-side debugging
         console.error('Error resolving UK identity:', error);
       } finally {
         resolving.value = false;
@@ -154,22 +165,24 @@ export const useMarketData = () => {
         // 2. TEXT SEARCH THE MASTER INDEX
         // The USA doesn't have a separate job_titles dictionary in this setup, so we fuzzy search
         // the main benchmark index to find the closest official SOC code.
-        const { hits } = await nationalIndex.search<any>(searchTitle, {
+        const { hits } = await nationalIndex.search<SalaryBenchmark>(searchTitle, {
           filters: `country:USA`,
           queryLanguages: ['en'],
           removeWordsIfNoResults: 'allOptional',
           hitsPerPage: 1
         });
 
-        if (hits.length > 0) {
-          matchedIdCode.value = hits[0].id_code;
-          matchedTitle.value = hits[0].title;
+        const [bestBenchmarkMatch] = hits;
+        if (bestBenchmarkMatch) {
+          matchedIdCode.value = bestBenchmarkMatch.id_code;
+          matchedTitle.value = bestBenchmarkMatch.title;
         } else {
           // Absolute worst case: Fallback to generic professional
           isGenericFallback.value = true;
           matchedTitle.value = 'Professional (Generic)';
         }
       } catch (error) {
+        // eslint-disable-next-line no-console -- surfaces Algolia fetch failures for server-side debugging
         console.error('Error resolving USA identity:', error);
       } finally {
         resolving.value = false;

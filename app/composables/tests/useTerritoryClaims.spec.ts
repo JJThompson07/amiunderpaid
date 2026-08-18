@@ -24,15 +24,20 @@ vi.stubGlobal('useUserProfile', () => ({
   userProfile: mockUserProfile
 }));
 
-const mockClaimsData = ref<any[] | null>(null);
+type MockTerritoryClaim = {
+  territoryId: number;
+  categoryValue: string;
+  takenExclusiveMonths: Record<string, string>;
+};
+type MockQueryRef = { value: unknown };
+
+const mockClaimsData = ref<MockTerritoryClaim[] | null>(null);
 const mockPending = ref(false);
-vi.stubGlobal(
-  'useCollection',
-  vi.fn(() => ({
-    data: mockClaimsData,
-    pending: mockPending
-  }))
-);
+const useCollectionMock = vi.fn((_: MockQueryRef) => ({
+  data: mockClaimsData,
+  pending: mockPending
+}));
+vi.stubGlobal('useCollection', useCollectionMock);
 
 describe('useTerritoryClaims', () => {
   beforeEach(() => {
@@ -64,8 +69,7 @@ describe('useTerritoryClaims', () => {
     expect(claimsLimitExceeded.value).toBe(true);
 
     // We can evaluate the computed by checking what useCollection was called with
-    const useCollectionMock = vi.mocked((globalThis as any).useCollection);
-    const claimsQueryComputed = useCollectionMock.mock.calls[0][0];
+    const claimsQueryComputed = useCollectionMock.mock.calls[0]![0];
     const queryResult = claimsQueryComputed.value;
 
     expect(queryResult).toEqual({
@@ -84,8 +88,7 @@ describe('useTerritoryClaims', () => {
 
     expect(claimsLimitExceeded.value).toBe(false);
 
-    const useCollectionMock = vi.mocked((globalThis as any).useCollection);
-    const claimsQueryComputed = useCollectionMock.mock.calls[0][0];
+    const claimsQueryComputed = useCollectionMock.mock.calls[0]![0];
 
     expect(claimsQueryComputed.value).toBe(null);
   });

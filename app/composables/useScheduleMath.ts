@@ -1,5 +1,13 @@
 // app/composables/useScheduleMath.ts
-import type { Territory } from '~/components/Territory/ScheduleMatrix.vue';
+import type {
+  ScheduleSelection,
+  Territory,
+  UpcomingMonth
+} from '~/components/Territory/ScheduleMatrix.vue';
+
+import type { CountryPricingBands } from '~/composables/usePricing';
+
+import type { TerritoryClaim } from '~~/shared/utils/types';
 
 type RowConfig = {
   isBasic: boolean;
@@ -8,16 +16,58 @@ type RowConfig = {
   lockedMonths: Set<string>;
 };
 
+type CategoryOption = { label: string; value: string };
+
+export type ScheduleMathEmit = {
+  (e: 'update:selections', payload: ScheduleSelection[]): void;
+  (e: 'update:total', payload: { payNow: number; nextMonth: number; total7Months: number }): void;
+};
+
+type BillingCountry = 'UK' | 'USA';
+
+type RowPricing = { basic: number; exclusive: number };
+
+type MatrixRow = {
+  id: string;
+  territory: Territory;
+  categoryValue: string;
+  categoryLabel: string;
+};
+
+type UseScheduleMathReturn = {
+  matrixRows: ComputedRef<MatrixRow[]>;
+  upcomingMonths: ComputedRef<UpcomingMonth[]>;
+  currencySymbol: ComputedRef<string>;
+  isPastHalfway: ComputedRef<boolean>;
+  matrixTotal: Ref<number>;
+  payNowTotal: Ref<number>;
+  nextMonthTotal: Ref<number>;
+  toggleBasic: (rowId: string) => void;
+  toggleMonth: (rowId: string, monthValue: string) => void;
+  isBasic: (rowId: string) => boolean;
+  isMonthSelected: (rowId: string, monthValue: string) => boolean;
+  isBasicLocked: (rowId: string) => boolean;
+  isMonthLocked: (rowId: string, monthValue: string) => boolean;
+  isMonthTaken: (rowId: string, monthStr: string) => boolean;
+  getMonthDisplayPrice: (
+    rowId: string,
+    monthValue: string,
+    index: number,
+    band: number | undefined
+  ) => number | null;
+  getRowPricing: (band: number | undefined) => RowPricing;
+};
+
 export const useScheduleMath = (
   props: {
     territories: Territory[];
     categories: string[];
-    categoryOptions: any[];
+    categoryOptions: CategoryOption[];
     // NEW: Accept the globally taken months from the database
     takenMonths?: Record<string, string[]>;
   },
-  emit: any
-) => {
+  emit: ScheduleMathEmit
+): UseScheduleMathReturn => {
   const { pricingData } = usePricing();
   const { userProfile } = useUserProfile();
 
@@ -37,8 +87,8 @@ export const useScheduleMath = (
     return now.getDate() > new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() / 2;
   });
 
-  const upcomingMonths = computed(() => {
-    const months = [];
+  const upcomingMonths = computed((): UpcomingMonth[] => {
+    const months: UpcomingMonth[] = [];
     const now = new Date();
     for (let i = 0; i < 7; i++) {
       const targetDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
@@ -51,24 +101,23 @@ export const useScheduleMath = (
     return months;
   });
 
-  const getOwnedTerritory = (territoryId: number, categoryValue: string) => {
+  const getOwnedTerritory = (territoryId: number, categoryValue: string): TerritoryClaim | null => {
     if (!userProfile.value) {
       return null;
     }
     const active = userProfile.value.activeTerritories || userProfile.value.claims || [];
     return (
-      active.find((t: any) => t.territoryId === territoryId && t.categoryValue === categoryValue) ||
-      null
+      active.find((t) => t.territoryId === territoryId && t.categoryValue === categoryValue) || null
     );
   };
 
-  const getCategoryLabel = (val: string) => {
+  const getCategoryLabel = (val: string): string => {
     const found = props.categoryOptions.find((c) => c.value === val);
     return found ? found.label : val;
   };
 
-  const matrixRows = computed(() => {
-    const rows = [];
+  const matrixRows = computed((): MatrixRow[] => {
+    const rows: MatrixRow[] = [];
     for (const territory of props.territories) {
       for (const category of props.categories) {
         const rowId = `${territory.id}|${category}`;
@@ -93,14 +142,16 @@ export const useScheduleMath = (
     return rows;
   });
 
-  const getRowPricing = (band: number | undefined) => {
+  const getRowPricing = (band: number | undefined): RowPricing => {
     const safeBand = band || 1;
-    if (!pricingData.value || !pricingData.value[billingCountry.value]) {
+    const countryPricing = pricingData.value?.[billingCountry.value as BillingCountry];
+    if (!countryPricing) {
       return { basic: 0, exclusive: 0 };
     }
 
     // 1. Get base prices from the platform settings
-    const basePrices = pricingData.value[billingCountry.value][`band${safeBand}`] || {
+    const bandKey = `band${safeBand}` as keyof CountryPricingBands;
+    const basePrices = countryPricing[bandKey] || {
       basic: 0,
       exclusive: 0
     };
@@ -120,7 +171,7 @@ export const useScheduleMath = (
   };
 
   // NEW: Helper to check if a month is owned by someone else
-  const isMonthTaken = (rowId: string, monthStr: string) => {
+  const isMonthTaken = (rowId: string, monthStr: string): boolean => {
     // 1. Safety check: Are there any locks at all?
     if (!props.takenMonths) {
       return false;
@@ -143,7 +194,7 @@ export const useScheduleMath = (
     monthValue: string,
     index: number,
     band: number | undefined
-  ) => {
+  ): number | null => {
     const config = rowConfigs.value.get(rowId);
     if (!config) {
       return null;
@@ -164,7 +215,7 @@ export const useScheduleMath = (
     return null;
   };
 
-  const toggleBasic = (rowId: string) => {
+  const toggleBasic = (rowId: string): void => {
     const config = rowConfigs.value.get(rowId);
     if (config && !config.lockedBasic) {
       config.isBasic = !config.isBasic;
@@ -172,7 +223,7 @@ export const useScheduleMath = (
     }
   };
 
-  const toggleMonth = (rowId: string, monthValue: string) => {
+  const toggleMonth = (rowId: string, monthValue: string): void => {
     const config = rowConfigs.value.get(rowId);
     // UPDATED: Prevent toggling if the month is globally taken
     if (config && !config.lockedMonths.has(monthValue) && !isMonthTaken(rowId, monthValue)) {
@@ -185,15 +236,16 @@ export const useScheduleMath = (
     }
   };
 
-  const isBasic = (rowId: string) => rowConfigs.value.get(rowId)?.isBasic || false;
-  const isMonthSelected = (rowId: string, monthValue: string) =>
+  const isBasic = (rowId: string): boolean => rowConfigs.value.get(rowId)?.isBasic || false;
+  const isMonthSelected = (rowId: string, monthValue: string): boolean =>
     rowConfigs.value.get(rowId)?.selectedMonths.has(monthValue) || false;
-  const isBasicLocked = (rowId: string) => rowConfigs.value.get(rowId)?.lockedBasic || false;
-  const isMonthLocked = (rowId: string, monthValue: string) =>
+  const isBasicLocked = (rowId: string): boolean =>
+    rowConfigs.value.get(rowId)?.lockedBasic || false;
+  const isMonthLocked = (rowId: string, monthValue: string): boolean =>
     rowConfigs.value.get(rowId)?.lockedMonths.has(monthValue) || false;
 
-  const emitUpdates = () => {
-    const payload = [];
+  const emitUpdates = (): void => {
+    const payload: ScheduleSelection[] = [];
     let calcMatrixTotal = 0,
       calcPayNow = 0,
       calcNextMonth = 0;
@@ -264,7 +316,9 @@ export const useScheduleMath = (
     });
   };
 
-  watch([matrixRows, pricingData, () => props.takenMonths, userProfile], emitUpdates, {
+  const getTakenMonths = (): Record<string, string[]> | undefined => props.takenMonths;
+
+  watch([matrixRows, pricingData, getTakenMonths, userProfile], emitUpdates, {
     immediate: true,
     deep: true
   });

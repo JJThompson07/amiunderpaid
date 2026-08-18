@@ -53,7 +53,9 @@ describe('useAdminFetch', () => {
   it('fetches successfully without auth token when user is null', async () => {
     mock$fetch.mockResolvedValueOnce({ data: 'ok' });
     const { useCurrentUser } = await import('vuefire');
-    vi.mocked(useCurrentUser).mockReturnValueOnce({ value: null } as any);
+    vi.mocked(useCurrentUser).mockReturnValueOnce({
+      value: null
+    } as unknown as ReturnType<typeof useCurrentUser>);
     const adminFetch = useAdminFetch();
 
     const res = await adminFetch('/api/test');

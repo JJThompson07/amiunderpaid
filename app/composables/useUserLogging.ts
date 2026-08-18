@@ -1,4 +1,27 @@
-export const useUserLogging = () => {
+type SearchLogUpdate = {
+  mcaScore?: number | null;
+  marketAverage?: number | null;
+  governmentAverage?: number | null;
+  microPercentile?: number | null;
+  macroPercentile?: number | null;
+  livePercentile?: number | null;
+  searchSuccess?: boolean;
+  provider?: string;
+};
+
+type UseUserLoggingReturn = {
+  logSearch: (
+    title: string,
+    country: string,
+    location: string,
+    salary: string,
+    schedule?: string,
+    contract?: string
+  ) => Promise<string>;
+  updateSearchLog: (searchId: string, data: SearchLogUpdate) => void;
+};
+
+export const useUserLogging = (): UseUserLoggingReturn => {
   // Track whenever a user performs a search
   const { $siteBrand } = useNuxtApp();
 
@@ -51,19 +74,7 @@ export const useUserLogging = () => {
     return '';
   };
 
-  const updateSearchLog = (
-    searchId: string,
-    data: {
-      mcaScore?: number | null;
-      marketAverage?: number | null;
-      governmentAverage?: number | null;
-      microPercentile?: number | null;
-      macroPercentile?: number | null;
-      livePercentile?: number | null;
-      searchSuccess?: boolean;
-      provider?: string;
-    }
-  ) => {
+  const updateSearchLog = (searchId: string, data: SearchLogUpdate): void => {
     /* v8 ignore start */
     if (import.meta.dev || !import.meta.client || !searchId) {
       return;
@@ -76,7 +87,7 @@ export const useUserLogging = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: searchId, token, ...data }),
       keepalive: true
-    }).catch(() => {});
+    }).catch(() => undefined);
     /* v8 ignore stop */
   };
 

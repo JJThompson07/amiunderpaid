@@ -1,4 +1,7 @@
+import type { FetchError } from 'ofetch';
 import { useCurrentUser, useFirebaseAuth } from 'vuefire';
+
+type AdminFetchOptions = Parameters<typeof $fetch>[1];
 
 export const useAdminFetch = () => {
   const { logout } = useAdminAuth();
@@ -7,7 +10,7 @@ export const useAdminFetch = () => {
 
   return async <T = unknown>(
     request: Parameters<typeof $fetch>[0],
-    opts?: Parameters<typeof $fetch>[1]
+    opts?: AdminFetchOptions
   ): Promise<T> => {
     let token = '';
 
@@ -26,12 +29,12 @@ export const useAdminFetch = () => {
           ...opts?.headers,
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
-      } as any);
+      } as AdminFetchOptions);
 
       return response as unknown as T;
-    } catch (error: any) {
-      if (error.response?.status === 401 || error.statusCode === 401) {
-        console.warn('Session expired. Forcing client logout...');
+    } catch (error) {
+      const fetchError = error as FetchError;
+      if (fetchError.response?.status === 401 || fetchError.statusCode === 401) {
         await logout();
         navigateTo({
           path: '/admin/login'

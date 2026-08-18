@@ -1,3 +1,4 @@
+import type { ComputedRef, Ref } from 'vue';
 import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 import type {
   JobCategoryEntry,
@@ -25,7 +26,42 @@ export type {
  * seamlessly fall back to Reed if Adzuna hits a rate limit (429 Error). The client
  * remains completely agnostic to which provider was used.
  */
-export const useJobs = () => {
+export type UseJobsReturn = {
+  distributionData: Ref<SalaryDistributionResponse | null>;
+  jobsData: Ref<JobSearchResponse | null>;
+  categories: Ref<JobCategoryEntry[]>;
+  hasJobsData: ComputedRef<boolean>;
+  hasDistributionData: ComputedRef<boolean>;
+  loading: ComputedRef<boolean>;
+  meanSalary: ComputedRef<number>;
+  jobsCount: ComputedRef<number>;
+  histogramBuckets: ComputedRef<HistogramBucket[]>;
+  histogramRange: ComputedRef<number>;
+  histogramMaxCount: ComputedRef<number>;
+  histogramTotalCount: ComputedRef<number>;
+  cachedGovIdCode: Ref<string | undefined>;
+  dataProvider: ComputedRef<MarketDataProvider>;
+  fetchJobs: (
+    title: string,
+    location: string,
+    country: string,
+    jobType?: string,
+    contractType?: string,
+    devProviderOverride?: string
+  ) => Promise<void>;
+  fetchHistogram: (
+    title: string,
+    location: string,
+    country: string,
+    jobType?: string,
+    contractType?: string,
+    devProviderOverride?: string
+  ) => Promise<void>;
+  fetchCategories: (country: string) => Promise<void>;
+  isUnderpaid: (salary: number) => boolean;
+};
+
+export const useJobs = (): UseJobsReturn => {
   const distributionData = useState<SalaryDistributionResponse | null>(
     'market_data_distribution',
     () => null

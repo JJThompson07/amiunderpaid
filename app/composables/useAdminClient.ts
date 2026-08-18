@@ -1,4 +1,16 @@
-export const useAdminClient = (log: (msg: string) => void) => {
+import type { Ref } from 'vue';
+
+type UseAdminClientReturn = {
+  loading: Ref<boolean>;
+  batchDelete: (
+    collectionName: string,
+    filters: Record<string, string | number | boolean>,
+    description: string
+  ) => Promise<void>;
+  batchSeed: <T>(data: T[], collectionName: string) => Promise<void>;
+};
+
+export const useAdminClient = (log: (msg: string) => void): UseAdminClientReturn => {
   const loading = ref(false);
   const adminFetch = useAdminFetch();
 
@@ -7,9 +19,9 @@ export const useAdminClient = (log: (msg: string) => void) => {
    */
   const batchDelete = async (
     collectionName: string,
-    filters: Record<string, any>,
+    filters: Record<string, string | number | boolean>,
     description: string
-  ) => {
+  ): Promise<void> => {
     loading.value = true;
     log(`Preparing to delete ${description}...`);
 
@@ -24,7 +36,7 @@ export const useAdminClient = (log: (msg: string) => void) => {
       } else {
         log('No records found to delete.');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
       log(`❌ Delete Error: ${message}`);
       throw e;
@@ -37,7 +49,7 @@ export const useAdminClient = (log: (msg: string) => void) => {
    * Seeds data in batches.
    * @param data Array of data to seed
    */
-  const batchSeed = async <T>(data: T[], collectionName: string) => {
+  const batchSeed = async <T>(data: T[], collectionName: string): Promise<void> => {
     if (data.length === 0) {
       return;
     }
@@ -51,7 +63,7 @@ export const useAdminClient = (log: (msg: string) => void) => {
       });
 
       log(`\n🏆 ALL DONE: ${response.count} records are now live.`);
-    } catch (e: any) {
+    } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
       log(`\n❌ FIREBASE ERROR: ${message}`);
       throw e;

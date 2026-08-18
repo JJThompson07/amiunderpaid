@@ -1,3 +1,4 @@
+import type { UserCredential } from 'firebase/auth';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,10 +18,10 @@ vi.mock('firebase/auth', () => ({
 
 const mockNavigateTo = vi.fn();
 const mockUseCookie = vi.fn(() => ({ value: null }));
-const mockUseFirebaseAuth = vi.fn(() => ({ currentUser: {} })); // valid auth object
-const mockUseI18n = vi.fn(() => ({ t: (key: string) => key }));
+const mockUseFirebaseAuth = vi.fn((): { currentUser: object } | null => ({ currentUser: {} })); // valid auth object
+const mockUseI18n = vi.fn(() => ({ t: (key: string): string => key }));
 const mockUseRuntimeConfig = vi.fn(() => ({ public: { adminAccessKey: 'valid-key' } }));
-const mockRef = vi.fn((val: any) => ({ value: val }));
+const mockRef = vi.fn(<T>(val: T) => ({ value: val }));
 
 vi.stubGlobal('navigateTo', mockNavigateTo);
 vi.stubGlobal('useCookie', mockUseCookie);
@@ -42,7 +43,7 @@ describe('useAdminAuth', () => {
   });
 
   it('fails to login when auth service is not ready', async () => {
-    mockUseFirebaseAuth.mockReturnValueOnce(null as any);
+    mockUseFirebaseAuth.mockReturnValueOnce(null);
     const { login, error } = useAdminAuth();
     const result = await login('email', 'password', 'valid-key');
     expect(result).toBe(false);
@@ -50,8 +51,8 @@ describe('useAdminAuth', () => {
   });
 
   it('successfully logs in with valid credentials', async () => {
-    vi.mocked(signInWithEmailAndPassword).mockResolvedValueOnce({} as any);
-    const { login, loading, error } = useAdminAuth();
+    vi.mocked(signInWithEmailAndPassword).mockResolvedValueOnce({} as unknown as UserCredential);
+    const { login, error } = useAdminAuth();
     const result = await login('email', 'password', 'valid-key');
     expect(result).toBe(true);
     expect(error.value).toBe('');
