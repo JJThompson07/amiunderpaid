@@ -78,6 +78,14 @@ import { definePageMeta } from '#imports';
 import { useCollection, useFirestore } from 'vuefire';
 import { collection, documentId, orderBy, query, where } from 'firebase/firestore';
 
+// A daily session-count document as stored in the `user_sessions` Firestore
+// collection, keyed by date (YYYY-MM-DD document id).
+type UserSessionDoc = {
+  id: string;
+  total?: number;
+  locations?: Record<string, Record<string, number>>;
+};
+
 definePageMeta({ middleware: 'admin' });
 
 const { t } = useI18n();
@@ -107,7 +115,7 @@ const isCurrentMonth = computed(() => {
   return currentYear.value === now.getUTCFullYear() && currentMonth.value === now.getUTCMonth();
 });
 
-const changeMonth = (delta: number) => {
+const changeMonth = (delta: number): void => {
   const date = new Date(currentYear.value, currentMonth.value + delta, 1);
   currentYear.value = date.getFullYear();
   currentMonth.value = date.getMonth();
@@ -138,9 +146,9 @@ const sessionsQuery = computed(() =>
   )
 );
 
-const { data: sessions, pending } = useCollection(sessionsQuery);
+const { data: sessions, pending } = useCollection<UserSessionDoc>(sessionsQuery);
 
 const monthlyTotal = computed(() =>
-  sessions.value.reduce((sum: number, s: any) => sum + (s.total || 0), 0)
+  sessions.value.reduce((sum: number, s: UserSessionDoc) => sum + (s.total || 0), 0)
 );
 </script>

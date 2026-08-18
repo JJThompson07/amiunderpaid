@@ -77,6 +77,10 @@
 </template>
 
 <script setup lang="ts">
+import type { ScheduleSelection } from '~/components/Territory/ScheduleMatrix.vue';
+import type { JobCategoryEntry } from '~~/shared/utils/market-data';
+import type { TerritoryClaim } from '~~/shared/utils/types';
+
 definePageMeta({
   middleware: ['recruiters', 'recruiter-verified']
 });
@@ -89,7 +93,7 @@ const user = useCurrentUser();
 
 const loading = ref(true);
 const isSubmitting = ref(false);
-const scheduleSelections = ref<any[]>([]);
+const scheduleSelections = ref<ScheduleSelection[]>([]);
 
 // 1. Get the ID from the URL (?id=123)
 const territoryId = computed(() => Number(route.query.id));
@@ -100,7 +104,7 @@ const ownedTerritory = computed(() => {
     return null;
   }
   const active = userProfile.value.activeTerritories || userProfile.value.claims || [];
-  return active.find((t: any) => t.territoryId === territoryId.value) || null;
+  return active.find((t: TerritoryClaim) => t.territoryId === territoryId.value) || null;
 });
 
 // 3. Get the full territory details (for the name and band)
@@ -117,7 +121,9 @@ const categoryLabel = computed(() => {
     return '';
   }
   const val = ownedTerritory.value.categoryValue;
-  const found = categoriesData.value.find((c: any) => c.id === val || c.label === val);
+  const found = categoriesData.value.find(
+    (c: JobCategoryEntry & { id?: string }) => c.id === val || c.label === val
+  );
   return found ? found.label || found.id : val;
 });
 
@@ -129,7 +135,7 @@ const territoryIdsForQuery = computed(() => [Number(route.query.id)]);
 const { globalTakenMonths } = useTerritoryClaims(territoryIdsForQuery);
 
 // 6. Checkout handler
-const submitUpgrade = async () => {
+const submitUpgrade = async (): Promise<void> => {
   if (scheduleSelections.value.length === 0) {
     return;
   }
@@ -153,6 +159,7 @@ const submitUpgrade = async () => {
       window.location.href = response.url;
     }
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces checkout initialization failures for debugging; no dedicated error-logging utility for this page
     console.error('Failed to initialize payment:', error);
     alert('Something went wrong. Please try again.');
   } finally {

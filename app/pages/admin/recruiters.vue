@@ -25,35 +25,39 @@
           empty-message="No recruiters found on the platform yet.">
           <template #agency="{ row }">
             <div class="flex flex-col">
-              <span class="text-sm font-bold text-slate-900">{{ row.agencyName }}</span>
-              <span class="text-xs text-slate-500">{{ row.email }}</span>
+              <span class="text-sm font-bold text-slate-900">{{ asRow(row).agencyName }}</span>
+              <span class="text-xs text-slate-500">{{ asRow(row).email }}</span>
             </div>
           </template>
 
           <template #categories="{ value }">
             <div class="flex flex-wrap gap-1">
-              <span v-if="!value || value.length === 0" class="text-xs text-slate-400 italic"
+              <span
+                v-if="!value || (value as string[]).length === 0"
+                class="text-xs text-slate-400 italic"
                 >None</span
               >
               <span
-                v-for="cat in value.slice(0, 2)"
+                v-for="cat in (value as string[]).slice(0, 2)"
                 :key="cat"
                 class="inline-flex items-center px-2 py-0.5 rounded text-2xs font-bold bg-slate-100 text-slate-600 truncate max-w-[120px]">
                 {{ cat }}
               </span>
-              <span v-if="value.length > 2" class="text-2xs font-bold text-slate-400">
-                +{{ value.length - 2 }}
+              <span v-if="(value as string[]).length > 2" class="text-2xs font-bold text-slate-400">
+                +{{ (value as string[]).length - 2 }}
               </span>
             </div>
           </template>
 
           <template #activeTerritories="{ value }">
-            <div v-if="!value || value.length === 0" class="text-xs text-slate-400 italic">
+            <div
+              v-if="!value || (value as TerritoryClaim[]).length === 0"
+              class="text-xs text-slate-400 italic">
               None
             </div>
             <div v-else class="flex flex-col gap-1.5 py-1">
               <div
-                v-for="(t, idx) in value"
+                v-for="(t, idx) in value as TerritoryClaim[]"
                 :key="idx"
                 class="bg-slate-50 border border-slate-100 rounded-md p-2 flex flex-col gap-1.5">
                 <div class="flex items-center justify-between gap-2">
@@ -86,21 +90,21 @@
 
           <template #status="{ row }">
             <div class="flex items-center justify-center gap-1">
-              <template v-if="row.status === 'requested'">
+              <template v-if="asRow(row).status === 'requested'">
                 <HelpCircle class="w-4 h-4 text-amber-500 animate-pulse" />
                 <span class="text-xs font-bold text-amber-700">Requested</span>
               </template>
-              <template v-else-if="row.status === 'rejected'">
+              <template v-else-if="asRow(row).status === 'rejected'">
                 <XCircle class="w-4 h-4 text-red-500" />
                 <span class="text-xs font-bold text-red-700">Rejected</span>
               </template>
               <template v-else>
-                <CheckCircle2 v-if="row.verified" class="w-4 h-4 text-emerald-500" />
+                <CheckCircle2 v-if="asRow(row).verified" class="w-4 h-4 text-emerald-500" />
                 <XCircle v-else class="w-4 h-4 text-slate-300" />
                 <span
                   class="text-xs font-bold"
-                  :class="row.verified ? 'text-emerald-700' : 'text-slate-400'">
-                  {{ row.verified ? 'Verified' : 'Pending' }}
+                  :class="asRow(row).verified ? 'text-emerald-700' : 'text-slate-400'">
+                  {{ asRow(row).verified ? 'Verified' : 'Pending' }}
                 </span>
               </template>
             </div>
@@ -108,9 +112,9 @@
 
           <template #invoice="{ row }">
             <span class="text-sm font-black text-slate-700">
-              {{ row.billingCountry === 'USA' ? '$' : '£'
+              {{ asRow(row).billingCountry === 'USA' ? '$' : '£'
               }}{{
-                row.monthlyInvoice.toLocaleString(undefined, {
+                asRow(row).monthlyInvoice.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 })
@@ -121,17 +125,17 @@
           <template #discounts="{ row }">
             <div class="flex flex-col gap-1 items-end">
               <span
-                v-if="row.basicDiscount > 0"
+                v-if="asRow(row).basicDiscount > 0"
                 class="text-2xs font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded">
-                Basic: -{{ row.basicDiscount }}%
+                Basic: -{{ asRow(row).basicDiscount }}%
               </span>
               <span
-                v-if="row.exclusiveDiscount > 0"
+                v-if="asRow(row).exclusiveDiscount > 0"
                 class="text-2xs font-bold text-secondary-600 bg-secondary-50 px-2 py-0.5 rounded">
-                Excl: -{{ row.exclusiveDiscount }}%
+                Excl: -{{ asRow(row).exclusiveDiscount }}%
               </span>
               <span
-                v-if="!row.basicDiscount && !row.exclusiveDiscount"
+                v-if="!asRow(row).basicDiscount && !asRow(row).exclusiveDiscount"
                 class="text-xs text-slate-300"
                 >-</span
               >
@@ -140,30 +144,30 @@
 
           <template #actions="{ row }">
             <div class="flex items-center justify-end gap-1">
-              <template v-if="row.status === 'requested'">
+              <template v-if="asRow(row).status === 'requested'">
                 <button
                   class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
                   title="Accept Access Request"
-                  :disabled="actioningIds.has(row.id)"
-                  @click="acceptRequest(row)">
+                  :disabled="actioningIds.has(asRow(row).id)"
+                  @click="acceptRequest(asRow(row))">
                   <Check class="w-4 h-4" />
                 </button>
                 <button
                   class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                   title="Reject Access Request"
-                  :disabled="actioningIds.has(row.id)"
-                  @click="rejectRequest(row)">
+                  :disabled="actioningIds.has(asRow(row).id)"
+                  @click="rejectRequest(asRow(row))">
                   <X class="w-4 h-4" />
                 </button>
               </template>
-              <template v-else-if="row.status === 'rejected'">
+              <template v-else-if="asRow(row).status === 'rejected'">
                 <span class="text-xs text-slate-300 italic">No Actions</span>
               </template>
               <template v-else>
                 <button
                   class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors cursor-pointer"
                   title="Edit Discounts"
-                  @click="openDiscountModal(row)">
+                  @click="openDiscountModal(asRow(row))">
                   <Tag class="w-4 h-4" />
                 </button>
               </template>
@@ -223,15 +227,38 @@
 
 <script setup lang="ts">
 import { Check, CheckCircle2, CheckSquare, HelpCircle, Tag, X, XCircle } from 'lucide-vue-next';
+import { FetchError } from 'ofetch';
+import type { TerritoryClaim } from '~~/shared/utils/types';
+
+// A recruiter row as returned by GET /api/admin/recruiters (see index.get.ts).
+type AdminRecruiterRow = {
+  id: string;
+  email: string;
+  agencyName: string;
+  categories: string[];
+  activeTerritories: TerritoryClaim[];
+  territoriesCount: number;
+  verified: boolean;
+  status: string;
+  monthlyInvoice: number;
+  billingCountry: string;
+  basicDiscount: number;
+  exclusiveDiscount: number;
+};
 
 definePageMeta({ middleware: 'admin' });
+
+// AmITable's slot-scoped `row` is typed Record<string, unknown> (it's a
+// generic reusable table), but every row here is always an AdminRecruiterRow.
+const asRow = (row: Record<string, unknown>): AdminRecruiterRow =>
+  row as unknown as AdminRecruiterRow;
 
 const adminFetch = useAdminFetch();
 const { showToast } = useSystemToast();
 
 const actioningIds = ref(new Set<string>());
 
-const acceptRequest = async (row: any) => {
+const acceptRequest = async (row: AdminRecruiterRow): Promise<void> => {
   if (actioningIds.value.has(row.id)) {
     return;
   }
@@ -263,15 +290,18 @@ const acceptRequest = async (row: any) => {
     } else {
       showToast('Error', res?.message || 'Failed to accept recruiter.', 'error');
     }
-  } catch (err: any) {
-    const msg = err.data?.message || 'An error occurred while approving the request.';
+  } catch (err) {
+    const msg =
+      err instanceof FetchError && err.data?.message
+        ? err.data.message
+        : 'An error occurred while approving the request.';
     showToast('Error', msg, 'error');
   } finally {
     actioningIds.value.delete(row.id);
   }
 };
 
-const rejectRequest = async (row: any) => {
+const rejectRequest = async (row: AdminRecruiterRow): Promise<void> => {
   if (actioningIds.value.has(row.id)) {
     return;
   }
@@ -299,8 +329,11 @@ const rejectRequest = async (row: any) => {
     } else {
       showToast('Error', res?.message || 'Failed to reject recruiter.', 'error');
     }
-  } catch (err: any) {
-    const msg = err.data?.message || 'An error occurred while rejecting the request.';
+  } catch (err) {
+    const msg =
+      err instanceof FetchError && err.data?.message
+        ? err.data.message
+        : 'An error occurred while rejecting the request.';
     showToast('Error', msg, 'error');
   } finally {
     actioningIds.value.delete(row.id);
@@ -308,7 +341,7 @@ const rejectRequest = async (row: any) => {
 };
 
 const { getTerritoryById } = useTerritories();
-const getTerritoryName = (id: number) => {
+const getTerritoryName = (id: number): string => {
   const t = getTerritoryById(id);
   return t ? t.name : `Region #${id}`;
 };
@@ -327,7 +360,7 @@ const tableColumns = [
 // Data Fetching
 const { data, pending, refresh } = await useAsyncData(
   'admin-recruiters',
-  () => adminFetch<{ success: boolean; recruiters: any[] }>('/api/admin/recruiters'),
+  () => adminFetch<{ success: boolean; recruiters: AdminRecruiterRow[] }>('/api/admin/recruiters'),
   { server: false }
 );
 
@@ -335,19 +368,19 @@ const recruiters = computed(() => data.value?.recruiters || []);
 
 // Modal State
 const showModal = ref(false);
-const selectedRecruiter = ref<any>(null);
+const selectedRecruiter = ref<AdminRecruiterRow | null>(null);
 const editBasic = ref<number | string>('');
 const editExclusive = ref<number | string>('');
 const isSaving = ref(false);
 
-const openDiscountModal = (recruiter: any) => {
+const openDiscountModal = (recruiter: AdminRecruiterRow): void => {
   selectedRecruiter.value = recruiter;
   editBasic.value = recruiter.basicDiscount || '';
   editExclusive.value = recruiter.exclusiveDiscount || '';
   showModal.value = true;
 };
 
-const saveDiscount = async () => {
+const saveDiscount = async (): Promise<void> => {
   if (!selectedRecruiter.value) {
     return;
   }

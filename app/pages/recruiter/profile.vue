@@ -45,7 +45,7 @@
           </div>
 
           <div
-            v-if="userProfile.basicDiscount > 0 || userProfile.exclusiveDiscount > 0"
+            v-if="(userProfile.basicDiscount ?? 0) > 0 || (userProfile.exclusiveDiscount ?? 0) > 0"
             class="mt-4 bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex flex-col gap-2">
             <p
               class="text-2xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1.5">
@@ -54,14 +54,14 @@
             </p>
             <div class="flex flex-wrap gap-3 mt-1">
               <span
-                v-if="userProfile.basicDiscount > 0"
+                v-if="(userProfile.basicDiscount ?? 0) > 0"
                 class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-black bg-emerald-200/50 text-emerald-800">
                 {{ $t('recruiter.account.discounts.basic', 'Basic Tier') }}: -{{
                   userProfile.basicDiscount
                 }}%
               </span>
               <span
-                v-if="userProfile.exclusiveDiscount > 0"
+                v-if="(userProfile.exclusiveDiscount ?? 0) > 0"
                 class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-black bg-emerald-200/50 text-emerald-800">
                 {{ $t('recruiter.account.discounts.exclusive', 'Exclusive Tier') }}: -{{
                   userProfile.exclusiveDiscount
@@ -300,6 +300,15 @@
 <script setup lang="ts">
 import { BriefcaseBusiness, CheckSquareIcon, KeyRound, LockIcon, Tag } from 'lucide-vue-next';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
+
+import type { UserProfile } from '~~/shared/utils/types';
+
+// `inboundEmail` is a real Firestore field on the `users` document (see
+// server/api/user/leads/submit.post.ts) that isn't yet modelled on the
+// shared UserProfile type — extend it locally rather than widening the
+// shared type.
+type UserProfileWithInboundEmail = UserProfile & { inboundEmail?: string };
 
 definePageMeta({
   middleware: 'recruiters'
@@ -320,7 +329,7 @@ const updatingPassword = ref(false);
 const passwordError = ref('');
 const passwordSuccess = ref(false);
 
-const submitPasswordChange = async () => {
+const submitPasswordChange = async (): Promise<void> => {
   passwordError.value = '';
   passwordSuccess.value = false;
 
@@ -374,9 +383,13 @@ const submitPasswordChange = async () => {
     setTimeout(() => {
       passwordSuccess.value = false;
     }, 3000);
-  } catch (err: any) {
+  } catch (err) {
+    // eslint-disable-next-line no-console -- surfaces password-change failures for recruiter-account debugging; no dedicated error-logging utility for this page
     console.error('🔥 Error updating password:', err);
-    if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+    if (
+      err instanceof FirebaseError &&
+      (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password')
+    ) {
       passwordError.value = t('account.passwordChange.errors.wrongPassword');
     } else {
       passwordError.value = t('account.passwordChange.errors.generic');
@@ -404,9 +417,9 @@ const formattedCategories = computed(() => {
     return [];
   }
 
-  const uniqueCategories = new Map();
+  const uniqueCategories = new Map<string, { label: string; value: string }>();
 
-  categoriesData.value.forEach((cat: any) => {
+  categoriesData.value.forEach((cat) => {
     const val = cat.label || cat.id;
 
     // Only add it if we haven't seen this exact category name yet
@@ -421,12 +434,12 @@ const formattedCategories = computed(() => {
   return Array.from(uniqueCategories.values());
 });
 
-const getCategoryLabel = (val: string) => {
+const getCategoryLabel = (val: string): string => {
   const found = formattedCategories.value.find((c) => c.value === val);
   return found ? found.label : val;
 };
 
-const removeCategoryFromList = (val: string) => {
+const removeCategoryFromList = (val: string): void => {
   selectedCategories.value = selectedCategories.value.filter((c) => c !== val);
 };
 
@@ -440,20 +453,22 @@ watch(
       if (newProfile.billingCountry) {
         billingPreference.value = [newProfile.billingCountry];
       }
-      if (newProfile.inboundEmail) {
-        inboundEmail.value = newProfile.inboundEmail;
+      const profileWithInboundEmail = newProfile as UserProfileWithInboundEmail;
+      if (profileWithInboundEmail.inboundEmail) {
+        inboundEmail.value = profileWithInboundEmail.inboundEmail;
       }
     }
   },
   { immediate: true }
 );
 
-const handleBillingChange = async (newValArray: string[]) => {
+const handleBillingChange = async (newValArray: string[]): Promise<void> => {
   const selectedCurrency = newValArray.length > 0 ? newValArray[0] : 'UK';
   isUpdatingBilling.value = true;
   try {
     await updateProfile({ billingCountry: selectedCurrency });
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces billing-preference update failures for recruiter-account debugging; no dedicated error-logging utility for this page
     console.error('Failed to update billing preference:', error);
   } finally {
     setTimeout(() => {
@@ -462,7 +477,7 @@ const handleBillingChange = async (newValArray: string[]) => {
   }
 };
 
-const saveProfileCategories = async () => {
+const saveProfileCategories = async (): Promise<void> => {
   isSaving.value = true;
   showSuccess.value = false;
   try {

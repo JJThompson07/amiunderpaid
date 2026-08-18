@@ -47,14 +47,14 @@
             <div class="flex items-center justify-end gap-2">
               <button
                 class="px-3 py-1.5 text-xs font-bold text-negative-600 bg-negative-50 hover:bg-negative-100 rounded-lg transition-colors disabled:opacity-50"
-                :disabled="isProcessing === row.id"
-                @click="rejectItem(row.id)">
+                :disabled="isProcessing === asSuggestion(row).id"
+                @click="rejectItem(asSuggestion(row).id)">
                 Reject
               </button>
               <button
                 class="px-3 py-1.5 text-xs font-bold text-white bg-positive-600 hover:bg-positive-700 rounded-lg shadow-sm transition-colors disabled:opacity-50"
-                :disabled="isProcessing === row.id"
-                @click="approveItem(row)">
+                :disabled="isProcessing === asSuggestion(row).id"
+                @click="approveItem(asSuggestion(row))">
                 Approve
               </button>
             </div>
@@ -75,6 +75,10 @@ type Suggestion = {
   count: number;
   status: string;
 };
+
+// AmITable's slot-scoped `row` is typed Record<string, unknown> (it's a
+// generic reusable table), but every row here is always a Suggestion.
+const asSuggestion = (row: Record<string, unknown>): Suggestion => row as unknown as Suggestion;
 
 // Define layout and middleware if required for your admin section
 definePageMeta({
@@ -103,7 +107,7 @@ const suggestions = computed<Suggestion[]>(() => {
 });
 
 // 2. Approve Action
-const approveItem = async (item: Suggestion) => {
+const approveItem = async (item: Suggestion): Promise<void> => {
   isProcessing.value = item.id;
   try {
     await adminFetch('/api/admin/suggestions/approve', {
@@ -120,6 +124,7 @@ const approveItem = async (item: Suggestion) => {
     await refresh();
     showToast('Success', 'Suggestion approved', 'success');
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces approval failures for admin debugging; no dedicated error-logging utility for this admin tooling
     console.error('Failed to approve', error);
     showToast('Error', 'Failed to approve suggestion.', 'error');
   } finally {
@@ -128,7 +133,7 @@ const approveItem = async (item: Suggestion) => {
 };
 
 // 3. Reject Action
-const rejectItem = async (id: string) => {
+const rejectItem = async (id: string): Promise<void> => {
   isProcessing.value = id;
   try {
     await adminFetch('/api/admin/suggestions/reject', {
@@ -138,6 +143,7 @@ const rejectItem = async (id: string) => {
     await refresh();
     showToast('Success', 'Suggestion rejected', 'success');
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces rejection failures for admin debugging; no dedicated error-logging utility for this admin tooling
     console.error('Failed to reject', error);
     showToast('Error', 'Failed to reject suggestion.', 'error');
   } finally {

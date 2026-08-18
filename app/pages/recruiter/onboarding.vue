@@ -70,7 +70,7 @@ const agencyName = ref('');
 const loading = ref(false);
 const error = ref('');
 
-const saveProfile = async () => {
+const saveProfile = async (): Promise<void> => {
   if (!agencyName.value) {
     error.value = t('recruiter.onboarding.errors.empty-agency');
     return;
@@ -91,7 +91,8 @@ const saveProfile = async () => {
     });
 
     await navigateTo('/recruiter/dashboard');
-  } catch (e: any) {
+  } catch (e) {
+    // eslint-disable-next-line no-console -- surfaces Firestore write failures for onboarding debugging; no dedicated error-logging utility exists at the page layer
     console.error('🔥 Error saving profile:', e);
     error.value = t('recruiter.onboarding.errors.save-failed');
   } finally {

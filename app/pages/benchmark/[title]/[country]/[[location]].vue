@@ -195,12 +195,12 @@
       <div class="w-full max-w-md animate-in zoom-in-95 duration-200">
         <AmICardLeadContact
           v-if="selectedRecruiter"
-          :title="selectedRecruiter.title"
-          :content="selectedRecruiter.categoryContent || selectedRecruiter.content"
+          :title="selectedRecruiter.title ?? undefined"
+          :content="selectedRecruiter.categoryContent || selectedRecruiter.content || undefined"
           :brand-bg-colour="selectedRecruiter.brandBgColour"
           :brand-text-colour="selectedRecruiter.brandTextColour"
-          :logo-url="selectedRecruiter.logoUrl"
-          :agency-name="selectedRecruiter.agencyName"
+          :logo-url="selectedRecruiter.logoUrl ?? undefined"
+          :agency-name="selectedRecruiter.agencyName ?? undefined"
           :button-text="selectedRecruiter.buttonText"
           :location="location || country"
           :recruiter-id="selectedRecruiter.recruiterId"
@@ -227,6 +227,7 @@
 // ** imports **
 import { Info } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
+import type { RecruiterCard } from '~~/shared/utils/types';
 
 const { $siteBrand } = useNuxtApp();
 const route = useRoute();
@@ -291,7 +292,7 @@ const recruiterSectionTitle = computed(() => {
   return t('recruiter.search-results.basic-subtitle', 'Speak to an expert to improve your MCA');
 });
 
-const getFloatingButtonText = (card: any) => {
+const getFloatingButtonText = (card: RecruiterCard): string => {
   const base = card.buttonText || 'Contact Us';
   const incentive = route.path.includes('/benchmark') ? 'candidates' : 'roles';
   const loc = location.value || country.value || 'their location';
@@ -304,9 +305,9 @@ const getFloatingButtonText = (card: any) => {
 
 // Modal State Logic
 const showRecruiterModal = ref(false);
-const selectedRecruiter = ref<any>(null);
+const selectedRecruiter = ref<RecruiterCard | null>(null);
 
-const openRecruiterModal = (card: any) => {
+const openRecruiterModal = (card: RecruiterCard): void => {
   selectedRecruiter.value = card;
   showRecruiterModal.value = true;
 };
