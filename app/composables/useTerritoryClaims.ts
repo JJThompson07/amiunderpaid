@@ -1,8 +1,21 @@
 // composables/useTerritoryClaims.ts
-import type { Ref } from 'vue';
+import type { ComputedRef, Ref } from 'vue';
 import { collection, query, where } from 'firebase/firestore';
 
-export const useTerritoryClaims = (territoryIds: Ref<number[]>) => {
+type TerritoryClaimDoc = {
+  territoryId: number;
+  categoryValue: string;
+  takenExclusiveMonths?: Record<string, string>;
+};
+
+type UseTerritoryClaimsReturn = {
+  globalTakenMonths: ComputedRef<Record<string, string[]>>;
+  loadingClaims: Ref<boolean>;
+  claimsData: Ref<(TerritoryClaimDoc & { id: string })[] | undefined>;
+  claimsLimitExceeded: ComputedRef<boolean>;
+};
+
+export const useTerritoryClaims = (territoryIds: Ref<number[]>): UseTerritoryClaimsReturn => {
   const db = useFirestore();
   const { userProfile } = useUserProfile();
 
@@ -19,7 +32,8 @@ export const useTerritoryClaims = (territoryIds: Ref<number[]>) => {
   });
 
   // 2. Fetch the live collection
-  const { data: claimsData, pending: loadingClaims } = useCollection(claimsQuery);
+  const { data: claimsData, pending: loadingClaims } =
+    useCollection<TerritoryClaimDoc>(claimsQuery);
 
   // 3. Format the data for the Matrix
   const globalTakenMonths = computed(() => {

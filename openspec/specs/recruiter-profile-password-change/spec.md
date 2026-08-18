@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change restrict-recruiter-onboarding. Update Purpose after archive.
+Defines the capability for recruiters to change their password from their profile settings.
 
 ## Requirements
 

@@ -60,7 +60,7 @@ defineProps({
     required: true
   },
   data: {
-    type: Array as PropType<any[]>,
+    type: Array as PropType<Record<string, unknown>[]>,
     required: true
   },
   minWidth: {
@@ -77,7 +77,7 @@ defineProps({
   },
   rowClass: {
     type: Function as PropType<
-      (row: any, index: number) => string | string[] | Record<string, boolean>
+      (row: Record<string, unknown>, index: number) => string | string[] | Record<string, boolean>
     >,
     default: undefined
   }

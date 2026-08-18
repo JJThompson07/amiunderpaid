@@ -41,6 +41,7 @@ Built with **Nuxt 4**, **Tailwind CSS v4**, and **Firebase**, the platform lever
 ## 📚 Technical Guidelines & Development
 
 If you are a developer looking to contribute or run the project locally, please refer to the dedicated developer documentation:
+
 - [Local Setup & Testing Guide](./DEV.md)
 - [Country & Tenant Guidelines](./COUNTRY_GUIDELINES.md)
 - [Coding Standards & Rules](./CODE_STANDARDS.md)

@@ -1,4 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { H3Error, H3Event } from 'h3';
+import type { JobSearchResponse } from '~~/shared/utils/market-data';
 
 vi.mock('firebase-admin/firestore', () => ({
   FieldValue: {
@@ -8,19 +10,27 @@ vi.mock('firebase-admin/firestore', () => ({
 
 const mockConfig = { adzunaAppId: 'test-id', adzunaAppKey: 'test-key' };
 vi.stubGlobal('useRuntimeConfig', () => mockConfig);
-vi.stubGlobal('defineEventHandler', (fn: any) => fn);
-vi.stubGlobal('useAdminFirestore', vi.fn());
-vi.stubGlobal('generateCacheKey', vi.fn(() => 'cache-key'));
-vi.stubGlobal('createError', (err: any) => {
-  const e = new Error(err.statusMessage) as any;
+vi.stubGlobal('defineEventHandler', <T>(fn: T): T => fn);
+const useAdminFirestoreMock = vi.fn();
+vi.stubGlobal('useAdminFirestore', useAdminFirestoreMock);
+vi.stubGlobal(
+  'generateCacheKey',
+  vi.fn(() => 'cache-key')
+);
+vi.stubGlobal('createError', (err: Partial<H3Error>) => {
+  const e = new Error(err.statusMessage) as Error & { statusCode?: number };
   e.statusCode = err.statusCode;
   return e;
 });
-vi.stubGlobal('sanitizeAdzunaData', vi.fn((data: any) => data));
+vi.stubGlobal(
+  'sanitizeAdzunaData',
+  vi.fn(<T>(data: T): T => data)
+);
 const $fetchMock = vi.fn();
 vi.stubGlobal('$fetch', $fetchMock);
 const getQueryMock = vi.fn();
 vi.stubGlobal('getQuery', getQueryMock);
+vi.stubGlobal('defineCachedFunction', <T>(fn: T): T => fn);
 
 // We need to mock the import of `../../utils/reed` and `../../utils/jooble` that happens inside the catch block
 vi.mock('../../../utils/reed', () => ({
@@ -41,18 +51,27 @@ vi.mock('../../../utils/jooble', () => ({
   })
 }));
 
-let jobsHandler: any;
+type MockDocRef = {
+  get: ReturnType<typeof vi.fn>;
+  set: ReturnType<typeof vi.fn>;
+};
+
+type MockCollection = {
+  doc: ReturnType<typeof vi.fn>;
+};
+
+let jobsHandler: (event: H3Event) => Promise<JobSearchResponse>;
 
 describe('Adzuna Jobs API - 429 Fallback', () => {
-  let mockDocRef: any;
-  let mockCollection: any;
+  let mockDocRef: MockDocRef;
+  let mockCollection: MockCollection;
 
   beforeEach(async () => {
     vi.clearAllMocks();
     if (!jobsHandler) {
       jobsHandler = (await import('../jobs')).default;
     }
-    
+
     mockDocRef = {
       get: vi.fn().mockResolvedValue({ exists: false }),
       set: vi.fn()
@@ -66,7 +85,7 @@ describe('Adzuna Jobs API - 429 Fallback', () => {
       collection: vi.fn(() => mockCollection)
     };
 
-    vi.mocked((globalThis as any).useAdminFirestore).mockReturnValue(mockDb);
+    useAdminFirestoreMock.mockReturnValue(mockDb);
   });
 
   it('should fall back to Reed API if Adzuna returns 429 for gb', async () => {
@@ -83,15 +102,15 @@ describe('Adzuna Jobs API - 429 Fallback', () => {
       response: { status: 429 }
     });
 
-    const result = await jobsHandler({} as any);
+    const result = await jobsHandler({} as unknown as H3Event);
 
     expect($fetchMock).toHaveBeenCalledTimes(1);
-    
+
     // We expect it to hit the reed fallback and return provider: 'reed'
     expect(result.provider).toBe('reed');
     expect(result.count).toBe(10);
-    expect(result.results[0].title).toBe('Reed Job');
-    
+    expect(result.results[0]?.title).toBe('Reed Job');
+
     // Ensure we cached the fallback data
     expect(mockDocRef.set).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -112,12 +131,12 @@ describe('Adzuna Jobs API - 429 Fallback', () => {
     });
 
     // Expect the promise to resolve successfully with fallback data
-    const result = await jobsHandler({} as any);
+    const result = await jobsHandler({} as unknown as H3Event);
     expect(result.provider).toBe('jooble');
     expect(result.count).toBe(20);
-    expect(result.results[0].title).toBe('Jooble Job');
+    expect(result.results[0]?.title).toBe('Jooble Job');
   });
-  
+
   it('should fall back to Jooble API if Adzuna returns 0 results for usa', async () => {
     vi.mocked(getQueryMock).mockReturnValue({
       title: 'Software Engineer',
@@ -131,7 +150,7 @@ describe('Adzuna Jobs API - 429 Fallback', () => {
     });
 
     // Expect the promise to resolve successfully with fallback data
-    const result = await jobsHandler({} as any);
+    const result = await jobsHandler({} as unknown as H3Event);
     expect(result.provider).toBe('jooble');
     expect(result.count).toBe(20);
   });

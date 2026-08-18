@@ -1,3 +1,20 @@
+import { FetchError } from 'ofetch';
+
+// Minimal shape of a raw Adzuna job/geodata entry — only the fields this
+// admin discovery endpoint actually reads (area[1] region names).
+type AdzunaRawLocation = {
+  area?: string[];
+  display_name?: string;
+};
+
+type AdzunaRawSearchResponse = {
+  results?: { location?: AdzunaRawLocation }[];
+};
+
+type AdzunaGeodataItem = {
+  location?: AdzunaRawLocation;
+};
+
 export default defineEventHandler(async (event) => {
   await verifyAdmin(event);
 
@@ -20,7 +37,7 @@ export default defineEventHandler(async (event) => {
     // Strategy: fetch a broad search with no location filter, then extract
     // unique area[1] values from the results to discover Adzuna's region names.
     // We request 50 results to get a good spread of regions.
-    const rawData: any = await $fetch(
+    const rawData = await $fetch<AdzunaRawSearchResponse>(
       `https://api.adzuna.com/v1/api/jobs/${targetCountry}/search/1`,
       {
         params: {
@@ -38,7 +55,7 @@ export default defineEventHandler(async (event) => {
     if (rawData?.results) {
       for (const job of rawData.results) {
         const area = job?.location?.area;
-        if (Array.isArray(area) && area.length >= 2) {
+        if (Array.isArray(area) && area.length >= 2 && area[1]) {
           regions.add(area[1]);
         }
       }
@@ -47,7 +64,7 @@ export default defineEventHandler(async (event) => {
     // Also try the geodata endpoint for a more complete picture
     let geodataRegions: string[] = [];
     try {
-      const geodata: any = await $fetch(
+      const geodata = await $fetch<AdzunaGeodataItem[]>(
         `https://api.adzuna.com/v1/api/jobs/${targetCountry}/geodata`,
         {
           params: {
@@ -63,13 +80,13 @@ export default defineEventHandler(async (event) => {
       if (Array.isArray(geodata)) {
         for (const item of geodata) {
           const area = item?.location?.area;
-          if (Array.isArray(area) && area.length >= 2) {
+          if (Array.isArray(area) && area.length >= 2 && area[1]) {
             regions.add(area[1]);
           }
         }
       }
       geodataRegions = Array.isArray(geodata)
-        ? geodata.map((item: any) => item?.location?.display_name || item?.location?.area?.[1])
+        ? geodata.map((item) => item?.location?.display_name || item?.location?.area?.[1] || '')
         : [];
     } catch {
       // geodata endpoint may not be available, that's fine
@@ -81,11 +98,13 @@ export default defineEventHandler(async (event) => {
       regionsFromGeodata: geodataRegions.filter(Boolean).sort(),
       totalSearchResults: rawData?.results?.length || 0
     };
-  } catch (e: any) {
+  } catch (e) {
+    const isFetchError = e instanceof FetchError;
+    const status = isFetchError ? e.response?.status : undefined;
     throw createError({
-      statusCode: e.response?.status === 429 ? 503 : (e.response?.status || 500),
+      statusCode: status === 429 ? 503 : status || 500,
       statusMessage: 'Market data temporarily unavailable.',
-      data: import.meta.dev ? e.data : undefined
+      data: import.meta.dev && isFetchError ? e.data : undefined
     });
   }
 });

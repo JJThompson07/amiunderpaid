@@ -5,11 +5,9 @@
       class="ml-1 font-bold uppercase tracking-wider"
       :class="[labelSize, labelColour]">
       {{ label }}
-      <span
-v-if="optional"
-class="text-slate-400 text-3xs uppercase"
-        >({{ $t('common.optional') }})</span
-      >
+      <template v-if="optional">
+        <span class="text-slate-400 text-3xs uppercase">({{ $t('common.optional') }})</span>
+      </template>
     </label>
     <div class="relative flex">
       <div
@@ -108,7 +106,10 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:modelValue', 'update:paramValue']);
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string | number): void;
+  (e: 'update:paramValue', value: string | number | null): void;
+}>();
 
 const value = computed({
   get: () => props.modelValue,

@@ -1,7 +1,36 @@
 import type { SearchClient } from 'algoliasearch';
+import type { Ref } from 'vue';
 import type { PercentileData } from '~~/shared/utils/types';
 
-export const useMicroData = () => {
+// Raw shape of a benchmark record as stored in the Algolia `salary_benchmarks` /
+// `regional_salary_benchmarks` indices.
+type AlgoliaBenchmarkHit = {
+  title?: string;
+  avg_salary?: number;
+  salary?: number;
+  salary_10_pt?: number;
+  salary_25_pt?: number;
+  salary_75_pt?: number;
+  salary_90_pt?: number;
+  searchLocation?: string;
+};
+
+export type MicroBaselines = {
+  microNationalData: PercentileData | null;
+  microRegionalData: PercentileData | null;
+  allRegionalMicroData: Record<string, PercentileData>;
+  officialGroupTitle: string | null;
+};
+
+export const useMicroData = (): {
+  fetching: Ref<boolean>;
+  fetchMicroBaselines: (
+    country: string,
+    title: string,
+    userLocation?: string | null,
+    idCode?: string | null
+  ) => Promise<MicroBaselines>;
+} => {
   const { $algolia } = useNuxtApp();
   const fetching = ref(false);
 
@@ -13,7 +42,7 @@ export const useMicroData = () => {
     title: string,
     userLocation?: string | null,
     idCode?: string | null
-  ) => {
+  ): Promise<MicroBaselines> => {
     fetching.value = true;
     const client = $algolia as SearchClient;
 
@@ -37,6 +66,7 @@ export const useMicroData = () => {
         } else {
           // UK usually treats SOC codes as numbers
           baseNationalFilter += ` AND id_code:${cleanId}`;
+          baseRegionalFilter += ` AND id_code:${cleanId}`;
         }
       } else {
         // FALLBACK: TEXT MATCH (If no ID was resolved)
@@ -56,7 +86,7 @@ export const useMicroData = () => {
       // For regional, we grab all regions for this specific job
       const regionalQuery = regionalIndex.search('', {
         filters: baseRegionalFilter,
-        hitsPerPage: 1000
+        hitsPerPage: 100
       });
 
       // ==========================================
@@ -64,7 +94,7 @@ export const useMicroData = () => {
       // ==========================================
       const [nationalRes, regionalRes] = await Promise.all([nationalQuery, regionalQuery]);
 
-      const nationalHit = nationalRes?.hits[0] as any;
+      const nationalHit = nationalRes?.hits[0] as unknown as AlgoliaBenchmarkHit | undefined;
 
       // Extract the official Group Title from the benchmark record
       const officialGroupTitle = nationalHit?.title || null;
@@ -86,7 +116,7 @@ export const useMicroData = () => {
       const allRegionalMicroData: Record<string, PercentileData> = {};
 
       if (regionalRes && regionalRes.hits) {
-        regionalRes.hits.forEach((hit: any) => {
+        (regionalRes.hits as unknown as AlgoliaBenchmarkHit[]).forEach((hit) => {
           if (hit.searchLocation) {
             allRegionalMicroData[hit.searchLocation.toLowerCase()] = {
               mean: hit.avg_salary || hit.salary || 0,
@@ -100,10 +130,9 @@ export const useMicroData = () => {
         });
       }
 
-      const microRegionalData =
-        userLocation && allRegionalMicroData[userLocation.toLowerCase()]
-          ? allRegionalMicroData[userLocation.toLowerCase()]
-          : null;
+      const regionalKey = userLocation?.toLowerCase();
+      const microRegionalData: PercentileData | null =
+        (regionalKey && allRegionalMicroData[regionalKey]) || null;
 
       return {
         microNationalData,
@@ -112,6 +141,7 @@ export const useMicroData = () => {
         officialGroupTitle
       };
     } catch (error) {
+      // eslint-disable-next-line no-console -- surfaces Algolia fetch failures for server-side debugging
       console.error(`Failed to fetch ${country} micro baseline data for ${title}:`, error);
       return {
         microNationalData: null,

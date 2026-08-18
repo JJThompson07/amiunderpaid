@@ -22,5 +22,7 @@ defineProps({
   rows: { type: [Number, String], default: 4 }
 });
 
-defineEmits(['update:modelValue']);
+defineEmits<{
+  (e: 'update:modelValue', value: string): void;
+}>();
 </script>

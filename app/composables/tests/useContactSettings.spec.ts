@@ -9,18 +9,33 @@ vi.mock('firebase/firestore', () => ({
 const mockData = { value: { contact: 'test' } };
 const mockPending = { value: false };
 
-let mockUser: any = { uid: 'user-123' };
+let mockUser: { uid: string } | null = { uid: 'user-123' };
 
-vi.stubGlobal('useFirestore', vi.fn(() => 'mock-db'));
-vi.stubGlobal('useCurrentUser', vi.fn(() => ({
-  get value() { return mockUser; }
-})));
-vi.stubGlobal('useDocument', vi.fn((docRef) => {
-  // Read value to trigger computed evaluation
-  const _ = docRef?.value;
-  return { data: mockData, pending: mockPending };
+vi.stubGlobal(
+  'useFirestore',
+  vi.fn(() => 'mock-db')
+);
+vi.stubGlobal(
+  'useCurrentUser',
+  vi.fn(() => ({
+    get value(): { uid: string } | null {
+      return mockUser;
+    }
+  }))
+);
+vi.stubGlobal(
+  'useDocument',
+  vi.fn((docRef?: { value: unknown }) => {
+    // Read value to trigger computed evaluation
+    const _ = docRef?.value;
+    return { data: mockData, pending: mockPending };
+  })
+);
+vi.stubGlobal('computed', <T>(fn: () => T) => ({
+  get value(): T {
+    return fn();
+  }
 }));
-vi.stubGlobal('computed', (fn: any) => ({ get value() { return fn(); } }));
 
 describe('useContactSettings', () => {
   beforeEach(() => {
@@ -30,7 +45,7 @@ describe('useContactSettings', () => {
 
   it('fetches contact settings when user is logged in', () => {
     const { contactSettings, loadingSettings } = useContactSettings();
-    
+
     expect(contactSettings.value).toEqual({ contact: 'test' });
     expect(loadingSettings.value).toBe(false);
   });

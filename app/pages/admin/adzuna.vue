@@ -111,6 +111,16 @@
 <script setup lang="ts">
 import { RefreshCw, Save, TrendingUp } from 'lucide-vue-next';
 import { collection, doc, getDocs, query, where, writeBatch } from 'firebase/firestore';
+import type { JobCategoryEntry } from '~~/shared/utils/market-data';
+
+// A category document as stored in the `adzuna_categories` Firestore collection,
+// including the admin-managed cache TTL alongside the base label/tag entry.
+type StoredAdzunaCategory = JobCategoryEntry & {
+  id: string;
+  cache: number;
+  country?: string;
+  updatedAt?: Date;
+};
 
 /**
  * PAGE METADATA
@@ -126,11 +136,11 @@ const { fetchCategories, categories } = useJobs();
 const targetCountry = ref('UK');
 const syncingCategories = ref(false);
 const categoryStatus = ref('');
-const storedCategories = ref<any[]>([]);
+const storedCategories = ref<StoredAdzunaCategory[]>([]);
 const loadingStored = ref(false);
 const { showToast } = useSystemToast();
 
-const handleSyncCategories = async () => {
+const handleSyncCategories = async (): Promise<void> => {
   if (!db) {
     return;
   }
@@ -163,14 +173,15 @@ const handleSyncCategories = async () => {
     await batch.commit();
     categoryStatus.value = `✅ Synced ${categories.value.length} categories.`;
     await fetchStoredCategories();
-  } catch (e: any) {
-    categoryStatus.value = `❌ Error: ${e.message}`;
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    categoryStatus.value = `❌ Error: ${message}`;
   } finally {
     syncingCategories.value = false;
   }
 };
 
-const fetchStoredCategories = async () => {
+const fetchStoredCategories = async (): Promise<void> => {
   if (!db) {
     return;
   }
@@ -182,11 +193,14 @@ const fetchStoredCategories = async () => {
     );
     const snapshot = await getDocs(q);
     storedCategories.value = snapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-      }))
-      .sort((a: any, b: any) => a.label.localeCompare(b.label));
+      .map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data()
+          }) as StoredAdzunaCategory
+      )
+      .sort((a, b) => a.label.localeCompare(b.label));
   } catch {
     // Silent fail for fetching categories
   } finally {
@@ -194,7 +208,7 @@ const fetchStoredCategories = async () => {
   }
 };
 
-const saveStoredCategories = async () => {
+const saveStoredCategories = async (): Promise<void> => {
   if (!db) {
     return;
   }

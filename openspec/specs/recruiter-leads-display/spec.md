@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change fix-recruiter-leads-display. Update Purpose after archive.
+Fixes display anomalies and sorting logic for the recruiter leads dashboard.
 
 ## Requirements
 

@@ -51,7 +51,7 @@
                   ? [selectedBgColour, selectedBorderColour, selectedTextColour, 'cursor-pointer']
                   : [bgColour, borderColour, textColour, hoverColour, 'cursor-pointer']
             ]"
-            @click="!isClaimed(option.id) && $emit('territory-click', option)">
+            @click="!isClaimed(option.id) && $emit('territoryClick', option)">
             <div class="flex items-center gap-2 overflow-hidden">
               <span class="font-semibold text-xs truncate">
                 {{ option.name }}
@@ -89,8 +89,10 @@ const props = defineProps({
     type: Array as PropType<TerritoryListOption[]>,
     required: true
   },
+  // Only `.id` is actually read (see selectedIds below), so callers don't
+  // need to supply the full TerritoryListOption shape (e.g. `region`).
   selectedOptions: {
-    type: Array as PropType<TerritoryListOption[]>,
+    type: Array as PropType<Pick<TerritoryListOption, 'id'>[]>,
     required: true
   },
   bgColour: {
@@ -135,7 +137,9 @@ const props = defineProps({
   }
 });
 
-defineEmits(['territory-click', 'territory-remove']);
+defineEmits<{
+  (e: 'territoryClick' | 'territoryRemove', option: TerritoryListOption): void;
+}>();
 
 // Accordion State
 const openGroups = ref<Set<string>>(new Set());
@@ -162,9 +166,9 @@ const selectedIdsSet = computed(() => {
 
 const claimedIdsSet = computed(() => new Set(props.claimedIds));
 
-const isClaimed = (id: number) => claimedIdsSet.value.has(id);
+const isClaimed = (id: number): boolean => claimedIdsSet.value.has(id);
 
-const toggleGroup = (groupName: string) => {
+const toggleGroup = (groupName: string): void => {
   if (openGroups.value.has(groupName)) {
     openGroups.value.delete(groupName);
   } else {
@@ -172,11 +176,11 @@ const toggleGroup = (groupName: string) => {
   }
 };
 
-const isSelected = (id: number) => {
+const isSelected = (id: number): boolean => {
   return selectedIdsSet.value.has(id);
 };
 
-const groupItemsSelected = (options: TerritoryListOption[]) => {
+const groupItemsSelected = (options: TerritoryListOption[]): number => {
   return options.filter((option) => isSelected(option.id)).length;
 };
 </script>

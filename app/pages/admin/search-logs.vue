@@ -32,11 +32,9 @@
           <div
             class="bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-end">
             <span class="text-2xs font-black text-slate-400 uppercase tracking-widest">Today</span>
-            <span
-v-if="pending"
-class="text-2xl font-black text-slate-300 animate-pulse mt-1"
-              >---</span
-            >
+            <template v-if="pending">
+              <span class="text-2xl font-black text-slate-300 animate-pulse mt-1">---</span>
+            </template>
             <div v-else class="flex flex-col items-end">
               <span class="text-2xl font-black text-primary-500 leading-none mt-1">
                 {{ todayCount.toLocaleString() }}
@@ -50,11 +48,9 @@ class="text-2xl font-black text-slate-300 animate-pulse mt-1"
             <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Yesterday</span
             >
-            <span
-v-if="pending"
-class="text-2xl font-black text-slate-300 animate-pulse mt-1"
-              >---</span
-            >
+            <template v-if="pending">
+              <span class="text-2xl font-black text-slate-300 animate-pulse mt-1">---</span>
+            </template>
             <div v-else class="flex flex-col items-end">
               <span class="text-2xl font-black text-primary-500 leading-none mt-1">
                 {{ yesterdayCount.toLocaleString() }}
@@ -68,11 +64,9 @@ class="text-2xl font-black text-slate-300 animate-pulse mt-1"
             <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Daily Avg</span
             >
-            <span
-v-if="pending"
-class="text-2xl font-black text-slate-300 animate-pulse mt-1"
-              >---</span
-            >
+            <template v-if="pending">
+              <span class="text-2xl font-black text-slate-300 animate-pulse mt-1">---</span>
+            </template>
             <div v-else class="flex flex-col items-end">
               <span class="text-2xl font-black text-primary-500 leading-none mt-1">
                 {{ averageDailySearches.toLocaleString() }}
@@ -86,11 +80,9 @@ class="text-2xl font-black text-slate-300 animate-pulse mt-1"
             <span class="text-2xs font-black text-slate-400 uppercase tracking-widest"
               >Lifetime Searches</span
             >
-            <span
-v-if="pending"
-class="text-2xl font-black text-slate-300 animate-pulse mt-1"
-              >---</span
-            >
+            <template v-if="pending">
+              <span class="text-2xl font-black text-slate-300 animate-pulse mt-1">---</span>
+            </template>
             <div v-else class="flex flex-col items-end">
               <span class="text-2xl font-black text-primary-500 leading-none mt-1">
                 {{ totalLifetimeSearches.toLocaleString() }}
@@ -123,7 +115,7 @@ class="text-2xl font-black text-slate-300 animate-pulse mt-1"
         <AmITable
           :columns="tableColumns"
           :data="colouredLogs"
-          :row-class="(row) => row.rowClass"
+          :row-class="(row) => row.rowClass as string"
           max-height="h-125"
           empty-message="No search logs match your query.">
           <template #formattedDate="{ value }">
@@ -150,7 +142,7 @@ class="text-2xl font-black text-slate-300 animate-pulse mt-1"
 
           <template #salary="{ value }">
             <span class="text-sm font-mono font-medium text-slate-600">
-              {{ value && value > 0 ? value.toLocaleString() : '-' }}
+              {{ value && (value as number) > 0 ? (value as number).toLocaleString() : '-' }}
             </span>
           </template>
 
@@ -251,7 +243,7 @@ class="text-2xl font-black text-slate-300 animate-pulse mt-1"
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { Search } from 'lucide-vue-next';
-import type { SearchLog } from '../../../server/api/user/search-logs.get';
+import type { SearchLog } from '../../../server/api/admin/search-logs.get';
 
 definePageMeta({ middleware: 'admin' });
 
@@ -286,6 +278,9 @@ const searchQuery = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 50;
 
+// Maintain cursors for each page
+const cursors = ref<Record<number, string>>({});
+
 const { data, pending, refresh } = await useFetch<{
   success: boolean;
   totalCount: number;
@@ -294,14 +289,25 @@ const { data, pending, refresh } = await useFetch<{
   oldestDate: string;
   averagePerDay: number;
   logs: SearchLog[];
-}>('/api/user/search-logs', {
-  query: {
-    page: currentPage,
+  nextCursor?: string;
+}>('/api/admin/search-logs', {
+  query: computed(() => ({
     limit: itemsPerPage,
-    search: searchQuery // Passed directly to the server
-  },
+    search: searchQuery.value, // Passed directly to the server
+    cursor: currentPage.value > 1 ? cursors.value[currentPage.value] : undefined
+  })),
   watch: [currentPage, searchQuery]
 });
+
+watch(
+  data,
+  (newData) => {
+    if (newData?.nextCursor) {
+      cursors.value[currentPage.value + 1] = newData.nextCursor;
+    }
+  },
+  { immediate: true }
+);
 
 // --- BACKFILL STATE ---
 const backfillLoading = ref(false);
@@ -312,15 +318,24 @@ const backfillResult = ref<{
   failed: number;
 } | null>(null);
 
-const runBackfill = async () => {
+const runBackfill = async (): Promise<void> => {
   backfillLoading.value = true;
   backfillResult.value = null;
   try {
-    const result = await $fetch<any>('/api/admin/backfill-searches', { method: 'POST' });
+    const result = await $fetch<{
+      success: boolean;
+      processed: number;
+      updated: number;
+      skipped: number;
+      failed: number;
+      skipReasons?: string[];
+      failReasons?: string[];
+    }>('/api/admin/backfill-searches', { method: 'POST' });
     backfillResult.value = result;
     // Refresh the table data to show newly enriched logs
     await refresh();
   } catch (e) {
+    // eslint-disable-next-line no-console -- surfaces backfill failures for admin debugging; no dedicated error-logging utility for this admin tooling
     console.error('Backfill failed:', e);
   } finally {
     backfillLoading.value = false;
@@ -362,7 +377,7 @@ const colouredLogs = computed(() => {
   let currentBg = 'bg-white';
   let lastDate = '';
 
-  return logs.value.map((log: any, index: number) => {
+  return logs.value.map((log: SearchLog, index: number) => {
     if (index === 0) {
       lastDate = log.dateKey;
     }

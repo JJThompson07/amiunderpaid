@@ -11,7 +11,7 @@ test.describe('Recruiter Dashboard Flows', () => {
     // 2. Fill in the credentials
     const emailInput = page.locator('input[type="text"], input[type="email"]').first();
     const passwordInput = page.locator('input[type="password"]').first();
-    
+
     await emailInput.fill(TEST_EMAIL);
     await passwordInput.fill(TEST_PASSWORD);
 

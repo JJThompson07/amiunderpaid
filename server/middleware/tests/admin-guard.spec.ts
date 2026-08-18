@@ -1,0 +1,57 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { H3Event } from 'h3';
+import { verifyAdmin } from '../../utils/firebase';
+import type AdminGuardHandler from '../admin-guard';
+
+vi.stubGlobal(
+  'defineEventHandler',
+  (fn: (event: H3Event) => Promise<void>): ((event: H3Event) => Promise<void>) => fn
+);
+vi.stubGlobal('getRequestURL', (event: H3Event) => new URL(event.path, 'http://localhost'));
+
+vi.mock('../../utils/firebase', () => ({
+  verifyAdmin: vi.fn()
+}));
+
+describe('Admin Guard Middleware', () => {
+  let handler: typeof AdminGuardHandler;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const mod = await import('../admin-guard');
+    handler = mod.default;
+  });
+
+  it('should call verifyAdmin for /api/admin/ routes', async () => {
+    const event = { path: '/api/admin/users' } as unknown as H3Event;
+
+    await handler(event);
+
+    expect(verifyAdmin).toHaveBeenCalledWith(event);
+  });
+
+  it('should NOT call verifyAdmin for non-admin routes', async () => {
+    const event = { path: '/api/user/profile' } as unknown as H3Event;
+
+    await handler(event);
+
+    expect(verifyAdmin).not.toHaveBeenCalled();
+  });
+
+  it('should NOT call verifyAdmin for non-api routes', async () => {
+    const event = { path: '/admin/dashboard' } as unknown as H3Event;
+
+    await handler(event);
+
+    expect(verifyAdmin).not.toHaveBeenCalled();
+  });
+
+  it('should throw if verifyAdmin throws', async () => {
+    const event = { path: '/api/admin/settings' } as unknown as H3Event;
+
+    const error = new Error('Forbidden');
+    vi.mocked(verifyAdmin).mockRejectedValueOnce(error);
+
+    await expect(handler(event)).rejects.toThrow('Forbidden');
+  });
+});

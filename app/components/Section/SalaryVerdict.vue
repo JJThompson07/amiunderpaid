@@ -27,11 +27,9 @@ import { computed } from 'vue';
 import { Check, TrendingDown, TrendingUp } from 'lucide-vue-next';
 
 const props = defineProps<{
-  marketAverage: number;
   currencySymbol: string;
   diff: number;
   diffPercent: number;
-  isUnderpaid: boolean;
   comparison: number;
 }>();
 

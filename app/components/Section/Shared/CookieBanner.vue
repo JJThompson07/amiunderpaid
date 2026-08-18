@@ -49,12 +49,12 @@ onMounted(() => {
   }
 });
 
-const accept = () => {
+const accept = (): void => {
   analyticsConsent.value = 'granted';
   showBanner.value = false;
 };
 
-const decline = () => {
+const decline = (): void => {
   analyticsConsent.value = 'denied';
   showBanner.value = false;
 };

@@ -1,7 +1,18 @@
+import type { ComputedRef, Ref } from 'vue';
 import { computed, onMounted, onUpdated, ref } from 'vue';
 import { useElementSize, useEventListener } from '@vueuse/core';
 
-export const useCarousel = () => {
+type UseCarouselReturn = {
+  trackRef: Ref<HTMLElement | null>;
+  canScrollLeft: Ref<boolean>;
+  canScrollRight: Ref<boolean>;
+  isScrollable: Ref<boolean>;
+  cardWidth: ComputedRef<string>;
+  checkScroll: () => void;
+  scrollByAmount: (direction: 1 | -1) => void;
+};
+
+export const useCarousel = (): UseCarouselReturn => {
   const trackRef = ref<HTMLElement | null>(null);
   const canScrollLeft = ref(false);
   const canScrollRight = ref(true);
@@ -36,7 +47,7 @@ export const useCarousel = () => {
     return `calc((100% - ${totalGap}px) / ${actualItemsToShow.value})`;
   });
 
-  const checkScroll = () => {
+  const checkScroll = (): void => {
     if (!trackRef.value) {
       return;
     }
@@ -47,7 +58,7 @@ export const useCarousel = () => {
     canScrollRight.value = Math.ceil(scrollLeft + clientWidth) < scrollWidth - 2;
   };
 
-  const scrollByAmount = (direction: 1 | -1) => {
+  const scrollByAmount = (direction: 1 | -1): void => {
     if (!trackRef.value || trackRef.value.children.length === 0) {
       return;
     }
@@ -60,7 +71,7 @@ export const useCarousel = () => {
     trackRef.value.scrollBy({ left: scrollAmount * direction, behavior: 'smooth' });
   };
 
-  const updateItemCount = () => {
+  const updateItemCount = (): void => {
     if (trackRef.value) {
       const count = trackRef.value.children.length;
       if (itemCount.value !== count) {

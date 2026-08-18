@@ -169,6 +169,13 @@ type JobTitleRecord = {
   group: string;
 };
 
+type JobTitleFirestoreRecord = JobTitleRecord & {
+  searchTitle: string;
+  country: string;
+  updatedAt: Date;
+  objectID: string;
+};
+
 /**
  * PAGE METADATA
  */
@@ -195,7 +202,7 @@ const existingData = ref<{ country: string; count: number }[]>([]);
 
 // ** methods **
 
-const fetchSummary = async () => {
+const fetchSummary = async (): Promise<void> => {
   if (!db) {
     return;
   }
@@ -213,7 +220,7 @@ const fetchSummary = async () => {
   existingData.value = results;
 };
 
-const onFileSelect = (e: Event) => {
+const onFileSelect = (e: Event): void => {
   const target = e.target as HTMLInputElement;
   const file = target.files?.[0];
   if (file) {
@@ -225,7 +232,7 @@ const onFileSelect = (e: Event) => {
   }
 };
 
-const deleteRecords = async (country: string) => {
+const deleteRecords = async (country: string): Promise<void> => {
   if (!db) {
     return;
   }
@@ -251,14 +258,15 @@ const deleteRecords = async (country: string) => {
       }
     });
     log('✅ Algolia index cleared.');
-  } catch (e: any) {
-    log(`⚠️ Failed to clear Algolia: ${e.message}`);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log(`⚠️ Failed to clear Algolia: ${message}`);
   }
 
   await fetchSummary();
 };
 
-const handleParse = async () => {
+const handleParse = async (): Promise<void> => {
   if (!selectedFile.value) {
     return;
   }
@@ -289,20 +297,21 @@ const handleParse = async () => {
     } else {
       log(`❌ PARSE ERROR: ${response.error}`);
     }
-  } catch (e: any) {
-    log(`❌ NETWORK ERROR: ${e.message}`);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log(`❌ NETWORK ERROR: ${message}`);
   } finally {
     parsing.value = false;
   }
 };
 
-const seedToFirestore = async () => {
+const seedToFirestore = async (): Promise<void> => {
   if (loading.value || parsedData.value.length === 0 || !db) {
     return;
   }
 
   // Helper to generate consistent IDs
-  const getRecordId = (record: JobTitleRecord) => {
+  const getRecordId = (record: JobTitleRecord): string => {
     const cleanTitle = record.title
       .toLowerCase()
       .replace(/\s+/g, '_')
@@ -351,7 +360,7 @@ const seedToFirestore = async () => {
     }
 
     // 2. Batch write new records
-    const recordsToSync: any[] = [];
+    const recordsToSync: JobTitleFirestoreRecord[] = [];
 
     recordsToSeed.forEach((record) => {
       const docId = getRecordId(record);
@@ -386,8 +395,9 @@ const seedToFirestore = async () => {
     selectedFile.value = null;
     fileName.value = '';
     await fetchSummary();
-  } catch (e: any) {
-    log(`❌ Error: ${e.message}`);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log(`❌ Error: ${message}`);
     loading.value = false;
   }
 };

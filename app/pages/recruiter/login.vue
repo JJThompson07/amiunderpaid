@@ -35,7 +35,7 @@
       class="flex-1 bg-secondary-900 text-white flex flex-col justify-center items-center p-6 md:p-12 xl:p-24 relative overflow-hidden">
       <div class="relative z-10 max-w-lg">
         <h2 class="text-3xl xl:text-3xl font-black mb-12 text-white leading-tight">
-          {{ $t('login.recruiter.benefits.title', { title: SiteTitle }) }}
+          {{ $t('login.recruiter.benefits.title', { title: siteTitle }) }}
         </h2>
 
         <div class="space-y-6">
@@ -78,7 +78,7 @@ const { t } = useI18n();
 
 const { $siteBrand } = useNuxtApp();
 
-const SiteTitle = computed<string>(() => {
+const siteTitle = computed<string>(() => {
   return $siteBrand === 'benchmarkmyrole'
     ? 'BenchmarkMyRole & AmIUnderpaid'
     : 'AmIUnderpaid & BenchmarkMyRole';
@@ -120,12 +120,12 @@ const benefits = computed(() => [
   }
 ]);
 
-const clearError = () => {
+const clearError = (): void => {
   localError.value = '';
   error.value = '';
 };
 
-const handleLogin = async (credentials: any) => {
+const handleLogin = async (credentials: { email: string; password: string }): Promise<void> => {
   clearError();
 
   if (!credentials.email || !credentials.password) {

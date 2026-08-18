@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change fix-recruiter-password-layout-i18n. Update Purpose after archive.
+Fixes layout anomalies and i18n key references in the recruiter password reset flow.
 
 ## Requirements
 

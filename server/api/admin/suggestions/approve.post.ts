@@ -10,7 +10,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 2. Dynamically route to the correct Master Dictionary
-    const targetCollection = country === 'USA' || country === 'US' ? 'usa_job_groups' : 'uk_job_groups';
+    const targetCollection =
+      country === 'USA' || country === 'US' ? 'usa_job_groups' : 'uk_job_groups';
 
     const groupRef = db.collection(targetCollection).doc(targetIdCode);
 
@@ -39,6 +40,7 @@ export default defineEventHandler(async (event) => {
 
     return { success: true };
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces suggestion approval failures for admin debugging; no dedicated server-side error-logging utility exists
     console.error('Error approving suggestion:', error);
     throw createError({ statusCode: 500, message: 'Approval failed' });
   }

@@ -1,6 +1,12 @@
 import { doc, getDoc } from 'firebase/firestore';
 
-export const useUserRole = () => {
+export const useUserRole = (): {
+  userRole: Ref<string | null>;
+  isRoleLoading: Ref<boolean>;
+  isAdmin: ComputedRef<boolean>;
+  isRecruiter: ComputedRef<boolean>;
+  isStandardUser: ComputedRef<boolean>;
+} => {
   const user = useCurrentUser();
   const db = useFirestore();
 
@@ -27,6 +33,7 @@ export const useUserRole = () => {
             userRole.value = 'user';
           }
         } catch (error) {
+          // eslint-disable-next-line no-console -- surfaces role-fetch failures for debugging; no dedicated error-logging utility exists in the composables layer yet
           console.error('Error fetching user role:', error);
           userRole.value = 'user';
         } finally {

@@ -1,13 +1,13 @@
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
-import { defineEventHandler, getHeader, getRequestHeader } from 'h3';
+import { defineEventHandler, getHeader } from 'h3';
 
 export default defineEventHandler(async (event) => {
   // If in local development (but not testing), abort
-  if (process.dev && process.env.NODE_ENV !== 'test') {
+  if (import.meta.dev && process.env.NODE_ENV !== 'test') {
     return { status: 200, message: 'Local development session skipped' };
   }
 
-  const decodeSafe = (val: string) => {
+  const decodeSafe = (val: string): string => {
     try {
       return decodeURIComponent(val);
     } catch {
@@ -17,12 +17,22 @@ export default defineEventHandler(async (event) => {
 
   // Get geolocation headers
   const countryRaw = decodeSafe(
-    (getHeader(event, 'x-vercel-ip-country') || getHeader(event, 'cf-ipcountry') || 'Unknown') as string
+    (getHeader(event, 'x-vercel-ip-country') ||
+      getHeader(event, 'cf-ipcountry') ||
+      'Unknown') as string
   );
-  let country = countryRaw.replace(/[^a-zA-Z0-9 -]/g, '').trim().substring(0, 50) || 'Unknown';
+  const country =
+    countryRaw
+      .replace(/[^a-zA-Z0-9 -]/g, '')
+      .trim()
+      .substring(0, 50) || 'Unknown';
 
   const cityRaw = decodeSafe((getHeader(event, 'x-vercel-ip-city') || 'Unknown') as string);
-  let city = cityRaw.replace(/[^a-zA-Z0-9 -]/g, '').trim().substring(0, 100) || 'Unknown';
+  const city =
+    cityRaw
+      .replace(/[^a-zA-Z0-9 -]/g, '')
+      .trim()
+      .substring(0, 100) || 'Unknown';
 
   // YYYY-MM-DD UTC
   const now = new Date();
@@ -45,6 +55,7 @@ export default defineEventHandler(async (event) => {
     );
   } catch (err) {
     // Fail silently so client isn't impacted
+    // eslint-disable-next-line no-console -- surfaces session-logging failures for debugging; no dedicated server-side error-logging utility exists
     console.error('Failed to log user session:', err);
   }
 

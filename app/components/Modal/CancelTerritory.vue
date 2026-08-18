@@ -76,5 +76,8 @@ defineProps({
   }
 });
 
-defineEmits(['update:modelValue', 'confirm']);
+defineEmits<{
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'confirm'): void;
+}>();
 </script>

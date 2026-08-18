@@ -48,5 +48,7 @@ defineProps({
     default: ''
   }
 });
-defineEmits(['update:modelValue']);
+defineEmits<{
+  (e: 'update:modelValue', value: boolean): void;
+}>();
 </script>

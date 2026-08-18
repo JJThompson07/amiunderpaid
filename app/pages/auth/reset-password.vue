@@ -100,7 +100,7 @@ onMounted(async () => {
   }
 });
 
-const handleReset = async () => {
+const handleReset = async (): Promise<void> => {
   if (newPassword.value.length < 6) {
     error.value = t('account.reset-password.error.length');
     return;

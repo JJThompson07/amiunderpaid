@@ -8,10 +8,18 @@ vi.stubGlobal('useNuxtApp', () => ({ $siteBrand: 'TestBrand' }));
 
 let mockCookieValue: string | null = null;
 vi.stubGlobal('useCookie', () => ({
-  get value() { return mockCookieValue; },
-  set value(val) { mockCookieValue = val; }
+  get value(): string | null {
+    return mockCookieValue;
+  },
+  set value(val: string | null) {
+    mockCookieValue = val;
+  }
 }));
-vi.stubGlobal('computed', (fn: any) => ({ get value() { return fn(); } }));
+vi.stubGlobal('computed', <T>(fn: () => T) => ({
+  get value(): T {
+    return fn();
+  }
+}));
 
 describe('useAnalytics', () => {
   beforeEach(() => {

@@ -58,7 +58,9 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['click']);
+const emit = defineEmits<{
+  (e: 'click', event: Event): void;
+}>();
 
 // ** Data & Refs **
 const button = ref<HTMLElement | null>(null);
@@ -74,7 +76,7 @@ const backgroundColour = computed<string>(() => {
   return isHovered.value ? props.animationColour : props.bgColour;
 });
 
-const handleClick = (event: Event) => {
+const handleClick = (event: Event): void => {
   // Completely block the click event from firing if disabled
   if (props.disabled) {
     event.preventDefault();

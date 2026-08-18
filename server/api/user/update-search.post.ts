@@ -23,14 +23,16 @@ export default defineEventHandler(async (event) => {
 
   // Security Remediation: Verify the HMAC token before allowing the update
   const config = useRuntimeConfig();
-  if (!verifySearchToken(body.id, body.token, config.stripeWebhookSecret || 'fallback-secret-for-dev')) {
+  if (
+    !verifySearchToken(body.id, body.token, config.stripeWebhookSecret || 'fallback-secret-for-dev')
+  ) {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
   }
 
   const db = getFirestore();
 
   try {
-    const updateData: Record<string, any> = {};
+    const updateData: Partial<Omit<UpdateSearchBody, 'id' | 'token'>> = {};
 
     if (body.mcaScore !== undefined) {
       updateData.mcaScore = body.mcaScore;

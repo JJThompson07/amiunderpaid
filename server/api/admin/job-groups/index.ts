@@ -22,6 +22,7 @@ export default defineEventHandler(async (event) => {
 
     return { success: true, groups };
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces job-group fetch failures for admin debugging; no dedicated server-side error-logging utility exists
     console.error('Error fetching job groups:', error);
     throw createError({ statusCode: 500, message: 'Failed to fetch job groups' });
   }

@@ -13,9 +13,11 @@ When job seekers in the USA search for positions, the primary provider (Adzuna) 
 ## Capabilities
 
 ### New Capabilities
+
 - `jooble-api-fallback`: Jooble API integration and USA-specific geographic fallback routing.
 
 ### Modified Capabilities
+
 - `reed-api-fallback`: Update the geographic routing logic to explicitly accommodate the USA secondary fallback path (since the core routing logic exists here from the previous branch).
 
 ## Impact

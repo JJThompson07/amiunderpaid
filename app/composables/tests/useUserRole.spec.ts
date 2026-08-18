@@ -8,7 +8,7 @@ vi.stubGlobal('ref', ref);
 vi.stubGlobal('watch', watch);
 
 // Mock Nuxt useState
-vi.stubGlobal('useState', (key: string, init: () => any) => {
+vi.stubGlobal('useState', (key: string, init: () => unknown) => {
   const state = ref(init ? init() : null);
   return state;
 });
@@ -35,7 +35,7 @@ describe('useUserRole', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUser.value = null;
-    
+
     // Default getDoc mock behavior
     mockGetDoc.mockResolvedValue({
       exists: () => true,
@@ -45,20 +45,20 @@ describe('useUserRole', () => {
 
   it('initializes with null user role and sets it when user logs in', async () => {
     const { userRole, isRoleLoading, isAdmin } = useUserRole();
-    
+
     expect(userRole.value).toBe(null);
     expect(isRoleLoading.value).toBe(false);
     expect(isAdmin.value).toBe(false);
-    
+
     // Simulate user login
     mockUser.value = { uid: 'user-123' };
-    
+
     // Await watch execution
     await nextTick();
     await nextTick(); // sometimes needs two ticks for promises
     // Wait for promise resolution from getDoc
-    await new Promise(resolve => setTimeout(resolve, 0));
-    
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
     expect(mockGetDoc).toHaveBeenCalledWith('doc-users-user-123');
     expect(userRole.value).toBe('admin');
     expect(isAdmin.value).toBe(true);
@@ -69,64 +69,64 @@ describe('useUserRole', () => {
     mockGetDoc.mockResolvedValueOnce({
       exists: () => false
     });
-    
+
     mockUser.value = { uid: 'user-456' };
     const { userRole, isStandardUser } = useUserRole();
-    
+
     await nextTick();
-    await new Promise(resolve => setTimeout(resolve, 0));
-    
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
     expect(userRole.value).toBe('user');
     expect(isStandardUser.value).toBe(true);
   });
 
   it('sets userRole to user if fetch throws an error', async () => {
     mockGetDoc.mockRejectedValueOnce(new Error('Firebase error'));
-    
+
     // Mock console.error to avoid test output noise
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    
+
     mockUser.value = { uid: 'user-789' };
     const { userRole } = useUserRole();
-    
+
     await nextTick();
-    await new Promise(resolve => setTimeout(resolve, 0));
-    
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
     expect(userRole.value).toBe('user');
     expect(consoleSpy).toHaveBeenCalledWith('Error fetching user role:', expect.any(Error));
-    
+
     consoleSpy.mockRestore();
   });
 
   it('sets userRole to null when user logs out', async () => {
     mockUser.value = { uid: 'user-123' };
     const { userRole } = useUserRole();
-    
+
     await nextTick();
-    await new Promise(resolve => setTimeout(resolve, 0));
-    
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
     expect(userRole.value).toBe('admin');
-    
+
     // Simulate user logout
     mockUser.value = null;
     await nextTick();
-    
+
     expect(userRole.value).toBe(null);
   });
 
   it('computed properties return correct values based on role', async () => {
     mockUser.value = { uid: 'user-123' };
-    
+
     mockGetDoc.mockResolvedValueOnce({
       exists: () => true,
       data: () => ({ role: 'recruiter' })
     });
-    
+
     const { isAdmin, isRecruiter, isStandardUser } = useUserRole();
-    
+
     await nextTick();
-    await new Promise(resolve => setTimeout(resolve, 0));
-    
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
     expect(isAdmin.value).toBe(false);
     expect(isRecruiter.value).toBe(true);
     expect(isStandardUser.value).toBe(false);

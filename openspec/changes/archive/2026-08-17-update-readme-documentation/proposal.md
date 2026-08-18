@@ -11,9 +11,11 @@ The current README and project documentation need to be updated to present a pro
 ## Capabilities
 
 ### New Capabilities
+
 None.
 
 ### Modified Capabilities
+
 None. (This is a pure documentation update. We will configure `skip_specs: true` in `.openspec.yaml`).
 
 ## Impact

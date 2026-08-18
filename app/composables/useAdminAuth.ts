@@ -1,6 +1,14 @@
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import type { Ref } from 'vue';
 
-export const useAdminAuth = () => {
+export type UseAdminAuthReturn = {
+  login: (email: string, password: string, accessKey: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  loading: Ref<boolean>;
+  error: Ref<string>;
+};
+
+export const useAdminAuth = (): UseAdminAuthReturn => {
   const auth = useFirebaseAuth();
   const loading = ref(false);
   const error = ref('');
@@ -30,8 +38,12 @@ export const useAdminAuth = () => {
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       return true;
-    } catch (e: any) {
-      switch (e.code) {
+    } catch (e: unknown) {
+      const code =
+        typeof e === 'object' && e !== null && 'code' in e
+          ? (e as { code: string }).code
+          : undefined;
+      switch (code) {
         case 'auth/invalid-credential':
         case 'auth/user-not-found':
         case 'auth/wrong-password':
@@ -49,7 +61,7 @@ export const useAdminAuth = () => {
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     if (auth) {
       await signOut(auth);
 

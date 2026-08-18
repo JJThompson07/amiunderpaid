@@ -95,7 +95,7 @@
                   :options="territoryOptions"
                   :selected-options="selectedTerritories"
                   max-height="max-h-40"
-                  @remove="removeTerritory($event)" />
+                  @remove="removeTerritory($event as number)" />
               </div>
 
               <div class="flex flex-col gap-2">
@@ -122,7 +122,7 @@
                 <AmIButtonList
                   :options="intelligentCategories"
                   :selected-options="selectedCategories"
-                  @remove="removeCategoryFromList($event)" />
+                  @remove="removeCategoryFromList($event as string)" />
               </div>
 
               <hr class="border-slate-100" />
@@ -187,6 +187,9 @@
 <script setup lang="ts">
 // IMPORT YOUR CONSTANTS
 import type { TerritoryListOption } from '../../../components/Territory/List.vue';
+import type { ScheduleSelection } from '../../../components/Territory/ScheduleMatrix.vue';
+import type { JobCategoryEntry } from '~~/shared/utils/market-data';
+import type { TerritoryClaim } from '~~/shared/utils/types';
 
 definePageMeta({
   middleware: ['recruiters', 'recruiter-verified']
@@ -195,6 +198,16 @@ definePageMeta({
 export type CountryCode = 'UK' | 'USA';
 export type ViewType = 'list' | 'map';
 export type TerritoryOption = { label: string; value: number };
+
+// Common shape shared by every source that can populate `selectedTerritories`
+// (the map, the list view, and the non-contiguous USA regions widget) --
+// all of them guarantee at least an id + name, with an optional band.
+type SelectedTerritory = { id: number; name: string; band?: number };
+
+// The `adzuna_categories` Firestore documents carry an `id` alongside the
+// base label/tag entry (see StoredAdzunaCategory in admin/adzuna.vue), even
+// though the composable's declared type only models label/tag.
+type CategoryEntry = JobCategoryEntry & { id?: string; country?: string };
 
 const { t } = useI18n();
 const { showToast } = useSystemToast();
@@ -219,12 +232,12 @@ const { categories: categoriesData, loadingCategories } = useCategories();
 // 2. State Management
 const selectedCountry = ref<CountryCode>('UK');
 const selectedView = ref<ViewType>('map');
-const selectedTerritories = ref<any[]>([]); // Array of selected map regions
+const selectedTerritories = ref<SelectedTerritory[]>([]); // Array of selected map regions
 const selectedCategories = ref<string[]>([]); // Array of selected industries
 
 // Wizard & Submission State
 const step = ref<1 | 2>(1);
-const scheduleSelections = ref<any[]>([]);
+const scheduleSelections = ref<ScheduleSelection[]>([]);
 const isSubmitting = ref(false);
 
 const userClaimedIds = computed(() => {
@@ -232,7 +245,9 @@ const userClaimedIds = computed(() => {
     return [];
   }
   const active = userProfile.value.activeTerritories || userProfile.value.claims || [];
-  return active.map((t: any) => t.territoryId || t.id);
+  return active
+    .map((t: TerritoryClaim & { id?: number }) => t.territoryId ?? t.id)
+    .filter((id): id is number => id !== undefined);
 });
 
 // 1. Create a reactive array of all the territory IDs they clicked
@@ -272,17 +287,19 @@ const intelligentCategories = computed(() => {
   }
 
   const countrySpecificCategories = categoriesData.value.filter(
-    (cat: any) => cat.country === selectedCountry.value.toUpperCase()
+    (cat: CategoryEntry) => cat.country === selectedCountry.value.toUpperCase()
   );
 
-  const allFormatted = countrySpecificCategories.map((cat: any) => ({
-    label: cat.label || cat.id,
-    value: cat.label || cat.id
-  }));
+  const allFormatted: { label: string; value: string }[] = countrySpecificCategories.map(
+    (cat: CategoryEntry) => ({
+      label: cat.label || cat.id || '',
+      value: cat.label || cat.id || ''
+    })
+  );
 
   if (userProfile.value?.coveredCategories && userProfile.value.coveredCategories.length > 0) {
-    return allFormatted.filter((cat: any) =>
-      userProfile.value!.coveredCategories.includes(cat.value)
+    return allFormatted.filter((cat: { label: string; value: string }) =>
+      userProfile.value!.coveredCategories!.includes(cat.value)
     );
   }
 
@@ -295,7 +312,7 @@ const isReadyForSchedule = computed(() => {
 });
 
 // 6. Map Click & Toggle Handlers
-const handleTerritoryClick = (territory: any) => {
+const handleTerritoryClick = (territory: SelectedTerritory): void => {
   const index = selectedTerritories.value.findIndex((t) => t.id === territory.id);
   if (index > -1) {
     selectedTerritories.value.splice(index, 1);
@@ -304,16 +321,16 @@ const handleTerritoryClick = (territory: any) => {
   }
 };
 
-const removeTerritory = (id: number) => {
+const removeTerritory = (id: number): void => {
   selectedTerritories.value = selectedTerritories.value.filter((t) => t.id !== id);
 };
 
-const removeCategoryFromList = (val: string) => {
+const removeCategoryFromList = (val: string): void => {
   selectedCategories.value = selectedCategories.value.filter((c) => c !== val);
 };
 
 // 7. Proceed to Step 2 (The Matrix)
-const continueToSchedule = () => {
+const continueToSchedule = (): void => {
   if (!isReadyForSchedule.value) {
     return;
   }
@@ -322,7 +339,7 @@ const continueToSchedule = () => {
 
 // 8. Final Submission
 // 8. Final Submission & Payment Routing
-const submitSchedule = async () => {
+const submitSchedule = async (): Promise<void> => {
   if (scheduleSelections.value.length === 0) {
     return;
   }
@@ -354,30 +371,13 @@ const submitSchedule = async () => {
       window.location.href = response.url;
     }
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces checkout initialization failures for debugging; no dedicated error-logging utility for this page
     console.error('Failed to initialize payment:', error);
     showToast('Error', 'Something went wrong calculating the cart. Please try again.', 'error');
   } finally {
     isSubmitting.value = false;
   }
 };
-
-watch(
-  [() => globalTakenMonths.value, selectedTerritories, selectedCategories],
-  () => {
-    console.log('--- MATRIX LOCK DIAGNOSTICS ---');
-
-    // 1. What does the matrix expect the row name to be?
-    const expectedRowId =
-      selectedTerritories.value.length && selectedCategories.value.length
-        ? `${selectedTerritories.value[0].id}|${selectedCategories.value[0]}`
-        : 'Waiting for selection...';
-
-    console.log('📍 1. Matrix is looking for row:', expectedRowId);
-    console.log('🔒 2. Data returned from Firebase:', globalTakenMonths.value);
-    console.log('👤 3. User Profile Loaded?', !!userProfile.value);
-  },
-  { deep: true }
-);
 
 // Wipe cart when switching countries (Only happens in Step 1)
 watch(selectedCountry, () => {

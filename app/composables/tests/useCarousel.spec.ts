@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, ref, nextTick } from 'vue';
+import { defineComponent, nextTick, ref } from 'vue';
 import { useElementSize } from '@vueuse/core';
 
 import { useCarousel } from '../useCarousel';
@@ -18,12 +18,16 @@ describe('useCarousel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     widthRef.value = 1000;
-    vi.mocked(useElementSize).mockReturnValue({ width: widthRef } as any);
+    vi.mocked(useElementSize).mockReturnValue({
+      width: widthRef,
+      height: ref(0),
+      stop: vi.fn()
+    });
   });
 
   it('computes card width and maxItemsToShow correctly for different widths', async () => {
     widthRef.value = 1000;
-    const { cardWidth, trackRef } = useCarousel();
+    const { cardWidth } = useCarousel();
     expect(cardWidth.value).toBe('calc((100% - 16px) / 2)');
 
     widthRef.value = 500; // < 640
@@ -41,20 +45,19 @@ describe('useCarousel', () => {
 
   it('computes actualItemsToShow correctly when itemCount > 0', async () => {
     widthRef.value = 1200; // max is 3
-    const { cardWidth, trackRef } = useCarousel();
-    
+
     // Mount to trigger updateItemCount which sets itemCount
-    const TestComponent = defineComponent({
+    const testComponent = defineComponent({
       template: '<div ref="trackRef"><div>c1</div><div>c2</div></div>',
       setup() {
         const { trackRef, cardWidth } = useCarousel();
         return { trackRef, cardWidth };
       }
     });
-    
-    const wrapper = mount(TestComponent);
+
+    const wrapper = mount(testComponent);
     await nextTick();
-    
+
     // itemCount should be 2 now, min(3, 2) = 2
     expect(wrapper.vm.cardWidth).toBe('calc((100% - 16px) / 2)');
   });
@@ -77,15 +80,17 @@ describe('useCarousel', () => {
     const child1 = document.createElement('div');
     Object.defineProperty(child1, 'offsetWidth', { value: 200, configurable: true });
     mockTrack.appendChild(child1);
-    
+
     const originalGetComputedStyle = window.getComputedStyle;
-    window.getComputedStyle = vi.fn().mockReturnValue({ gap: '16px' } as any);
+    window.getComputedStyle = vi
+      .fn()
+      .mockReturnValue({ gap: '16px' } as unknown as CSSStyleDeclaration);
     mockTrack.scrollBy = vi.fn();
     trackRef.value = mockTrack;
-    
+
     scrollByAmount(1);
     expect(mockTrack.scrollBy).toHaveBeenCalledWith({ left: 216, behavior: 'smooth' });
-    
+
     scrollByAmount(-1);
     expect(mockTrack.scrollBy).toHaveBeenCalledWith({ left: -216, behavior: 'smooth' });
     window.getComputedStyle = originalGetComputedStyle;
@@ -97,10 +102,10 @@ describe('useCarousel', () => {
     Object.defineProperty(mockTrack, 'scrollLeft', { value: 5, configurable: true });
     Object.defineProperty(mockTrack, 'scrollWidth', { value: 1000, configurable: true });
     Object.defineProperty(mockTrack, 'clientWidth', { value: 500, configurable: true });
-    
+
     trackRef.value = mockTrack;
     checkScroll();
-    
+
     expect(isScrollable.value).toBe(true);
     expect(canScrollLeft.value).toBe(true);
     expect(canScrollRight.value).toBe(true);
@@ -108,7 +113,7 @@ describe('useCarousel', () => {
 
   it('triggers lifecycle hooks and updates itemCount', async () => {
     vi.useFakeTimers();
-    const TestComponent = defineComponent({
+    const testComponent = defineComponent({
       props: ['testProp'],
       template: '<div ref="trackRef"><div>c1</div><div>c2</div></div>',
       setup() {
@@ -116,14 +121,14 @@ describe('useCarousel', () => {
         return { trackRef };
       }
     });
-    
-    const wrapper = mount(TestComponent);
+
+    const wrapper = mount(testComponent);
     vi.runAllTimers();
-    
+
     // Trigger onUpdated
     await wrapper.setProps({ testProp: 'updated' });
     vi.runAllTimers();
-    
+
     vi.useRealTimers();
   });
 });

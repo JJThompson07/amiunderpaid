@@ -116,19 +116,17 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { ChevronDown } from 'lucide-vue-next'; // 👈 Added the icon import
 import { useI18n } from 'vue-i18n';
+import type { PropType } from 'vue';
+import type { McaUiData } from '~~/shared/utils/formatter';
 
 const { t } = useI18n();
 
 const props = defineProps({
   verdict: {
-    type: Object,
+    type: Object as PropType<McaUiData | null>,
     required: false,
     default: null
-  },
-  userSalary: { type: Number, required: true },
-  currencySymbol: { type: String, default: '£' },
-  matchedTitle: { type: String, required: true },
-  location: { type: String, default: '' }
+  }
 });
 
 // UI State
@@ -219,11 +217,12 @@ const confidenceDescription = computed(() => {
 // ==========================================
 // ⚡ ANIMATION TRIGGER
 // ==========================================
-const triggerAnimation = () => {
-  if (props.verdict?.score) {
+const triggerAnimation = (): void => {
+  const targetScore = props.verdict?.score;
+  if (targetScore) {
     animatedScore.value = 0;
     setTimeout(() => {
-      animatedScore.value = props.verdict.score;
+      animatedScore.value = targetScore;
     }, 100);
   }
 };

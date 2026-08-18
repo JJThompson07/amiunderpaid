@@ -51,12 +51,25 @@
               <span class="text-sm font-medium text-slate-700">{{ value }}</span>
               <button
                 class="p-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-indigo-600 transition-colors shrink-0"
-                @click="copyToClipboard(value)">
+                @click="copyToClipboard(asEmailValue(value))">
                 <Copy class="w-3.5 h-3.5" />
               </button>
             </div>
           </template>
         </AmITable>
+
+        <div
+          v-if="rawLeadsData && rawLeadsData.length >= leadsLimit"
+          class="mt-6 flex justify-center">
+          <AmIButton
+            bg-colour="bg-white"
+            text-colour="text-slate-700"
+            animation-colour="bg-slate-50"
+            class="border border-slate-200 shadow-none"
+            @click="leadsLimit += 50">
+            {{ $t('recruiter.leads.load-more', 'Load More') }}
+          </AmIButton>
+        </div>
       </div>
 
       <div
@@ -222,7 +235,7 @@
               </div>
 
               <div
-                v-if="userProfile && userProfile?.coveredCategories?.length > 0"
+                v-if="userProfile && (userProfile?.coveredCategories?.length ?? 0) > 0"
                 class="space-y-6">
                 <AmIInputTextarea
                   v-for="category in userProfile.coveredCategories"
@@ -263,7 +276,7 @@
                 </p>
               </div>
 
-              <div v-if="userProfile?.coveredCategories?.length > 0" class="w-full">
+              <div v-if="(userProfile?.coveredCategories?.length ?? 0) > 0" class="w-full">
                 <AmIInputSelect
                   v-model="previewCategory"
                   :options="previewCategoryOptions"
@@ -316,7 +329,7 @@
       @click.self="showPreviewModal = false">
       <div class="w-full max-w-md animate-in zoom-in-95 duration-200 flex flex-col">
         <div
-          v-if="userProfile?.coveredCategories?.length > 0"
+          v-if="(userProfile?.coveredCategories?.length ?? 0) > 0"
           class="w-full mb-4 bg-white p-4 rounded-2xl shadow-lg">
           <label class="text-2xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
             {{
@@ -362,10 +375,14 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { ChevronDown, Copy } from 'lucide-vue-next';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
-import { collection, orderBy, query, where } from 'firebase/firestore';
+import { collection, limit, orderBy, query, where } from 'firebase/firestore';
 import { useCollection, useCurrentUser, useFirestore } from 'vuefire';
 
 definePageMeta({ middleware: 'recruiters' });
+
+// AmITable's slot-scoped `value` is typed as unknown (it's a generic
+// reusable table), but the `email` column always contains a string.
+const asEmailValue = (value: unknown): string => value as string;
 
 const { t } = useI18n();
 const { userProfile } = useUserProfile();
@@ -375,6 +392,7 @@ const storage = useFirebaseStorage();
 const db = useFirestore();
 const { showToast } = useSystemToast();
 
+const leadsLimit = ref(50);
 const activeTab = ref('leads');
 const showWildcards = ref(false);
 const tabOptions = [
@@ -392,7 +410,8 @@ const leadsQuery = computed(() => {
   return query(
     collection(db, 'leads'),
     where('recruiterId', '==', user.value.uid),
-    orderBy('createdAt', 'desc')
+    orderBy('createdAt', 'desc'),
+    limit(leadsLimit.value)
   );
 });
 
@@ -500,7 +519,7 @@ watch(
   { immediate: true }
 );
 
-const onLogoSelect = (e: Event) => {
+const onLogoSelect = (e: Event): void => {
   const target = e.target as HTMLInputElement;
   const file = target.files?.[0];
   if (file) {
@@ -509,7 +528,7 @@ const onLogoSelect = (e: Event) => {
   }
 };
 
-const saveSettings = async () => {
+const saveSettings = async (): Promise<void> => {
   if (buttonTextError.value) {
     showToast('Error', buttonTextError.value, 'error');
     return;
@@ -559,7 +578,7 @@ const saveSettings = async () => {
   }
 };
 
-const copyToClipboard = async (text: string) => {
+const copyToClipboard = async (text: string): Promise<void> => {
   try {
     await navigator.clipboard.writeText(text);
     showToast(
@@ -568,6 +587,7 @@ const copyToClipboard = async (text: string) => {
       'success'
     );
   } catch (err) {
+    // eslint-disable-next-line no-console -- surfaces clipboard-write failures for recruiter-leads debugging; no dedicated error-logging utility for this page
     console.error('Failed to copy text:', err);
   }
 };

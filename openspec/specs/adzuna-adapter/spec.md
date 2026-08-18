@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change adzuna-adapter-pattern. Update Purpose after archive.
+Defines the standard adapter pattern for querying Adzuna market data APIs.
 
 ## Requirements
 

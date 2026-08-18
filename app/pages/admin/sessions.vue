@@ -12,8 +12,7 @@
       <div class="flex items-center justify-between mb-6 bg-white rounded-xl shadow-sm px-5 py-3">
         <button
           class="flex items-center gap-1 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          @click="changeMonth(-1)"
-        >
+          @click="changeMonth(-1)">
           <span class="text-lg">←</span>
           {{ $t('admin.sessions.prev-month') }}
         </button>
@@ -23,8 +22,7 @@
         <button
           class="flex items-center gap-1 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           :disabled="isCurrentMonth"
-          @click="changeMonth(1)"
-        >
+          @click="changeMonth(1)">
           {{ $t('admin.sessions.next-month') }}
           <span class="text-lg">→</span>
         </button>
@@ -41,17 +39,26 @@
           <span class="font-bold text-slate-900">{{ row.id }}</span>
         </template>
         <template #locations="{ row }">
-          <div v-if="row.locations && Object.keys(row.locations).length" class="flex flex-col gap-3 py-3">
-            <div v-for="(cities, country) in row.locations" :key="country" class="flex flex-col gap-1.5">
-              <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">{{ country }}</span>
+          <div
+            v-if="row.locations && Object.keys(row.locations).length"
+            class="flex flex-col gap-3 py-3">
+            <div
+              v-for="(cities, country) in row.locations"
+              :key="country"
+              class="flex flex-col gap-1.5">
+              <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">{{
+                country
+              }}</span>
               <div class="flex flex-wrap gap-1.5">
-                <span 
-                  v-for="(count, city) in cities" 
+                <span
+                  v-for="(count, city) in cities"
                   :key="city"
-                  class="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/60 shadow-sm"
-                >
+                  class="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200/60 shadow-sm">
                   {{ city }}
-                  <span class="bg-white text-slate-500 px-1.5 rounded border border-slate-200 font-bold leading-tight">{{ count }}</span>
+                  <span
+                    class="bg-white text-slate-500 px-1.5 rounded border border-slate-200 font-bold leading-tight"
+                    >{{ count }}</span
+                  >
                 </span>
               </div>
             </div>
@@ -71,6 +78,14 @@ import { definePageMeta } from '#imports';
 import { useCollection, useFirestore } from 'vuefire';
 import { collection, documentId, orderBy, query, where } from 'firebase/firestore';
 
+// A daily session-count document as stored in the `user_sessions` Firestore
+// collection, keyed by date (YYYY-MM-DD document id).
+type UserSessionDoc = {
+  id: string;
+  total?: number;
+  locations?: Record<string, Record<string, number>>;
+};
+
 definePageMeta({ middleware: 'admin' });
 
 const { t } = useI18n();
@@ -78,7 +93,12 @@ const { t } = useI18n();
 const tableColumns = [
   { key: 'date', label: t('admin.sessions.col-date'), class: 'w-48' },
   { key: 'locations', label: t('admin.sessions.col-locations') },
-  { key: 'total', label: t('admin.sessions.col-total'), class: 'w-48 text-right', cellClass: 'text-right pr-4' }
+  {
+    key: 'total',
+    label: t('admin.sessions.col-total'),
+    class: 'w-48 text-right',
+    cellClass: 'text-right pr-4'
+  }
 ];
 
 // --- Month Navigation ---
@@ -95,7 +115,7 @@ const isCurrentMonth = computed(() => {
   return currentYear.value === now.getUTCFullYear() && currentMonth.value === now.getUTCMonth();
 });
 
-const changeMonth = (delta: number) => {
+const changeMonth = (delta: number): void => {
   const date = new Date(currentYear.value, currentMonth.value + delta, 1);
   currentYear.value = date.getFullYear();
   currentMonth.value = date.getMonth();
@@ -126,9 +146,9 @@ const sessionsQuery = computed(() =>
   )
 );
 
-const { data: sessions, pending } = useCollection(sessionsQuery);
+const { data: sessions, pending } = useCollection<UserSessionDoc>(sessionsQuery);
 
 const monthlyTotal = computed(() =>
-  sessions.value.reduce((sum: number, s: any) => sum + (s.total || 0), 0)
+  sessions.value.reduce((sum: number, s: UserSessionDoc) => sum + (s.total || 0), 0)
 );
 </script>

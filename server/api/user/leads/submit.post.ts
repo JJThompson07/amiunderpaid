@@ -14,8 +14,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Invalid email format' });
   }
 
-  const sanitizeHTML = (str: string) => {
-    if (!str) return '';
+  const sanitizeHTML = (str: string): string => {
+    if (!str) {
+      return '';
+    }
     return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -95,8 +97,7 @@ export default defineEventHandler(async (event) => {
     });
 
     return { success: true, leadId: leadRef.id };
-  } catch (error: any) {
-    console.error('Failed to process lead:', error);
+  } catch {
     throw createError({ statusCode: 500, message: 'Internal server error processing lead' });
   }
 });

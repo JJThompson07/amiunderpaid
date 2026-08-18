@@ -121,13 +121,25 @@
       <div v-if="jobListings.length" class="w-full flex flex-col gap-3 min-w-0">
         <h3 class="relative text-xl md:text-2xl text-slate-900 font-bold sm:whitespace-nowrap px-1">
           <a
-            :href="dataProvider === 'reed' ? 'https://www.reed.co.uk' : dataProvider === 'jooble' ? 'https://jooble.org' : $t(`sections.jobs.href.${country.toLowerCase()}`)"
+            :href="
+              dataProvider === 'reed'
+                ? 'https://www.reed.co.uk'
+                : dataProvider === 'jooble'
+                  ? 'https://jooble.org'
+                  : $t(`sections.jobs.href.${country.toLowerCase()}`)
+            "
             target="_blank"
             rel="noopener noreferrer"
             class="text-primary-500 hover:text-primary-700 transition-colors duration-500 ease-in-out"
             >{{ $t('sections.jobs.jobs') }}</a
           >
-          {{ dataProvider === 'reed' ? $t('sections.jobs.by-reed') : dataProvider === 'jooble' ? $t('sections.jobs.by-jooble') : $t('sections.jobs.by-adzuna') }}
+          {{
+            dataProvider === 'reed'
+              ? $t('sections.jobs.by-reed')
+              : dataProvider === 'jooble'
+                ? $t('sections.jobs.by-jooble')
+                : $t('sections.jobs.by-adzuna')
+          }}
         </h3>
 
         <span class="text-slate-500 text-2xs uppercase">
@@ -212,12 +224,17 @@
           :country="country" />
       </div>
 
-      <!-- 6. Disclaimer -->
-      <p
-        class="flex items-center justify-center gap-1 mt-4 lg:mt-12 text-2xs text-center text-slate-400">
-        <Info class="w-3 h-3" />
-        {{ $t('common.data.disclaimer') }}
-      </p>
+      <div
+        class="flex flex-col items-center justify-center gap-1 mt-4 lg:mt-12 text-2xs text-center text-slate-400">
+        <p class="flex items-center gap-1">
+          <Info class="w-3 h-3" />
+          {{ $t('common.data.disclaimer') }}
+        </p>
+        <span class="font-medium opacity-80">
+          Data as of
+          {{ new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) }}
+        </span>
+      </div>
     </div>
 
     <!-- Recruiter Lead Contact Modal -->
@@ -228,12 +245,12 @@
       <div class="w-full max-w-md animate-in zoom-in-95 duration-200">
         <AmICardLeadContact
           v-if="selectedRecruiter"
-          :title="selectedRecruiter.title"
-          :content="selectedRecruiter.categoryContent || selectedRecruiter.content"
+          :title="selectedRecruiter.title ?? undefined"
+          :content="selectedRecruiter.categoryContent || selectedRecruiter.content || undefined"
           :brand-bg-colour="selectedRecruiter.brandBgColour"
           :brand-text-colour="selectedRecruiter.brandTextColour"
-          :logo-url="selectedRecruiter.logoUrl"
-          :agency-name="selectedRecruiter.agencyName"
+          :logo-url="selectedRecruiter.logoUrl ?? undefined"
+          :agency-name="selectedRecruiter.agencyName ?? undefined"
           :button-text="selectedRecruiter.buttonText"
           :location="location || country"
           :recruiter-id="selectedRecruiter.recruiterId"
@@ -263,6 +280,7 @@
 <script setup lang="ts">
 import { FileUser, Info } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
+import type { RecruiterCard } from '~~/shared/utils/types';
 
 const { $siteBrand } = useNuxtApp();
 const route = useRoute();
@@ -324,12 +342,12 @@ const recruiterSectionTitle = computed(() => {
   if (recruiterCards.value?.[0]?.isExclusive) {
     const cat = adzunaCategory.value || 'your industry';
     const loc = location.value || country.value || 'your region';
-    return $t('recruiter.search-results.exclusive-subtitle', { category: cat, location: loc });
+    return t('recruiter.search-results.exclusive-subtitle', { category: cat, location: loc });
   }
-  return $t('recruiter.search-results.basic-subtitle', 'Speak to an expert to improve your MCA');
+  return t('recruiter.search-results.basic-subtitle', 'Speak to an expert to improve your MCA');
 });
 
-const getFloatingButtonText = (card: any) => {
+const getFloatingButtonText = (card: RecruiterCard): string => {
   const base = card.buttonText || 'Contact Us';
   const incentive = route.path.includes('/benchmark') ? 'candidates' : 'roles';
   const loc = location.value || country.value || 'their location';
@@ -342,9 +360,9 @@ const getFloatingButtonText = (card: any) => {
 
 // Modal State Logic
 const showRecruiterModal = ref(false);
-const selectedRecruiter = ref<any>(null);
+const selectedRecruiter = ref<RecruiterCard | null>(null);
 
-const openRecruiterModal = (card: any) => {
+const openRecruiterModal = (card: RecruiterCard): void => {
   selectedRecruiter.value = card;
   showRecruiterModal.value = true;
 };

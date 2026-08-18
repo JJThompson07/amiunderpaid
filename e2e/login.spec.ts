@@ -12,12 +12,15 @@ test.describe('Authentication Flows', () => {
     // Verify the email and password inputs exist
     const emailInput = page.locator('input[type="text"], input[type="email"]').first();
     const passwordInput = page.locator('input[type="password"]').first();
-    
+
     await expect(emailInput).toBeVisible();
     await expect(passwordInput).toBeVisible();
 
     // Verify the Sign In button is visible (it's rendered via AmIButton)
-    const submitBtn = page.getByRole('button').filter({ hasText: /Sign in|login/i }).first();
+    const submitBtn = page
+      .getByRole('button')
+      .filter({ hasText: /Sign in|login/i })
+      .first();
     await expect(submitBtn).toBeVisible();
   });
 });

@@ -1,15 +1,124 @@
 /**
  * Market Data Endpoint (Jobs)
- * 
- * This endpoint acts as an API gateway. It attempts to fetch data from the 
- * primary provider (Adzuna). If the primary provider returns a 429 Rate Limit error, 
- * this endpoint catches the error and seamlessly falls back to a secondary provider (Reed), 
- * mapping the response to a unified schema. 
+ *
+ * This endpoint acts as an API gateway. It attempts to fetch data from the
+ * primary provider (Adzuna). If the primary provider returns a 429 Rate Limit error,
+ * this endpoint catches the error and seamlessly falls back to a secondary provider (Reed),
+ * mapping the response to a unified schema.
  * The client does not need to know which provider was ultimately used.
  */
 import { FieldValue } from 'firebase-admin/firestore';
 import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 import { ADZUNA_LOCATION_MAP } from '../../constants/locations';
+import type { JobSearchResponse } from '~~/shared/utils/market-data';
+
+// Query params sent to the Adzuna search API.
+type AdzunaSearchParams = {
+  app_id: string;
+  app_key: string;
+  results_per_page: number;
+  what: string;
+  'content-type': string;
+  part_time?: number;
+  full_time?: number;
+  contract?: number;
+  permanent?: number;
+  where?: string;
+  distance?: number;
+};
+
+// Duck-typed shape covering both an ofetch `FetchError` (`.response.status`)
+// and an h3 error thrown via `createError` (`.statusCode`), without requiring
+// the caught value to actually be an instance of either class.
+type FetchLikeError = {
+  response?: { status?: number };
+  statusCode?: number;
+};
+
+// Define the cached fetcher outside the event handler
+const fetchFromProviders = defineCachedFunction(
+  async (
+    params: AdzunaSearchParams,
+    countryCode: string,
+    titleStr: string,
+    locationStr: string,
+    typeStr: string,
+    contractStr: string,
+    limit: number,
+    isDevOrE2e: boolean,
+    devProviderOverride?: string
+  ) => {
+    try {
+      // e2e runs never hit the real Reed/Jooble APIs — return a static fixture
+      // directly. The manual local-dev provider toggle (import.meta.dev, not
+      // process.env.E2E) still falls through to the real fake-429 path below
+      // so a developer can verify real fallback-provider integration.
+      const isE2E = process.env.E2E === 'true';
+      if (isE2E && (devProviderOverride === 'reed' || devProviderOverride === 'jooble')) {
+        const { getMockFallbackJobs } = await import('../../utils/fallback');
+        const mockJobs = getMockFallbackJobs(devProviderOverride);
+        return { ...mockJobs, results: mockJobs.results.slice(0, limit) };
+      }
+
+      if (isDevOrE2e && devProviderOverride === 'reed') {
+        throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
+      }
+      if (isDevOrE2e && devProviderOverride === 'jooble') {
+        throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
+      }
+
+      const rawData = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1`, {
+        params
+      });
+
+      const cleanData = sanitizeAdzunaData(rawData) as JobSearchResponse;
+
+      if (cleanData.count && cleanData.count > 0) {
+        cleanData.provider = 'adzuna';
+        return cleanData;
+      } else {
+        throw createError({ statusCode: 404, statusMessage: 'Zero results from Adzuna' });
+      }
+    } catch (e) {
+      const err = e as FetchLikeError;
+      const statusCode = err?.response?.status || err?.statusCode;
+      if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
+        const { executeMarketFallback } = await import('../../utils/fallback');
+        const fallbackRaw = await executeMarketFallback(
+          titleStr,
+          locationStr,
+          countryCode,
+          typeStr,
+          contractStr
+        );
+
+        return {
+          mean: fallbackRaw.mean,
+          count: fallbackRaw.count,
+          results: fallbackRaw.results.slice(0, limit),
+          provider: fallbackRaw.provider
+        };
+      }
+      throw e;
+    }
+  },
+  {
+    maxAge: 60 * 60, // Keep in memory for 1 hour to prevent stampedes
+    name: 'marketJobsProviderFetch',
+    getKey: (
+      params,
+      countryCode,
+      titleStr,
+      locationStr,
+      typeStr,
+      contractStr,
+      limit,
+      isDevOrE2e,
+      devProviderOverride
+    ) =>
+      `${titleStr}-${locationStr}-${countryCode}-${typeStr}-${contractStr}-${limit}-${devProviderOverride || 'none'}`
+  }
+);
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -49,8 +158,9 @@ export default defineEventHandler(async (event) => {
   let existingGovIdCode: string | undefined = undefined;
   let isAdminVerified: boolean = false;
 
-  const devProviderOverride = process.dev ? (query.devProvider as string) : undefined;
-  const skipCache = process.dev && !!devProviderOverride;
+  const isDevOrE2e = import.meta.dev || process.env.E2E === 'true';
+  const devProviderOverride = isDevOrE2e ? (query.devProvider as string) : undefined;
+  const skipCache = isDevOrE2e && !!devProviderOverride;
 
   if (!skipCache) {
     try {
@@ -112,7 +222,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: 'Market data service is misconfigured.' });
   }
 
-  const params: Record<string, any> = {
+  const params: AdzunaSearchParams = {
     app_id: appId,
     app_key: appKey,
     results_per_page: limit,
@@ -150,116 +260,62 @@ export default defineEventHandler(async (event) => {
     params.distance = 20;
   }
 
-  // 3. Fetch from Adzuna API
+  // 3. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
   try {
-    if (import.meta.dev && devProviderOverride === 'reed') {
-      throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
-    }
-    if (import.meta.dev && devProviderOverride === 'jooble') {
-      throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
-    }
+    const cleanData: JobSearchResponse = await fetchFromProviders(
+      params,
+      countryCode,
+      titleStr,
+      locationStr,
+      typeStr,
+      contractStr,
+      limit,
+      isDevOrE2e,
+      devProviderOverride
+    );
 
-    const rawData = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1`, {
-      params
-    });
+    // --- CALCULATE EXPIRES AT ---
+    let cacheDays = 30; // Reduced from 120
+    const categoryTag = cleanData.results?.[0]?.category?.tag || 'unknown';
 
-    const cleanData = sanitizeAdzunaData(rawData);
-    
-    // If Adzuna succeeded and found results, use it!
-    if (cleanData.count && cleanData.count > 0) {
-      const categoryTag = cleanData.results?.[0]?.category?.tag || 'unknown';
-
-      // --- CALCULATE EXPIRES AT ---
-      let cacheDays = 120; // Default
-      if (categoryTag !== 'unknown') {
-        try {
-          const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
-          if (catSnap.exists) {
-            cacheDays = Number(catSnap.data()?.cache || 120);
-          }
-        } catch {
-          // Silently ignore failures and default to 120 cacheDays
-        }
-      }
-
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + cacheDays);
-      
-      cleanData.provider = 'adzuna';
-
-      // 4. Save to Cache
-      await cacheRef.set(
-        {
-          categoryTag,
-          data: cleanData,
-          timestamp: FieldValue.serverTimestamp(),
-          expiresAt: expiresAt, // <-- Save the exact expiration date!
-          searchParams: { title: titleStr, location: locationStr, country: countryCode },
-          gov_id_code: existingGovIdCode || null, // Preserve admin match
-          is_admin_verified: isAdminVerified, // Preserve admin status
-          job_type: typeStr,
-          contract_type: contractStr
-        },
-        { merge: true }
-      );
-
-      return {
-        ...cleanData,
-        gov_id_code: existingGovIdCode,
-        is_admin_verified: isAdminVerified
-      };
-    } else {
-      // Fall through to fallback on 0 results!
-      throw createError({ statusCode: 404, statusMessage: 'Zero results from Adzuna' });
-    }
-  } catch (e: any) {
-    const statusCode = e?.response?.status || e?.statusCode;
-    // Fallback if Adzuna is rate-limited, forbidden, or returned 0 results
-    if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
+    if (categoryTag !== 'unknown') {
       try {
-        const { executeMarketFallback } = await import('../../utils/fallback');
-        const fallbackRaw = await executeMarketFallback(titleStr, locationStr, countryCode, typeStr, contractStr);
-        
-        const fallbackData = {
-          mean: fallbackRaw.mean,
-          count: fallbackRaw.count,
-          results: fallbackRaw.results.slice(0, limit),
-          provider: fallbackRaw.provider
-        };
-
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24); // Cache Fallback for 24h
-
-        await cacheRef.set(
-          {
-            categoryTag: 'unknown',
-            data: fallbackData,
-            timestamp: FieldValue.serverTimestamp(),
-            expiresAt: expiresAt,
-            searchParams: { title: titleStr, location: locationStr, country: countryCode },
-            gov_id_code: existingGovIdCode || null,
-            is_admin_verified: isAdminVerified,
-            job_type: typeStr,
-            contract_type: contractStr
-          },
-          { merge: true }
-        );
-
-        return {
-          ...fallbackData,
-          gov_id_code: existingGovIdCode,
-          is_admin_verified: isAdminVerified
-        };
-      } catch (fallbackErr) {
-        console.error('Jobs Fallback Error:', fallbackErr);
-        throw createError({
-          statusCode: 503,
-          statusMessage: 'Market data temporarily unavailable. Please try again later.'
-        });
+        const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
+        if (catSnap.exists) {
+          cacheDays = Number(catSnap.data()?.cache || 30);
+        }
+      } catch {
+        // Silently ignore failures
       }
     }
 
-    console.error('Jobs Primary Error:', e);
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + cacheDays);
+
+    // 4. Save to Cache
+    await cacheRef.set(
+      {
+        categoryTag,
+        data: cleanData,
+        timestamp: FieldValue.serverTimestamp(),
+        expiresAt: expiresAt, // <-- Save the exact expiration date!
+        searchParams: { title: titleStr, location: locationStr, country: countryCode },
+        gov_id_code: existingGovIdCode || null, // Preserve admin match
+        is_admin_verified: isAdminVerified, // Preserve admin status
+        job_type: typeStr,
+        contract_type: contractStr
+      },
+      { merge: true }
+    );
+
+    return {
+      ...cleanData,
+      gov_id_code: existingGovIdCode,
+      is_admin_verified: isAdminVerified
+    };
+  } catch (e) {
+    // eslint-disable-next-line no-console -- surfaces market-data fetch failures for debugging; no dedicated server-side error-logging utility exists
+    console.error('Jobs Endpoint Error:', e);
     throw createError({
       statusCode: 503,
       statusMessage: 'Market data temporarily unavailable. Please try again later.'

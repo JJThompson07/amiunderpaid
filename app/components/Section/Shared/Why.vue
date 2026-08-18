@@ -1,8 +1,11 @@
 <template>
   <section class="max-w-5xl mx-auto mt-24 px-4 pb-20 select-none">
     <div class="grid md:grid-cols-2 gap-8 text-slate-600">
-      <div class="bg-white/50 backdrop-blur-xl border border-slate-200/60 p-8 md:p-10 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
-        <h3 class="text-2xl font-black tracking-tight text-secondary-950 mb-4">Why check your market rate?</h3>
+      <div
+        class="bg-white/50 backdrop-blur-xl border border-slate-200/60 p-8 md:p-10 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+        <h3 class="text-2xl font-black tracking-tight text-secondary-950 mb-4">
+          Why check your market rate?
+        </h3>
         <i18n-t
           keypath="landing.why.body"
           tag="p"
@@ -13,7 +16,8 @@
           </template>
         </i18n-t>
       </div>
-      <div class="bg-white/50 backdrop-blur-xl border border-slate-200/60 p-8 md:p-10 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
+      <div
+        class="bg-white/50 backdrop-blur-xl border border-slate-200/60 p-8 md:p-10 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300">
         <h3 class="text-2xl font-black tracking-tight text-secondary-950 mb-4">
           {{ $t('landing.data.heading') }}
         </h3>

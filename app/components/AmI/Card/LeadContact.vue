@@ -123,11 +123,12 @@ const props = defineProps({
   brandTextColour: { type: String, default: '' },
   location: { type: String, default: 'their location' },
   agencyName: { type: String, default: '' },
-  buttonText: { type: String, default: '' },
   showClose: { type: Boolean, default: false }
 });
 
-defineEmits(['close']);
+defineEmits<{
+  (e: 'close'): void;
+}>();
 
 const name = ref('');
 const email = ref('');
@@ -144,7 +145,7 @@ const previewLogo = computed(() => {
   return props.logoUrl || '';
 });
 
-const replaceWildcards = (text: string) => {
+const replaceWildcards = (text: string): string => {
   if (!text) {
     return '';
   }
@@ -182,7 +183,7 @@ const brandStyle = computed(() => ({
 }));
 
 // THE SUBMISSION LOGIC
-const submitLead = async () => {
+const submitLead = async (): Promise<void> => {
   if (!name.value || !email.value || !props.recruiterId) {
     return;
   }
@@ -203,9 +204,8 @@ const submitLead = async () => {
     });
 
     isSuccess.value = true;
-  } catch (err) {
+  } catch {
     error.value = 'Something went wrong. Please try again.';
-    console.error(err);
   } finally {
     isLoading.value = false;
   }

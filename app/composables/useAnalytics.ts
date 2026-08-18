@@ -1,4 +1,22 @@
-export const useAnalytics = () => {
+import type { Ref } from 'vue';
+
+type UseAnalyticsReturn = {
+  trackSearch: (
+    title: string,
+    country: string,
+    location: string,
+    currentSalary: string,
+    schedule?: string,
+    contract?: string
+  ) => void;
+  trackAmbiguousSearch: (title: string, group: string) => void;
+  trackResultAction: (action: string) => void;
+  trackDistribution: (title: string, country: string, location: string, fetch: boolean) => void;
+  trackViewRole: (title: string, company: string, location: string, url: string) => void;
+  analyticsConsent: Ref<string | null>;
+};
+
+export const useAnalytics = (): UseAnalyticsReturn => {
   const { gtag } = useGtag();
   const { $siteBrand } = useNuxtApp();
 
@@ -10,7 +28,7 @@ export const useAnalytics = () => {
 
   const hasConsent = computed(() => analyticsConsent.value === 'granted');
 
-  const trackEvent = (eventName: string, payload: Record<string, any>) => {
+  const trackEvent = (eventName: string, payload: Record<string, unknown>): void => {
     if (import.meta.dev) {
       // safety dev check to not track dev events
       return;
@@ -31,7 +49,7 @@ export const useAnalytics = () => {
     currentSalary: string,
     schedule: string = 'full-time',
     contract: string = 'permanent'
-  ) => {
+  ): void => {
     trackEvent('search', {
       job_title: title,
       country,
@@ -42,19 +60,24 @@ export const useAnalytics = () => {
     });
   };
 
-  const trackAmbiguousSearch = (title: string, group: string) => {
+  const trackAmbiguousSearch = (title: string, group: string): void => {
     trackEvent('ambiguous_search', { job_title: title, group });
   };
 
-  const trackResultAction = (action: string) => {
+  const trackResultAction = (action: string): void => {
     trackEvent('result_action', { action });
   };
 
-  const trackDistribution = (title: string, country: string, location: string, fetch: boolean) => {
+  const trackDistribution = (
+    title: string,
+    country: string,
+    location: string,
+    fetch: boolean
+  ): void => {
     trackEvent('fetch_distribution', { job_title: title, country, location, fetch });
   };
 
-  const trackViewRole = (title: string, company: string, location: string, url: string) => {
+  const trackViewRole = (title: string, company: string, location: string, url: string): void => {
     trackEvent('view_role', { job_title: title, company, location, url });
   };
 

@@ -1,7 +1,14 @@
 import { useWindowSize } from '@vueuse/core';
-import { computed } from 'vue';
+import { computed, type ComputedRef } from 'vue';
 
-export const useViewport = () => {
+type UseViewportReturn = {
+  width: ReturnType<typeof useWindowSize>['width'];
+  isMobile: ComputedRef<boolean>;
+  isDesktop: ComputedRef<boolean>;
+  isXl: ComputedRef<boolean>;
+};
+
+export const useViewport = (): UseViewportReturn => {
   const { width } = useWindowSize();
   const isMobile = computed(() => width.value < 768);
   const isDesktop = computed(() => width.value >= 1024);

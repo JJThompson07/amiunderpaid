@@ -50,5 +50,7 @@ defineProps({
   }
 });
 
-defineEmits(['click']);
+defineEmits<{
+  (e: 'click', value: MouseEvent): void;
+}>();
 </script>

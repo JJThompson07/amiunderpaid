@@ -1,15 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSystemToast } from '../useSystemToast';
+import type { SystemToastState } from '../useSystemToast';
 
 // Mock Nuxt auto-imports
-let mockState: Record<string, any> = {};
+let mockState: Record<string, { value: SystemToastState }> = {};
 
-vi.stubGlobal('useState', (key: string, init: () => any) => {
-  if (!mockState[key]) {
-    mockState[key] = { value: init() };
+vi.stubGlobal(
+  'useState',
+  (key: string, init: () => SystemToastState): { value: SystemToastState } => {
+    if (!mockState[key]) {
+      mockState[key] = { value: init() };
+    }
+    return mockState[key];
   }
-  return mockState[key];
-});
+);
 
 describe('useSystemToast composable', () => {
   beforeEach(() => {

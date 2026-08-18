@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change restrict-recruiter-onboarding. Update Purpose after archive.
+Defines the access request workflow for gating recruiter onboarding.
 
 ## Requirements
 

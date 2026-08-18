@@ -1,4 +1,7 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import type { H3Event } from 'h3';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import sessionEndpoint from '../session.post';
 
 // Mock Firebase Admin SDK
 const { setMock, docMock, collectionMock } = vi.hoisted(() => {
@@ -11,15 +14,13 @@ const { setMock, docMock, collectionMock } = vi.hoisted(() => {
 vi.mock('firebase-admin/firestore', () => {
   return {
     getFirestore: vi.fn().mockReturnValue({
-      collection: collectionMock,
+      collection: collectionMock
     }),
     FieldValue: {
-      increment: vi.fn((val) => `increment(${val})`),
-    },
+      increment: vi.fn((val) => `increment(${val})`)
+    }
   };
 });
-
-import sessionEndpoint from '../session.post';
 
 describe('Analytics Session API', () => {
   beforeEach(() => {
@@ -32,11 +33,11 @@ describe('Analytics Session API', () => {
         req: {
           headers: {
             'x-vercel-ip-country': 'GB',
-            'x-vercel-ip-city': 'London',
-          },
-        },
-      },
-    } as any;
+            'x-vercel-ip-city': 'London'
+          }
+        }
+      }
+    } as unknown as H3Event;
 
     await sessionEndpoint(event);
 
@@ -62,7 +63,7 @@ describe('Analytics Session API', () => {
           headers: {}
         }
       }
-    } as any;
+    } as unknown as H3Event;
 
     await sessionEndpoint(event);
 
@@ -88,7 +89,7 @@ describe('Analytics Session API', () => {
           }
         }
       }
-    } as any;
+    } as unknown as H3Event;
 
     await sessionEndpoint(event);
 

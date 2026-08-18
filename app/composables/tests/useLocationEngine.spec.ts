@@ -2,21 +2,32 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useLocationEngine } from '../useLocationEngine';
 
-vi.mock('firebase/firestore', () => ({ doc: vi.fn(), collection: vi.fn(), getFirestore: vi.fn(), Timestamp: { now: vi.fn() } }));
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(),
+  collection: vi.fn(),
+  getFirestore: vi.fn(),
+  Timestamp: { now: vi.fn() }
+}));
 vi.mock('firebase/auth', () => ({ getAuth: vi.fn() }));
 
-const mockRoute = { query: {} as any, params: {} as any };
+const mockRoute: { query: Record<string, string>; params: Record<string, string> } = {
+  query: {},
+  params: {}
+};
 vi.stubGlobal('useRoute', () => mockRoute);
-vi.stubGlobal('useI18n', () => ({ t: (k: string) => k }));
+vi.stubGlobal('useI18n', (): { t: (k: string) => string } => ({ t: (k: string) => k }));
 
 const mockAnalytics = { trackAmbiguousSearch: vi.fn() };
 vi.stubGlobal('useAnalytics', () => mockAnalytics);
 
+type MockJobListing = { category?: { label: string }; salary_max?: number };
+type MockJobsData = { results?: MockJobListing[] } | null;
+
 const mockAdzuna = {
   fetchJobs: vi.fn(),
   fetchHistogram: vi.fn(),
-  cachedGovIdCode: { value: null as any },
-  jobsData: { value: null as any },
+  cachedGovIdCode: { value: null as string | null },
+  jobsData: { value: null as MockJobsData },
   histogramTotalCount: { value: 0 },
   histogramBuckets: { value: [] },
   histogramRange: { value: {} },
@@ -51,7 +62,7 @@ vi.stubGlobal('useMicroData', () => mockMicroData);
 
 vi.stubGlobal('useDevProviderOverride', () => ({ value: 'auto' }));
 
-vi.stubGlobal('useAsyncData', async (key: string, fetcher: Function) => {
+vi.stubGlobal('useAsyncData', async (key: string, fetcher: () => Promise<unknown>) => {
   const data = await fetcher();
   return {
     data: { value: data },
@@ -60,15 +71,24 @@ vi.stubGlobal('useAsyncData', async (key: string, fetcher: Function) => {
   };
 });
 
-vi.stubGlobal('ref', (val: any) => {
+vi.stubGlobal('ref', <T>(val: T) => {
   return {
-    get value() { return val; },
-    set value(v) { val = v; }
+    get value(): T {
+      return val;
+    },
+    set value(v: T) {
+      val = v;
+    }
   };
 });
-vi.stubGlobal('computed', (fn: any) => ({ get value() { return fn(); } }));
-const watchCallbacks: any[] = [];
-vi.stubGlobal('watch', (source: any, cb: any) => {
+vi.stubGlobal('computed', <T>(fn: () => T) => ({
+  get value(): T {
+    return fn();
+  }
+}));
+type WatchCallback = (value: unknown) => void;
+const watchCallbacks: WatchCallback[] = [];
+vi.stubGlobal('watch', (source: unknown, cb: WatchCallback) => {
   watchCallbacks.push(cb);
 });
 const mockNavigateTo = vi.fn();
@@ -80,26 +100,26 @@ describe('useLocationEngine', () => {
     vi.clearAllMocks();
     mockRoute.query = {};
     mockRoute.params = { title: 'software-engineer', country: 'uk' };
-    
+
     mockMarketData.matchedTitle.value = '';
     mockMarketData.matchedIdCode.value = '';
     mockMarketData.isGenericFallback.value = false;
-    
+
     mockAdzuna.cachedGovIdCode.value = null;
     mockAdzuna.jobsData.value = null;
     mockAdzuna.histogramTotalCount.value = 0;
-    
+
     mockMacroData.fetchMacroBaselines.mockResolvedValue({});
     mockMicroData.fetchMicroBaselines.mockResolvedValue({});
   });
 
   it('initializes and calls dependencies correctly for UK', async () => {
     const engine = await useLocationEngine('salary');
-    
+
     expect(engine.displayTitle.value).toBe('Software Engineer');
     expect(engine.country.value).toBe('UK');
     expect(engine.currencySymbol.value).toBe('£');
-    
+
     expect(mockAdzuna.fetchJobs).toHaveBeenCalled();
     expect(mockAdzuna.fetchHistogram).toHaveBeenCalled();
     expect(mockMarketData.resolveUkIdentity).toHaveBeenCalled();
@@ -109,9 +129,9 @@ describe('useLocationEngine', () => {
 
   it('initializes and calls dependencies correctly for USA', async () => {
     mockRoute.params = { title: 'teacher', country: 'usa' };
-    
+
     const engine = await useLocationEngine('salary');
-    
+
     expect(engine.country.value).toBe('USA');
     expect(engine.currencySymbol.value).toBe('$');
     expect(mockMarketData.resolveUsaIdentity).toHaveBeenCalled();
@@ -130,17 +150,17 @@ describe('useLocationEngine', () => {
     mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({
       microNationalData: { p50: 50000 }
     });
-    
+
     const engine = await useLocationEngine('salary');
     expect(engine.isUnderpaid.value).toBe(true);
   });
-  
+
   it('computes not underpaid when salary is higher', async () => {
     mockRoute.query = { compare: '60000' };
     mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({
       microNationalData: { p50: 50000 }
     });
-    
+
     const engine = await useLocationEngine('salary');
     expect(engine.isUnderpaid.value).toBe(false);
   });
@@ -154,8 +174,12 @@ describe('useLocationEngine', () => {
 
   it('handles handleAmbiguitySelect API calls', async () => {
     const engine = await useLocationEngine('salary');
-    await engine.handleAmbiguitySelect({ id_code: '123', title: 'Test Title', group: 'Test Group' });
-    
+    await engine.handleAmbiguitySelect({
+      id_code: '123',
+      title: 'Test Title',
+      group: 'Test Group'
+    });
+
     expect(mockAnalytics.trackAmbiguousSearch).toHaveBeenCalledWith('Test Title', 'Test Group');
     expect(engine.showUserSelection.value).toBe(false);
   });
@@ -183,7 +207,7 @@ describe('useLocationEngine', () => {
     let engine = await useLocationEngine('salary');
     expect(engine.regionalData.value).toBeNull();
 
-    mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({ 
+    mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({
       microRegionalData: { p50: 100, mean: 120, p10: 10, p25: 25, p75: 75, p90: 90 }
     });
     engine = await useLocationEngine('salary');
@@ -225,12 +249,12 @@ describe('useLocationEngine', () => {
 
   it('watches userSalary and updates route compare query', async () => {
     const engine = await useLocationEngine('salary');
-    
+
     // Test positive salary
     engine.userSalary.value = 50000;
     // manually trigger watcher callbacks
-    watchCallbacks.forEach(cb => cb(50000));
-    
+    watchCallbacks.forEach((cb) => cb(50000));
+
     // expect navigateTo to have been called
     expect(mockNavigateTo).toHaveBeenCalled();
   });
@@ -241,20 +265,22 @@ describe('useLocationEngine', () => {
     mockRoute.params.location = 'uk';
     // set matchedLocation to same as country ('uk')
     mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({ microRegionalData: { p50: 1 } });
-    
+
     // Set conditions to pass `hasGovernmentData`
     mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({ microNationalData: { mean: 100 } });
     engine.userSalary.value = 50000;
 
     // manually trigger resolving watcher
-    watchCallbacks.forEach(cb => cb(false));
-    
+    watchCallbacks.forEach((cb) => cb(false));
+
     // We just want the lines to be executed to pass coverage, no complex assert needed
     expect(engine).toBeDefined();
   });
 
   it('updates matchedTitle if micro data has officialGroupTitle', async () => {
-    mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({ officialGroupTitle: 'Official Title' });
+    mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({
+      officialGroupTitle: 'Official Title'
+    });
     const engine = await useLocationEngine('salary');
     expect(engine).toBeDefined();
   });

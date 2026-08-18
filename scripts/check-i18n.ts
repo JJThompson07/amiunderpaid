@@ -6,10 +6,13 @@ const LOCALES_DIR = path.join(process.cwd(), 'i18n/locales');
 const REFERENCE_LOCALE = 'en-GB';
 const TARGET_LOCALES = ['en-US']; // Add other locales here as you expand
 
+// Recursive shape of a locale JSON file: nested objects of string leaves.
+type LocaleMessages = { [key: string]: string | LocaleMessages };
+
 /**
  * Recursively gets all keys from a JSON object
  */
-function getAllKeys(obj: any, prefix = ''): string[] {
+function getAllKeys(obj: LocaleMessages, prefix = ''): string[] {
   return Object.keys(obj).reduce((res: string[], el) => {
     const name = prefix ? `${prefix}.${el}` : el;
     if (typeof obj[el] === 'object' && obj[el] !== null && !Array.isArray(obj[el])) {
@@ -21,7 +24,7 @@ function getAllKeys(obj: any, prefix = ''): string[] {
   }, []);
 }
 
-function checkLocales() {
+function checkLocales(): void {
   const refPath = path.join(LOCALES_DIR, REFERENCE_LOCALE);
 
   // Get all JSON files in the reference directory

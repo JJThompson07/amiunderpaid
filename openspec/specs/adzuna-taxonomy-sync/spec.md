@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change adzuna-taxonomy-sync. Update Purpose after archive.
+Defines the taxonomy synchronization script for mapping Adzuna job categories.
 
 ## Requirements
 

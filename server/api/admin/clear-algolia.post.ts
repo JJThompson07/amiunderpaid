@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   try {
     await index.deleteBy({ filters });
     return { success: true };
-  } catch (error: any) {
+  } catch {
     throw createError({ statusCode: 500, message: 'Failed to clear search index.' });
   }
 });

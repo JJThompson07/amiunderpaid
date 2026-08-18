@@ -3,16 +3,16 @@ import { useMicroData } from '../useMicroData';
 
 const mockSearch = vi.fn();
 const mockInitIndex = vi.fn(() => ({
-  search: mockSearch,
+  search: mockSearch
 }));
 
 vi.stubGlobal('useNuxtApp', () => ({
   $algolia: {
-    initIndex: mockInitIndex,
-  },
+    initIndex: mockInitIndex
+  }
 }));
 
-vi.stubGlobal('ref', (val: any) => ({ value: val }));
+vi.stubGlobal('ref', <T>(val: T) => ({ value: val }));
 
 describe('useMicroData', () => {
   beforeEach(() => {
@@ -27,14 +27,10 @@ describe('useMicroData', () => {
 
   it('fetches micro baselines with UK idCode', async () => {
     mockSearch.mockResolvedValueOnce({
-      hits: [
-        { title: 'Software Developer', salary: 50000, avg_salary: 51000 }
-      ]
+      hits: [{ title: 'Software Developer', salary: 50000, avg_salary: 51000 }]
     });
     mockSearch.mockResolvedValueOnce({
-      hits: [
-        { searchLocation: 'London', salary: 60000 }
-      ]
+      hits: [{ searchLocation: 'London', salary: 60000 }]
     });
 
     const { fetchMicroBaselines } = useMicroData();
@@ -42,7 +38,7 @@ describe('useMicroData', () => {
 
     expect(mockInitIndex).toHaveBeenCalledWith('salary_benchmarks');
     expect(mockInitIndex).toHaveBeenCalledWith('regional_salary_benchmarks');
-    
+
     // First call (national)
     expect(mockSearch).toHaveBeenNthCalledWith(1, '', {
       filters: 'country:UK AND id_code:2136',
@@ -51,8 +47,8 @@ describe('useMicroData', () => {
 
     // Second call (regional)
     expect(mockSearch).toHaveBeenNthCalledWith(2, '', {
-      filters: 'country:UK',
-      hitsPerPage: 1000
+      filters: 'country:UK AND id_code:2136',
+      hitsPerPage: 100
     });
 
     expect(result.officialGroupTitle).toBe('Software Developer');
@@ -92,7 +88,7 @@ describe('useMicroData', () => {
 
     const { fetchMicroBaselines, fetching } = useMicroData();
     const result = await fetchMicroBaselines('UK', 'Job');
-    
+
     expect(result.microNationalData).toBeNull();
     expect(result.microRegionalData).toBeNull();
     expect(result.allRegionalMicroData).toEqual({});

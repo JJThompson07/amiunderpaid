@@ -79,34 +79,38 @@
 
           <template #titles="{ row }">
             <div class="flex flex-wrap gap-2 items-center">
-              <div v-if="row.titles.length === 0" class="text-xs text-slate-400 italic py-1">
+              <div
+                v-if="asJobGroup(row).titles.length === 0"
+                class="text-xs text-slate-400 italic py-1">
                 No synonyms mapped yet.
               </div>
 
               <template v-else>
                 <span
-                  v-for="title in expandedRows[row.id_code]
-                    ? row.titles
-                    : row.titles.slice(0, CHIPS_LIMIT)"
+                  v-for="title in expandedRows[asJobGroup(row).id_code]
+                    ? asJobGroup(row).titles
+                    : asJobGroup(row).titles.slice(0, CHIPS_LIMIT)"
                   :key="title"
                   class="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium px-2.5 py-1 rounded-md">
                   {{ title }}
                   <button
                     class="text-slate-400 hover:text-negative-600 transition-colors"
                     title="Remove"
-                    @click="removeTitle(row.id_code, title)">
+                    @click="removeTitle(asJobGroup(row).id_code, title)">
                     &times;
                   </button>
                 </span>
 
                 <button
-                  v-if="row.titles.length > CHIPS_LIMIT"
+                  v-if="asJobGroup(row).titles.length > CHIPS_LIMIT"
                   class="text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-50 hover:bg-slate-200 border border-slate-200 px-2 py-1 rounded-md transition-colors shadow-sm ml-1"
-                  @click="expandedRows[row.id_code] = !expandedRows[row.id_code]">
+                  @click="
+                    expandedRows[asJobGroup(row).id_code] = !expandedRows[asJobGroup(row).id_code]
+                  ">
                   {{
-                    expandedRows[row.id_code]
+                    expandedRows[asJobGroup(row).id_code]
                       ? 'Show less'
-                      : `+ ${row.titles.length - CHIPS_LIMIT} more`
+                      : `+ ${asJobGroup(row).titles.length - CHIPS_LIMIT} more`
                   }}
                 </button>
               </template>
@@ -114,19 +118,21 @@
           </template>
 
           <template #actions="{ row }">
-            <form class="flex gap-2" @submit.prevent="addTitle(row.id_code)">
+            <form class="flex gap-2" @submit.prevent="addTitle(asJobGroup(row).id_code)">
               <div class="w-full">
                 <AmIInputGeneric
-                  v-model="newInputs[row.id_code] as string"
+                  v-model="newInputs[asJobGroup(row).id_code] as string"
                   placeholder="e.g. React Dev" />
               </div>
 
               <AmIButton
                 bg-colour="bg-slate-800"
                 animation-colour="bg-slate-900"
-                :disabled="!newInputs[row.id_code] || isProcessing === row.id_code"
+                :disabled="
+                  !newInputs[asJobGroup(row).id_code] || isProcessing === asJobGroup(row).id_code
+                "
                 class="text-xs shrink-0 h-12 rounded-xl flex items-center justify-center"
-                @click="addTitle(row.id_code)">
+                @click="addTitle(asJobGroup(row).id_code)">
                 Add
               </AmIButton>
             </form>
@@ -176,6 +182,10 @@ type JobGroup = {
   group_name: string;
   titles: string[];
 };
+
+// AmITable's slot-scoped `row` is typed Record<string, unknown> (it's a
+// generic reusable table), but every row here is always a JobGroup.
+const asJobGroup = (row: Record<string, unknown>): JobGroup => row as unknown as JobGroup;
 
 const adminFetch = useAdminFetch();
 
@@ -242,7 +252,7 @@ const paginatedGroups = computed(() => {
 });
 
 // 2. Add Title
-const addTitle = async (idCode: string) => {
+const addTitle = async (idCode: string): Promise<void> => {
   const newTitle = newInputs[idCode];
   if (!newTitle) {
     return;
@@ -272,7 +282,7 @@ const addTitle = async (idCode: string) => {
 };
 
 // 3. Remove Title
-const removeTitle = async (idCode: string, titleToRemove: string) => {
+const removeTitle = async (idCode: string, titleToRemove: string): Promise<void> => {
   if (!confirm(`Are you sure you want to remove "${titleToRemove}"?`)) {
     return;
   }
@@ -300,7 +310,7 @@ const removeTitle = async (idCode: string, titleToRemove: string) => {
 };
 
 // 4. Run Migration
-const runMigration = async () => {
+const runMigration = async (): Promise<void> => {
   if (!confirm(`Are you sure you want to migrate ${activeCountry.value} data?`)) {
     return;
   }
@@ -317,6 +327,7 @@ const runMigration = async () => {
       showToast('Error', 'Migration failed.', 'error');
     }
   } catch (e) {
+    // eslint-disable-next-line no-console -- surfaces migration failures for admin debugging; no dedicated error-logging utility for this admin tooling
     console.error(e);
     showToast('Error', 'Migration failed.', 'error');
   } finally {

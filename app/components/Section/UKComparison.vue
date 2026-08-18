@@ -122,10 +122,6 @@ import type { PropType } from 'vue';
 import { MapPin, Minus, TrendingDown, TrendingUp } from 'lucide-vue-next';
 
 const props = defineProps({
-  country: {
-    type: String,
-    required: true
-  },
   location: {
     type: String,
     default: ''

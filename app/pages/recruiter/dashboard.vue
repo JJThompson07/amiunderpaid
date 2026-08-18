@@ -56,16 +56,16 @@
             <div
               v-if="
                 userProfile &&
-                (userProfile?.basicDiscount > 0 || userProfile?.exclusiveDiscount > 0)
+                ((userProfile?.basicDiscount ?? 0) > 0 || (userProfile?.exclusiveDiscount ?? 0) > 0)
               "
               class="flex items-center gap-2">
               <span
-                v-if="userProfile.basicDiscount > 0"
+                v-if="(userProfile.basicDiscount ?? 0) > 0"
                 class="text-2xs font-black text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg">
                 Basic: -{{ userProfile.basicDiscount }}%
               </span>
               <span
-                v-if="userProfile.exclusiveDiscount > 0"
+                v-if="(userProfile.exclusiveDiscount ?? 0) > 0"
                 class="text-2xs font-black text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg">
                 Excl: -{{ userProfile.exclusiveDiscount }}%
               </span>
@@ -100,7 +100,7 @@
 
         <div v-else class="mt-4 animate-in fade-in duration-300">
           <TerritoryDashboardMatrix
-            :territories="userProfile?.activeTerritories || userProfile?.claims"
+            :territories="userProfile?.activeTerritories || userProfile?.claims || []"
             :is-cancelling="isCancelling ? territoryToCancel : null"
             @cancel="promptCancel"
             @edit="handleEdit" />
@@ -142,12 +142,12 @@ const showCancelModal = ref(false);
 const territoryToCancel = ref<number | null>(null);
 const isCancelling = ref(false);
 
-const promptCancel = (territoryId: number) => {
+const promptCancel = (territoryId: number): void => {
   territoryToCancel.value = territoryId;
   showCancelModal.value = true;
 };
 
-const executeCancel = async () => {
+const executeCancel = async (): Promise<void> => {
   if (!territoryToCancel.value) {
     return;
   }
@@ -166,18 +166,19 @@ const executeCancel = async () => {
     showCancelModal.value = false;
     territoryToCancel.value = null;
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces territory-cancellation failures for recruiter-dashboard debugging; no dedicated error-logging utility for this page
     console.error('Failed to cancel territory:', error);
   } finally {
     isCancelling.value = false;
   }
 };
 
-const handleEdit = (territoryId: number) => {
+const handleEdit = (territoryId: number): void => {
   navigateTo(`/recruiter/territories/edit?id=${territoryId}`);
 };
 
 // 4. Auth
-const handleLogout = async () => {
+const handleLogout = async (): Promise<void> => {
   await logout();
   await navigateTo('/recruiter/login');
 };

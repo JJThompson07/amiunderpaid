@@ -1,3 +1,5 @@
-export const useDevProviderOverride = () => {
-  return useState<string>('devProviderOverride', () => 'auto');
+import type { CookieRef } from '#app';
+
+export const useDevProviderOverride = (): CookieRef<string> => {
+  return useCookie<string>('devProviderOverride', { default: () => 'auto' });
 };

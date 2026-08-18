@@ -1,10 +1,17 @@
 import { nextTick, ref } from 'vue';
 
-export const useConsoleLog = () => {
+type UseConsoleLogReturn = {
+  status: Ref<string>;
+  consoleRef: Ref<HTMLElement | null>;
+  log: (msg: string) => void;
+  clearLog: () => void;
+};
+
+export const useConsoleLog = (): UseConsoleLogReturn => {
   const status = ref('');
   const consoleRef = ref<HTMLElement | null>(null);
 
-  const log = (msg: string) => {
+  const log = (msg: string): void => {
     status.value += `> ${msg}\n`;
     nextTick(() => {
       if (consoleRef.value) {
@@ -13,7 +20,7 @@ export const useConsoleLog = () => {
     });
   };
 
-  const clearLog = () => {
+  const clearLog = (): void => {
     status.value = '';
   };
 

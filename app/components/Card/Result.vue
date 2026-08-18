@@ -63,21 +63,9 @@ const props = defineProps({
     type: [Object, Function] as PropType<Component>,
     default: null
   },
-  iconBg: {
-    type: String,
-    default: 'bg-slate-100'
-  },
-  iconColour: {
-    type: String,
-    default: 'bg-slate-600'
-  },
   title: {
     type: String,
     required: true
-  },
-  warning: {
-    type: Boolean,
-    default: false
   },
   comparison: {
     type: Number,

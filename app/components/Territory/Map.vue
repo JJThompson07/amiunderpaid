@@ -16,25 +16,37 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import * as echarts from 'echarts';
 import type { CountryCode } from '../../pages/recruiter/territories/index.vue';
+import type { ONSMatch } from '~~/utils/locations/uk';
+
+// A minimal, country-agnostic territory shape: only the fields this map
+// component actually reads. UK `Territory` and USA `USATerritory` objects
+// (which carry additional fields such as `band`/`region`) both satisfy this.
+export type MapTerritory = {
+  id: number;
+  name: string;
+  ons_matches?: ONSMatch[];
+};
 
 const props = defineProps<{
   country: CountryCode;
   claimedIds: number[];
-  territories: any[];
+  territories: MapTerritory[];
   selectedIds: number[];
 }>();
 
-const emit = defineEmits(['territory-clicked']);
+const emit = defineEmits<{
+  (e: 'territoryClicked', territory: MapTerritory): void;
+}>();
 
 const mapContainer = ref<HTMLElement | null>(null);
 const loading = ref(true);
 const chart = shallowRef<echarts.ECharts | null>(null);
 
 const territoryLookup = computed(() => {
-  const lookup = new Map<string, any>();
+  const lookup = new Map<string, MapTerritory>();
 
   props.territories.forEach((t) => {
     // Index the main territory name
@@ -42,7 +54,7 @@ const territoryLookup = computed(() => {
 
     // Index all associated ONS names (Crucial for UK maps)
     if (t.ons_matches) {
-      t.ons_matches.forEach((ons: any) => {
+      t.ons_matches.forEach((ons: ONSMatch) => {
         lookup.set(normalizeName(ons.name), t);
       });
     }
@@ -51,7 +63,7 @@ const territoryLookup = computed(() => {
   return lookup;
 });
 
-const getThemeColor = (cssVar: string, fallback: string) => {
+const getThemeColor = (cssVar: string, fallback: string): string => {
   if (!import.meta.client) {
     return fallback;
   }
@@ -59,7 +71,7 @@ const getThemeColor = (cssVar: string, fallback: string) => {
   return val || fallback;
 };
 
-const normalizeName = (name: string) => {
+const normalizeName = (name: string): string => {
   if (!name) {
     return '';
   }
@@ -73,7 +85,32 @@ const normalizeName = (name: string) => {
     .toLowerCase();
 };
 
-const loadAndDrawMap = async () => {
+type MapPolygonData = {
+  name: string;
+  value: number;
+  itemStyle: {
+    areaColor: string;
+    borderColor: string;
+    borderWidth: number;
+  };
+  emphasis: {
+    disabled?: boolean;
+    itemStyle?: {
+      areaColor: string;
+      borderColor: string;
+      borderWidth: number;
+    };
+    label?: { show: boolean };
+  };
+  cursor: string;
+};
+
+// The subset of ECharts' click-event payload this handler reads
+type EChartsClickEvent = {
+  name: string;
+};
+
+const loadAndDrawMap = async (): Promise<void> => {
   if (!mapContainer.value) {
     return;
   }
@@ -84,7 +121,6 @@ const loadAndDrawMap = async () => {
     const response = await fetch(fileName);
 
     if (!response.ok) {
-      console.error(`ERROR: Could not find ${fileName} in your public folder!`);
       loading.value = false;
       return;
     }
@@ -101,7 +137,7 @@ const loadAndDrawMap = async () => {
     // Initialize fresh
     chart.value = echarts.init(mapContainer.value);
 
-    chart.value.on('click', (params: any) => {
+    chart.value.on('click', (params: EChartsClickEvent) => {
       const clickedName = normalizeName(params.name);
       const matchedTerritory = territoryLookup.value.get(clickedName);
 
@@ -111,28 +147,25 @@ const loadAndDrawMap = async () => {
           return;
         }
 
-        emit('territory-clicked', matchedTerritory);
-      } else {
-        console.warn(`No match found in constants for map shape: ${params.name}`);
+        emit('territoryClicked', matchedTerritory);
       }
     });
 
     loading.value = false;
 
     updateMapData();
-  } catch (error) {
-    console.error(`Failed to load ${props.country} map data:`, error);
+  } catch {
     loading.value = false;
   }
 };
 
-const updateMapData = () => {
+const updateMapData = (): void => {
   // RACE CONDITION SHIELD
   if (!chart.value || loading.value) {
     return;
   }
 
-  const mapData: any[] = [];
+  const mapData: MapPolygonData[] = [];
 
   const white = getThemeColor('--color-white', '#ffffff');
   const slate100 = getThemeColor('--color-slate-100', '#f1f5f9');
@@ -152,8 +185,17 @@ const updateMapData = () => {
 
   const nameProp = props.country === 'UK' ? 'ctyua18nm' : 'name';
 
+  type GeoJSONFeature = {
+    properties: Record<string, string>;
+  };
+
+  type EChartsTooltipParams = {
+    data?: unknown;
+    name: string;
+  };
+
   // 2. Loop through every single polygon on the actual map
-  mapObj.geoJSON.features.forEach((feature: any) => {
+  mapObj.geoJSON.features.forEach((feature: GeoJSONFeature) => {
     const rawGeoName = feature.properties[nameProp];
     if (!rawGeoName) {
       return;
@@ -211,7 +253,7 @@ const updateMapData = () => {
     {
       tooltip: {
         trigger: 'item',
-        formatter: (params: any) => {
+        formatter: (params: EChartsTooltipParams) => {
           // Hide tooltip for greyed out areas
           if (!params.data) {
             return undefined;

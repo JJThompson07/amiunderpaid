@@ -28,5 +28,7 @@ defineProps({
   accept: { type: String, default: 'image/png, image/jpeg' }
 });
 
-defineEmits(['change']);
+defineEmits<{
+  (e: 'change', event: Event): void;
+}>();
 </script>

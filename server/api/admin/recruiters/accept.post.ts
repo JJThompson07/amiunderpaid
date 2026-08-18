@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
 
     // 4. Queue the confirmation email to the recruiter
     const config = useRuntimeConfig();
-    const siteUrl = (config.public as any).siteUrl || 'https://amiunderpaid.co.uk';
+    const siteUrl = config.public.siteUrl || 'https://amiunderpaid.co.uk';
     const loginUrl = `${siteUrl}/recruiter/login`;
 
     await db.collection('mail').add({
@@ -74,14 +74,15 @@ export default defineEventHandler(async (event) => {
     });
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces recruiter approval failures for admin debugging; no dedicated server-side error-logging utility exists
     console.error('🔥 Error accepting recruiter:', error);
-    if (error.statusCode) {
+    if (isError(error)) {
       throw error;
     }
     throw createError({
       statusCode: 500,
-      message: error.message || 'Failed to approve recruiter.'
+      message: error instanceof Error ? error.message : 'Failed to approve recruiter.'
     });
   }
 });

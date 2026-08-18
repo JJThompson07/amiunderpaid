@@ -3,10 +3,8 @@
  * Run via `pnpm lint:structure` (`tsx scripts/structure-lint.ts`). Exits non-zero on any violation.
  */
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { basename, dirname, join, relative } from 'node:path';
-
-const COMPONENT_PREFIX = 'AmI'; // Set based on CODE_STANDARDS.md for global components
+import { existsSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 
 type Violation = { rule: string; file: string; message: string };
 
@@ -28,8 +26,6 @@ const isVue = (file: string): boolean => file.endsWith('.vue');
 const isTs = (file: string): boolean => file.endsWith('.ts') && !file.endsWith('.d.ts');
 const isSpec = (file: string): boolean => file.endsWith('.spec.ts');
 const isPlay = (file: string): boolean => file.endsWith('.play.ts');
-
-const pascal = (segment: string): string => segment.charAt(0).toUpperCase() + segment.slice(1);
 
 const stem = (file: string): string => basename(file).replace(/\.(vue|ts)$/, '');
 
@@ -79,7 +75,7 @@ try {
     .map((s) => s.trim())
     .filter(Boolean)
     .forEach((f) => newFiles.add(f));
-} catch (e) {
+} catch {
   // Gracefully handle general git errors (e.g. shallow clone, no HEAD)
 }
 

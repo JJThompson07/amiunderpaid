@@ -17,12 +17,14 @@ A recent security audit highlighted critical vulnerabilities in the API layer, p
 ## Capabilities
 
 ### New Capabilities
+
 - `admin-guard`: Middleware enforcement and role-based access control for administrative endpoints.
 - `firestore-rules`: Firebase security rules for data access and integrity.
 - `stripe-checkout-security`: Checkout security improvements and race condition fixes for exclusive territories.
 - `leads-relay-security`: Validation and sanitization for recruiter lead emails.
 
 ### Modified Capabilities
+
 - `analytics-tracking`: Requires server-side ID minting for `track-search` and `update-search` to prevent arbitrary document overwrites.
 - `admin-search-log-metrics`: Moves `/api/user/search-logs` to the `/api/admin/` namespace and enforces authentication.
 

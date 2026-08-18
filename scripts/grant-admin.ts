@@ -1,4 +1,4 @@
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import * as dotenv from 'dotenv';
@@ -7,7 +7,7 @@ import { resolve } from 'path';
 // Load .env
 dotenv.config({ path: resolve(process.cwd(), '.env') });
 
-async function grantAdmin() {
+async function grantAdmin(): Promise<void> {
   const uid = process.argv[2];
   if (!uid) {
     console.error('Usage: pnpm tsx scripts/grant-admin.ts <uid>');
@@ -23,18 +23,18 @@ async function grantAdmin() {
 
   try {
     const serviceAccount = JSON.parse(Buffer.from(serviceAccountBase64, 'base64').toString('utf8'));
-    
+
     if (getApps().length === 0) {
       initializeApp({
-        credential: cert(serviceAccount),
+        credential: cert(serviceAccount)
       });
     }
 
     console.log(`Granting admin claim to ${uid}...`);
-    
+
     // Set custom claim
     await getAuth().setCustomUserClaims(uid, { admin: true });
-    
+
     // Update user document
     await getFirestore().collection('users').doc(uid).set({ role: 'admin' }, { merge: true });
 

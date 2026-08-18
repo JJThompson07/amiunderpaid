@@ -1,19 +1,22 @@
+import type { CookieOptions } from '#app';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useDevProviderOverride } from '../useDevProviderOverride';
 
-const stateCache: Record<string, any> = {};
-vi.stubGlobal('useState', (key: string, init: any) => {
-  if (!(key in stateCache)) {
-    stateCache[key] = { value: init ? init() : null };
+type FakeCookieRef = { value: string | null };
+
+const cookieCache = new Map<string, FakeCookieRef>();
+vi.stubGlobal('useCookie', (key: string, options?: CookieOptions<string>) => {
+  if (!cookieCache.has(key)) {
+    cookieCache.set(key, { value: options?.default ? (options.default() as string) : null });
   }
-  return stateCache[key];
+  return cookieCache.get(key);
 });
 
 describe('useDevProviderOverride', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.keys(stateCache).forEach((key) => delete stateCache[key]);
+    cookieCache.clear();
   });
 
   it('initializes to auto', () => {
@@ -24,7 +27,7 @@ describe('useDevProviderOverride', () => {
   it('updates the state', () => {
     const override = useDevProviderOverride();
     override.value = 'reed';
-    
+
     const checkOverride = useDevProviderOverride();
     expect(checkOverride.value).toBe('reed');
   });

@@ -1,12 +1,17 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchJoobleData, parseJoobleSalary, processJoobleData } from '../jooble';
 
 describe('Jooble Provider', () => {
+  const fetchMock = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({ joobleApiKey: 'test-key' })));
-    vi.stubGlobal('createError', (err: any) => new Error(err.statusMessage));
-    vi.stubGlobal('$fetch', vi.fn());
+    vi.stubGlobal(
+      'useRuntimeConfig',
+      vi.fn(() => ({ joobleApiKey: 'test-key' }))
+    );
+    vi.stubGlobal('createError', (err: { statusMessage?: string }) => new Error(err.statusMessage));
+    vi.stubGlobal('$fetch', fetchMock);
   });
 
   describe('parseJoobleSalary', () => {
@@ -140,7 +145,7 @@ describe('Jooble Provider', () => {
 
       // Verify mean calculation (only includes jobs with valid salaries)
       expect(result.mean).toBe(110000); // Average of 100k and 120k
-      
+
       // Verify histogram buckets
       // 110000 rounds down to nearest 5000 -> 110000
       expect(result.histogram![110000]).toBe(1);
@@ -149,14 +154,14 @@ describe('Jooble Provider', () => {
 
   describe('fetchJoobleData', () => {
     it('should call $fetch with correct parameters', async () => {
-      (global.$fetch as any).mockResolvedValue({
+      fetchMock.mockResolvedValue({
         totalCount: 0,
         jobs: []
       });
 
       await fetchJoobleData('Developer', 'Chicago', 'full-time', 'permanent');
 
-      expect(global.$fetch).toHaveBeenCalledWith(
+      expect(fetchMock).toHaveBeenCalledWith(
         'https://jooble.org/api/test-key',
         expect.objectContaining({
           method: 'POST',
@@ -170,7 +175,7 @@ describe('Jooble Provider', () => {
     });
 
     it('should throw 500 error if fetch fails', async () => {
-      (global.$fetch as any).mockRejectedValue(new Error('Network error'));
+      fetchMock.mockRejectedValue(new Error('Network error'));
 
       await expect(
         fetchJoobleData('Developer', 'Chicago', 'full-time', 'permanent')

@@ -43,10 +43,6 @@ defineProps({
   country: {
     type: String,
     required: true
-  },
-  period: {
-    type: String,
-    required: true
   }
 });
 </script>

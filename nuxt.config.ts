@@ -2,7 +2,7 @@
 import tailwindcss from '@tailwindcss/vite';
 
 // Debug: Check if env vars are loaded
-if (!process.env.FIREBASE_API_KEY) {
+if (!process.env.FIREBASE_API_KEY && !process.env.CI && process.env.NODE_ENV !== 'test') {
   // if no key then we want to fail immediately
   throw new Error(
     'FATAL CONFIG ERROR: FIREBASE_API_KEY is missing from environment variables. The application cannot start.'
@@ -18,11 +18,15 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
     const singleLineJson = JSON.stringify(JSON.parse(decoded));
     process.env.GOOGLE_APPLICATION_CREDENTIALS = singleLineJson;
   } catch (error) {
+    // Intentional diagnostic log: this runs at build/server startup, before any
+    // app-level logging utility is available.
+    // eslint-disable-next-line no-console
     console.error('⚠️ Failed to decode FIREBASE_SERVICE_ACCOUNT_BASE64', error);
   }
 }
 
 const isDev = process.env.NODE_ENV !== 'production';
+const isE2E = process.env.E2E === 'true';
 const DAY_IN_S = 86400;
 
 export default defineNuxtConfig({
@@ -39,15 +43,31 @@ export default defineNuxtConfig({
 
   // ** 1. ENABLE SERVER-SIDE RENDERING **
   // This must be true for SEO and Caching to work
-  ssr: !process.env.E2E,
+  ssr: true,
 
-  // ** 2. CONFIGURE CACHING (Route Rules) **
-  routeRules: isDev
-    ? {}
-    : {
-        '/salary/**': { swr: DAY_IN_S },
-        '/benchmark/**': { swr: DAY_IN_S }
-      },
+  // ** 2. CONFIGURE CACHING & HYBRID RENDERING (Route Rules) **
+  // SWR caching on /salary/**|/benchmark/** doesn't vary by cookie, so it
+  // would silently ignore the devProviderOverride cookie (see
+  // useDevProviderOverride.ts) — the first request to a given URL/build
+  // populates the cache and every subsequent request gets served that same
+  // response regardless of cookie. Disable it during e2e runs so the
+  // fallback-provider tests (and local dev toggling) see the override
+  // rather than a stale/unrelated cached render.
+  routeRules:
+    isDev || isE2E
+      ? {
+          // In E2E dev, we must disable SSR for protected routes to ensure Firebase auth stability
+          '/recruiter/**': { ssr: false },
+          '/admin/**': { ssr: false }
+        }
+      : {
+          '/salary/**': { swr: DAY_IN_S, ssr: true },
+          '/benchmark/**': { swr: DAY_IN_S, ssr: true },
+          '/sitemap.xml': { swr: 86400 },
+          // Always disable SSR for highly dynamic, user-specific auth routes
+          '/recruiter/**': { ssr: false },
+          '/admin/**': { ssr: false }
+        },
 
   css: ['~/assets/css/main.css'],
 
@@ -139,9 +159,11 @@ export default defineNuxtConfig({
     adzunaAppKey: process.env.ADZUNA_APP_KEY,
     reedApiKey: process.env.REED_API_KEY,
     joobleApiKey: process.env.JOOBLE_API_KEY,
-    firebaseServiceAccount: process.env.FIREBASE_SERVICE_ACCOUNT,
     algoliaApplicationId: process.env.ALGOLIA_APPLICATION_ID,
-    algoliaAdminApiKey: process.env.ALGOLIA_ADMIN_KEY || process.env.ALGOLIA_ADMIN_API_KEY || process.env.ALGOLIA_API_KEY,
+    algoliaAdminApiKey:
+      process.env.ALGOLIA_ADMIN_KEY ||
+      process.env.ALGOLIA_ADMIN_API_KEY ||
+      process.env.ALGOLIA_API_KEY,
 
     public: {
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
@@ -157,7 +179,7 @@ export default defineNuxtConfig({
 
   // ** 6. Vite / Tailwind **
   vite: {
-    plugins: [tailwindcss() as any],
+    plugins: [tailwindcss()],
     build: {
       rollupOptions: {
         output: {

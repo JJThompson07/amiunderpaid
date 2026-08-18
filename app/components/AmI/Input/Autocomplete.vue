@@ -136,9 +136,11 @@ const props = defineProps({
 });
 
 // ** emits **
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void;
+}>();
 
-const getLabelForValue = (val: string) => {
+const getLabelForValue = (val: string): string => {
   if (!val) {
     return '';
   }
@@ -167,7 +169,7 @@ const filteredOptions = computed(() => {
 });
 
 // ** methods **
-const selectOption = (option: AutocompleteOption) => {
+const selectOption = (option: AutocompleteOption): void => {
   inputValue.value = option.label;
 
   emit('update:modelValue', option.value);
@@ -176,19 +178,19 @@ const selectOption = (option: AutocompleteOption) => {
   activeIndex.value = -1;
 };
 
-const onInput = () => {
+const onInput = (): void => {
   isOpen.value = true;
   activeIndex.value = -1;
   emit('update:modelValue', inputValue.value);
 };
 
-const onFocus = () => {
+const onFocus = (): void => {
   if (inputValue.value) {
     isOpen.value = true;
   }
 };
 
-const navigateOptions = (direction: number) => {
+const navigateOptions = (direction: number): void => {
   if (!isOpen.value || filteredOptions.value.length === 0) {
     return;
   }
@@ -206,7 +208,7 @@ const navigateOptions = (direction: number) => {
   activeIndex.value = next;
 };
 
-const selectActiveOption = () => {
+const selectActiveOption = (): void => {
   if (isOpen.value && activeIndex.value >= 0 && filteredOptions.value[activeIndex.value]) {
     // Pass the whole object here too
     selectOption(filteredOptions.value[activeIndex.value]!);

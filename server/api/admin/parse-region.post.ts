@@ -1,4 +1,4 @@
-import { createError, defineEventHandler, readMultipartFormData } from 'h3';
+import { createError, defineEventHandler, isError, readMultipartFormData } from 'h3';
 import * as XLSX from 'xlsx';
 import { ONS_LOCATIONS } from '../../../utils/locations/uk';
 
@@ -11,6 +11,9 @@ import { ONS_LOCATIONS } from '../../../utils/locations/uk';
  * - 'AREA_TITLE' column = Location Name
  * - 'OCC_TITLE' column = Job Title
  */
+
+// A raw spreadsheet cell value, as returned by XLSX's `sheet_to_json({ header: 1 })`.
+type SheetCellValue = string | number | boolean | Date | null | undefined;
 
 type SalaryRecord = {
   title: string;
@@ -66,7 +69,7 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+      const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as SheetCellValue[][];
 
       let headerRowIndex = -1;
       for (let i = 0; i < Math.min(rawData.length, 10); i++) {
@@ -108,12 +111,12 @@ export default defineEventHandler(async (event) => {
       const pct90Idx = headers.findIndex((h) => h != null && String(h).trim() === '90');
 
       // Helper to strictly validate UK numeric values (handles null, undefined, strings, and missing data chars)
-      const parseUKVal = (val: any) => {
+      const parseUKVal = (val: SheetCellValue): number | undefined => {
         if (val == null || val === 'x' || val === '..' || val === ':') {
           return undefined;
         }
         const parsed =
-          typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) : parseFloat(val);
+          typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) : parseFloat(String(val));
         if (!isNaN(parsed) && parsed >= 1000) {
           return Math.round(parsed);
         }
@@ -130,7 +133,7 @@ export default defineEventHandler(async (event) => {
 
         const location = String(row[locIdx]).trim();
         const cleanLocation = cleanNameMap.get(location) || location;
-        const id_code =
+        const idCode =
           codeIdx > -1 && row[codeIdx] != null ? String(row[codeIdx]).trim() : undefined;
 
         const salaryVal = parseUKVal(row[medianIdx]);
@@ -144,7 +147,7 @@ export default defineEventHandler(async (event) => {
           year: targetYear,
           salary: salaryVal,
           country: 'UK',
-          id_code,
+          id_code: idCode,
           period: 'year'
         };
 
@@ -190,7 +193,7 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+      const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as SheetCellValue[][];
       const headers = rawData[0] || [];
 
       const titleIdx = headers.findIndex(
@@ -219,12 +222,12 @@ export default defineEventHandler(async (event) => {
       }
 
       // Helper to clean BLS numeric strings and handle suppression (*, #, null, undefined)
-      const parseUSVal = (val: any) => {
+      const parseUSVal = (val: SheetCellValue): number | undefined => {
         if (val == null || val === '*' || val === '#') {
           return undefined;
         }
         const parsed =
-          typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) : parseFloat(val);
+          typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) : parseFloat(String(val));
         if (!isNaN(parsed)) {
           return Math.round(parsed);
         }
@@ -244,7 +247,7 @@ export default defineEventHandler(async (event) => {
 
         const title = String(row[titleIdx]).trim();
         const location = String(row[locIdx]).trim(); // Explicitly use AREA_TITLE for location
-        const id_code =
+        const idCode =
           codeIdx > -1 && row[codeIdx] != null ? String(row[codeIdx]).trim() : undefined;
 
         const salaryVal = parseUSVal(row[salaryIdx]);
@@ -258,7 +261,7 @@ export default defineEventHandler(async (event) => {
           year: targetYear,
           salary: salaryVal,
           country: 'USA',
-          id_code,
+          id_code: idCode,
           period: 'year'
         };
 
@@ -294,10 +297,12 @@ export default defineEventHandler(async (event) => {
       count: normalizedData.length,
       data: normalizedData
     };
-  } catch (error: any) {
+  } catch (error) {
+    const statusCode = isError(error) ? error.statusCode : 500;
+    const message = error instanceof Error ? error.message : 'Internal Server Error during parsing';
     throw createError({
-      statusCode: error.statusCode || 500,
-      message: error.message || 'Internal Server Error during parsing',
+      statusCode: statusCode || 500,
+      message: message || 'Internal Server Error during parsing',
       cause: error
     });
   }

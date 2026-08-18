@@ -100,7 +100,9 @@ const props = defineProps<{
 }>();
 
 // ** emits **
-defineEmits(['close']);
+defineEmits<{
+  (e: 'close'): void;
+}>();
 
 // ** data & refs **
 const copied = ref(false);
@@ -134,7 +136,7 @@ const emailBody = computed(() => {
 });
 
 // ** methods **
-const toggleScript = () => {
+const toggleScript = (): void => {
   showScript.value = !showScript.value;
 
   // only track the action when the user views the script, not when they hide it
@@ -143,7 +145,7 @@ const toggleScript = () => {
   }
 };
 
-const copyToClipboard = async () => {
+const copyToClipboard = async (): Promise<void> => {
   await navigator.clipboard.writeText(emailBody.value);
   copied.value = true;
   setTimeout(() => (copied.value = false), 2000);

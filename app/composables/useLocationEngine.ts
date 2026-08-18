@@ -1,13 +1,70 @@
+import type { ComputedRef, Ref } from 'vue';
 import { getRawDiffPercentage } from '~/helpers/utility';
 import type { SalaryBenchmark } from '~/composables/useMarketData';
+import type { JobListing } from '~~/shared/utils/market-data';
+import type { BenchmarkResult, EngineContext } from '~~/shared/utils/types';
+import type { McaUiData } from '~~/shared/utils/formatter';
 
-export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
+// The shape of an ambiguity-modal selection: an Algolia job-title hit resolved
+// to a specific government occupation group. `group` mirrors the source hit
+// types (GovBenchmarkHit/SalaryBenchmarkHit) where it's optional, since Algolia
+// data doesn't always carry it.
+export type AmbiguityMatch = {
+  id_code?: string;
+  soc?: string;
+  objectID?: string;
+  title: string;
+  group?: string;
+};
+
+export type UseLocationEngineReturn = {
+  pending: Ref<boolean>;
+  adzunaLoading: ReturnType<typeof useJobs>['loading'];
+  resolving: ReturnType<typeof useMarketData>['resolving'];
+  showUserSelection: Ref<boolean>;
+  userSalary: Ref<number>;
+  displayTitle: ComputedRef<string>;
+  country: ComputedRef<string>;
+  location: ComputedRef<string>;
+  searchTitle: Ref<string>;
+  jobType: Ref<string>;
+  contractType: Ref<string>;
+  currencySymbol: ComputedRef<string>;
+  matchedTitle: ReturnType<typeof useMarketData>['matchedTitle'];
+  matchedLocation: ComputedRef<string>;
+  marketDataYear: Ref<number>;
+  adzunaCategory: ComputedRef<string | undefined>;
+  hasGovernmentData: ComputedRef<boolean>;
+  hasJobsData: ReturnType<typeof useJobs>['hasJobsData'];
+  mcaScore: ComputedRef<McaUiData | null>;
+  diffPercent: ComputedRef<number>;
+  isUnderpaid: ComputedRef<boolean>;
+  marketAverage: ComputedRef<number>;
+  marketLow: ComputedRef<number>;
+  marketHigh: ComputedRef<number>;
+  regionalData: ComputedRef<SalaryBenchmark | null>;
+  jobListings: ComputedRef<JobListing[]>;
+  isAdminVerified: ComputedRef<boolean>;
+  histogramBuckets: ReturnType<typeof useJobs>['histogramBuckets'];
+  histogramRange: ReturnType<typeof useJobs>['histogramRange'];
+  histogramMaxCount: ReturnType<typeof useJobs>['histogramMaxCount'];
+  histogramTotalCount: ReturnType<typeof useJobs>['histogramTotalCount'];
+  meanSalary: ReturnType<typeof useJobs>['meanSalary'];
+  jobsCount: ReturnType<typeof useJobs>['jobsCount'];
+  dataProvider: ReturnType<typeof useJobs>['dataProvider'];
+  handleAmbiguitySelect: (match: AmbiguityMatch) => Promise<void>;
+  isUnderpaidAdzuna: ReturnType<typeof useJobs>['isUnderpaid'];
+};
+
+export const useLocationEngine = async (
+  mode: 'salary' | 'benchmark'
+): Promise<UseLocationEngineReturn> => {
   const route = useRoute();
   const { t } = useI18n();
   const { trackAmbiguousSearch } = useAnalytics();
 
   // 1. Core Route State
-  const govId = ref<string>(route.query.gov_id as string);
+  const govId = ref<string | undefined>(route.query.gov_id as string | undefined);
   const jobType = ref<string>((route.query.schedule as string) || 'full-time');
   const contractType = ref<string>((route.query.contract as string) || 'permanent');
   const searchConfirmed = ref<boolean>(
@@ -17,7 +74,7 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
   const userSelected = ref<boolean>(false);
 
   // 2. Formatting Helpers
-  const unslugify = (slug: string) => {
+  const unslugify = (slug: string): string => {
     if (!slug) {
       return '';
     }
@@ -48,7 +105,8 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
 
   // 4. The Orchestrator
   const asyncDataKey = computed<string>(
-    () => `${mode}-${country.value}-${location.value}-${searchTitle.value}-${devProviderOverride.value}`
+    () =>
+      `${mode}-${country.value}-${location.value}-${searchTitle.value}-${devProviderOverride.value}`
   );
 
   const {
@@ -67,7 +125,14 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
           contractType.value,
           devProviderOverride.value
         ),
-        adzuna.fetchHistogram(searchTitle.value, location.value, country.value, jobType.value, contractType.value, devProviderOverride.value)
+        adzuna.fetchHistogram(
+          searchTitle.value,
+          location.value,
+          country.value,
+          jobType.value,
+          contractType.value,
+          devProviderOverride.value
+        )
       ]);
 
       const targetGovId = govId.value || adzuna.cachedGovIdCode.value;
@@ -88,6 +153,14 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
 
       if (micro.officialGroupTitle) {
         marketData.matchedTitle.value = micro.officialGroupTitle;
+      }
+
+      // Strip large collections out to prevent massive hydration bloat
+      if (macro.allRegionalData) {
+        delete (macro as unknown as Record<string, unknown>).allRegionalData;
+      }
+      if (micro.allRegionalMicroData) {
+        delete (micro as unknown as Record<string, unknown>).allRegionalMicroData;
       }
 
       return {
@@ -150,7 +223,9 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
       : getRawDiffPercentage(userSalary.value, marketAverage.value)
   );
   const jobListings = computed(() =>
-    (adzuna.jobsData.value?.results || []).sort((a: any, b: any) => b.salary_max - a.salary_max)
+    (adzuna.jobsData.value?.results || []).sort(
+      (a: JobListing, b: JobListing) => b.salary_max - a.salary_max
+    )
   );
   const isAdminVerified = computed<boolean>(() =>
     Boolean(userSelected.value || govId.value || !!adzuna.cachedGovIdCode.value)
@@ -159,7 +234,6 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
     () => adzuna.jobsData.value?.results?.[0]?.category?.label
   );
 
-  /* v8 ignore start */
   const mcaScore = computed(() => {
     if (!pageData.value?.macro?.macroNationalData) {
       return null;
@@ -170,32 +244,27 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
       return null;
     }
 
-    const rawResult =
-      country.value === 'UK'
-        ? calculateUKBenchmarkScore(
-            userSalary.value,
-            pageData.value.macro.macroNationalData,
-            pageData.value.micro.microNationalData || null,
-            pageData.value.micro.officialGroupTitle || '',
-            pageData.value.micro.microRegionalData || null,
-            pageData.value.macro.regionalMedianAllRoles,
-            pageData.value.macro.nationalMedianAllRoles,
-            adzuna.histogramBuckets.value,
-            adzuna.jobsCount.value || 0,
-            adzuna.meanSalary.value || 0
-          )
-        : calculateUSABenchmarkScore(
-            userSalary.value,
-            pageData.value.macro.macroNationalData,
-            pageData.value.macro.userRegionalData || null,
-            pageData.value.micro.microNationalData || null,
-            pageData.value.micro.microRegionalData || null,
-            pageData.value.macro.regionalMedianAllRoles,
-            pageData.value.macro.nationalMedianAllRoles,
-            adzuna.histogramBuckets.value,
-            adzuna.jobsCount.value || 0,
-            adzuna.meanSalary.value || 0
-          );
+    const context = {
+      userSalary: userSalary.value,
+      macroNationalData: pageData.value.macro.macroNationalData,
+      macroRegionalData: pageData.value.macro.userRegionalData || null,
+      microNationalData: pageData.value.micro.microNationalData || null,
+      microRegionalData: pageData.value.micro.microRegionalData || null,
+      microNationalOfficialTitle: pageData.value.micro.officialGroupTitle || '',
+      regionalMedianAllRoles: pageData.value.macro.regionalMedianAllRoles,
+      nationalMedianAllRoles: pageData.value.macro.nationalMedianAllRoles,
+      liveBuckets: adzuna.histogramBuckets.value,
+      totalLiveJobs: adzuna.jobsCount.value || 0,
+      meanLiveSalary: adzuna.meanSalary.value || 0
+    };
+
+    const scorers: Record<string, (ctx: EngineContext) => BenchmarkResult> = {
+      UK: calculateUKBenchmarkScore,
+      USA: calculateUSABenchmarkScore
+    };
+
+    const scorer = scorers[country.value] || calculateUKBenchmarkScore;
+    const rawResult = scorer(context);
 
     return formatMcaScoreForUi(
       rawResult,
@@ -204,13 +273,12 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
       t
     );
   });
-  /* v8 ignore stop */
 
   // 6. Shared Methods
-  const handleAmbiguitySelect = async (match: any) => {
+  const handleAmbiguitySelect = async (match: AmbiguityMatch): Promise<void> => {
     const exactId = match.id_code || match.soc || match.objectID;
     govId.value = exactId;
-    trackAmbiguousSearch(match.title, match.group);
+    trackAmbiguousSearch(match.title, match.group || '');
 
     try {
       await $fetch('/api/market-data/update-match', {
@@ -240,7 +308,6 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
   // 7. Shared Watchers
   watch(marketData.resolving, (newLoading) => {
     if (newLoading === false) {
-      /* v8 ignore start */
       if (
         import.meta.client &&
         hasGovernmentData.value &&
@@ -260,9 +327,8 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
             job_type: jobType.value,
             contract_type: contractType.value
           }
-        }).catch(() => {});
+        }).catch(() => undefined);
       }
-      /* v8 ignore stop */
 
       if (
         location.value &&
@@ -288,7 +354,7 @@ export const useLocationEngine = async (mode: 'salary' | 'benchmark') => {
     if (newSalary > 0) {
       navigateTo({ query: { ...route.query, compare: newSalary.toString() } }, { replace: true });
     } else {
-      const { compare, ...rest } = route.query;
+      const { compare: _, ...rest } = route.query;
       navigateTo({ query: rest }, { replace: true });
     }
   });

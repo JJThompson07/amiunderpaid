@@ -11,9 +11,11 @@ During local development, developers need a reliable way to test both the primar
 ## Capabilities
 
 ### New Capabilities
+
 - `dev-provider-toggle`: Dev-only UI toggle to switch between search API providers.
 
 ### Modified Capabilities
+
 - `job-provider-ui`: Modifying the search UI to conditionally display the dev toggle.
 
 ## Impact

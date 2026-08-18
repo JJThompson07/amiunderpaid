@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Convert to JSON
-    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as unknown[][];
 
     if (!rawData || rawData.length === 0) {
       throw createError({ statusCode: 400, message: 'The file appears to be empty.' });
@@ -49,7 +49,11 @@ export default defineEventHandler(async (event) => {
 
     // 1. Scan for Headers
     for (let i = 0; i < Math.min(rawData.length, 20); i++) {
-      const row = (rawData[i] || []).map((c: any) => c?.toString().toLowerCase().trim() || '');
+      const row = (rawData[i] || []).map((c: unknown) =>
+        String(c ?? '')
+          .toLowerCase()
+          .trim()
+      );
 
       // Look for "INDEXOCC" or "INDEX_TERM" for the title
       const t = row.findIndex(
@@ -87,9 +91,9 @@ export default defineEventHandler(async (event) => {
         continue;
       }
 
-      const title = row[titleIdx]?.toString().trim();
-      const soc = row[socIdx]?.toString().trim();
-      const group = groupIdx > -1 ? row[groupIdx]?.toString().trim() : '';
+      const title = row[titleIdx] != null ? String(row[titleIdx]).trim() : '';
+      const soc = row[socIdx] != null ? String(row[socIdx]).trim() : '';
+      const group = groupIdx > -1 && row[groupIdx] != null ? String(row[groupIdx]).trim() : '';
 
       if (title && soc) {
         normalizedData.push({
@@ -105,10 +109,10 @@ export default defineEventHandler(async (event) => {
       count: normalizedData.length,
       data: normalizedData
     };
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
-      error: error.message || 'An unknown error occurred during parsing',
+      error: error instanceof Error ? error.message : 'An unknown error occurred during parsing',
       cause: error
     };
   }

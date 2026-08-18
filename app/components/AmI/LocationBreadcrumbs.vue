@@ -32,7 +32,6 @@
             path: `${urlStart}/${route.params.title}/${route.params.country}`,
             query: route.query
           }"
-          external
           class="hover:text-white transition-colors">
           {{ country }}
         </NuxtLink>

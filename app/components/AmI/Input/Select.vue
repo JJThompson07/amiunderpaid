@@ -171,7 +171,9 @@ const props = defineProps({
   externalList: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string[]): void;
+}>();
 
 // Refs
 const containerRef = ref<HTMLElement | null>(null);
@@ -184,7 +186,7 @@ const activeIndex = ref(-1);
 const { focused } = useFocus(searchInput);
 
 // Helpers
-const getLabelForValue = (val: string) => {
+const getLabelForValue = (val: string): string => {
   const found = props.options.find((opt) => opt.value === val);
   return found ? found.label : val;
 };
@@ -205,7 +207,7 @@ const showPlaceholder = computed(() => {
 });
 
 // Methods
-const onFocusContainer = () => {
+const onFocusContainer = (): void => {
   if (props.disabled) {
     return;
   }
@@ -213,7 +215,7 @@ const onFocusContainer = () => {
   focused.value = true; // Automatically handles the DOM focus
 };
 
-const toggleOption = (option: AutocompleteOption) => {
+const toggleOption = (option: AutocompleteOption): void => {
   let newValue: string[];
 
   // Handle single vs multi selection logic
@@ -235,19 +237,19 @@ const toggleOption = (option: AutocompleteOption) => {
   searchQuery.value = ''; // Clear search text
 };
 
-const removeOption = (val: string) => {
+const removeOption = (val: string): void => {
   const newValue = props.modelValue.filter((v) => v !== val);
   emit('update:modelValue', newValue);
 };
 
-const clearAll = () => {
+const clearAll = (): void => {
   emit('update:modelValue', []);
   searchQuery.value = '';
   isOpen.value = false;
 };
 
 // Keyboard Navigation
-const navigateOptions = (direction: number) => {
+const navigateOptions = (direction: number): void => {
   if (!isOpen.value || filteredOptions.value.length === 0) {
     return;
   }
@@ -262,13 +264,13 @@ const navigateOptions = (direction: number) => {
   activeIndex.value = next;
 };
 
-const selectActiveOption = () => {
+const selectActiveOption = (): void => {
   if (isOpen.value && activeIndex.value >= 0 && filteredOptions.value[activeIndex.value]) {
     toggleOption(filteredOptions.value[activeIndex.value]!);
   }
 };
 
-const handleBackspace = () => {
+const handleBackspace = (): void => {
   // If search is empty, delete the last selected pill
   if (searchQuery.value === '' && props.modelValue.length > 0) {
     const newValue = [...props.modelValue];

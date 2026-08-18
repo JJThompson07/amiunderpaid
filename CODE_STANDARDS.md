@@ -106,6 +106,7 @@ runtimeConfig: {
 ### 9.3 Opaque Error Messages
 
 Server error messages returned to the client **MUST NOT** reveal:
+
 - Provider or vendor names (e.g. `'Adzuna'`, `'Reed'`)
 - Country routing logic (e.g. `for ${countryCode}`)
 - Internal infrastructure topology
@@ -115,24 +116,28 @@ Server error messages returned to the client **MUST NOT** reveal:
 throw createError({ statusCode: 503, statusMessage: 'Market data temporarily unavailable.' });
 
 // ❌ FORBIDDEN — leaks internal architecture
-throw createError({ statusCode: 500, statusMessage: `Failed to fetch Adzuna jobs for ${countryCode}` });
+throw createError({
+  statusCode: 500,
+  statusMessage: `Failed to fetch Adzuna jobs for ${countryCode}`
+});
 ```
 
 Use `503 Service Unavailable` (not `500`) when the failure is caused by a downstream provider being rate-limited or unavailable, as this is semantically correct and helps downstream monitoring tools.
 
 ### 9.4 Error Status Codes
 
-| Scenario | Correct Status Code |
-|---|---|
-| Downstream provider rate-limited (429) or unavailable | `503` |
-| Missing or misconfigured server credentials | `500` |
-| Invalid client input | `400` |
-| Unauthenticated request | `401` |
-| Authorised but forbidden resource | `403` |
+| Scenario                                              | Correct Status Code |
+| ----------------------------------------------------- | ------------------- |
+| Downstream provider rate-limited (429) or unavailable | `503`               |
+| Missing or misconfigured server credentials           | `500`               |
+| Invalid client input                                  | `400`               |
+| Unauthenticated request                               | `401`               |
+| Authorised but forbidden resource                     | `403`               |
 
 ### 9.5 Dev-Only Features
 
 Features that exist only for local development **MUST** be gated behind both:
+
 - `process.dev` on the server side (Nitro handlers)
 - `import.meta.dev` on the client side (Vue components / composables)
 

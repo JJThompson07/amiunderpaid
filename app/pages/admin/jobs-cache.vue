@@ -46,7 +46,7 @@
         </div>
         <AmIButton
           class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700"
-          @click="refreshSuggestions">
+          @click="() => refreshSuggestions()">
           Refresh Queue
         </AmIButton>
       </div>
@@ -123,6 +123,21 @@
 <script setup lang="ts">
 import { Check, CheckCircle2, DatabaseZap, RefreshCcw, Trash2, Users, X } from 'lucide-vue-next';
 
+// A pending job-title match suggestion as stored in the `job_suggestions`
+// Firestore collection (see server/api/admin/suggestions).
+type JobSuggestion = {
+  id: string;
+  title: string;
+  suggested_gov_title?: string;
+  suggested_gov_id?: string;
+  country?: string;
+  is_automatic_system_save?: boolean;
+  location?: string;
+  job_type?: string;
+  contract_type?: string;
+  timestamp?: string;
+};
+
 // Protect this route with your admin middleware
 definePageMeta({
   middleware: 'admin'
@@ -135,7 +150,7 @@ const { showToast } = useSystemToast();
 const isCleaning = ref(false);
 const cleanupStats = ref<{ deletedJobs: number; deletedDistributions: number } | null>(null);
 
-const runCleanup = async () => {
+const runCleanup = async (): Promise<void> => {
   if (
     !confirm(
       'Are you sure you want to run the cache cleanup? This will delete all expired entries.'
@@ -173,13 +188,13 @@ const {
   refresh: refreshSuggestions
 } = useAsyncData(
   'admin-suggestions',
-  () => adminFetch<{ success: boolean; suggestions: any[] }>('/api/admin/suggestions'),
+  () => adminFetch<{ success: boolean; suggestions: JobSuggestion[] }>('/api/admin/suggestions'),
   { server: false }
 );
 
 const suggestions = computed(() => suggestionsData.value?.suggestions || []);
 
-const approveMatch = async (suggestion: any) => {
+const approveMatch = async (suggestion: JobSuggestion): Promise<void> => {
   try {
     // 3. Updated to useAdminFetch
     await adminFetch('/api/admin/suggestions/approve', {
@@ -203,7 +218,7 @@ const approveMatch = async (suggestion: any) => {
   }
 };
 
-const rejectMatch = async (id: string) => {
+const rejectMatch = async (id: string): Promise<void> => {
   if (!confirm('Are you sure you want to reject and delete this suggestion?')) {
     return;
   }

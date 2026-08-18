@@ -1,14 +1,42 @@
 import type { SearchClient } from 'algoliasearch';
+import type { Ref } from 'vue';
 import type { PercentileData } from '~~/shared/utils/types';
 
-export const useMacroData = () => {
+// Raw shape of a benchmark record as stored in the Algolia `salary_benchmarks` /
+// `regional_salary_benchmarks` indices.
+type AlgoliaBenchmarkHit = {
+  title?: string;
+  avg_salary?: number;
+  salary?: number;
+  salary_10_pt?: number;
+  salary_25_pt?: number;
+  salary_75_pt?: number;
+  salary_90_pt?: number;
+  searchLocation?: string;
+};
+
+export type MacroBaselines = {
+  macroNationalData: PercentileData;
+  userRegionalData: PercentileData | null;
+  allRegionalData: Record<string, PercentileData>;
+  nationalMedianAllRoles: number;
+  regionalMedianAllRoles: number | null;
+};
+
+export const useMacroData = (): {
+  fetching: Ref<boolean>;
+  fetchMacroBaselines: (country: string, userLocation?: string | null) => Promise<MacroBaselines>;
+} => {
   const { $algolia } = useNuxtApp();
   const fetching = ref(false);
 
   const NATIONAL_INDEX_NAME = 'salary_benchmarks';
   const REGIONAL_INDEX_NAME = 'regional_salary_benchmarks';
 
-  const fetchMacroBaselines = async (country: string, userLocation?: string | null) => {
+  const fetchMacroBaselines = async (
+    country: string,
+    userLocation?: string | null
+  ): Promise<MacroBaselines> => {
     fetching.value = true;
     const client = $algolia as SearchClient;
 
@@ -25,13 +53,14 @@ export const useMacroData = () => {
       } else {
         nationalFilter = `country:UK AND searchTitle:"all employees" AND searchLocation:"united kingdom"`;
       }
-      const nationalQuery = nationalIndex.search('', { filters: nationalFilter, hitsPerPage: 1 });
+      const nationalQuery = nationalIndex.search<AlgoliaBenchmarkHit>('', {
+        filters: nationalFilter,
+        hitsPerPage: 1
+      });
 
       // ==========================================
       // 2. BUILD "ALL REGIONS" QUERY
       // ==========================================
-      let regionalQuery: Promise<any> = Promise.resolve(null);
-
       let regionalFilter = '';
       if (country === 'USA') {
         regionalFilter = `country:USA AND id_code:"00-0000"`;
@@ -40,14 +69,17 @@ export const useMacroData = () => {
         // We set hitsPerPage to 50 to make sure we grab every single UK region in one go
         regionalFilter = `country:UK AND searchTitle:"all employees" AND NOT searchLocation:"uk"`;
       }
-      regionalQuery = regionalIndex.search('', { filters: regionalFilter, hitsPerPage: 1000 });
+      const regionalQuery = regionalIndex.search<AlgoliaBenchmarkHit>('', {
+        filters: regionalFilter,
+        hitsPerPage: 1000
+      });
 
       // ==========================================
       // 3. EXECUTE IN PARALLEL
       // ==========================================
       const [nationalRes, regionalRes] = await Promise.all([nationalQuery, regionalQuery]);
 
-      const nationalHit = nationalRes?.hits[0] as any;
+      const nationalHit = nationalRes?.hits[0];
 
       // ==========================================
       // 4. MAP TO STRICT TYPES
@@ -65,7 +97,7 @@ export const useMacroData = () => {
       const allRegionalData: Record<string, PercentileData> = {};
 
       if (regionalRes && regionalRes.hits) {
-        regionalRes.hits.forEach((hit: any) => {
+        regionalRes.hits.forEach((hit) => {
           if (hit.searchLocation) {
             allRegionalData[hit.searchLocation.toLowerCase()] = {
               mean: hit.avg_salary || hit.salary || 0,
@@ -80,10 +112,9 @@ export const useMacroData = () => {
       }
 
       // Extract the exact region the user searched for to feed the scoring engine
-      const userRegionalData =
-        userLocation && allRegionalData[userLocation.toLowerCase()]
-          ? allRegionalData[userLocation.toLowerCase()]
-          : null;
+      const userRegionKey = userLocation?.toLowerCase();
+      const userRegionalData: PercentileData | null =
+        (userRegionKey && allRegionalData[userRegionKey]) || null;
 
       return {
         macroNationalData,
@@ -93,6 +124,7 @@ export const useMacroData = () => {
         regionalMedianAllRoles: userRegionalData?.p50 || null
       };
     } catch (error) {
+      // eslint-disable-next-line no-console -- surfaces Algolia fetch failures for server-side debugging
       console.error(`Failed to fetch ${country} macro baseline data:`, error);
       return {
         macroNationalData: { mean: 35000, p10: 0, p25: 0, p50: 35000, p75: 0, p90: 0 },

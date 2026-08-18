@@ -15,11 +15,11 @@ export default defineEventHandler(async (event) => {
     await db.collection('job_suggestions').doc(suggestionId).delete();
 
     return { success: true, message: 'Suggestion rejected and deleted.' };
-  } catch (e: any) {
+  } catch (e) {
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to delete suggestion',
-      data: e.message
+      data: e instanceof Error ? e.message : 'Unknown error'
     });
   }
 });

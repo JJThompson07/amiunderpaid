@@ -19,14 +19,13 @@ export default defineEventHandler(async (event) => {
   try {
     const auth = getAuth(useAdminApp());
     await auth.setCustomUserClaims(uid, { admin: true });
-    
+
     // Also update the Firestore profile so the UI logic works correctly
     const db = useAdminFirestore();
     await db.collection('users').doc(uid).set({ role: 'admin' }, { merge: true });
 
     return { success: true };
-  } catch (err: any) {
-    console.error(`Failed to grant admin claim to ${uid}:`, err);
+  } catch {
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to provision admin access.'

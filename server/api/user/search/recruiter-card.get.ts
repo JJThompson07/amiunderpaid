@@ -1,4 +1,4 @@
-import { getFirestore } from 'firebase-admin/firestore';
+import { FieldPath, getFirestore } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -6,52 +6,54 @@ export default defineEventHandler(async (event) => {
   const category = String(query.category);
 
   if (!territoryId || !category) {
-    return createError({ statusCode: 400, message: 'Missing territoryId or category' });
+    throw createError({ statusCode: 400, message: 'Missing territoryId or category' });
   }
 
   const db = getFirestore();
-  const usersSnap = await db.collection('users').where('role', '==', 'recruiter').get();
 
   const now = new Date();
   const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-  let exclusiveOwner = null;
-  const basicOwners: any[] = [];
+  const claimDocId = `${territoryId}_${category}`;
+  const claimSnap = await db.collection('territory_category_owners').doc(claimDocId).get();
 
-  // Find who owns this territory/category this month
-  for (const doc of usersSnap.docs) {
-    const data = doc.data();
-    const activeTerritories = data.activeTerritories || [];
-
-    const matchedTerritory = activeTerritories.find(
-      (t: any) => t.territoryId === territoryId && t.categoryValue === category
-    );
-
-    if (matchedTerritory) {
-      if (matchedTerritory.exclusiveMonths?.includes(currentMonthStr)) {
-        exclusiveOwner = { uid: doc.id, data };
-        break; // Exclusive overrides basic, stop searching!
-      } else if (matchedTerritory.isBasic) {
-        basicOwners.push({ uid: doc.id, data });
-      }
-    }
-  }
-
-  // 1. Prioritise Exclusive Owner
-  // 2. If no exclusive, randomly distribute between Basic owners
-  let selectedOwners: any[] = [];
-  if (exclusiveOwner) {
-    selectedOwners.push(exclusiveOwner);
-  } else if (basicOwners.length > 0) {
-    // Shuffle array to randomize which basic recruiters show up
-    const shuffled = basicOwners.sort(() => 0.5 - Math.random());
-    // Take up to 3 recruiters
-    selectedOwners = shuffled.slice(0, 3);
-  }
-
-  if (selectedOwners.length === 0) {
+  if (!claimSnap.exists) {
     return { success: true, cards: [] };
   }
+
+  const claimData = claimSnap.data() || {};
+  const takenMonths = claimData.takenExclusiveMonths || {};
+  const basicOwners = claimData.basicOwners || [];
+
+  const exclusiveOwnerUid = takenMonths[currentMonthStr] || null;
+
+  let selectedOwnerUids: string[] = [];
+
+  // 1. Prioritise Exclusive Owner
+  if (exclusiveOwnerUid) {
+    selectedOwnerUids.push(exclusiveOwnerUid);
+  } else if (basicOwners.length > 0) {
+    // 2. If no exclusive, randomly distribute between Basic owners
+    const shuffled = basicOwners.sort(() => 0.5 - Math.random());
+    selectedOwnerUids = shuffled.slice(0, 3);
+  }
+
+  if (selectedOwnerUids.length === 0) {
+    return { success: true, cards: [] };
+  }
+
+  // 3. Fetch the selected user profiles
+  // We can fetch up to 10 in an 'in' query, and we only select up to 3!
+  const usersSnap = await db
+    .collection('users')
+    .where(FieldPath.documentId(), 'in', selectedOwnerUids)
+    .get();
+
+  const selectedOwners = usersSnap.docs.map((doc) => ({
+    uid: doc.id,
+    data: doc.data(),
+    isExclusive: doc.id === exclusiveOwnerUid
+  }));
 
   // Return the resolved contact settings to be rendered in AmICardLeadContact
   const cards = await Promise.all(
@@ -63,6 +65,7 @@ export default defineEventHandler(async (event) => {
         try {
           settings = JSON.parse(settings);
         } catch {
+          // eslint-disable-next-line no-console -- surfaces malformed contactSettings JSON for debugging; no dedicated server-side error-logging utility exists
           console.error(`Failed to parse contactSettings for user ${owner.uid}`);
         }
       }
@@ -85,7 +88,7 @@ export default defineEventHandler(async (event) => {
 
       return {
         recruiterId: owner.uid,
-        isExclusive: !!exclusiveOwner,
+        isExclusive: owner.isExclusive,
         title: settings.title || settings.contactTitle || null,
         content: settings.content || settings.contactContent || null,
         categoryContent: settings.categoryContent?.[category] || null,

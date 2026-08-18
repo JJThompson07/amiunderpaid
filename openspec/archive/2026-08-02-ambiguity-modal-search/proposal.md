@@ -13,10 +13,12 @@ When a user searches for a job title and the exact match isn't found or is ambig
 ## Capabilities
 
 ### New Capabilities
+
 - `job-search-ambiguity-modal`: Adds a dynamic, in-modal search feature allowing users to query the full Algolia dictionary if the initial suggestions are inaccurate.
 
 ### Modified Capabilities
-- 
+
+-
 
 ## Impact
 

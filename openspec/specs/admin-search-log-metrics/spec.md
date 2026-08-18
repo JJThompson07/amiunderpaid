@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change admin-search-log-update. Update Purpose after archive.
+Defines the metrics and capabilities for the admin search log dashboard.
 
 ## Requirements
 
@@ -43,12 +43,15 @@ The admin dashboard SHALL provide a mechanism to retroactively backfill historic
 - **AND** updates the records with the calculated metrics along with the flag `historical_fetched_MCA: true`.
 
 ### Requirement: Search logs endpoint is secured
+
 The API endpoint that serves search logs for the admin dashboard SHALL be strictly authenticated and authorized, preventing public access to sensitive user data.
 
 #### Scenario: Anonymous user requests search logs
+
 - **WHEN** an unauthenticated request is made to fetch the search logs
 - **THEN** the system rejects the request with a 401 Unauthorized or 403 Forbidden error
 
 #### Scenario: Admin views the search logs
+
 - **WHEN** an authenticated admin requests the search logs for the dashboard
 - **THEN** the system securely returns the log data

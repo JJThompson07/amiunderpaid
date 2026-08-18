@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fetchReedData, processReedData, ReedJobResponse } from '../reed';
+import type { ReedJobResponse } from '../reed';
+import { fetchReedData, processReedData } from '../reed';
 
 describe('Reed Utility', () => {
   it('should process Reed job data and calculate mean and histogram correctly', () => {
@@ -46,7 +47,7 @@ describe('Reed Utility', () => {
 
     expect(processed.provider).toBe('reed');
     expect(processed.count).toBe(5);
-    
+
     // Mean should be (50000 + 60000) / 2 = 55000
     expect(processed.mean).toBe(55000);
 
@@ -85,66 +86,100 @@ describe('Reed Utility', () => {
   });
   describe('fetchReedData', () => {
     it('should throw error if API key is missing', async () => {
-      vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({ reedApiKey: null })));
-      vi.stubGlobal('createError', (err: any) => new Error(err.statusMessage));
-      
-      await expect(fetchReedData('Dev', '', 'full-time', 'permanent')).rejects.toThrow('Market data service is misconfigured.');
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ reedApiKey: null }))
+      );
+      vi.stubGlobal(
+        'createError',
+        (err: { statusMessage?: string }) => new Error(err.statusMessage)
+      );
+
+      await expect(fetchReedData('Dev', '', 'full-time', 'permanent')).rejects.toThrow(
+        'Market data service is misconfigured.'
+      );
     });
 
     it('should fetch and process data successfully', async () => {
-      vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({ reedApiKey: 'test-key' })));
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ reedApiKey: 'test-key' }))
+      );
       const fetchMock = vi.fn().mockResolvedValue({ totalResults: 1, results: [] });
       vi.stubGlobal('$fetch', fetchMock);
 
       const result = await fetchReedData('Dev', 'London', 'full-time', 'permanent');
-      
-      expect(fetchMock).toHaveBeenCalledWith('https://www.reed.co.uk/api/1.0/search', expect.objectContaining({
-        params: expect.objectContaining({
-          keywords: 'Dev',
-          locationName: 'London',
-          fullTime: true,
-          permanent: true
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://www.reed.co.uk/api/1.0/search',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            keywords: 'Dev',
+            locationName: 'London',
+            fullTime: true,
+            permanent: true
+          })
         })
-      }));
+      );
       expect(result.count).toBe(1);
     });
 
     it('should handle mapped locations and part-time/contract params', async () => {
-      vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({ reedApiKey: 'test-key' })));
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ reedApiKey: 'test-key' }))
+      );
       const fetchMock = vi.fn().mockResolvedValue({ totalResults: 0, results: [] });
       vi.stubGlobal('$fetch', fetchMock);
 
       await fetchReedData('Dev', 'yorkshire and the humber, uk', 'part-time', 'contract');
-      
-      expect(fetchMock).toHaveBeenCalledWith('https://www.reed.co.uk/api/1.0/search', expect.objectContaining({
-        params: expect.objectContaining({
-          locationName: 'Yorkshire', // mapped
-          partTime: true,
-          contract: true
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://www.reed.co.uk/api/1.0/search',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            locationName: 'Yorkshire', // mapped
+            partTime: true,
+            contract: true
+          })
         })
-      }));
+      );
     });
 
     it('should handle temp param', async () => {
-      vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({ reedApiKey: 'test-key' })));
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ reedApiKey: 'test-key' }))
+      );
       const fetchMock = vi.fn().mockResolvedValue({ totalResults: 0, results: [] });
       vi.stubGlobal('$fetch', fetchMock);
 
       await fetchReedData('Dev', '', '', 'temp');
-      
-      expect(fetchMock).toHaveBeenCalledWith('https://www.reed.co.uk/api/1.0/search', expect.objectContaining({
-        params: expect.objectContaining({
-          temp: true
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://www.reed.co.uk/api/1.0/search',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            temp: true
+          })
         })
-      }));
+      );
     });
 
     it('should throw error on fetch failure', async () => {
-      vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({ reedApiKey: 'test-key' })));
-      vi.stubGlobal('createError', (err: any) => new Error(err.statusMessage));
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ reedApiKey: 'test-key' }))
+      );
+      vi.stubGlobal(
+        'createError',
+        (err: { statusMessage?: string }) => new Error(err.statusMessage)
+      );
       vi.stubGlobal('$fetch', vi.fn().mockRejectedValue(new Error('Network error')));
 
-      await expect(fetchReedData('Dev', '', 'full-time', 'permanent')).rejects.toThrow('Failed to fetch from Reed API');
+      await expect(fetchReedData('Dev', '', 'full-time', 'permanent')).rejects.toThrow(
+        'Failed to fetch from Reed API'
+      );
     });
   });
 });

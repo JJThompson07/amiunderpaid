@@ -3,17 +3,17 @@ import { useMarketData } from '../useMarketData';
 
 const mockSearch = vi.fn();
 const mockInitIndex = vi.fn(() => ({
-  search: mockSearch,
+  search: mockSearch
 }));
 
 vi.stubGlobal('useNuxtApp', () => ({
   $algolia: {
-    initIndex: mockInitIndex,
-  },
+    initIndex: mockInitIndex
+  }
 }));
 
-const stateCache: Record<string, any> = {};
-vi.stubGlobal('useState', (key: string, init: () => any) => {
+let stateCache: Record<string, { value: unknown }> = {};
+vi.stubGlobal('useState', <T>(key: string, init: () => T) => {
   if (!stateCache[key]) {
     stateCache[key] = { value: init ? init() : null };
   }
@@ -23,11 +23,12 @@ vi.stubGlobal('useState', (key: string, init: () => any) => {
 describe('useMarketData', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.keys(stateCache).forEach((key) => delete stateCache[key]);
+    stateCache = {};
   });
 
   it('initializes without throwing and provides default state', () => {
-    const { resolving, matchedTitle, matchedIdCode, ambiguousMatches, isGenericFallback } = useMarketData();
+    const { resolving, matchedTitle, matchedIdCode, ambiguousMatches, isGenericFallback } =
+      useMarketData();
     expect(resolving.value).toBe(false);
     expect(matchedTitle.value).toBe('');
     expect(matchedIdCode.value).toBeUndefined();
@@ -38,7 +39,7 @@ describe('useMarketData', () => {
   it('resolves UK identity with exact id bypass', async () => {
     const { resolveUkIdentity, matchedTitle, matchedIdCode } = useMarketData();
     await resolveUkIdentity('Software Engineer', '1234');
-    
+
     expect(matchedTitle.value).toBe('Software Engineer');
     expect(matchedIdCode.value).toBe('1234');
     expect(mockInitIndex).not.toHaveBeenCalled();
@@ -46,9 +47,7 @@ describe('useMarketData', () => {
 
   it('resolves UK identity via dictionary search with group', async () => {
     mockSearch.mockResolvedValueOnce({
-      hits: [
-        { title: 'Developer', group: 'Software Engineering', soc: '2136' }
-      ]
+      hits: [{ title: 'Developer', group: 'Software Engineering', soc: '2136' }]
     });
     const { resolveUkIdentity, matchedTitle, matchedIdCode } = useMarketData();
     await resolveUkIdentity('Developer (Software Engineering)');
@@ -62,7 +61,7 @@ describe('useMarketData', () => {
     mockSearch.mockResolvedValue({ hits: [] }); // For both job_titles and salary_benchmarks
     const { resolveUkIdentity, matchedTitle, isGenericFallback } = useMarketData();
     await resolveUkIdentity('Unknown Job');
-    
+
     expect(isGenericFallback.value).toBe(true);
     expect(matchedTitle.value).toBe('Professional (Generic)');
   });
@@ -70,20 +69,18 @@ describe('useMarketData', () => {
   it('resolves USA identity with exact id bypass', async () => {
     const { resolveUsaIdentity, matchedTitle, matchedIdCode } = useMarketData();
     await resolveUsaIdentity('Data Scientist', '5678');
-    
+
     expect(matchedTitle.value).toBe('Data Scientist');
     expect(matchedIdCode.value).toBe('5678');
   });
 
   it('resolves USA identity via master index search', async () => {
     mockSearch.mockResolvedValueOnce({
-      hits: [
-        { title: 'Data Scientist', id_code: '15-1221' }
-      ]
+      hits: [{ title: 'Data Scientist', id_code: '15-1221' }]
     });
     const { resolveUsaIdentity, matchedTitle, matchedIdCode } = useMarketData();
     await resolveUsaIdentity('Data Scientist');
-    
+
     expect(mockInitIndex).toHaveBeenCalledWith('salary_benchmarks');
     expect(matchedTitle.value).toBe('Data Scientist');
     expect(matchedIdCode.value).toBe('15-1221');
@@ -130,7 +127,7 @@ describe('useMarketData', () => {
   it('handles error in resolveUkIdentity gracefully', async () => {
     mockSearch.mockRejectedValueOnce(new Error('Algolia fails'));
     const { resolveUkIdentity, resolving } = useMarketData();
-    
+
     await resolveUkIdentity('Error Job');
     expect(resolving.value).toBe(false);
   });
@@ -139,7 +136,7 @@ describe('useMarketData', () => {
     mockSearch.mockResolvedValueOnce({ hits: [] });
     const { resolveUsaIdentity, matchedTitle, isGenericFallback } = useMarketData();
     await resolveUsaIdentity('Unknown Job');
-    
+
     expect(isGenericFallback.value).toBe(true);
     expect(matchedTitle.value).toBe('Professional (Generic)');
   });
@@ -157,9 +154,7 @@ describe('useMarketData', () => {
 
   it('handles single title hit without ambiguous matches', async () => {
     mockSearch.mockResolvedValueOnce({
-      hits: [
-        { title: 'Only Hit', soc: '111' }
-      ]
+      hits: [{ title: 'Only Hit', soc: '111' }]
     });
     const { resolveUkIdentity, matchedIdCode, ambiguousMatches } = useMarketData();
     await resolveUkIdentity('Single');
@@ -182,9 +177,7 @@ describe('useMarketData', () => {
 
   it('sets matchedTitle to title if group is missing', async () => {
     mockSearch.mockResolvedValueOnce({
-      hits: [
-        { title: 'Fallback Title', soc: '111' }
-      ]
+      hits: [{ title: 'Fallback Title', soc: '111' }]
     });
     const { resolveUkIdentity, matchedTitle } = useMarketData();
     await resolveUkIdentity('Dev');
@@ -193,9 +186,7 @@ describe('useMarketData', () => {
 
   it('sets matchedTitle to searchTitle if group and title are missing', async () => {
     mockSearch.mockResolvedValueOnce({
-      hits: [
-        { soc: '111' }
-      ]
+      hits: [{ soc: '111' }]
     });
     const { resolveUkIdentity, matchedTitle } = useMarketData();
     await resolveUkIdentity('Fallback Search');
@@ -205,7 +196,7 @@ describe('useMarketData', () => {
   it('handles error in resolveUsaIdentity gracefully', async () => {
     mockSearch.mockRejectedValueOnce(new Error('Algolia fails'));
     const { resolveUsaIdentity, resolving } = useMarketData();
-    
+
     await resolveUsaIdentity('Error Job');
     expect(resolving.value).toBe(false);
   });

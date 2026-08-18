@@ -72,15 +72,13 @@ import { getPercentage } from '~/helpers/utility';
 import type { HistogramBucket } from '../../../../shared/utils/types';
 import { XCircle } from 'lucide-vue-next';
 
-defineEmits(['close']);
+defineEmits<{
+  (e: 'close'): void;
+}>();
 
 defineProps({
   buckets: {
     type: Array as PropType<HistogramBucket[]>,
-    required: true
-  },
-  histogramRange: {
-    type: Number,
     required: true
   },
   histogramMaxCount: {
@@ -94,18 +92,6 @@ defineProps({
   currencySymbol: {
     type: String,
     required: true
-  },
-  isUnderpaid: {
-    type: Boolean,
-    required: true
-  },
-  currentSalary: {
-    type: Number,
-    default: 0
-  },
-  averageSalary: {
-    type: Number,
-    default: 0
   }
 });
 

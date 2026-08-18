@@ -37,12 +37,12 @@ const localError = ref('');
 const adminPassword = ref('');
 const { t } = useI18n();
 
-const clearError = () => {
+const clearError = (): void => {
   localError.value = '';
   error.value = '';
 };
 
-const handleLogin = async (credentials: any) => {
+const handleLogin = async (credentials: { email: string; password: string }): Promise<void> => {
   clearError();
 
   if (!credentials.email || !credentials.password || !adminPassword.value) {

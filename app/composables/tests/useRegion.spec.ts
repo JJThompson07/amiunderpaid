@@ -7,12 +7,12 @@ const mockHostname = { value: 'localhost' };
 
 vi.stubGlobal('useI18n', () => ({ locale: mockLocale }));
 vi.stubGlobal('useRequestURL', () => ({
-  get hostname() {
+  get hostname(): string {
     return mockHostname.value;
   }
 }));
-vi.stubGlobal('computed', (fn: any) => ({
-  get value() {
+vi.stubGlobal('computed', <T>(fn: () => T) => ({
+  get value(): T {
     return fn();
   }
 }));

@@ -119,13 +119,15 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits<{
+  (e: 'close'): void;
+}>();
 
 const { t } = useI18n();
 const { isAdmin, isRecruiter, isRoleLoading } = useUserRole();
 const { logout } = useRecruiterAuth();
 
-const handleLogoutClick = async () => {
+const handleLogoutClick = async (): Promise<void> => {
   emit('close');
   await logout();
 };

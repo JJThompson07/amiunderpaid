@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useJobDictionary } from '../useJobDictionary';
 
-vi.mock('firebase/firestore', () => ({ doc: vi.fn(), collection: vi.fn(), getFirestore: vi.fn(), Timestamp: { now: vi.fn() } }));
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(),
+  collection: vi.fn(),
+  getFirestore: vi.fn(),
+  Timestamp: { now: vi.fn() }
+}));
 vi.mock('firebase/auth', () => ({ getAuth: vi.fn() }));
 
 const mockCurrentCountry = { value: 'UK' };
@@ -10,13 +15,13 @@ vi.stubGlobal('useRegion', () => ({ currentCountry: mockCurrentCountry }));
 
 const mockSearch = vi.fn();
 const mockInitIndex = vi.fn(() => ({
-  search: mockSearch,
+  search: mockSearch
 }));
 
 vi.stubGlobal('useNuxtApp', () => ({
   $algolia: {
-    initIndex: mockInitIndex,
-  },
+    initIndex: mockInitIndex
+  }
 }));
 
 const mockFetch = vi.fn();
@@ -67,17 +72,18 @@ describe('useJobDictionary', () => {
     mockFetch.mockResolvedValueOnce({ matches: [] }); // No Firestore match
 
     mockSearch.mockResolvedValueOnce({
-      hits: [
-        { gov_id: '789', group_name: 'Software Developer', titles: [] }
-      ]
+      hits: [{ gov_id: '789', group_name: 'Software Developer', titles: [] }]
     });
 
     const composable = useJobDictionary();
     const result = await composable.resolveJobId('Software Developer');
 
     expect(mockInitIndex).toHaveBeenCalledWith('uk_job_groups');
-    expect(mockSearch).toHaveBeenCalledWith('software developer', { removeWordsIfNoResults: 'allOptional', hitsPerPage: 5 });
-    
+    expect(mockSearch).toHaveBeenCalledWith('software developer', {
+      removeWordsIfNoResults: 'allOptional',
+      hitsPerPage: 5
+    });
+
     expect(result).toEqual({ type: 'exact', id: '789', group_name: 'Software Developer' });
   });
 
@@ -85,14 +91,12 @@ describe('useJobDictionary', () => {
     mockFetch.mockResolvedValueOnce({ matches: [] }); // No Firestore match
 
     mockSearch.mockResolvedValueOnce({
-      hits: [
-        { gov_id: '789', group_name: 'Software Developer', titles: ['coder', 'dev'] }
-      ]
+      hits: [{ gov_id: '789', group_name: 'Software Developer', titles: ['coder', 'dev'] }]
     });
 
     const composable = useJobDictionary();
     const result = await composable.resolveJobId('Dev');
-    
+
     expect(result).toEqual({ type: 'exact', id: '789', group_name: 'Software Developer' });
   });
 
@@ -100,14 +104,12 @@ describe('useJobDictionary', () => {
     mockFetch.mockResolvedValueOnce({ matches: [] }); // No Firestore match
 
     mockSearch.mockResolvedValueOnce({
-      hits: [
-        { gov_id: '111', group_name: 'UI/UX Designer', titles: [] }
-      ]
+      hits: [{ gov_id: '111', group_name: 'UI/UX Designer', titles: [] }]
     });
 
     const composable = useJobDictionary();
     const result = await composable.resolveJobId('UI UX Designer'); // Missing slash
-    
+
     expect(result).toEqual({ type: 'exact', id: '111', group_name: 'UI/UX Designer' });
   });
 
@@ -115,14 +117,12 @@ describe('useJobDictionary', () => {
     mockFetch.mockResolvedValueOnce({ matches: [] }); // No Firestore match
 
     mockSearch.mockResolvedValueOnce({
-      hits: [
-        { gov_id: '222', group_name: 'Software Engineer', titles: [] }
-      ]
+      hits: [{ gov_id: '222', group_name: 'Software Engineer', titles: [] }]
     });
 
     const composable = useJobDictionary();
     const result = await composable.resolveJobId('Software Enginear'); // Typo with 'a'
-    
+
     expect(result).toEqual({ type: 'exact', id: '222', group_name: 'Software Engineer' });
   });
 
@@ -130,15 +130,13 @@ describe('useJobDictionary', () => {
     mockFetch.mockResolvedValueOnce({ matches: [] }); // No Firestore match
 
     mockSearch.mockResolvedValueOnce({
-      hits: [
-        { gov_id: '789', group_name: 'Software Developer', titles: ['coder'] }
-      ]
+      hits: [{ gov_id: '789', group_name: 'Software Developer', titles: ['coder'] }]
     });
 
     const composable = useJobDictionary();
     // Search term "programming" matches partially but not exactly group or synonym
     const result = await composable.resolveJobId('programming');
-    
+
     expect(result).toEqual({
       type: 'ambiguous',
       id: null,
@@ -152,7 +150,7 @@ describe('useJobDictionary', () => {
 
     const composable = useJobDictionary();
     const result = await composable.resolveJobId('unknown');
-    
+
     expect(result).toEqual({ type: 'unmapped', id: null });
   });
 

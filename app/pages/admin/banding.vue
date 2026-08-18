@@ -31,16 +31,21 @@
               <div class="flex items-center gap-3">
                 <div
                   class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 font-black text-sm border border-slate-200 shrink-0">
-                  {{ row.band }}
+                  {{ asPricingRow(row).band }}
                 </div>
-                <span class="text-sm font-black text-slate-800">Band {{ row.band }}</span>
+                <span class="text-sm font-black text-slate-800"
+                  >Band {{ asPricingRow(row).band }}</span
+                >
               </div>
             </template>
             <template #basic="{ row }">
-              <AmIInputGeneric v-model="row.basic" type="number" placeholder="£" />
+              <AmIInputGeneric v-model="asPricingRow(row).basic" type="number" placeholder="£" />
             </template>
             <template #exclusive="{ row }">
-              <AmIInputGeneric v-model="row.exclusive" type="number" placeholder="£" />
+              <AmIInputGeneric
+                v-model="asPricingRow(row).exclusive"
+                type="number"
+                placeholder="£" />
             </template>
           </AmITable>
         </div>
@@ -60,16 +65,21 @@
               <div class="flex items-center gap-3">
                 <div
                   class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 font-black text-sm border border-slate-200 shrink-0">
-                  {{ row.band }}
+                  {{ asPricingRow(row).band }}
                 </div>
-                <span class="text-sm font-black text-slate-800">Band {{ row.band }}</span>
+                <span class="text-sm font-black text-slate-800"
+                  >Band {{ asPricingRow(row).band }}</span
+                >
               </div>
             </template>
             <template #basic="{ row }">
-              <AmIInputGeneric v-model="row.basic" type="number" placeholder="$" />
+              <AmIInputGeneric v-model="asPricingRow(row).basic" type="number" placeholder="$" />
             </template>
             <template #exclusive="{ row }">
-              <AmIInputGeneric v-model="row.exclusive" type="number" placeholder="$" />
+              <AmIInputGeneric
+                v-model="asPricingRow(row).exclusive"
+                type="number"
+                placeholder="$" />
             </template>
           </AmITable>
         </div>
@@ -103,6 +113,7 @@
 
 <script setup lang="ts">
 import { CheckCircle2, DollarSign, PoundSterling } from 'lucide-vue-next';
+import type { CountryPricingBands, PricingBand } from '~/composables/usePricing';
 
 definePageMeta({ middleware: 'admin' });
 
@@ -118,7 +129,13 @@ const pricingColumns = [
   { key: 'exclusive', label: 'Exclusive (/mo)', class: 'w-1/3' }
 ];
 
-const form = ref({
+type PricingRow = PricingBand & { band: number };
+
+// AmITable's slot-scoped `row` is typed as Record<string, unknown> (it's a
+// generic reusable table), but every row here is always a PricingRow.
+const asPricingRow = (row: Record<string, unknown>): PricingRow => row as unknown as PricingRow;
+
+const form = ref<{ UK: PricingRow[]; USA: PricingRow[] }>({
   UK: [
     { band: 1, basic: 50, exclusive: 250 },
     { band: 2, basic: 30, exclusive: 150 },
@@ -135,11 +152,11 @@ const form = ref({
   ]
 });
 
-const objectToArray = (obj: any) => {
+const objectToArray = (obj: CountryPricingBands): PricingRow[] => {
   return [1, 2, 3, 4, 5].map((band) => ({
     band,
-    basic: obj[`band${band}`]?.basic || 0,
-    exclusive: obj[`band${band}`]?.exclusive || 0
+    basic: obj[`band${band}` as keyof CountryPricingBands]?.basic || 0,
+    exclusive: obj[`band${band}` as keyof CountryPricingBands]?.exclusive || 0
   }));
 };
 
@@ -158,20 +175,20 @@ watch(
   { immediate: true, deep: true }
 );
 
-const handleSave = async () => {
+const handleSave = async (): Promise<void> => {
   isSaving.value = true;
   error.value = '';
   showSuccess.value = false;
 
   try {
-    const arrayToObject = (arr: any[]) => {
-      return arr.reduce(
-        (acc, row) => {
-          acc[`band${row.band}`] = { basic: Number(row.basic), exclusive: Number(row.exclusive) };
-          return acc;
-        },
-        {} as Record<string, any>
-      );
+    const arrayToObject = (arr: PricingRow[]): CountryPricingBands => {
+      return arr.reduce((acc, row) => {
+        acc[`band${row.band}` as keyof CountryPricingBands] = {
+          basic: Number(row.basic),
+          exclusive: Number(row.exclusive)
+        };
+        return acc;
+      }, {} as CountryPricingBands);
     };
 
     const payload = {

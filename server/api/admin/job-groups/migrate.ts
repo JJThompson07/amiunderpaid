@@ -1,5 +1,6 @@
 import { getFirestore } from 'firebase-admin/firestore';
 import algoliasearch from 'algoliasearch';
+import type { AlgoliaJobGroupRecord } from '~~/shared/utils/types';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -33,7 +34,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 3. DATA MAPPING
-    const groups: any[] = [];
+    const groups: AlgoliaJobGroupRecord[] = [];
     const MAX_TITLES_PER_RECORD = 200; // Keeps every record safely under 10KB
 
     snapshot.docs.forEach((doc) => {
@@ -75,12 +76,12 @@ export default defineEventHandler(async (event) => {
     const response = await index.replaceAllObjects(groups, { safe: true });
 
     return { success: true, count: response.objectIDs.length };
-  } catch (error: any) {
+  } catch (error) {
     // 5. ERROR CATCHER
 
     throw createError({
       statusCode: 500,
-      message: error.message || 'Failed to sync with Algolia.'
+      message: error instanceof Error ? error.message : 'Failed to sync with Algolia.'
     });
   }
 });

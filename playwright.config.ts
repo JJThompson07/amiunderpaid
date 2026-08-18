@@ -32,18 +32,28 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /.*ssr\.spec\.ts/
     },
 
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] }
+      use: { ...devices['Desktop Firefox'] },
+      testIgnore: /.*ssr\.spec\.ts/
+    },
+    {
+      name: 'ssr',
+      use: {
+        ...devices['Desktop Chrome'],
+        javaScriptEnabled: false
+      },
+      testMatch: /.*ssr\.spec\.ts/
     }
   ],
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: process.env.CI ? 'pnpm run preview' : 'E2E=true pnpm run dev',
+    command: `E2E=true pnpm run ${process.env.CI ? 'preview' : 'dev'}`,
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI
   }

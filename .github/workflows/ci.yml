@@ -2,11 +2,34 @@ name: CI Pipeline
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
   push:
-    branches: [ "main" ]
+    branches: ['main']
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run Linting Suite
+        run: pnpm run lint
+
   unit-tests:
     runs-on: ubuntu-latest
     steps:
@@ -31,8 +54,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Setup Java (for Firebase Emulator)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
       - name: Run Unit Tests & Enforce 80% Coverage
         run: pnpm run test:coverage
+
+      - name: Run Firebase Rules Tests
+        run: pnpm run test:rules
 
   e2e-tests:
     runs-on: ubuntu-latest
@@ -65,10 +97,10 @@ jobs:
 
       - name: Install Playwright Browsers
         run: pnpm exec playwright install chromium firefox --with-deps
-      
+
       - name: Build Application for E2E
         run: E2E=true pnpm run build
-      
+
       - name: Run Playwright E2E Tests
         run: |
           set -a

@@ -234,7 +234,7 @@
 
 <script setup lang="ts">
 import { CheckCircle2, Database, LoaderCircle, Lock, UploadCloud, X } from 'lucide-vue-next';
-import { collection, getCountFromServer, query, where } from 'firebase/firestore';
+import { collection, FirestoreError, getCountFromServer, query, where } from 'firebase/firestore';
 import type { SalaryRecord } from '../../../utils/seedData';
 
 /**
@@ -258,7 +258,7 @@ const { loading, batchDelete, batchSeed } = useAdminClient(log);
 const targetScope = ref('national'); // 'national' | 'regional'
 const targetCountry = ref('UK');
 const targetPeriod = ref('year');
-const targetYear = ref(2026);
+const targetYear = ref(new Date().getFullYear());
 const selectedFile = ref<File | null>(null);
 const fileName = ref('');
 const parsedData = ref<(SalaryRecord & { period: string })[]>([]);
@@ -268,7 +268,7 @@ const existingData = ref<
 
 // ** methods **
 
-const fetchSummary = async () => {
+const fetchSummary = async (): Promise<void> => {
   if (!db) {
     return;
   }
@@ -277,7 +277,7 @@ const fetchSummary = async () => {
 
   // Generate last 5 years dynamically
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i + 1);
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   const results: { country: string; year: number; period: string; count: number; scope: string }[] =
     [];
@@ -293,7 +293,7 @@ const fetchSummary = async () => {
       for (const year of years) {
         for (const period of periods) {
           promises.push(
-            (async () => {
+            (async (): Promise<void> => {
               try {
                 const q = query(
                   collection(db, col.name),
@@ -324,14 +324,14 @@ const fetchSummary = async () => {
   );
 };
 
-const setCountry = (c: string) => {
+const setCountry = (c: string): void => {
   targetCountry.value = c;
   if (c === 'USA') {
     targetPeriod.value = 'year';
   }
 };
 
-const onFileSelect = (e: Event) => {
+const onFileSelect = (e: Event): void => {
   const target = e.target as HTMLInputElement;
   const file = target.files?.[0];
   if (file) {
@@ -343,7 +343,12 @@ const onFileSelect = (e: Event) => {
   }
 };
 
-const deleteRecords = async (country: string, year: number, period: string, scope: string) => {
+const deleteRecords = async (
+  country: string,
+  year: number,
+  period: string,
+  scope: string
+): Promise<void> => {
   if (!db) {
     return;
   }
@@ -372,14 +377,15 @@ const deleteRecords = async (country: string, year: number, period: string, scop
       }
     });
     log('✅ Algolia index cleared.');
-  } catch (e: any) {
-    log(`⚠️ Failed to clear Algolia: ${e.message}`);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    log(`⚠️ Failed to clear Algolia: ${message}`);
   }
 
   await fetchSummary();
 };
 
-const handleParse = async () => {
+const handleParse = async (): Promise<void> => {
   // 1. Validation checks
   if (!selectedFile.value) {
     return;
@@ -417,14 +423,15 @@ const handleParse = async () => {
     } else {
       log(`❌ PARSE ERROR: ${response.error}`);
     }
-  } catch (e: any) {
-    log(`❌ NETWORK ERROR: ${e.message}`);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    log(`❌ NETWORK ERROR: ${message}`);
   } finally {
     parsing.value = false;
   }
 };
 
-const seedToFirestore = async () => {
+const seedToFirestore = async (): Promise<void> => {
   // 1. Pre-flight check
   if (loading.value || parsedData.value.length === 0 || !db) {
     return;
@@ -436,11 +443,17 @@ const seedToFirestore = async () => {
   const collectionName =
     targetScope.value === 'national' ? 'salary_benchmarks' : 'regional_salary_benchmarks';
 
-  const recordsToSync: any[] = [];
+  const recordsToSync: (SalaryRecord & {
+    period: string;
+    searchTitle: string;
+    searchLocation: string;
+    updatedAt: Date;
+    objectID: string;
+  })[] = [];
 
   try {
     // 1. Prepare and Save to Firestore
-    parsedData.value.forEach((record: any) => {
+    parsedData.value.forEach((record) => {
       // Create deterministic IDs
       const cleanTitle = record.title
         .toLowerCase()
@@ -481,9 +494,9 @@ const seedToFirestore = async () => {
     selectedFile.value = null;
     fileName.value = '';
     await fetchSummary();
-  } catch (e: any) {
+  } catch (e) {
     loading.value = false;
-    if (e.code === 'permission-denied') {
+    if (e instanceof FirestoreError && e.code === 'permission-denied') {
       log(
         `❌ PERMISSION ERROR: Missing write access for collection '${collectionName}'. Check firestore.rules.`
       );

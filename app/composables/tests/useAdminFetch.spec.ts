@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAdminFetch } from '../useAdminFetch';
 
-vi.mock('firebase/firestore', () => ({ doc: vi.fn(), collection: vi.fn(), getFirestore: vi.fn(), Timestamp: { now: vi.fn() } }));
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(),
+  collection: vi.fn(),
+  getFirestore: vi.fn(),
+  Timestamp: { now: vi.fn() }
+}));
 vi.mock('firebase/auth', () => ({ getAuth: vi.fn() }));
 
 const mockLogout = vi.fn();
@@ -33,9 +38,9 @@ describe('useAdminFetch', () => {
   it('fetches successfully with auth token', async () => {
     mock$fetch.mockResolvedValueOnce({ data: 'ok' });
     const adminFetch = useAdminFetch();
-    
+
     const res = await adminFetch('/api/test', { method: 'GET' });
-    
+
     expect(mockAuthStateReady).toHaveBeenCalled();
     expect(mockGetIdToken).toHaveBeenCalledWith(true);
     expect(mock$fetch).toHaveBeenCalledWith('/api/test', {
@@ -48,11 +53,13 @@ describe('useAdminFetch', () => {
   it('fetches successfully without auth token when user is null', async () => {
     mock$fetch.mockResolvedValueOnce({ data: 'ok' });
     const { useCurrentUser } = await import('vuefire');
-    vi.mocked(useCurrentUser).mockReturnValueOnce({ value: null } as any);
+    vi.mocked(useCurrentUser).mockReturnValueOnce({
+      value: null
+    } as unknown as ReturnType<typeof useCurrentUser>);
     const adminFetch = useAdminFetch();
-    
+
     const res = await adminFetch('/api/test');
-    
+
     expect(mock$fetch).toHaveBeenCalledWith('/api/test', { headers: {} });
     expect(res).toEqual({ data: 'ok' });
   });
@@ -60,7 +67,7 @@ describe('useAdminFetch', () => {
   it('handles 401 error and redirects to login', async () => {
     mock$fetch.mockRejectedValueOnce({ response: { status: 401 } });
     const adminFetch = useAdminFetch();
-    
+
     await expect(adminFetch('/api/test')).rejects.toEqual({ response: { status: 401 } });
     expect(mockLogout).toHaveBeenCalled();
     expect(mockNavigateTo).toHaveBeenCalledWith({ path: '/admin/login' });
@@ -69,7 +76,7 @@ describe('useAdminFetch', () => {
   it('handles generic error without redirecting', async () => {
     mock$fetch.mockRejectedValueOnce({ statusCode: 500 });
     const adminFetch = useAdminFetch();
-    
+
     await expect(adminFetch('/api/test')).rejects.toEqual({ statusCode: 500 });
     expect(mockLogout).not.toHaveBeenCalled();
     expect(mockNavigateTo).not.toHaveBeenCalled();

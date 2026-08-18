@@ -100,6 +100,7 @@
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { applyActionCode, getAuth } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 
 // Prevent this page from using any global layouts with navbars/footers
 // to keep it hyper-focused on the single task.
@@ -133,11 +134,12 @@ onMounted(async () => {
     await applyActionCode(auth, actionCode);
 
     status.value = 'success';
-  } catch (error: any) {
+  } catch (error) {
     status.value = 'error';
 
     // Simplified error messages since the UI box now handles the "what next" instructions
-    switch (error.code) {
+    const code = error instanceof FirebaseError ? error.code : undefined;
+    switch (code) {
       case 'auth/expired-action-code':
         errorMessage.value = t('account.email-verification.failure.message.expired-action-code');
         break;

@@ -83,7 +83,6 @@ export const USA_REGIONS: USARegion[] = [
   { id: 194, name: 'Territories' }
 ];
 
-/* v8 ignore start */
 export const RECRUITER_TERRITORIES_USA: USATerritory[] = [
   {
     id: 201,
@@ -464,7 +463,6 @@ export const RECRUITER_TERRITORIES_USA: USATerritory[] = [
     region: { id: 193, name: 'West' }
   }
 ];
-/* v8 ignore stop */
 
 export const NON_CONTIGUOUS_TERRITORIES_USA = [
   { id: 202, gov_name: 'Alaska', name: 'Alaska' },

@@ -13,7 +13,7 @@
     "preview": "nuxt preview",
     "dev:clean": "rm -rf .nuxt node_modules && pnpm install && nuxt dev",
     "postinstall": "nuxt prepare",
-    "lint": "pnpm spellcheck && pnpm typecheck && prettier . --check && tsx scripts/structure-lint.ts && eslint --max-warnings 0",
+    "lint": "pnpm spellcheck && pnpm typecheck && prettier . --check && tsx scripts/structure-lint.ts && tsx scripts/check-standards.ts && eslint --max-warnings 0",
     "lint:fix": "prettier . --write && eslint . --fix --max-warnings 0",
     "lint:i18n": "tsx scripts/check-i18n.ts",
     "check-standards": "tsx scripts/check-standards.ts",
@@ -23,6 +23,7 @@
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
+    "test:rules": "npx -y firebase-tools@latest emulators:exec \"vitest run tests/firestore.spec.ts -c vitest.rules.config.ts\"",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -39,9 +40,10 @@
     "vue": "^3.5.40",
     "vue-router": "^4.6.4",
     "vuefire": "^3.2.3",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "xlsx": "file:./vendor/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@intlify/utils": "^1.0.1",
     "@nuxt/eslint": "^0.7.6",
     "@nuxtjs/i18n": "^10.2.3",
@@ -51,11 +53,13 @@
     "@types/json-schema": "^7.0.15",
     "@types/tough-cookie": "^4.0.5",
     "@types/web-bluetooth": "^0.0.21",
+    "@vitejs/plugin-vue": "^6.0.8",
     "@vitest/coverage-v8": "^4.1.10",
     "@vue/test-utils": "^2.4.11",
     "@vueuse/core": "^14.4.0",
     "@vueuse/nuxt": "^14.4.0",
     "cspell": "^10.0.1",
+    "dotenv": "^17.4.2",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
     "happy-dom": "^20.11.1",

@@ -42,6 +42,7 @@ export default defineEventHandler(async (event) => {
 
     return { success: true };
   } catch (error) {
+    // eslint-disable-next-line no-console -- surfaces suggestion logging failures for debugging; no dedicated server-side error-logging utility exists
     console.error('Failed to log ambiguity suggestion:', error);
     return { success: false };
   }

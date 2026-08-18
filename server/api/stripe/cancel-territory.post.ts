@@ -2,6 +2,11 @@
 import Stripe from 'stripe';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import type { TerritoryClaim } from '~~/shared/utils/types';
+
+type PricingBand = { basic: number; exclusive: number };
+type CountryPricing = Record<string, PricingBand>;
+type PlatformPricing = Record<string, CountryPricing>;
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -15,7 +20,7 @@ export default defineEventHandler(async (event) => {
   // 1. VERIFY USER
   const authHeader = getRequestHeader(event, 'authorization');
   if (!authHeader?.startsWith('Bearer ')) {
-    return createError({ statusCode: 401, message: 'Unauthorized' });
+    throw createError({ statusCode: 401, message: 'Unauthorized' });
   }
 
   const token = authHeader.split('Bearer ')[1];
@@ -28,21 +33,21 @@ export default defineEventHandler(async (event) => {
   const userData = userDoc.data();
 
   if (!userData) {
-    return createError({ statusCode: 404, message: 'User not found' });
+    throw createError({ statusCode: 404, message: 'User not found' });
   }
 
-  const currentTerritories = userData.activeTerritories || [];
+  const currentTerritories: TerritoryClaim[] = userData.activeTerritories || [];
   const stripeSubId = userData.stripeSubscriptionId;
 
   // 2. FILTER OUT THE CANCELED TERRITORY
   const updatedTerritories = currentTerritories
-    .map((t: any) => {
+    .map((t: TerritoryClaim) => {
       if (t.territoryId === territoryIdToCancel) {
         return { ...t, isBasic: false }; // Downgrade to remove the basic plan
       }
       return t;
     })
-    .filter((t: any) => {
+    .filter((t: TerritoryClaim) => {
       // ONLY completely remove the territory if it has NO basic plan AND NO exclusive months left
       return t.isBasic || (t.exclusiveMonths && t.exclusiveMonths.length > 0);
     });
@@ -51,7 +56,7 @@ export default defineEventHandler(async (event) => {
   // We must fetch pricing to know exactly how much to charge them now
   const pricingDoc = await db.collection('platform_settings').doc('pricing').get();
 
-  const DEFAULT_PRICING: Record<string, any> = {
+  const DEFAULT_PRICING: PlatformPricing = {
     UK: {
       band1: { basic: 50, exclusive: 250 },
       band2: { basic: 30, exclusive: 150 },
@@ -68,16 +73,18 @@ export default defineEventHandler(async (event) => {
     }
   };
 
-  const platformPricing = pricingDoc.exists ? pricingDoc.data() || {} : DEFAULT_PRICING;
+  const platformPricing: PlatformPricing = pricingDoc.exists
+    ? pricingDoc.data() || {}
+    : DEFAULT_PRICING;
   const currency = userData.billingCountry === 'USA' ? 'usd' : 'gbp';
   const countryPricing = platformPricing[userData.billingCountry || 'UK'];
   const basicDiscount = userData.basicDiscount || 0;
 
   let newMonthlyTotal = 0;
-  updatedTerritories.forEach((t: any) => {
+  updatedTerritories.forEach((t: TerritoryClaim) => {
     if (t.isBasic) {
       // If you don't have the band saved on the object, default to band 1
-      const bandData = countryPricing[`band${t.band || 1}`];
+      const bandData = countryPricing?.[`band${t.band || 1}`];
       let basicPrice = bandData?.basic || 10;
       if (basicDiscount > 0) {
         basicPrice = basicPrice * (1 - basicDiscount / 100);
@@ -114,15 +121,14 @@ export default defineEventHandler(async (event) => {
           proration_behavior: 'none' // Don't refund them for the middle of this month
         });
       }
-    } catch (stripeError) {
-      console.error('Stripe update failed:', stripeError);
-      return createError({ statusCode: 500, message: 'Failed to update billing with Stripe.' });
+    } catch {
+      throw createError({ statusCode: 500, message: 'Failed to update billing with Stripe.' });
     }
   }
 
   // 5. IDENTIFY REMOVED EXCLUSIVE MONTHS for the cancelled territory
   const cancelledTerritory = currentTerritories.find(
-    (t: any) => t.territoryId === territoryIdToCancel
+    (t: TerritoryClaim) => t.territoryId === territoryIdToCancel
   );
   const removedExclusiveMonths: string[] = cancelledTerritory?.exclusiveMonths || [];
 
@@ -135,34 +141,54 @@ export default defineEventHandler(async (event) => {
     updatedAt: new Date().toISOString()
   });
 
-  // 6b. Remove this user's exclusive month locks from territory_claims atomically
-  if (removedExclusiveMonths.length > 0) {
+  // 6b. Remove this user's locks and basic ownership from territory_category_owners atomically
+  const wasBasic = cancelledTerritory?.isBasic;
+  // If the territory is completely removed or just basic was cancelled, we might need to remove from basicOwners.
+  // Wait, if it was just downgraded (isBasic = false), we must remove it from basicOwners.
+  // If it was completely removed (not in updatedTerritories), it means isBasic was also removed.
+  const isStillBasic = updatedTerritories.find(
+    (t: TerritoryClaim) => t.territoryId === territoryIdToCancel
+  )?.isBasic;
+  const shouldRemoveBasic = wasBasic && !isStillBasic;
+
+  if (removedExclusiveMonths.length > 0 || shouldRemoveBasic) {
     const claimDocId = `${territoryIdToCancel}_${cancelledTerritory?.categoryValue}`;
-    const claimRef = db.collection('territory_claims').doc(claimDocId);
+    const claimRef = db.collection('territory_category_owners').doc(claimDocId);
     const claimSnap = await claimRef.get();
 
     if (claimSnap.exists) {
       const claimData = claimSnap.data() || {};
       const takenMonths: Record<string, string> = claimData.takenExclusiveMonths || {};
+      const basicOwners: string[] = claimData.basicOwners || [];
 
       // Count how many months remain after removing this user's months
       const remainingMonths = Object.entries(takenMonths).filter(
         ([month, ownerId]) => ownerId !== userId || !removedExclusiveMonths.includes(month)
       );
 
-      if (remainingMonths.length === 0) {
-        // No months left — delete the entire claim document
+      const remainingBasic = basicOwners.filter((id) => id !== userId);
+
+      if (remainingMonths.length === 0 && remainingBasic.length === 0) {
+        // No months left AND no basic owners left — delete the entire claim document
         batch.delete(claimRef);
       } else {
-        // Surgically remove only this user's cancelled months
-        const deletions: Record<string, ReturnType<typeof FieldValue.delete>> = {};
-        for (const month of removedExclusiveMonths) {
-          if (takenMonths[month] === userId) {
-            deletions[`takenExclusiveMonths.${month}`] = FieldValue.delete();
+        // Surgically remove only this user's cancelled properties
+        const updates: Record<string, FirebaseFirestore.FieldValue> = {};
+
+        if (removedExclusiveMonths.length > 0) {
+          for (const month of removedExclusiveMonths) {
+            if (takenMonths[month] === userId) {
+              updates[`takenExclusiveMonths.${month}`] = FieldValue.delete();
+            }
           }
         }
-        if (Object.keys(deletions).length > 0) {
-          batch.update(claimRef, deletions);
+
+        if (shouldRemoveBasic) {
+          updates.basicOwners = FieldValue.arrayRemove(userId);
+        }
+
+        if (Object.keys(updates).length > 0) {
+          batch.update(claimRef, updates);
         }
       }
     }

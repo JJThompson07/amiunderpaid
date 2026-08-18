@@ -5,7 +5,17 @@ import {
   signOut
 } from 'firebase/auth';
 
-export const useRecruiterAuth = () => {
+const getFirebaseErrorCode = (e: unknown): string | undefined =>
+  typeof e === 'object' && e !== null && 'code' in e ? (e as { code: string }).code : undefined;
+
+export const useRecruiterAuth = (): {
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<boolean>;
+  resendVerificationEmail: () => Promise<boolean>;
+  loading: Ref<boolean>;
+  error: Ref<string>;
+} => {
   const auth = useFirebaseAuth();
   const { t } = useI18n();
   const { showToast } = useSystemToast();
@@ -29,8 +39,9 @@ export const useRecruiterAuth = () => {
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       return true;
-    } catch (e: any) {
-      switch (e.code) {
+    } catch (e) {
+      const code = getFirebaseErrorCode(e);
+      switch (code) {
         case 'auth/invalid-credential':
         case 'auth/user-not-found':
         case 'auth/wrong-password':
@@ -48,7 +59,7 @@ export const useRecruiterAuth = () => {
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     if (auth) {
       await signOut(auth);
 
@@ -64,7 +75,7 @@ export const useRecruiterAuth = () => {
     }
   };
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = async (email: string): Promise<boolean> => {
     loading.value = true;
     error.value = '';
 
@@ -78,12 +89,14 @@ export const useRecruiterAuth = () => {
       // This sends the standard Firebase reset email
       await sendPasswordResetEmail(auth, email);
       return true;
-    } catch (err: any) {
+    } catch (err) {
+      // eslint-disable-next-line no-console -- surfaces password-reset failures for debugging; no dedicated error-logging utility exists in the composables layer yet
       console.error('Password reset error:', err);
       // Map Firebase errors to user-friendly messages
-      if (err.code === 'auth/user-not-found') {
+      const code = getFirebaseErrorCode(err);
+      if (code === 'auth/user-not-found') {
         error.value = t('auth.errors.user_not_found');
-      } else if (err.code === 'auth/invalid-email') {
+      } else if (code === 'auth/invalid-email') {
         error.value = t('auth.errors.invalid_email');
       } else {
         error.value = t('auth.errors.reset_failed');
@@ -94,7 +107,7 @@ export const useRecruiterAuth = () => {
     }
   };
 
-  const resendVerificationEmail = async () => {
+  const resendVerificationEmail = async (): Promise<boolean> => {
     if (!auth || !auth.currentUser) {
       return false;
     }
@@ -102,10 +115,11 @@ export const useRecruiterAuth = () => {
     try {
       await sendEmailVerification(auth.currentUser);
       return true;
-    } catch (err: any) {
+    } catch (err) {
+      // eslint-disable-next-line no-console -- surfaces verification-email failures for debugging; no dedicated error-logging utility exists in the composables layer yet
       console.error('Failed to resend verification:', err);
       // Optional: Handle Firebase's "too-many-requests" error if they spam the button
-      if (err.code === 'auth/too-many-requests') {
+      if (getFirebaseErrorCode(err) === 'auth/too-many-requests') {
         showToast('Error', t('auth.errors.wait_before_resend'), 'error');
       }
       return false;

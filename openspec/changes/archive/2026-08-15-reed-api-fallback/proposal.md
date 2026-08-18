@@ -14,10 +14,12 @@ The current API integration relies on Adzuna, which has a strict monthly limit o
 ## Capabilities
 
 ### New Capabilities
+
 - `reed-api-fallback`: Handles fetching job data from Reed.co.uk API and converting raw job bounds (minimum/maximum salary) into the aggregated histogram format required by the frontend.
 - `job-provider-ui`: Updates the frontend application to dynamically identify the data provider (Adzuna or Reed) and adjust component rendering, section titles, and job listing layouts.
 
 ### Modified Capabilities
+
 - `adzuna-adapter`: Update the server-side logic (e.g., `server/api/adzuna/salary.ts` and `server/api/adzuna/jobs.ts`) to intercept rate limit errors and invoke the Reed API fallback adapter.
 - `admin-search-log-metrics`: Enhance search log entries to include the data provider (Adzuna or Reed) and display this provider within the admin dashboard search logs table.
 

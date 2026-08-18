@@ -16,17 +16,14 @@
       <div class="flex flex-col">
         <span class="uppercase text-2xs text-slate-400">{{ $t('card.role.salary') }}</span>
         <div class="flex flex-row items-center justify-between min-h-7">
-          <span :class="isSalaryProvided ? 'text-xl font-bold' : 'text-slate-400 text-xs italic'">{{ salaryRange }}</span>
+          <span :class="isSalaryProvided ? 'text-xl font-bold' : 'text-slate-400 text-xs italic'">{{
+            salaryRange
+          }}</span>
           <div>
             <div
               v-if="userSalary && isSalaryProvided"
               class="flex flex-col items-end gap-1 text-sm text-right relative">
-              <AmIChip
-v-bind="comparisonChipAttributes"
-text-size="text-sm"
-compact
-                >{{ salaryMaxComparison }}%</AmIChip
-              >
+              <AmIChip v-bind="comparisonChipAttributes">{{ salaryMaxComparison }}%</AmIChip>
               <span
                 class="text-2xs absolute top-full right-1/2 translate-x-1/2 w-max"
                 :class="
@@ -127,10 +124,6 @@ const props = defineProps({
     type: Number,
     default: 0
   },
-  marketAverage: {
-    type: Number,
-    default: 0
-  },
   currencySymbol: {
     type: String,
     required: true
@@ -152,7 +145,9 @@ const hasRange = computed<boolean>(() => {
 });
 
 const isSalaryProvided = computed<boolean>(() => {
-  if (props.rawSalary) return true;
+  if (props.rawSalary) {
+    return true;
+  }
   return Boolean(props.salaryMin) || Boolean(props.salaryMax);
 });
 
@@ -191,7 +186,9 @@ const comparisonChipAttributes = computed(() => {
   return {
     bgColour: background,
     textColour: text,
-    icon
+    icon,
+    textSize: 'text-sm',
+    compact: true
   };
 });
 
@@ -214,7 +211,7 @@ const salaryRange = computed(() => {
       );
 });
 
-const handleViewRole = () => {
+const handleViewRole = (): void => {
   trackViewRole(props.title, props.company, props.location, props.url);
 
   const safeUrl = sanitizeUrl(props.url);

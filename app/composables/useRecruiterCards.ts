@@ -1,9 +1,10 @@
-import type { Ref } from 'vue';
+import type { ComputedRef, Ref } from 'vue';
+import type { RecruiterCard } from '~~/shared/utils/types';
 
 // 1. Explicitly define the shape we expect back from the API
 export type RecruiterCardResponse = {
   success: boolean;
-  cards: any[]; // You can swap `any` for a specific Card interface if you have one!
+  cards: RecruiterCard[];
 };
 
 export const useRecruiterCards = async (
@@ -11,7 +12,11 @@ export const useRecruiterCards = async (
   matchedLocation: Ref<string | undefined | null>,
   adzunaCategory: Ref<string | undefined | null>,
   prefix: string = 'search'
-) => {
+): Promise<{
+  territoryId: ComputedRef<number | null>;
+  recruiterCards: ComputedRef<RecruiterCard[]>;
+  pendingRecruiters: Ref<boolean>;
+}> => {
   const route = useRoute();
   const { allTerritories } = useTerritories();
 

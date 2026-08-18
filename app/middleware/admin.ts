@@ -29,6 +29,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // If the document doesn't exist, OR the role isn't admin, kick them out!
   if (!userDocSnap.exists() || userDocSnap.data().role !== 'admin') {
+    // Intentional diagnostic log: no client-side logging utility exists yet for this path.
+    // eslint-disable-next-line no-console
     console.warn('Access Denied: User is not an admin');
     return navigateTo({
       path: '/admin/login',

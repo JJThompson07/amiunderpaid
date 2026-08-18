@@ -252,14 +252,59 @@ export const calculateConfidenceScore = (
 };
 
 /**
+ * CORE ENGINE 5: Universal Benchmark Scoring
+ * Consolidates the common logic between UK and USA for calculating the final score.
+ */
+export const calculateBenchmarkScore = (
+  macroPercentile: number,
+  microPercentile: number | null,
+  livePercentile: number | null,
+  activeWeights: { MACRO: number; MICRO: number; LIVE: number }
+): number => {
+  let finalScore: number;
+
+  if (livePercentile !== null) {
+    if (microPercentile !== null) {
+      // ✅ Scenario A: We have all data
+      finalScore =
+        macroPercentile * activeWeights.MACRO +
+        microPercentile * activeWeights.MICRO +
+        livePercentile * activeWeights.LIVE;
+    } else {
+      // ⚠️ Scenario B: No Location (Micro is null)
+      // We proportionally rebalance the remaining Macro and Live weights to equal 100%
+      const remainingWeight = activeWeights.MACRO + activeWeights.LIVE;
+      const rebalancedMacroWeight = activeWeights.MACRO / remainingWeight;
+      const rebalancedLiveWeight = activeWeights.LIVE / remainingWeight;
+
+      finalScore = macroPercentile * rebalancedMacroWeight + livePercentile * rebalancedLiveWeight;
+    }
+  } else {
+    // 🚨 Scenario C: Adzuna API failed or returned 0 jobs (Live is null)
+    finalScore =
+      microPercentile !== null
+        ? macroPercentile * WEIGHTS.NO_LIVE_DATA.MACRO +
+          microPercentile * WEIGHTS.NO_LIVE_DATA.MICRO
+        : macroPercentile;
+  }
+
+  return Math.min(99, Math.max(1, Math.round(finalScore)));
+};
+
+/**
  * CORE ENGINE 4: Dynamic Histogram Builder
  * Takes an array of raw salary numbers and returns a balanced, max-7-bucket histogram
  * with clean, human-readable bucket boundaries.
  */
-export const buildHistogramBuckets = (salaries: number[], maxBuckets: number = 7): Record<number, number> => {
+export const buildHistogramBuckets = (
+  salaries: number[],
+  maxBuckets: number = 7
+): Record<number, number> => {
   const validSalaries = salaries.filter((s) => s > 0);
-  if (!validSalaries.length) return {};
-  
+  if (!validSalaries.length) {
+    return {};
+  }
+
   const min = Math.min(...validSalaries);
   const max = Math.max(...validSalaries);
 
@@ -272,16 +317,21 @@ export const buildHistogramBuckets = (salaries: number[], maxBuckets: number = 7
 
   // 2. Find a "nice" interval (e.g. 1000, 2000, 5000, 10000, 20000)
   // Ensure we don't do log10 of 0 or negative
-  const safeInterval = Math.max(rawInterval, 1); 
+  const safeInterval = Math.max(rawInterval, 1);
   const magnitude = Math.pow(10, Math.floor(Math.log10(safeInterval)));
   const normalized = safeInterval / magnitude; // between 1 and 10
-  
+
   let niceMultiplier;
-  if (normalized <= 1) niceMultiplier = 1;
-  else if (normalized <= 2) niceMultiplier = 2;
-  else if (normalized <= 5) niceMultiplier = 5;
-  else niceMultiplier = 10;
-  
+  if (normalized <= 1) {
+    niceMultiplier = 1;
+  } else if (normalized <= 2) {
+    niceMultiplier = 2;
+  } else if (normalized <= 5) {
+    niceMultiplier = 5;
+  } else {
+    niceMultiplier = 10;
+  }
+
   const interval = niceMultiplier * magnitude;
 
   // 3. Snap min down to nearest interval
@@ -289,12 +339,12 @@ export const buildHistogramBuckets = (salaries: number[], maxBuckets: number = 7
 
   // 4. Build histogram
   const histogram: Record<number, number> = {};
-  
+
   for (const salary of validSalaries) {
     const bucketIndex = Math.floor((salary - bucketMin) / interval);
     // Cap at maxBuckets - 1 so we don't accidentally create an 8th bucket if max == exact bound
     const safeIndex = Math.min(bucketIndex, maxBuckets - 1);
-    const bucketKey = bucketMin + (safeIndex * interval);
+    const bucketKey = bucketMin + safeIndex * interval;
     histogram[bucketKey] = (histogram[bucketKey] || 0) + 1;
   }
 
