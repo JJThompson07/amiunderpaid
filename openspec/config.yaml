@@ -24,6 +24,10 @@ context: |
   - Unit tests strictly required for new core utilities (`~/utils/`) and composables (`~/composables/`) in adjacent `tests/` directories.
   - All changes MUST pass the test suite (`pnpm vitest run`) and standard build steps.
 
+  VERIFY BEFORE RECOMMENDING (CODE_STANDARDS.md §10):
+  - Before proposing anything irreversible, environment-dependent, or that flips a failure mode from silent to loud (or vice versa), verify the real current state — don't assume it.
+  - The e2e/Playwright suite uses mocked endpoints, not live ones; never propose otherwise without explicit current instruction.
+
 rules:
   proposal:
     - Include clear Why, What, Scope, and Non-goals sections.
@@ -38,3 +42,4 @@ rules:
     - Name concrete repo-relative files.
     - Include test authoring in the same task step as the feature code.
     - The final task MUST be a gate check task (e.g., "Run local verification `pnpm vitest run`").
+    - Any task that is irreversible (data deletion/migration), flips a failure mode from silent to loud, or depends on infrastructure specifics (hosting platform, trusted proxy headers, deployed env vars) MUST be preceded by an explicit verification/pre-flight task that confirms the real current state before the risky task runs.

@@ -12,6 +12,7 @@ You are an autonomous AI coding agent operating in the Am I Underpaid & Benchmar
 - **The Security Rule:** NEVER read secrets via `process.env` or `config.public` in server handlers. ALL credentials MUST be accessed exclusively via Nuxt's private `runtimeConfig` (e.g. `config.myApiKey`). Any new secret MUST also be registered in `nuxt.config.ts` `runtimeConfig` before use.
 - **The Error Message Rule:** Server error messages returned to the client MUST be opaque. NEVER include provider names, country codes, or internal routing details in `statusMessage`. Use `503` for downstream provider failures and `500` for server misconfigurations.
 - **The Dev-Gate Rule:** Any feature that only exists for local development (e.g. provider overrides, debug toggles) MUST be gated behind `process.dev` (server) and `import.meta.dev` (client). Zero dev-only surface area in production.
+- **The Verify-Before-Recommending Rule:** Before proposing or implementing anything irreversible (data deletion/migration), anything that changes silent-failure to loud-failure behavior, or anything that depends on infrastructure specifics (hosting platform, trusted proxy headers, deployed env vars), verify the real current state first instead of assuming it. See `CODE_STANDARDS.md` §10. This repo's Playwright/e2e suite uses mocked endpoints — never propose pointing it at live endpoints without explicit, current instruction.
 
 ## 2. OpenSpec Workflow
 
