@@ -143,7 +143,20 @@ Features that exist only for local development **MUST** be gated behind both:
 
 This guarantees zero surface area in production builds.
 
-## 10. TypeScript Strictness & Build Integrity
+## 10. Verification Before Recommending
+
+Before proposing or implementing a change that is irreversible, environment-dependent, or changes a failure mode, **verify the actual current state rather than assuming it**. Confident, plausible-sounding recommendations that turn out to be wrong about the real environment have previously caused real damage on this project (e.g. wrongly recommending Playwright e2e tests hit live endpoints instead of mocks, which broke CI and burned significant time/tokens before being reverted).
+
+This applies in particular to:
+
+- **Irreversible or destructive actions** — deleting a Firestore collection, dropping a document, force-pushing, discarding data. Prefer a reversible intermediate step (leave old data in place unread for a burn-in period, dry-run against an export/emulator, diff before/after) over doing the irreversible thing in the same change that also does the fix.
+- **Behavior that changes silent-failure to loud-failure (or vice versa)** — e.g. turning a fallback default into a thrown error. Before flipping this, verify the production data/config that the new code path will run against is actually in the state you're assuming (query the real document, don't infer from the schema).
+- **Infrastructure-specific assumptions** — trusted proxy headers, hosting platform behavior (Vercel vs. Netlify vs. Cloudflare Pages), deployed environment variables. Confirm the actual deployed target and its real behavior before writing code that depends on it; don't infer it from what the README says is "supported."
+- **Test strategy changes** — this repository's Playwright/e2e suite uses **mocked** endpoints, not live ones. Do not propose or implement a change that points e2e tests at live/production endpoints without explicit, current instruction to do so.
+
+When a proposal touches any of the above, its `tasks.md` MUST include an explicit verification/pre-flight task (confirm the real state) before the risky task, not just the risky task itself.
+
+## 11. TypeScript Strictness & Build Integrity
 
 - **No `any` Types:** Avoid using `any` type casting or implicit `any` variables whenever possible. Explicitly define interfaces or use generic types (e.g. `Array<{ title: string }>` or `Record<string, unknown>`).
 - **Strict Null Checks:** Always handle potential `null` or `undefined` values. Use non-null assertions (`!`) only when you are absolutely certain the value exists, otherwise use optional chaining (`?.`) or fallback values (`||`).
