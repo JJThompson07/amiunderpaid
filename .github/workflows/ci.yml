@@ -111,10 +111,16 @@ jobs:
 
       - name: Install Playwright Browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 5
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: pnpm exec playwright install chromium firefox --with-deps
 
       - name: Install Playwright OS dependencies only
         if: steps.playwright-cache.outputs.cache-hit == 'true'
+        timeout-minutes: 5
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: pnpm exec playwright install-deps chromium firefox
 
       - name: Build Application for E2E
