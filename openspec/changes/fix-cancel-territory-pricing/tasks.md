@@ -4,7 +4,10 @@
 - [ ] 1.1 In `server/api/stripe/cancel-territory.post.ts`, after `countryPricing` is resolved (`:80`), throw immediately when it is falsy:
   ```ts
   if (!countryPricing) {
-    throw createError({ statusCode: 500, message: `Pricing bands for ${userData.billingCountry} not found.` });
+    throw createError({
+      statusCode: 500,
+      message: `Pricing bands for ${userData.billingCountry} not found.`
+    });
   }
   ```
   matching the shape already used in `server/api/stripe/create-checkout.post.ts:80-84`.
