@@ -3,7 +3,9 @@
 ## Purpose
 
 Fixes race conditions and authentication vulnerabilities in the territory purchasing flow to prevent double-selling and anonymous purchases.
+
 ## Requirements
+
 ### Requirement: Stripe checkout requires strict authentication
 
 The system SHALL strictly require a valid Firebase authentication token to initiate a Stripe checkout session.
@@ -73,4 +75,3 @@ When a recruiter's discount reduces the recurring (basic) total to $0/£0, the s
 
 - **WHEN** a recruiter's `exclusiveDiscount` reduces an exclusive-months total to $0 with no basic selections in the cart
 - **THEN** the system returns a specific error distinct from the generic "No items selected in cart" message, since Stripe cannot process a $0 one-time payment (out of scope for this change beyond surfacing a diagnosable error — see proposal Non-Goals)
-

@@ -65,7 +65,9 @@ async function migrate(): Promise<void> {
 
     if (!targetSnap.exists) {
       created++;
-      console.log(`[${dryRun ? 'DRY-RUN' : 'CREATE'}] ${doc.id}: no existing target, will copy as-is.`);
+      console.log(
+        `[${dryRun ? 'DRY-RUN' : 'CREATE'}] ${doc.id}: no existing target, will copy as-is.`
+      );
       if (!dryRun) {
         await targetRef.set(sourceData);
       }
@@ -99,7 +101,9 @@ async function migrate(): Promise<void> {
     }
 
     merged++;
-    console.log(`[${dryRun ? 'DRY-RUN' : 'MERGE'}] ${doc.id}: adding source-only months/owners not present in target.`);
+    console.log(
+      `[${dryRun ? 'DRY-RUN' : 'MERGE'}] ${doc.id}: adding source-only months/owners not present in target.`
+    );
     if (!dryRun) {
       await targetRef.set(
         { takenExclusiveMonths: mergedMonths, basicOwners: mergedBasicOwners },

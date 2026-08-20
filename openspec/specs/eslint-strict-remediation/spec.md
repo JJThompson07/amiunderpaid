@@ -1,8 +1,11 @@
 # eslint-strict-remediation Specification
 
 ## Purpose
+
 TBD - created by archiving change strict-typescript-remediation. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Strict Codebase Typing
 
 The codebase SHALL strictly enforce all ESLint TypeScript rules without disabling `@typescript-eslint/no-explicit-any` or `@typescript-eslint/explicit-function-return-type` in `eslint.config.mjs`.
@@ -25,4 +28,3 @@ All Vue 3 components using the Composition API `defineEmits` macro SHALL use typ
 
 - **WHEN** a component emits an event (e.g., `emit('user-select', user)`)
 - **THEN** the emit parameters MUST be statically validated by TypeScript, and the component MUST NOT raise a `vue/require-emit-validator` error.
-
