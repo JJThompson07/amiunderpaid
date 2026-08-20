@@ -6,6 +6,7 @@ You are an autonomous AI coding agent operating in the Am I Underpaid & Benchmar
 
 - **Core Stack:** Nuxt 4 (Nitro), Vue 3 (Composition API), Tailwind CSS v4, and TypeScript.
 - **Package Manager:** You MUST strictly use `pnpm` for all dependency management and script execution. Never run `npm` or `yarn`.
+- **Use Package Scripts:** Prefer the `package.json` scripts (e.g. `pnpm test`, `pnpm test:e2e`, `pnpm test:coverage`, `pnpm lint`, `pnpm lint:fix`, `pnpm typecheck`, `pnpm format`) over invoking the underlying tools (`vitest`, `playwright`, `eslint`, `prettier`, `tsc`) directly, so runs stay consistent with the flags and config the scripts already encode.
 - **Database & Auth:** Firebase (Firestore, Auth) using `vuefire` on the client and `firebase-admin` on the server.
 - **Strict Guidelines:** You MUST consult and obey the `CODE_STANDARDS.md` file before proposing or applying any changes.
 - **The Golden Rule:** NEVER use `useFirebaseAuth()?.currentUser` for UI reactivity. Always use `useCurrentUser()`.

@@ -49,9 +49,9 @@ service cloud.firestore {
       allow read: if isAdmin() || (isAuthenticated() && resource.data.recruiterId == request.auth.uid);
       allow write: if false; // server-only, via leads/submit.post.ts
     }
-    match /territory_claims/{id} {
+    match /territory_category_owners/{id} {
       allow read: if isAuthenticated();
-      allow write: if false; // server-only, via the Stripe webhook
+      allow write: if false; // server-only, via the Stripe webhook and cancel-territory endpoint
     }
     match /recruiter_contact_settings/{uid} {
       allow read: if true; // rendered on public salary pages
