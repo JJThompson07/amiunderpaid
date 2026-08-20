@@ -6,7 +6,7 @@ import {
 } from '@firebase/rules-unit-testing';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 let testEnv: RulesTestEnvironment;
 
@@ -130,6 +130,66 @@ describe('Firestore Security Rules', () => {
       await assertFails(
         recruiter.firestore().collection('leads').doc('lead3').set({ recruiterId: 'recruiter_uid' })
       );
+    });
+  });
+
+  describe('Territory Category Owners Collection', () => {
+    it('allows an authenticated user to read territory_category_owners', async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context
+          .firestore()
+          .collection('territory_category_owners')
+          .doc('1_dev')
+          .set({ territoryId: 1, categoryValue: 'dev', takenExclusiveMonths: {} });
+      });
+
+      const recruiter = testEnv.authenticatedContext('recruiter_uid');
+      await assertSucceeds(
+        recruiter.firestore().collection('territory_category_owners').doc('1_dev').get()
+      );
+    });
+
+    it('denies a client write to territory_category_owners (server-only)', async () => {
+      const recruiter = testEnv.authenticatedContext('recruiter_uid');
+      await assertFails(
+        recruiter
+          .firestore()
+          .collection('territory_category_owners')
+          .doc('1_dev')
+          .set({ territoryId: 1, categoryValue: 'dev', takenExclusiveMonths: {} })
+      );
+    });
+
+    it('makes a lock written the way the webhook writes it visible to the useTerritoryClaims query shape', async () => {
+      // Seeds a doc exactly as server/api/stripe/webhook.post.ts's fulfilment
+      // transaction does: doc ID `${territoryId}_${categoryValue}`, written
+      // via the Admin SDK (rules disabled, matching server-only write access).
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context
+          .firestore()
+          .collection('territory_category_owners')
+          .doc('1_dev')
+          .set({
+            territoryId: 1,
+            categoryValue: 'dev',
+            takenExclusiveMonths: { '2026-09': 'other-recruiter-uid' }
+          });
+      });
+
+      // Reads it back using the exact query shape useTerritoryClaims.ts builds
+      // (collection + `territoryId in [...]`) — this is the round-trip that
+      // originally broke when the reader and writer pointed at different
+      // collections.
+      const recruiter = testEnv.authenticatedContext('recruiter_uid');
+      const snapshot = await recruiter
+        .firestore()
+        .collection('territory_category_owners')
+        .where('territoryId', 'in', [1])
+        .get();
+
+      expect(snapshot.empty).toBe(false);
+      const doc = snapshot.docs[0]!.data();
+      expect(doc.takenExclusiveMonths['2026-09']).toBe('other-recruiter-uid');
     });
   });
 });
