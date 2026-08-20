@@ -28,7 +28,7 @@ export const useTerritoryClaims = (territoryIds: Ref<number[]>): UseTerritoryCla
     // Safety limit: Firestore 'in' queries max out at 10 items.
     const safeIds = territoryIds.value.slice(0, 10);
 
-    return query(collection(db, 'territory_claims'), where('territoryId', 'in', safeIds));
+    return query(collection(db, 'territory_category_owners'), where('territoryId', 'in', safeIds));
   });
 
   // 2. Fetch the live collection

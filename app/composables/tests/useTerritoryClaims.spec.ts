@@ -73,7 +73,7 @@ describe('useTerritoryClaims', () => {
     const queryResult = claimsQueryComputed.value;
 
     expect(queryResult).toEqual({
-      coll: 'collection-territory_claims',
+      coll: 'collection-territory_category_owners',
       condition: {
         field: 'territoryId',
         op: 'in',

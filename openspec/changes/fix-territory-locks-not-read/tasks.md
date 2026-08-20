@@ -1,14 +1,14 @@
 ## 1. Client query and rules
 
-- [ ] 1.1 In `app/composables/useTerritoryClaims.ts:31`, change the query to `collection(db, 'territory_category_owners')`.
-- [ ] 1.2 In `firestore.rules`, remove the `match /territory_claims/{id}` block (`:52`) and add:
+- [x] 1.1 In `app/composables/useTerritoryClaims.ts:31`, change the query to `collection(db, 'territory_category_owners')`.
+- [x] 1.2 In `firestore.rules`, remove the `match /territory_claims/{id}` block (`:52`) and add:
   ```
   match /territory_category_owners/{id} {
     allow read: if isAuthenticated();
     allow write: if false;
   }
   ```
-- [ ] 1.3 Update `app/composables/tests/useTerritoryClaims.spec.ts` so the mocked collection is `territory_category_owners`, not `territory_claims`.
+- [x] 1.3 Update `app/composables/tests/useTerritoryClaims.spec.ts` so the mocked collection is `territory_category_owners`, not `territory_claims`.
 
 ## 2. Firestore rules test coverage
 
