@@ -66,6 +66,20 @@ The system SHALL explicitly deny access to all collections not explicitly grante
 - **WHEN** a client attempts to read `search_history` directly
 - **THEN** Firestore denies the request
 
+### Requirement: territory_category_owners access control
+
+The system SHALL allow authenticated users to read `territory_category_owners` documents and SHALL deny all client-side writes; only server-side code (the Stripe webhook and cancellation endpoint, both using the Admin SDK) may write.
+
+#### Scenario: Authenticated recruiter reads territory locks
+
+- **WHEN** an authenticated user queries the `territory_category_owners` collection
+- **THEN** Firestore allows the read
+
+#### Scenario: Client attempts to write a territory lock directly
+
+- **WHEN** any client (authenticated or not) attempts to write to a `territory_category_owners` document
+- **THEN** Firestore denies the write
+
 ### Requirement: Strict profile field protection
 
 The system SHALL prevent users from updating sensitive fields on their own profile.

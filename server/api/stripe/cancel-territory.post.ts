@@ -132,7 +132,7 @@ export default defineEventHandler(async (event) => {
   );
   const removedExclusiveMonths: string[] = cancelledTerritory?.exclusiveMonths || [];
 
-  // 6. ATOMIC BATCH: update user doc + clean up territory_claims
+  // 6. ATOMIC BATCH: update user doc + clean up territory_category_owners
   const batch = db.batch();
 
   // 6a. Write the updated territories to the user doc
