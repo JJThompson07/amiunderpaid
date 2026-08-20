@@ -1,0 +1,130 @@
+{
+  "heading": "Terms & Conditions for Recruiters",
+  "updated": "Last updated: {date}",
+  "entity": "[LEGAL ENTITY NAME — placeholder pending incorporation]",
+  "address": "[REGISTERED ADDRESS — to be added]",
+  "contactEmail": "[CONTACT EMAIL — to be added]",
+  "intro": {
+    "heading": "1. Introduction & Acceptance",
+    "body": {
+      "1": "These Terms & Conditions (\"Terms\") govern access to and use of the recruiter territory and lead-access marketplace operated by {entity} (\"we\", \"us\", \"the Platform\").",
+      "2": "{entity} is a company registered in the United Kingdom. Regardless of which country your business is based in or operates Territories in, your relationship with us is with a UK-registered company and, as set out in Section 15, is governed by the laws of England and Wales.",
+      "3": "These Terms apply only to recruiters and recruitment agencies using the Platform's paid territory and lead-access services. They do not apply to visitors using the free salary benchmarking tools.",
+      "4": "By ticking the acceptance checkbox during checkout, or by accepting these Terms from your account settings, you confirm that you have read, understood, and agree to be bound by these Terms on behalf of the business you represent.",
+      "5": "This is a business-to-business agreement. You confirm that you are entering into this agreement as, or on behalf of, a business (such as a recruitment agency or sole-trader recruiter), and not as a consumer."
+    }
+  },
+  "definitions": {
+    "heading": "2. Definitions",
+    "body": {
+      "1": "\"Territory\" means a defined geographic and industry-category combination made available for purchase on the Platform.",
+      "2": "\"Basic Access\" means a non-exclusive, recurring monthly subscription granting visibility within a Territory, shared with other recruiters.",
+      "3": "\"Exclusive Month\" means a specific calendar month within a Territory purchased on an exclusive basis, during which no other recruiter may hold the same Territory and month combination.",
+      "4": "\"Recruiter\", \"you\", \"your\" means the business or individual that has been granted account access to the Platform's recruiter marketplace."
+    }
+  },
+  "account": {
+    "heading": "3. Account Access",
+    "body": {
+      "1": "Recruiter accounts are granted at our discretion following a request-access review. We may decline or revoke access at any time.",
+      "2": "You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account.",
+      "3": "You confirm that the person accepting these Terms has the authority to bind the business named on the account."
+    }
+  },
+  "pricing": {
+    "heading": "4. Pricing & Payment",
+    "body": {
+      "1": "Territory pricing is banded by geographic demand and varies by country. Current pricing is displayed on the Platform before purchase.",
+      "2": "All payments are processed by Stripe, our third-party payment processor. We do not store your card details.",
+      "3": "Prices are billed in the currency associated with your account's billing country and are exclusive of any applicable taxes unless stated otherwise.",
+      "4": "We reserve the right to change Territory pricing at any time. Changes will not affect a subscription price already agreed for your existing active Territories unless you make a new purchase or upgrade."
+    }
+  },
+  "trial": {
+    "heading": "5. Free Trial",
+    "body": {
+      "1": "New Basic Access subscriptions include a free trial period running until the start of the next calendar month (or the month after, if you sign up within 48 hours of month-end). No charge is taken until the trial ends.",
+      "2": "You may cancel at any time during the trial period at no cost, using the cancellation process described in Section 6."
+    }
+  },
+  "subscription": {
+    "heading": "6. Subscription Management & Cancellation",
+    "body": {
+      "1": "Basic Access subscriptions renew automatically every month until cancelled. There is no minimum term or lock-in period.",
+      "2": "You may cancel any individual Territory, or your entire subscription, at any time from your recruiter dashboard. Cancellation does not require our approval.",
+      "3": "You are solely responsible for managing and cancelling your subscription. We are not responsible for charges incurred because you did not cancel a Territory you no longer wish to keep.",
+      "4": "If you cancel or downgrade partway through a billing period, you retain access for the remainder of the period you have already paid for, but no partial refund is issued for that remaining time."
+    }
+  },
+  "refunds": {
+    "heading": "7. Refunds",
+    "body": {
+      "1": "Except as set out in this section, all payments are non-refundable.",
+      "2": "If an Exclusive Month is sold to you in error while already held by another recruiter (a Territory conflict), we will issue a refund for that purchase and notify you."
+    }
+  },
+  "exclusivity": {
+    "heading": "8. Exclusivity — What It Does and Does Not Guarantee",
+    "body": {
+      "1": "Purchasing an Exclusive Month guarantees that no other recruiter will be sold the same Territory and month combination for the duration of your purchase.",
+      "2": "Exclusivity does not guarantee any specific volume or quality of leads, candidate matches, or hiring outcomes. The Platform is a lead-access and visibility service, not a placement guarantee."
+    }
+  },
+  "acceptableUse": {
+    "heading": "9. Acceptable Use",
+    "body": {
+      "1": "You must not resell, sublicense, or share your Territory access or Platform-provided leads with any third party outside your business.",
+      "2": "You must not scrape, reverse-engineer, or attempt to circumvent the Platform's access controls or Territory-locking mechanisms.",
+      "3": "You must comply with all applicable data protection and recruitment-industry laws when handling any candidate or lead data obtained through the Platform."
+    }
+  },
+  "dataProtection": {
+    "heading": "10. Data Protection",
+    "body": {
+      "1": "We never store your card or bank details. All payments are handled directly by Stripe, our PCI-compliant payment processor; we only ever receive back a subscription reference ID to manage your billing.",
+      "2": "We store your email address solely for account login and to contact you about your account and the service.",
+      "3": "We store the business details you provide when requesting access (agency name, billing country, industry categories covered) and any public contact information you choose to display on your recruiter profile.",
+      "4": "We store your Territory purchase and exclusivity history, as this is necessary to administer and enforce this agreement.",
+      "5": "Full detail on your rights and how we process personal data is set out in our Privacy Policy, which forms part of these Terms by reference."
+    }
+  },
+  "intellectualProperty": {
+    "heading": "11. Intellectual Property",
+    "body": {
+      "1": "The Platform, its branding, and its underlying software remain our property. These Terms do not grant you any ownership rights in the Platform."
+    }
+  },
+  "liability": {
+    "heading": "12. Liability",
+    "body": {
+      "1": "Our total liability to you arising out of or in connection with these Terms, however arising, is limited to the total fees you paid us in the 12 months preceding the event giving rise to the claim.",
+      "2": "We are not liable for any indirect or consequential loss, including loss of profits, business, or anticipated hires.",
+      "3": "Nothing in these Terms limits liability that cannot be limited by law, including for fraud or death or personal injury caused by negligence."
+    }
+  },
+  "termination": {
+    "heading": "13. Termination",
+    "body": {
+      "1": "We may suspend or terminate your account if you breach these Terms, including for non-payment or misuse of the Platform.",
+      "2": "On termination, your right to access the Platform ends immediately. Sections that by their nature should survive (including Liability, Refunds, and Governing Law) continue to apply."
+    }
+  },
+  "changes": {
+    "heading": "14. Changes to These Terms",
+    "body": {
+      "1": "We may update these Terms from time to time. If we make material changes, we will ask you to re-accept them before you can continue using paid features of the Platform."
+    }
+  },
+  "governingLaw": {
+    "heading": "15. Governing Law",
+    "body": {
+      "1": "These Terms are governed by the laws of England and Wales, and the courts of England and Wales have exclusive jurisdiction over any dispute arising from them, regardless of the country you or your business are based in."
+    }
+  },
+  "contact": {
+    "heading": "16. Contact",
+    "body": {
+      "1": "Questions about these Terms can be sent to {contactEmail}."
+    }
+  }
+}

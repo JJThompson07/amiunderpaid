@@ -168,7 +168,11 @@ export default defineEventHandler(async (event) => {
   >[number];
   const lineItems: StripeCheckoutLineItem[] = [];
 
-  if (monthlyTotal > 0) {
+  if (basicCount > 0) {
+    // basicCount, not monthlyTotal: a 100% basicDiscount legitimately zeroes the
+    // price, but the recruiter still needs a real $0/mo subscription so a later
+    // discount change can reprice an existing subscription rather than starting
+    // from no billing relationship at all.
     lineItems.push({
       price_data: {
         currency: currency,
@@ -198,6 +202,16 @@ export default defineEventHandler(async (event) => {
   }
 
   if (lineItems.length === 0) {
+    // Distinguish a genuinely empty cart from exclusive months that were selected
+    // but priced to zero by a 100% exclusiveDiscount — Stripe can't process a $0
+    // one-time payment, so this needs its own handling rather than the generic
+    // "empty cart" message (see fix-checkout-zero-discount-subscription Non-Goals).
+    if (exclusiveMonthsTotal > 0) {
+      throw createError({
+        statusCode: 400,
+        message: 'Exclusive month pricing resolved to zero and cannot be processed as-is.'
+      });
+    }
     throw createError({ statusCode: 400, message: 'No items selected in cart.' });
   }
 
@@ -230,7 +244,9 @@ export default defineEventHandler(async (event) => {
   // ==========================================
   let subscriptionData = undefined;
 
-  if (monthlyTotal > 0) {
+  if (basicCount > 0 && monthlyTotal > 0) {
+    // A $0 subscription (100% basicDiscount) has no meaningful trial to grant —
+    // it starts billing at $0 immediately.
     const now = new Date();
     // Get the 1st day of the NEXT calendar month
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -256,10 +272,13 @@ export default defineEventHandler(async (event) => {
       payment_method_types: ['card'],
       customer_email: userEmail || undefined,
       line_items: lineItems,
-      mode: monthlyTotal > 0 ? 'subscription' : 'payment',
+      // basicCount, not monthlyTotal: a recurring commitment (even at $0, from a
+      // 100% basicDiscount) still needs subscription mode to create a real
+      // subscription object.
+      mode: basicCount > 0 ? 'subscription' : 'payment',
 
       // INJECT OUR DYNAMIC TRIAL HERE (Only valid in subscription mode)
-      ...(monthlyTotal > 0 && { subscription_data: subscriptionData }),
+      ...(basicCount > 0 && monthlyTotal > 0 && { subscription_data: subscriptionData }),
 
       success_url: `${baseUrl}/recruiter/dashboard?checkout_success=true`,
       cancel_url: `${baseUrl}/recruiter/territories?checkout_cancelled=true`,
