@@ -214,6 +214,56 @@ describe('cancel-territory', () => {
     expect(mockSubCancel).not.toHaveBeenCalled();
   });
 
+  it('resolves USD pricing and throws a 500 the same way when the caller billing country is USA but missing from pricing', async () => {
+    mockPricingGet.mockResolvedValue({
+      exists: true,
+      data: () => ({ UK: wellFormedPricing.UK })
+    });
+    mockUserGet.mockResolvedValue({
+      data: () => ({
+        billingCountry: 'USA',
+        stripeSubscriptionId: 'sub_123',
+        activeTerritories: [makeTerritory({ territoryId: 999, isBasic: true, band: 1 })]
+      })
+    });
+
+    const event = {} as unknown as H3Event;
+
+    await expect(handler(event)).rejects.toThrow('Pricing bands for USA not found.');
+    expect(mockSubUpdate).not.toHaveBeenCalled();
+    expect(mockSubCancel).not.toHaveBeenCalled();
+  });
+
+  it('resolves normal USD pricing when the pricing document has a well-formed USA entry', async () => {
+    mockUserGet.mockResolvedValue({
+      data: () => ({
+        billingCountry: 'USA',
+        stripeSubscriptionId: 'sub_123',
+        activeTerritories: [
+          makeTerritory({ territoryId: 999, isBasic: true, band: 1 }),
+          makeTerritory({ territoryId: 1000, isBasic: true, band: 1 })
+        ]
+      })
+    });
+    requestBody = { territoryId: 999 };
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ success: true, newTotal: 60 });
+    expect(mockSubUpdate).toHaveBeenCalledWith(
+      'sub_123',
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            id: 'si_123',
+            price_data: expect.objectContaining({ currency: 'usd', unit_amount: 6000 })
+          })
+        ]
+      })
+    );
+  });
+
   it('throws a 500 and does not push anything to Stripe when the resolved band is missing from the country pricing', async () => {
     mockUserGet.mockResolvedValue({
       data: () => ({
