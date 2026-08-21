@@ -72,7 +72,10 @@ async function queueRefundAndAlert(
     // swallows (the webhook still returns 200 so Stripe stops retrying), so it
     // must stay logged for ops to catch, in addition to the email alert above.
     // eslint-disable-next-line no-console
-    console.error(`🚨 ALERT: Automated refund failed for session ${session.id}. Reason: ${reason}`, refundError);
+    console.error(
+      `🚨 ALERT: Automated refund failed for session ${session.id}. Reason: ${reason}`,
+      refundError
+    );
     await sendHumanAlert(resendApiKey, session, reason, refundError);
   }
 }
@@ -190,8 +193,7 @@ export default defineEventHandler(async (event) => {
             // --- UPDATE 1: THE USER'S PROFILE DATA ---
             const existingIndex = updatedTerritories.findIndex(
               (tItem) =>
-                tItem.territoryId === item.territoryId &&
-                tItem.categoryValue === item.categoryValue
+                tItem.territoryId === item.territoryId && tItem.categoryValue === item.categoryValue
             );
 
             if (existingIndex > -1) {
@@ -247,7 +249,11 @@ export default defineEventHandler(async (event) => {
             territoryConflict = error;
             t.set(
               seen,
-              { type: stripeEvent.type, outcome: 'conflict', processedAt: FieldValue.serverTimestamp() },
+              {
+                type: stripeEvent.type,
+                outcome: 'conflict',
+                processedAt: FieldValue.serverTimestamp()
+              },
               { merge: true }
             );
             return;

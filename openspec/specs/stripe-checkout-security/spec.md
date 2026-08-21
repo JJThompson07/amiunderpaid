@@ -3,7 +3,9 @@
 ## Purpose
 
 Fixes race conditions and authentication vulnerabilities in the territory purchasing flow to prevent double-selling and anonymous purchases.
+
 ## Requirements
+
 ### Requirement: Stripe checkout requires strict authentication
 
 The system SHALL strictly require a valid Firebase authentication token to initiate a Stripe checkout session.
@@ -92,4 +94,3 @@ The system SHALL create the `stripe_events` dedup marker as part of the same Fir
 
 - **WHEN** two deliveries of the same `checkout.session.completed` event arrive concurrently
 - **THEN** at most one delivery's fulfilment transaction succeeds; the other fails on the `t.create()` dedup marker and does not duplicate the fulfilment
-
