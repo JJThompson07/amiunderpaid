@@ -165,7 +165,8 @@ export default defineNuxtConfig({
     },
 
     stripeSecretKey: process.env.STRIPE_SECRET_KEY,
-    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    resendApiKey: process.env.RESEND_API_KEY
   },
 
   // ** 6. Vite / Tailwind **

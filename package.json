@@ -36,6 +36,7 @@
     "nuxt": "^4.5.1",
     "nuxt-gtag": "4.1.0",
     "nuxt-vuefire": "^1.1.2",
+    "resend": "^6.21.0",
     "stripe": "^22.0.1",
     "vue": "^3.5.40",
     "vue-router": "^4.6.4",

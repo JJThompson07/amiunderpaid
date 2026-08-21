@@ -1,18 +1,80 @@
 import Stripe from 'stripe';
+import { Resend } from 'resend';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import type { TerritoryClaim } from '~~/shared/utils/types';
+
+const ALERT_EMAIL_TO = 'support@amiunderpaid.com';
+const ALERT_EMAIL_FROM = 'alerts@amiunderpaid.com';
+
+function isAlreadyExistsError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const code = (error as { code?: number | string }).code;
+  return code === 6 || code === 'already-exists' || /already exists/i.test(error.message);
+}
+
+async function sendHumanAlert(
+  resendApiKey: string | undefined,
+  session: Stripe.Checkout.Session,
+  reason: string,
+  refundError: unknown
+): Promise<void> {
+  if (!resendApiKey) {
+    // eslint-disable-next-line no-console
+    console.error('🚨 No RESEND_API_KEY configured; refund failure was not escalated beyond logs.');
+    return;
+  }
+
+  try {
+    const resend = new Resend(resendApiKey);
+    await resend.emails.send({
+      from: ALERT_EMAIL_FROM,
+      to: ALERT_EMAIL_TO,
+      subject: `Stripe territory conflict refund failed - session ${session.id}`,
+      text: [
+        `A Stripe checkout session hit a territory conflict and the automated refund/cancellation did not succeed.`,
+        `Session: ${session.id}`,
+        `Reason: ${reason}`,
+        `Refund error: ${refundError instanceof Error ? refundError.message : String(refundError)}`,
+        `This customer was charged and needs a manual refund.`
+      ].join('\n')
+    });
+  } catch (alertError) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to send refund failure alert email', alertError);
+  }
+}
 
 async function queueRefundAndAlert(
   stripe: Stripe,
   session: Stripe.Checkout.Session,
-  reason: string
+  reason: string,
+  resendApiKey: string | undefined
 ): Promise<void> {
-  // This is the only record of a territory conflict that fulfilment silently
-  // swallows (the webhook still returns 200 so Stripe stops retrying), so it
-  // must stay logged for ops to catch and manually refund/alert on.
-  // eslint-disable-next-line no-console
-  console.error(`🚨 ALERT: Needs manual refund! Session ${session.id}. Reason: ${reason}`);
-  // In a real system, you'd trigger an alert or automatically refund via stripe.refunds.create()
+  let refundError: unknown = null;
+
+  try {
+    if (session.mode === 'payment') {
+      if (!session.payment_intent) {
+        throw new Error('Session has no payment_intent to refund');
+      }
+      await stripe.refunds.create({ payment_intent: session.payment_intent as string });
+    } else if (session.subscription) {
+      await stripe.subscriptions.cancel(session.subscription as string);
+    } else {
+      throw new Error('Session has no payment_intent or subscription to refund/cancel');
+    }
+  } catch (error) {
+    refundError = error;
+  }
+
+  if (refundError) {
+    // This is the only record of a territory conflict that fulfilment silently
+    // swallows (the webhook still returns 200 so Stripe stops retrying), so it
+    // must stay logged for ops to catch, in addition to the email alert above.
+    // eslint-disable-next-line no-console
+    console.error(`🚨 ALERT: Automated refund failed for session ${session.id}. Reason: ${reason}`, refundError);
+    await sendHumanAlert(resendApiKey, session, reason, refundError);
+  }
 }
 
 export default defineEventHandler(async (event) => {
@@ -44,11 +106,15 @@ export default defineEventHandler(async (event) => {
     const session = stripeEvent.data.object as Stripe.Checkout.Session;
     const db = getFirestore();
 
-    // Security Remediation: Deduplicate webhook events to prevent double processing
+    // Security Remediation: Deduplicate webhook events to prevent double processing.
+    // This get() is just a fast-path short-circuit for events already fully processed;
+    // the real dedup guarantee comes from the t.create() inside the transaction below.
     const seen = db.collection('stripe_events').doc(stripeEvent.id);
     if ((await seen.get()).exists) {
       return { received: true };
     }
+
+    let territoryConflict: Error | null = null;
 
     try {
       const userId = session.metadata?.userId;
@@ -69,9 +135,16 @@ export default defineEventHandler(async (event) => {
         };
       });
 
-      const db = getFirestore();
-
       await db.runTransaction(async (t) => {
+        // Create the dedup marker as part of this same transaction. If a
+        // concurrent delivery of this event is also mid-transaction, only one
+        // commit wins; the other fails here with an "already exists" error.
+        t.create(seen, {
+          type: stripeEvent.type,
+          status: 'processing',
+          processedAt: FieldValue.serverTimestamp()
+        });
+
         // GET THE USER'S CURRENT PROFILE
         const userRef = db.collection('users').doc(userId);
         const userDoc = await t.get(userRef);
@@ -98,64 +171,95 @@ export default defineEventHandler(async (event) => {
           });
         }
 
-        for (const item of purchasedItems) {
-          // --- UPDATE 1: THE USER'S PROFILE DATA ---
-          const existingIndex = updatedTerritories.findIndex(
-            (tItem) =>
-              tItem.territoryId === item.territoryId && tItem.categoryValue === item.categoryValue
-          );
-
-          if (existingIndex > -1) {
-            // Upgrade existing territory
-            const existingTerritory = updatedTerritories[existingIndex]!;
-            existingTerritory.isBasic = item.isBasic || existingTerritory.isBasic;
-            const combinedMonths = new Set([
-              ...(existingTerritory.exclusiveMonths || []),
-              ...item.exclusiveMonths
-            ]);
-            existingTerritory.exclusiveMonths = Array.from(combinedMonths);
-          } else {
-            // Brand new territory
-            updatedTerritories.push(item);
-          }
-
-          // --- UPDATE 2: THE GLOBAL LOCK & BASIC OWNERS ---
-          const claimDocId = `${item.territoryId}_${item.categoryValue}`;
-          const existingClaimData = claimDocs[claimDocId] || {};
-          const updates: {
+        // First pass: compute every write in memory without staging anything,
+        // so a conflict partway through the cart can't leave earlier items'
+        // claim writes staged for commit alongside the conflict outcome below.
+        const claimWrites: Array<{
+          ref: FirebaseFirestore.DocumentReference;
+          updates: {
             takenExclusiveMonths?: Record<string, string>;
             basicOwners?: FirebaseFirestore.FieldValue;
             territoryId?: number;
             categoryValue?: string;
             updatedAt?: string;
-          } = {};
+          };
+        }> = [];
 
-          if (item.exclusiveMonths && item.exclusiveMonths.length > 0) {
-            const takenMonths = existingClaimData.takenExclusiveMonths || {};
-            const newExclusiveLocks: Record<string, string> = {};
-            for (const month of item.exclusiveMonths) {
-              if (takenMonths[month] && takenMonths[month] !== userId) {
-                throw new Error(`Territory ${claimDocId} is already taken for month ${month}`);
-              }
-              newExclusiveLocks[month] = userId;
+        try {
+          for (const item of purchasedItems) {
+            // --- UPDATE 1: THE USER'S PROFILE DATA ---
+            const existingIndex = updatedTerritories.findIndex(
+              (tItem) =>
+                tItem.territoryId === item.territoryId &&
+                tItem.categoryValue === item.categoryValue
+            );
+
+            if (existingIndex > -1) {
+              // Upgrade existing territory
+              const existingTerritory = updatedTerritories[existingIndex]!;
+              existingTerritory.isBasic = item.isBasic || existingTerritory.isBasic;
+              const combinedMonths = new Set([
+                ...(existingTerritory.exclusiveMonths || []),
+                ...item.exclusiveMonths
+              ]);
+              existingTerritory.exclusiveMonths = Array.from(combinedMonths);
+            } else {
+              // Brand new territory
+              updatedTerritories.push(item);
             }
-            updates.takenExclusiveMonths = newExclusiveLocks;
-          }
 
-          if (item.isBasic) {
-            updates.basicOwners = FieldValue.arrayUnion(userId);
-          }
+            // --- UPDATE 2: THE GLOBAL LOCK & BASIC OWNERS ---
+            const claimDocId = `${item.territoryId}_${item.categoryValue}`;
+            const existingClaimData = claimDocs[claimDocId] || {};
+            const updates: {
+              takenExclusiveMonths?: Record<string, string>;
+              basicOwners?: FirebaseFirestore.FieldValue;
+              territoryId?: number;
+              categoryValue?: string;
+              updatedAt?: string;
+            } = {};
 
-          if (Object.keys(updates).length > 0) {
-            updates.territoryId = item.territoryId;
-            updates.categoryValue = item.categoryValue;
-            updates.updatedAt = new Date().toISOString();
+            if (item.exclusiveMonths && item.exclusiveMonths.length > 0) {
+              const takenMonths = existingClaimData.takenExclusiveMonths || {};
+              const newExclusiveLocks: Record<string, string> = {};
+              for (const month of item.exclusiveMonths) {
+                if (takenMonths[month] && takenMonths[month] !== userId) {
+                  throw new Error(`Territory ${claimDocId} is already taken for month ${month}`);
+                }
+                newExclusiveLocks[month] = userId;
+              }
+              updates.takenExclusiveMonths = newExclusiveLocks;
+            }
 
-            t.set(claimRefs[claimDocId]!, updates, { merge: true });
+            if (item.isBasic) {
+              updates.basicOwners = FieldValue.arrayUnion(userId);
+            }
+
+            if (Object.keys(updates).length > 0) {
+              updates.territoryId = item.territoryId;
+              updates.categoryValue = item.categoryValue;
+              updates.updatedAt = new Date().toISOString();
+              claimWrites.push({ ref: claimRefs[claimDocId]!, updates });
+            }
           }
+        } catch (error) {
+          if (error instanceof Error && error.message.startsWith('Territory ')) {
+            territoryConflict = error;
+            t.set(
+              seen,
+              { type: stripeEvent.type, outcome: 'conflict', processedAt: FieldValue.serverTimestamp() },
+              { merge: true }
+            );
+            return;
+          }
+          throw error;
         }
 
-        // Add the updated user profile array to the transaction
+        // Second pass: no conflicts anywhere in the cart, safe to stage writes.
+        for (const { ref, updates } of claimWrites) {
+          t.set(ref, updates, { merge: true });
+        }
+
         t.set(
           userRef,
           {
@@ -167,23 +271,36 @@ export default defineEventHandler(async (event) => {
           },
           { merge: true }
         );
+
+        t.set(
+          seen,
+          { type: stripeEvent.type, processedAt: FieldValue.serverTimestamp() },
+          { merge: true }
+        );
       });
 
-      // Write the success marker to the seen document
-      await seen.set({ type: stripeEvent.type, processedAt: FieldValue.serverTimestamp() });
-    } catch (error) {
-      if (error instanceof Error && error.message.startsWith('Territory ')) {
-        // Business conflict: acknowledge so Stripe stops retrying, then refund and alert.
-        // This is swallowed from the caller's perspective (200 response below), so it
-        // must stay logged for ops to catch and manually refund/alert on.
+      if (territoryConflict) {
+        // This is the only record of a territory conflict that fulfilment
+        // silently swallows (the webhook still returns 200 so Stripe stops
+        // retrying), so it must stay logged for ops to catch.
         // eslint-disable-next-line no-console
-        console.error('Territory conflict on fulfilment', { eventId: stripeEvent.id, error });
-        await queueRefundAndAlert(stripe, session, error.message);
-        await seen.set({
-          type: stripeEvent.type,
-          outcome: 'conflict',
-          processedAt: FieldValue.serverTimestamp()
+        console.error('Territory conflict on fulfilment', {
+          eventId: stripeEvent.id,
+          error: territoryConflict
         });
+        await queueRefundAndAlert(
+          stripe,
+          session,
+          (territoryConflict as Error).message,
+          config.resendApiKey
+        );
+      }
+
+      return { received: true };
+    } catch (error) {
+      if (isAlreadyExistsError(error)) {
+        // Lost the race to a concurrent delivery of the same event; the other
+        // delivery's transaction is committing (or already committed).
         return { received: true };
       }
       throw createError({ statusCode: 500, message: 'Database fulfillment failed' }); // transient: let Stripe retry
