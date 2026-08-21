@@ -7,7 +7,7 @@ context: |
   Am I Underpaid & Benchmark My Role repository. Dual-tenant, SSR platform.
 
   TECH STACK:
-  Nuxt 3 (Nitro), Vue 3 (Composition API, `<script setup lang="ts">`), Tailwind CSS v3, Firebase (Firestore, Auth, vuefire, firebase-admin), TypeScript (Strict), Vitest.
+  Nuxt 4 (Nitro), Vue 3 (Composition API, `<script setup lang="ts">`), Tailwind CSS v4, Firebase (Firestore, Auth, vuefire, firebase-admin), TypeScript (Strict), Vitest.
 
   ARCHITECTURE & SEPARATION OF CONCERNS:
   - Composables: `~/composables/` for reusable business logic.
