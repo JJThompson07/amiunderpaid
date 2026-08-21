@@ -65,8 +65,10 @@ export const useMacroData = (): {
       if (country === 'USA') {
         regionalFilter = `country:USA AND id_code:"00-0000"`;
       } else {
-        // Fetch ALL regions by excluding the national "all employees" record
-        // We set hitsPerPage to 50 to make sure we grab every single UK region in one go
+        // Fetch ALL regions by excluding the national "all employees" record.
+        // Keep hitsPerPage in sync with useMicroData.ts's regional query —
+        // utils/locations/uk.ts carries ~400 ONS regions, and a filter-only
+        // query with no ranking returns an arbitrary subset if this is too low.
         regionalFilter = `country:UK AND searchTitle:"all employees" AND NOT searchLocation:"uk"`;
       }
       const regionalQuery = regionalIndex.search<AlgoliaBenchmarkHit>('', {
