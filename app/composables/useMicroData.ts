@@ -83,10 +83,13 @@ export const useMicroData = (): {
         hitsPerPage: 1
       });
 
-      // For regional, we grab all regions for this specific job
+      // For regional, we grab all regions for this specific job.
+      // Keep in sync with useMacroData.ts's regional query hitsPerPage —
+      // utils/locations/uk.ts carries ~400 ONS regions, and a filter-only
+      // query with no ranking returns an arbitrary subset if this is too low.
       const regionalQuery = regionalIndex.search('', {
         filters: baseRegionalFilter,
-        hitsPerPage: 100
+        hitsPerPage: 1000
       });
 
       // ==========================================
