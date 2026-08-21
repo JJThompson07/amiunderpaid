@@ -7,7 +7,9 @@ const ALERT_EMAIL_TO = 'support@amiunderpaid.com';
 const ALERT_EMAIL_FROM = 'alerts@amiunderpaid.com';
 
 function isAlreadyExistsError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
+  if (!(error instanceof Error)) {
+    return false;
+  }
   const code = (error as { code?: number | string }).code;
   return code === 6 || code === 'already-exists' || /already exists/i.test(error.message);
 }
@@ -177,7 +179,7 @@ export default defineEventHandler(async (event) => {
         // First pass: compute every write in memory without staging anything,
         // so a conflict partway through the cart can't leave earlier items'
         // claim writes staged for commit alongside the conflict outcome below.
-        const claimWrites: Array<{
+        const claimWrites: {
           ref: FirebaseFirestore.DocumentReference;
           updates: {
             takenExclusiveMonths?: Record<string, string>;
@@ -186,7 +188,7 @@ export default defineEventHandler(async (event) => {
             categoryValue?: string;
             updatedAt?: string;
           };
-        }> = [];
+        }[] = [];
 
         try {
           for (const item of purchasedItems) {
