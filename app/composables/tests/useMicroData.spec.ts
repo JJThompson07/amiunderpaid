@@ -48,13 +48,58 @@ describe('useMicroData', () => {
     // Second call (regional)
     expect(mockSearch).toHaveBeenNthCalledWith(2, '', {
       filters: 'country:UK AND id_code:2136',
-      hitsPerPage: 100
+      hitsPerPage: 1000
     });
 
     expect(result.officialGroupTitle).toBe('Software Developer');
     expect(result.microNationalData?.p50).toBe(50000);
     expect(result.microNationalData?.mean).toBe(51000);
     expect(result.microRegionalData?.p50).toBe(60000);
+  });
+
+  it('requests up to 1000 regional hits so occupations spanning more than 100 UK regions are not truncated', async () => {
+    // utils/locations/uk.ts carries ~400 ONS regions; a filter-only query
+    // with no ranking returns an arbitrary subset if hitsPerPage is too low.
+    const manyRegions = Array.from({ length: 250 }, (_, i) => ({
+      searchLocation: `Region ${i}`,
+      salary: 40000 + i
+    }));
+    mockSearch.mockResolvedValueOnce({ hits: [{ title: 'Nurse', salary: 42000 }] });
+    mockSearch.mockResolvedValueOnce({ hits: manyRegions });
+
+    const { fetchMicroBaselines } = useMicroData();
+    const result = await fetchMicroBaselines('UK', 'Nurse', 'Region 249', '2231');
+
+    expect(mockSearch).toHaveBeenNthCalledWith(2, '', {
+      filters: 'country:UK AND id_code:2231',
+      hitsPerPage: 1000
+    });
+    expect(Object.keys(result.allRegionalMicroData)).toHaveLength(250);
+    expect(result.microRegionalData?.p50).toBe(40000 + 249);
+  });
+
+  it('pins microRegionalData for a known occupation/region pair', async () => {
+    mockSearch.mockResolvedValueOnce({
+      hits: [{ title: 'Registered Nurse', salary: 36000, avg_salary: 37500 }]
+    });
+    mockSearch.mockResolvedValueOnce({
+      hits: [
+        { searchLocation: 'North West', salary: 33000 },
+        { searchLocation: 'London', salary: 41000, avg_salary: 42500 }
+      ]
+    });
+
+    const { fetchMicroBaselines } = useMicroData();
+    const result = await fetchMicroBaselines('UK', 'Registered Nurse', 'London', '2231');
+
+    expect(result.microRegionalData).toEqual({
+      mean: 42500,
+      p10: null,
+      p25: null,
+      p50: 41000,
+      p75: null,
+      p90: null
+    });
   });
 
   it('fetches micro baselines with USA idCode with quotes', async () => {
