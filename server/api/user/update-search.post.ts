@@ -21,11 +21,15 @@ export default defineEventHandler(async (event) => {
     return { success: false, error: 'Missing search ID or token' };
   }
 
-  // Security Remediation: Verify the HMAC token before allowing the update
+  // Security Remediation: fail closed if the token-signing secret is missing,
+  // rather than silently verifying against a default.
   const config = useRuntimeConfig();
-  if (
-    !verifySearchToken(body.id, body.token, config.stripeWebhookSecret || 'fallback-secret-for-dev')
-  ) {
+  if (!config.searchTokenSecret) {
+    throw createError({ statusCode: 500, statusMessage: 'Server misconfiguration.' });
+  }
+
+  // Security Remediation: Verify the HMAC token before allowing the update
+  if (!verifySearchToken(body.id, body.token, config.searchTokenSecret)) {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden' });
   }
 

@@ -15,6 +15,14 @@ export default defineEventHandler(async (event) => {
 
   const db = useAdminFirestore();
 
+  // Security Remediation: fail closed if the token-signing secret is missing,
+  // rather than silently signing with a default (this must stay outside the
+  // try/catch below, which swallows errors into a 200 `success: false`).
+  const config = useRuntimeConfig();
+  if (!config.searchTokenSecret) {
+    throw createError({ statusCode: 500, statusMessage: 'Server misconfiguration.' });
+  }
+
   try {
     if (!body.title || !body.country) {
       return { success: false, error: 'Missing required fields' };
@@ -34,11 +42,7 @@ export default defineEventHandler(async (event) => {
     const docRef = await db.collection('search_history').add(docData);
 
     // Security Remediation: Mint an HMAC token to authenticate future updates to this specific search record
-    const config = useRuntimeConfig();
-    const token = generateSearchToken(
-      docRef.id,
-      config.stripeWebhookSecret || 'fallback-secret-for-dev'
-    );
+    const token = generateSearchToken(docRef.id, config.searchTokenSecret);
 
     return { success: true, id: docRef.id, token };
   } catch {
