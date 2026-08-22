@@ -275,22 +275,31 @@ export default defineEventHandler(async (event) => {
     );
 
     // --- CALCULATE EXPIRES AT ---
-    let cacheDays = 30; // Reduced from 120
     const categoryTag = cleanData.results?.[0]?.category?.tag || 'unknown';
+    const isFallbackProvider = !!cleanData.provider && cleanData.provider !== 'adzuna';
 
-    if (categoryTag !== 'unknown') {
-      try {
-        const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
-        if (catSnap.exists) {
-          cacheDays = Number(catSnap.data()?.cache || 30);
+    let expiresAt: Date;
+    if (isFallbackProvider) {
+      // Fallback-provider (Reed/Jooble) data is a smaller, lower-confidence
+      // sample and should expire quickly so it doesn't outlive the transient
+      // Adzuna failure that produced it, regardless of the configured cacheDays.
+      expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    } else {
+      let cacheDays = 30; // Reduced from 120
+      if (categoryTag !== 'unknown') {
+        try {
+          const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
+          if (catSnap.exists) {
+            cacheDays = Number(catSnap.data()?.cache || 30);
+          }
+        } catch {
+          // Silently ignore failures
         }
-      } catch {
-        // Silently ignore failures
       }
-    }
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + cacheDays);
+      expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + cacheDays);
+    }
 
     // 4. Save to Cache
     await cacheRef.set(

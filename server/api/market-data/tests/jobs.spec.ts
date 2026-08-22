@@ -154,4 +154,56 @@ describe('Adzuna Jobs API - 429 Fallback', () => {
     expect(result.provider).toBe('jooble');
     expect(result.count).toBe(20);
   });
+
+  it('caches an Adzuna-sourced response for the configured cacheDays (default 30)', async () => {
+    getQueryMock.mockReturnValue({
+      title: 'developer',
+      location: 'london',
+      country: 'gb',
+      resultsPerPage: '10'
+    });
+
+    $fetchMock.mockResolvedValueOnce({
+      count: 1,
+      results: [{ id: 1, title: 'Adzuna Job', category: { tag: 'unknown' } }]
+    });
+
+    const before = Date.now();
+    await jobsHandler({} as unknown as H3Event);
+    const after = Date.now();
+
+    const setCall = mockDocRef.set.mock.calls[0]![0];
+    const expiresAtMs = (setCall.expiresAt as Date).getTime();
+    const expectedMin = before + 30 * 24 * 60 * 60 * 1000;
+    const expectedMax = after + 30 * 24 * 60 * 60 * 1000;
+
+    expect(expiresAtMs).toBeGreaterThanOrEqual(expectedMin);
+    expect(expiresAtMs).toBeLessThanOrEqual(expectedMax);
+  });
+
+  it('caches a fallback-sourced response for 24 hours regardless of cacheDays', async () => {
+    getQueryMock.mockReturnValue({
+      title: 'developer',
+      location: 'london',
+      country: 'gb',
+      resultsPerPage: '10'
+    });
+
+    $fetchMock.mockRejectedValueOnce({
+      statusCode: 429,
+      response: { status: 429 }
+    });
+
+    const before = Date.now();
+    await jobsHandler({} as unknown as H3Event);
+    const after = Date.now();
+
+    const setCall = mockDocRef.set.mock.calls[0]![0];
+    const expiresAtMs = (setCall.expiresAt as Date).getTime();
+    const expectedMin = before + 24 * 60 * 60 * 1000;
+    const expectedMax = after + 24 * 60 * 60 * 1000;
+
+    expect(expiresAtMs).toBeGreaterThanOrEqual(expectedMin);
+    expect(expiresAtMs).toBeLessThanOrEqual(expectedMax);
+  });
 });

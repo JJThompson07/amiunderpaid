@@ -212,34 +212,48 @@ export default defineEventHandler(async (event) => {
       devProviderOverride
     );
 
+    const isFallbackProvider = !!cleanData.provider && cleanData.provider !== 'adzuna';
+
     // FIX 2: Adzuna histogram data doesn't contain categories!
     // Let's try to steal the category tag from the jobs cache for this exact search.
+    // Skip this for fallback-provider responses: a long per-category cacheDays
+    // read from the jobs cache must never leak onto short-lived fallback data.
     let categoryTag = 'unknown';
-    try {
-      const jobsCacheKey = `${cacheKey}-full-time-permanent-10`;
-      const jobsDoc = await db.collection('adzuna_jobs_cache').doc(jobsCacheKey).get();
-      if (jobsDoc.exists) {
-        categoryTag = jobsDoc.data()?.categoryTag || 'unknown';
+    if (!isFallbackProvider) {
+      try {
+        const jobsCacheKey = `${cacheKey}-full-time-permanent-10`;
+        const jobsDoc = await db.collection('adzuna_jobs_cache').doc(jobsCacheKey).get();
+        if (jobsDoc.exists) {
+          categoryTag = jobsDoc.data()?.categoryTag || 'unknown';
+        }
+      } catch {
+        // Silently ignore and leave categoryTag as 'unknown'
       }
-    } catch {
-      // Silently ignore and leave categoryTag as 'unknown'
     }
 
     // --- CALCULATE EXPIRES AT ---
-    let cacheDays = 30; // Reduced from 120
-    if (categoryTag !== 'unknown') {
-      try {
-        const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
-        if (catSnap.exists) {
-          cacheDays = Number(catSnap.data()?.cache || 30);
+    let expiresAt: Date;
+    if (isFallbackProvider) {
+      // Fallback-provider (Reed/Jooble) data is a smaller, lower-confidence
+      // sample and should expire quickly so it doesn't outlive the transient
+      // Adzuna failure that produced it, regardless of the configured cacheDays.
+      expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    } else {
+      let cacheDays = 30; // Reduced from 120
+      if (categoryTag !== 'unknown') {
+        try {
+          const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
+          if (catSnap.exists) {
+            cacheDays = Number(catSnap.data()?.cache || 30);
+          }
+        } catch {
+          // Silently ignore failures
         }
-      } catch {
-        // Silently ignore failures
       }
-    }
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + cacheDays);
+      expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + cacheDays);
+    }
 
     // 4. Save to Cache (Server-Side)
     await cacheRef.set({

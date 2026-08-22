@@ -155,4 +155,59 @@ describe('Adzuna Salary API - 429 Fallback', () => {
     expect(result.provider).toBe('jooble');
     expect(result.histogram).toEqual({ '100000': 2 });
   });
+
+  it('caches an Adzuna-sourced response for the configured cacheDays (default 30)', async () => {
+    getQueryMock.mockReturnValue({
+      title: 'developer',
+      location: 'london',
+      country: 'gb'
+    });
+
+    $fetchMock.mockResolvedValueOnce({
+      histogram: { '50000': 1 }
+    });
+
+    const before = Date.now();
+    await salaryHandler({} as unknown as H3Event);
+    const after = Date.now();
+
+    const setCall = mockDocRef.set.mock.calls[0]![0];
+    const expiresAtMs = (setCall.expiresAt as Date).getTime();
+    const expectedMin = before + 30 * 24 * 60 * 60 * 1000;
+    const expectedMax = after + 30 * 24 * 60 * 60 * 1000;
+
+    expect(expiresAtMs).toBeGreaterThanOrEqual(expectedMin);
+    expect(expiresAtMs).toBeLessThanOrEqual(expectedMax);
+  });
+
+  it('caches a fallback-sourced response for 24 hours and does not inherit categoryTag from the jobs cache', async () => {
+    getQueryMock.mockReturnValue({
+      title: 'developer',
+      location: 'london',
+      country: 'gb'
+    });
+
+    $fetchMock.mockRejectedValueOnce({
+      statusCode: 429,
+      response: { status: 429 }
+    });
+
+    const before = Date.now();
+    await salaryHandler({} as unknown as H3Event);
+    const after = Date.now();
+
+    // The jobs cache must never be consulted for a fallback-provider response —
+    // otherwise a long per-category cacheDays could leak onto the fallback entry.
+    expect(mockCollection.doc).not.toHaveBeenCalledWith('cache-key-full-time-permanent-10');
+
+    const setCall = mockDocRef.set.mock.calls[0]![0];
+    expect(setCall.categoryTag).toBe('unknown');
+
+    const expiresAtMs = (setCall.expiresAt as Date).getTime();
+    const expectedMin = before + 24 * 60 * 60 * 1000;
+    const expectedMax = after + 24 * 60 * 60 * 1000;
+
+    expect(expiresAtMs).toBeGreaterThanOrEqual(expectedMin);
+    expect(expiresAtMs).toBeLessThanOrEqual(expectedMax);
+  });
 });
