@@ -141,15 +141,6 @@ export default defineEventHandler(async (event) => {
       });
 
       await db.runTransaction(async (t) => {
-        // Create the dedup marker as part of this same transaction. If a
-        // concurrent delivery of this event is also mid-transaction, only one
-        // commit wins; the other fails here with an "already exists" error.
-        t.create(seen, {
-          type: stripeEvent.type,
-          status: 'processing',
-          processedAt: FieldValue.serverTimestamp()
-        });
-
         // GET THE USER'S CURRENT PROFILE
         const userRef = db.collection('users').doc(userId);
         const userDoc = await t.get(userRef);
@@ -175,6 +166,16 @@ export default defineEventHandler(async (event) => {
             claimDocs[snap.id] = snap.exists ? (snap.data() ?? null) : null;
           });
         }
+
+        // Create the dedup marker as part of this same transaction, after all
+        // reads (Firestore transactions require every read before any write).
+        // If a concurrent delivery of this event is also mid-transaction, only
+        // one commit wins; the other fails here with an "already exists" error.
+        t.create(seen, {
+          type: stripeEvent.type,
+          status: 'processing',
+          processedAt: FieldValue.serverTimestamp()
+        });
 
         // First pass: compute every write in memory without staging anything,
         // so a conflict partway through the cart can't leave earlier items'
