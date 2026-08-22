@@ -29,6 +29,8 @@ const {
   mockGetFirestore,
   mockRefundsCreate,
   mockSubscriptionsCancel,
+  mockSubscriptionsRetrieve,
+  mockInvoicePaymentsList,
   mockResendSend
 } = vi.hoisted(() => {
   const mockCollection = vi.fn();
@@ -94,6 +96,8 @@ const {
     })),
     mockRefundsCreate: vi.fn(),
     mockSubscriptionsCancel: vi.fn(),
+    mockSubscriptionsRetrieve: vi.fn(),
+    mockInvoicePaymentsList: vi.fn(),
     mockResendSend: vi.fn()
   };
 });
@@ -103,7 +107,8 @@ vi.mock('stripe', () => {
     default: class Stripe {
       webhooks = { constructEvent: mockConstructEvent };
       refunds = { create: mockRefundsCreate };
-      subscriptions = { cancel: mockSubscriptionsCancel };
+      subscriptions = { cancel: mockSubscriptionsCancel, retrieve: mockSubscriptionsRetrieve };
+      invoicePayments = { list: mockInvoicePaymentsList };
     }
   };
 });
@@ -176,6 +181,8 @@ describe('Stripe Webhook', () => {
     // Default to a successful refund
     mockRefundsCreate.mockResolvedValue({ id: 're_123' });
     mockSubscriptionsCancel.mockResolvedValue({ id: 'sub_123' });
+    mockSubscriptionsRetrieve.mockResolvedValue({ latest_invoice: null });
+    mockInvoicePaymentsList.mockResolvedValue({ data: [] });
   });
 
   it('throws error on invalid signature', async () => {
@@ -275,7 +282,7 @@ describe('Stripe Webhook', () => {
     expect(mockResendSend).not.toHaveBeenCalled();
   });
 
-  it('handles a subscription conflict by cancelling the subscription', async () => {
+  it('handles a subscription conflict by refunding the paid invoice and cancelling the subscription', async () => {
     mockConstructEvent.mockReturnValueOnce({
       id: 'evt_sub_123',
       type: 'checkout.session.completed',
@@ -300,14 +307,67 @@ describe('Stripe Webhook', () => {
         })
       }
     ]);
+    mockSubscriptionsRetrieve.mockResolvedValueOnce({
+      latest_invoice: { id: 'in_123', amount_paid: 10000 }
+    });
+    mockInvoicePaymentsList.mockResolvedValueOnce({
+      data: [{ payment: { payment_intent: 'pi_sub_123' } }]
+    });
 
     const event = {} as unknown as H3Event;
 
     const res = await handler(event);
 
     expect(res).toEqual({ received: true });
+    expect(mockSubscriptionsRetrieve).toHaveBeenCalledWith('sub_123', {
+      expand: ['latest_invoice']
+    });
+    expect(mockInvoicePaymentsList).toHaveBeenCalledWith({ invoice: 'in_123' });
+    expect(mockRefundsCreate).toHaveBeenCalledWith({ payment_intent: 'pi_sub_123' });
     expect(mockSubscriptionsCancel).toHaveBeenCalledWith('sub_123');
+    expect(mockResendSend).not.toHaveBeenCalled();
+  });
+
+  it('cancels without refunding on a trialling subscription with nothing collected', async () => {
+    mockConstructEvent.mockReturnValueOnce({
+      id: 'evt_sub_trial_123',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_sub_trial_123',
+          mode: 'subscription',
+          subscription: 'sub_trial_123',
+          metadata: {
+            userId: 'user_123',
+            cart: '1:dev:1:2024-01~2024-02'
+          }
+        }
+      }
+    });
+    mockTransaction.getAll.mockResolvedValueOnce([
+      {
+        id: '1_dev',
+        exists: true,
+        data: (): { takenExclusiveMonths: Record<string, string> } => ({
+          takenExclusiveMonths: { '2024-01': 'other_user' }
+        })
+      }
+    ]);
+    mockSubscriptionsRetrieve.mockResolvedValueOnce({
+      latest_invoice: { id: 'in_trial_123', amount_paid: 0 }
+    });
+
+    const event = {} as unknown as H3Event;
+
+    const res = await handler(event);
+
+    expect(res).toEqual({ received: true });
+    expect(mockInvoicePaymentsList).not.toHaveBeenCalled();
     expect(mockRefundsCreate).not.toHaveBeenCalled();
+    expect(mockSubscriptionsCancel).toHaveBeenCalledWith('sub_trial_123');
+    // Cancelling a trial that never charged anything is the correct outcome,
+    // not a degraded one — no alert should fire.
+    expect(mockResendSend).not.toHaveBeenCalled();
   });
 
   it('sends an alert email when the automated refund itself fails', async () => {
@@ -341,5 +401,83 @@ describe('Stripe Webhook', () => {
     const event = {} as unknown as H3Event;
 
     await expect(handler(event)).rejects.toThrow('Database fulfillment failed');
+  });
+
+  it('does not refund a purchase that succeeded on a retried transaction attempt', async () => {
+    // Simulates Firestore internally re-invoking the transaction callback: the
+    // first attempt hits a conflict, the second (retried) attempt succeeds
+    // cleanly. Only the final attempt's outcome should drive refund behaviour.
+    mockTransaction.getAll
+      .mockResolvedValueOnce([
+        {
+          id: '1_dev',
+          exists: true,
+          data: (): { takenExclusiveMonths: Record<string, string> } => ({
+            takenExclusiveMonths: { '2024-01': 'other_user' }
+          })
+        }
+      ])
+      .mockResolvedValueOnce([]);
+
+    mockRunTransaction.mockImplementationOnce(async (callback) => {
+      const makeAttempt = (): {
+        get: (
+          ...args: Parameters<typeof mockTransaction.get>
+        ) => ReturnType<typeof mockTransaction.get>;
+        getAll: (
+          ...args: Parameters<typeof mockTransaction.getAll>
+        ) => ReturnType<typeof mockTransaction.getAll>;
+        set: (
+          ...args: Parameters<typeof mockTransaction.set>
+        ) => ReturnType<typeof mockTransaction.set>;
+        create: (
+          ...args: Parameters<typeof mockTransaction.create>
+        ) => ReturnType<typeof mockTransaction.create>;
+      } => {
+        let hasStagedWrite = false;
+        return {
+          get: (
+            ...args: Parameters<typeof mockTransaction.get>
+          ): ReturnType<typeof mockTransaction.get> => {
+            if (hasStagedWrite) {
+              throw new Error('read after write');
+            }
+            return mockTransaction.get(...args);
+          },
+          getAll: (
+            ...args: Parameters<typeof mockTransaction.getAll>
+          ): ReturnType<typeof mockTransaction.getAll> => {
+            if (hasStagedWrite) {
+              throw new Error('read after write');
+            }
+            return mockTransaction.getAll(...args);
+          },
+          set: (
+            ...args: Parameters<typeof mockTransaction.set>
+          ): ReturnType<typeof mockTransaction.set> => {
+            hasStagedWrite = true;
+            return mockTransaction.set(...args);
+          },
+          create: (
+            ...args: Parameters<typeof mockTransaction.create>
+          ): ReturnType<typeof mockTransaction.create> => {
+            hasStagedWrite = true;
+            return mockTransaction.create(...args);
+          }
+        };
+      };
+
+      await callback(makeAttempt());
+      return callback(makeAttempt());
+    });
+
+    const event = {} as unknown as H3Event;
+
+    const res = await handler(event);
+
+    expect(res).toEqual({ received: true });
+    expect(mockRefundsCreate).not.toHaveBeenCalled();
+    expect(mockSubscriptionsCancel).not.toHaveBeenCalled();
+    expect(mockResendSend).not.toHaveBeenCalled();
   });
 });
