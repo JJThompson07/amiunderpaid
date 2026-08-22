@@ -23,15 +23,11 @@ const {
   mockVerifyIdToken,
   mockPricingGet,
   mockUserGet,
-  mockUserRefUpdate,
   mockClaimGet,
   mockGetFirestore,
   mockSubRetrieve,
   mockSubUpdate,
-  mockSubCancel,
-  mockBatchUpdate,
-  mockBatchDelete,
-  mockBatchCommit
+  mockSubCancel
 } = vi.hoisted(() => {
   const mockPricingGet = vi.fn();
   const mockUserGet = vi.fn();
