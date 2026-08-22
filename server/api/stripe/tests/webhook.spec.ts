@@ -38,7 +38,49 @@ const {
     set: vi.fn(),
     create: vi.fn()
   };
-  const mockRunTransaction = vi.fn((callback) => callback(mockTransaction));
+
+  // Mirrors the real @google-cloud/firestore Transaction: get/getAll throw
+  // once any write has been staged, since Firestore requires all reads
+  // before all writes. This wraps mockTransaction (which tests configure
+  // directly via mockResolvedValue/toHaveBeenCalledWith) rather than
+  // replacing it, so an accidental write staged ahead of a read fails the
+  // same way it would in production instead of passing silently.
+  const READ_AFTER_WRITE_ERROR_MSG =
+    'Firestore transactions require all reads to be executed before all writes.';
+  const mockRunTransaction = vi.fn((callback) => {
+    let hasStagedWrite = false;
+    const t = {
+      get: (
+        ...args: Parameters<typeof mockTransaction.get>
+      ): ReturnType<typeof mockTransaction.get> => {
+        if (hasStagedWrite) {
+          throw new Error(READ_AFTER_WRITE_ERROR_MSG);
+        }
+        return mockTransaction.get(...args);
+      },
+      getAll: (
+        ...args: Parameters<typeof mockTransaction.getAll>
+      ): ReturnType<typeof mockTransaction.getAll> => {
+        if (hasStagedWrite) {
+          throw new Error(READ_AFTER_WRITE_ERROR_MSG);
+        }
+        return mockTransaction.getAll(...args);
+      },
+      set: (
+        ...args: Parameters<typeof mockTransaction.set>
+      ): ReturnType<typeof mockTransaction.set> => {
+        hasStagedWrite = true;
+        return mockTransaction.set(...args);
+      },
+      create: (
+        ...args: Parameters<typeof mockTransaction.create>
+      ): ReturnType<typeof mockTransaction.create> => {
+        hasStagedWrite = true;
+        return mockTransaction.create(...args);
+      }
+    };
+    return callback(t);
+  });
   return {
     mockConstructEvent: vi.fn(),
     mockTransaction,

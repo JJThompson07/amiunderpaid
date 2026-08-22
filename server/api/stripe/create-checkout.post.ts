@@ -123,9 +123,16 @@ export default defineEventHandler(async (event) => {
     const foundTerritory = allTerritories.find((tt) => tt.id === t.territoryId);
     const safeBand = foundTerritory ? foundTerritory.band || 1 : 1;
 
-    const bandData = countryPricing[`band${safeBand}`];
-    let basicPrice = bandData?.basic || 10;
-    let exclusivePrice = bandData?.exclusive || 50;
+    const bandKey = `band${safeBand}`;
+    const bandData = countryPricing[bandKey];
+    if (!bandData) {
+      throw createError({
+        statusCode: 500,
+        message: `Pricing band ${bandKey} for ${countryKey} not found.`
+      });
+    }
+    let basicPrice = bandData.basic;
+    let exclusivePrice = bandData.exclusive;
 
     // Apply custom recruiter discounts
     basicPrice = Math.max(0, basicPrice * (1 - basicDiscount / 100));

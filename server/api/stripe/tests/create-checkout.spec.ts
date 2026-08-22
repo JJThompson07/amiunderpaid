@@ -122,6 +122,21 @@ describe('create-checkout', () => {
     await expect(handler(event)).rejects.toThrow('No items selected in cart.');
   });
 
+  it('throws a 500 and does not create a Stripe session when the resolved band is missing from the country pricing', async () => {
+    // Pricing doc exists but only has band2 — territory 999 isn't in the
+    // static territory lists, so it resolves to band1 via the default,
+    // which is absent from this deliberately incomplete pricing document.
+    mockPricingGet.mockResolvedValue({
+      exists: true,
+      data: () => ({ UK: { band2: { basic: 30, exclusive: 150 } } })
+    });
+
+    const event = {} as unknown as H3Event;
+
+    await expect(handler(event)).rejects.toThrow('Pricing band band1 for UK not found.');
+    expect(mockSessionsCreate).not.toHaveBeenCalled();
+  });
+
   it('throws a distinct error when exclusive months were selected but priced to zero', async () => {
     mockUserGet.mockResolvedValue({ data: () => ({ exclusiveDiscount: 100 }) });
     requestBody = {

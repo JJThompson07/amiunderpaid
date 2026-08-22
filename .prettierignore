@@ -1,1 +1,6 @@
 pnpm-lock.yaml
+
+# Local-only Claude Code files (gitignored globally, not via this repo's
+# .gitignore, so Prettier still sees and flags them without this entry)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
