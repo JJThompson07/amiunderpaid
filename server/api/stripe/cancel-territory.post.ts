@@ -78,14 +78,29 @@ export default defineEventHandler(async (event) => {
     : DEFAULT_PRICING;
   const currency = userData.billingCountry === 'USA' ? 'usd' : 'gbp';
   const countryPricing = platformPricing[userData.billingCountry || 'UK'];
+
+  if (!countryPricing) {
+    throw createError({
+      statusCode: 500,
+      message: `Pricing bands for ${userData.billingCountry} not found.`
+    });
+  }
+
   const basicDiscount = userData.basicDiscount || 0;
 
   let newMonthlyTotal = 0;
   updatedTerritories.forEach((t: TerritoryClaim) => {
     if (t.isBasic) {
       // If you don't have the band saved on the object, default to band 1
-      const bandData = countryPricing?.[`band${t.band || 1}`];
-      let basicPrice = bandData?.basic || 10;
+      const bandKey = `band${t.band || 1}`;
+      const bandData = countryPricing[bandKey];
+      if (!bandData) {
+        throw createError({
+          statusCode: 500,
+          message: `Pricing band ${bandKey} for ${userData.billingCountry} not found.`
+        });
+      }
+      let basicPrice = bandData.basic;
       if (basicDiscount > 0) {
         basicPrice = basicPrice * (1 - basicDiscount / 100);
       }

@@ -70,6 +70,25 @@ When a recruiter selects more than 10 territories simultaneously, the `useTerrit
 - **WHEN** `territoryIds.value.length > 10`
 - **THEN** `claimsLimitExceeded` SHALL be `true` and the UI SHALL render a visible warning banner on the schedule matrix step
 
+### Requirement: Cancellation fails explicitly on missing pricing configuration
+
+When recalculating a recruiter's new monthly total during a territory cancellation, the system SHALL throw an explicit 500 error if the billing country's pricing bands, or a specific band within that country, cannot be resolved from `platform_settings/pricing`, rather than silently substituting a default price.
+
+#### Scenario: Pricing document is missing the caller's billing country
+
+- **WHEN** a recruiter cancels a territory and `platform_settings/pricing` has no entry for their `billingCountry`
+- **THEN** the endpoint returns a 500 error and does not update the Stripe subscription
+
+#### Scenario: Pricing document is missing the resolved band within the caller's billing country
+
+- **WHEN** a recruiter cancels a territory and their billing country's pricing document has no entry for the territory's resolved `bandN` key
+- **THEN** the endpoint returns a 500 error and does not update the Stripe subscription
+
+#### Scenario: Pricing document is well-formed
+
+- **WHEN** a recruiter cancels a territory and their billing country's pricing bands resolve correctly
+- **THEN** the new monthly total is calculated from the resolved band pricing as before
+
 ### Requirement: Direct recruiter signup path is removed or gated
 
 The `signup()` function in `useRecruiterAuth.ts` SHALL NOT be callable from any active UI route. The recruiter registration flow MUST go exclusively through the Request Access modal → admin approval → one-time password email pathway.
