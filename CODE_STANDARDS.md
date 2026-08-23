@@ -41,6 +41,7 @@ You are an AI assistant helping to build a dual-tenant, server-side rendered (SS
 - Always use utility-first Tailwind classes.
 - Avoid custom CSS blocks in `<style scoped>` unless handling highly specific external library overrides (like ECharts or custom scrollbars).
 - Use `animate-in`, `fade-in`, `slide-in-from-*` for simple micro-interactions and enter transitions.
+- **Expand/collapse animations:** Never animate `max-height` with an arbitrary fixed value (e.g. `max-h-96`) — content taller than the cap gets clipped, and content shorter than it animates at the wrong speed, both reading as a "jump." Use the CSS Grid technique instead: wrap the collapsible content in a `grid` container toggled between `grid-rows-[0fr]` and `grid-rows-[1fr]` (with `transition-all duration-300 ease-in-out`), and give the direct child `overflow-hidden`. This animates to the exact content height with no JS measurement. See `app/components/Section/Score/Mca.vue` or `app/components/Brand/AmI/Faq.vue` for the reference implementation.
 
 ## 6. Internationalization (i18n)
 

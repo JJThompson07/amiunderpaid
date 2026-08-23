@@ -19,6 +19,47 @@
     "review": "Action Required"
   },
   "percentile": "{percentile} Percentile",
+  "explainer": {
+    "intro": "Your MCA Score is a single number from 1 to 99 that shows exactly how your pay compares to the real, current market, not a stale annual survey. We triangulate three independent data sources so no single input can skew your result, then place the outcome into one of five brackets below.",
+    "algorithmNote": "We don't publish the exact weighting behind each score, since that's what keeps the engine reliable as the market shifts, but every data source that feeds it is listed below."
+  },
+  "brackets": {
+    "leader": {
+      "range": "80-99",
+      "advice": {
+        "candidate": "You're in the top bracket. This is leverage for equity or scope beyond base pay.",
+        "employer": "This offer should be enough to compete for elite talent."
+      }
+    },
+    "strong": {
+      "range": "60-79",
+      "advice": {
+        "candidate": "A solid, market-aligned position. You have a reasonable case for a modest raise.",
+        "employer": "You can expect this offer to be competitive without needing to lead the market."
+      }
+    },
+    "competitive": {
+      "range": "40-59",
+      "advice": {
+        "candidate": "Broadly in line with the market. Keep tracking live vacancy trends for the role.",
+        "employer": "You should still review quarterly, as this bracket sits close to the median and can slip."
+      }
+    },
+    "below": {
+      "range": "25-39",
+      "advice": {
+        "candidate": "There's a real gap versus the market. Raise this directly with your manager using the score breakdown as evidence.",
+        "employer": "This role may struggle to attract applicants until the offer is adjusted."
+      }
+    },
+    "review": {
+      "range": "1-24",
+      "advice": {
+        "candidate": "This needs attention soon. Open a direct conversation about pay.",
+        "employer": "Expect this offer to significantly underperform in the current market and consider revising it before posting."
+      }
+    }
+  },
   "breakdowns": {
     "live": {
       "label": "Live Market Demand",

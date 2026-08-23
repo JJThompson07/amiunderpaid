@@ -1,11 +1,26 @@
 {
   "heading": "About Us",
   "body": {
-    "bold": "Salary transparency is broken.",
-    "intro": "Most people rely on awkward conversations with colleagues or outdated reports to know what they are worth.",
+    "bold": "Striving for salary transparency.",
+    "intro": "Discussing pay has always been awkward, especially when you step into a conversation without knowing where you actually stand. Most people are forced to rely on uncomfortable whispers with colleagues or outdated annual reports to guess their true market value.",
     "middle": "We built {app-name} to change that.",
     "app-name": "Am I Underpaid?",
+    "outro-title": "Our Mission",
     "outro": "Our mission is simple: to give every employee the data they need to negotiate with confidence. We believe that when salary data is open and accessible, the pay gap closes and everyone wins."
+  },
+  "highlights": {
+    "1": {
+      "title": "Real-Time Data",
+      "body": "Every score blends live Adzuna vacancies with official ONS benchmarks, refreshed continuously."
+    },
+    "2": {
+      "title": "No Guesswork",
+      "body": "Get a definitive MCA Score from 1-99 instead of a vague 'ballpark' salary range."
+    },
+    "3": {
+      "title": "Built For Negotiation",
+      "body": "Walk into your next review with evidence, not just instinct."
+    }
   },
   "benchmark": {
     "body": {
@@ -13,7 +28,22 @@
       "intro": "For too long, the true value of a role has been a moving target, obscured by outdated data and inconsistent reporting. This imbalance makes it difficult for employers to stay competitive and for candidates to know their worth.",
       "middle": "{app-name} was developed to bridge this informational gap through real-time data integration.",
       "app-name": "Benchmark My Role",
+      "outro-title": "Our Mission",
       "outro": "The platform's mission is to provide an objective, data-backed standard for salary transparency. By cross-referencing 700,000+ active vacancies with official benchmarks, we ensure that every hiring decision and career move is rooted in current market reality, fostering a more equitable landscape for everyone"
+    },
+    "highlights": {
+      "1": {
+        "title": "Live Market Signal",
+        "body": "Every benchmark blends 700,000+ active vacancies with official ONS data, refreshed continuously."
+      },
+      "2": {
+        "title": "Objective Scoring",
+        "body": "Replace 'gut feel' salary bands with a definitive MCA Score employers and candidates both trust."
+      },
+      "3": {
+        "title": "Built For Hiring Decisions",
+        "body": "Validate an offer before you post it, and defend it with confidence when you extend it."
+      }
     }
   }
 }
