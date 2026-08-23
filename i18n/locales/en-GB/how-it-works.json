@@ -1,6 +1,7 @@
 {
   "heading": "How It Works",
   "description": "We calculate your Market Compensation Alignment (MCA) Score in three steps.",
+  "step-label": "Step {n}",
   "step": {
     "1": {
       "heading": "Input Your Details",

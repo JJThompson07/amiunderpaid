@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-screen pt-24 pb-12 bg-slate-50">
     <SectionSharedBackdrop bg-from="from-slate-900/15" />
-    <div class="max-w-3xl px-4 mx-auto relative">
+    <div class="max-w-5xl px-4 mx-auto relative">
       <!-- Header -->
-      <div class="mb-12 text-center">
+      <div class="mb-8 text-center">
         <h1 class="text-3xl font-black text-slate-900 md:text-4xl">
           {{ $t('how-it-works.heading') }}
         </h1>
@@ -16,90 +16,102 @@
         </p>
       </div>
 
-      <!-- Steps Grid -->
-      <div
-        class="space-y-12 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-linear-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+      <!-- Steps: one row on desktop so all three are visible without scrolling, with a
+      light stagger on the middle card. `items-start` keeps each card at its own natural
+      height instead of the grid default stretching every card flush to the same bottom
+      edge, which was cancelling out the middle card's offset. Stacks to a single column
+      on mobile. -->
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-3 md:items-start">
         <!-- Step 1 -->
-        <div
-          class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-          <div
-            class="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-white bg-slate-500 shadow md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-            <UserSearch class="w-5 h-5 text-secondary-100" />
-          </div>
-          <div
-            class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-900 mb-2">
-              {{
-                $siteBrand === 'benchmarkmyrole'
-                  ? $t('how-it-works.benchmark.step.1.heading')
-                  : $t('how-it-works.step.1.heading')
-              }}
-            </h3>
-            <p class="text-sm text-slate-500 leading-relaxed">
-              {{
-                $siteBrand === 'benchmarkmyrole'
-                  ? $t('how-it-works.benchmark.step.1.body')
-                  : $t('how-it-works.step.1.body')
-              }}
-            </p>
-          </div>
-        </div>
+        <article class="relative flex flex-col p-6 shadow-sm rounded-3xl bg-primary-50">
+          <span class="text-xs font-bold tracking-widest uppercase text-slate-500">{{
+            $t('how-it-works.step-label', { n: 1 })
+          }}</span>
+          <h3 class="mt-1 mb-1 font-bold text-slate-900 text-lg">
+            {{
+              $siteBrand === 'benchmarkmyrole'
+                ? $t('how-it-works.benchmark.step.1.heading')
+                : $t('how-it-works.step.1.heading')
+            }}
+          </h3>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            {{
+              $siteBrand === 'benchmarkmyrole'
+                ? $t('how-it-works.benchmark.step.1.body')
+                : $t('how-it-works.step.1.body')
+            }}
+          </p>
+          <img
+            :src="stepIllustration(1)"
+            :alt="
+              $siteBrand === 'benchmarkmyrole'
+                ? $t('how-it-works.benchmark.step.1.heading')
+                : $t('how-it-works.step.1.heading')
+            "
+            class="w-full h-auto mt-4" />
+        </article>
 
         <!-- Step 2 -->
-        <div
-          class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-          <div
-            class="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-white bg-secondary-600 shadow md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-            <Database class="w-5 h-5 text-white" />
-          </div>
-          <div
-            class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-900 mb-2">
-              {{
-                $siteBrand === 'benchmarkmyrole'
-                  ? $t('how-it-works.benchmark.step.2.heading')
-                  : $t('how-it-works.step.2.heading')
-              }}
-            </h3>
-            <p class="text-sm text-slate-500 leading-relaxed">
-              {{
-                $siteBrand === 'benchmarkmyrole'
-                  ? $t('how-it-works.benchmark.step.2.body')
-                  : $t('how-it-works.step.2.body')
-              }}
-            </p>
-          </div>
-        </div>
+        <article class="relative flex flex-col p-6 shadow-sm rounded-3xl bg-primary-50 md:mt-8">
+          <span class="text-xs font-bold tracking-widest uppercase text-slate-500">{{
+            $t('how-it-works.step-label', { n: 2 })
+          }}</span>
+          <h3 class="mt-1 mb-1 font-bold text-slate-900 text-lg">
+            {{
+              $siteBrand === 'benchmarkmyrole'
+                ? $t('how-it-works.benchmark.step.2.heading')
+                : $t('how-it-works.step.2.heading')
+            }}
+          </h3>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            {{
+              $siteBrand === 'benchmarkmyrole'
+                ? $t('how-it-works.benchmark.step.2.body')
+                : $t('how-it-works.step.2.body')
+            }}
+          </p>
+          <img
+            :src="stepIllustration(2)"
+            :alt="
+              $siteBrand === 'benchmarkmyrole'
+                ? $t('how-it-works.benchmark.step.2.heading')
+                : $t('how-it-works.step.2.heading')
+            "
+            class="w-full h-auto mt-4" />
+        </article>
 
         <!-- Step 3 -->
-        <div
-          class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-          <div
-            class="flex items-center justify-center w-10 h-10 shrink-0 rounded-full border border-white bg-positive-500 shadow md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
-            <BarChart3 class="w-5 h-5 text-white" />
-          </div>
-          <div
-            class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-900 mb-2">
-              {{
-                $siteBrand === 'benchmarkmyrole'
-                  ? $t('how-it-works.benchmark.step.3.heading')
-                  : $t('how-it-works.step.3.heading')
-              }}
-            </h3>
-            <p class="text-sm text-slate-500 leading-relaxed">
-              {{
-                $siteBrand === 'benchmarkmyrole'
-                  ? $t('how-it-works.benchmark.step.3.body')
-                  : $t('how-it-works.step.3.body')
-              }}
-            </p>
-          </div>
-        </div>
+        <article class="relative flex flex-col p-6 shadow-sm rounded-3xl bg-primary-50">
+          <span class="text-xs font-bold tracking-widest uppercase text-slate-500">{{
+            $t('how-it-works.step-label', { n: 3 })
+          }}</span>
+          <h3 class="mt-1 mb-1 font-bold text-slate-900 text-lg">
+            {{
+              $siteBrand === 'benchmarkmyrole'
+                ? $t('how-it-works.benchmark.step.3.heading')
+                : $t('how-it-works.step.3.heading')
+            }}
+          </h3>
+          <p class="text-sm text-slate-600 leading-relaxed">
+            {{
+              $siteBrand === 'benchmarkmyrole'
+                ? $t('how-it-works.benchmark.step.3.body')
+                : $t('how-it-works.step.3.body')
+            }}
+          </p>
+          <img
+            :src="stepIllustration(3)"
+            :alt="
+              $siteBrand === 'benchmarkmyrole'
+                ? $t('how-it-works.benchmark.step.3.heading')
+                : $t('how-it-works.step.3.heading')
+            "
+            class="w-full h-auto mt-4" />
+        </article>
       </div>
 
       <!-- CTA -->
-      <div class="mt-16 text-center">
+      <div class="mt-10 text-center">
         <NuxtLink to="/">
           <AmIButton title="Go to salary search" size="lg">{{
             $siteBrand === 'amiunderpaid'
@@ -113,11 +125,12 @@
 </template>
 
 <script setup lang="ts">
-// ** imports **
-import { BarChart3, Database, UserSearch } from 'lucide-vue-next';
-
 const { $siteBrand } = useNuxtApp();
 const { t } = useI18n();
+
+const stepIllustration = (step: 1 | 2 | 3): string =>
+  `/${$siteBrand === 'benchmarkmyrole' ? 'benchmarkmyrole' : 'amiunderpaid'}-how-it-works-${step}.svg`;
+
 useSeoMeta({
   title:
     $siteBrand === 'benchmarkmyrole'

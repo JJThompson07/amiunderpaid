@@ -1,6 +1,6 @@
 ## Why
 
-The homepage's "About" and "How it works" sections are currently under-optimized for user engagement. Furthermore, the FAQ section suffers from poor UX (jumpy accordion) and lacks a search feature to help users quickly find answers. We need to improve the content in these sections, enhance the accordion UX, add FAQ search functionality, and include more common career/role queries to improve SEO and user retention. 
+The homepage's "About" and "How it works" sections are currently under-optimized for user engagement. Furthermore, the FAQ section suffers from poor UX (jumpy accordion) and lacks a search feature to help users quickly find answers. We need to improve the content in these sections, enhance the accordion UX, add FAQ search functionality, and include more common career/role queries to improve SEO and user retention.
 
 ## What Changes
 
@@ -13,6 +13,7 @@ The homepage's "About" and "How it works" sections are currently under-optimized
 ## Capabilities
 
 ### New Capabilities
+
 - `homepage-informational`: Defines the requirements for the "About", "How it works", and "FAQ" sections, including content guidelines, the accordion UX standards, and the FAQ search functionality.
 - `mca-explainer`: Defines the requirements for the new dedicated MCA Score explanation page, its URL routing, content brackets, and actionable advice.
 

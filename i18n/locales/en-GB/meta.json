@@ -53,6 +53,14 @@
       "description": "How it works, a quick guide to Benchmark My Role"
     }
   },
+  "mca-score": {
+    "title": "MCA Score Explained — Am I Underpaid? — UK",
+    "description": "Understand your Market Compensation Alignment (MCA) Score, what each bracket means, and the actionable steps to take next.",
+    "benchmark": {
+      "title": "MCA Score Explained — Benchmark My Role",
+      "description": "Understand the Market Compensation Alignment (MCA) Score brackets and what they mean for your hiring decisions."
+    }
+  },
   "about": {
     "title": "About — Am I Underpaid? — UK",
     "description": "Discover the reason for Am I Underpaid?",

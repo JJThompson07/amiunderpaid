@@ -19,6 +19,32 @@
     "review": "Action Required"
   },
   "percentile": "{percentile} Percentile",
+  "explainer": {
+    "intro": "Your MCA Score is a single number from 1 to 99 that shows exactly how your pay compares to the real, current market, not a stale annual survey. We triangulate three independent data sources so no single input can skew your result, then place the outcome into one of five brackets below.",
+    "algorithmNote": "We don't publish the exact weighting behind each score, since that's what keeps the engine reliable as the market shifts, but every data source that feeds it is listed below."
+  },
+  "brackets": {
+    "leader": {
+      "range": "80-99",
+      "advice": "You're in the top bracket. If you're the candidate, this is leverage for equity or scope beyond base pay. If you're the employer, this offer should be enough to compete for elite talent."
+    },
+    "strong": {
+      "range": "60-79",
+      "advice": "A solid, market-aligned position. Candidates have a reasonable case for a modest raise; employers can expect this offer to be competitive without needing to lead the market."
+    },
+    "competitive": {
+      "range": "40-59",
+      "advice": "Broadly in line with the market. Candidates should keep tracking live vacancy trends for the role; employers should still review quarterly, as this bracket sits close to the median and can slip."
+    },
+    "below": {
+      "range": "25-39",
+      "advice": "There's a real gap versus the market. Candidates should raise this directly with their manager using the score breakdown as evidence; employers may see this role struggle to attract applicants until the offer is adjusted."
+    },
+    "review": {
+      "range": "1-24",
+      "advice": "This needs attention soon. Candidates should open a direct conversation about pay; employers should expect this offer to significantly underperform in the current market and consider revising it before posting."
+    }
+  },
   "breakdowns": {
     "live": {
       "label": "Live Market Demand",

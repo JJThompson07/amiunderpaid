@@ -220,6 +220,7 @@ const navLinks = computed<NavLink[]>(() => [
     mobileOnly: false,
     children: [
       { to: '/how-it-works', label: t('navbar.how-it-works') },
+      { to: '/mca-score', label: t('navbar.mca-score') },
       { to: '/data-sources', label: t('navbar.data-sources') },
       { to: '/frequently-asked-questions', label: t('navbar.faq-short') }
     ]

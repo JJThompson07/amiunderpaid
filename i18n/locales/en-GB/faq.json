@@ -2,6 +2,10 @@
   "title": "Frequently Asked Questions",
   "subtitle": "Everything you need to know about salary expectations and navigating the {name} tool.",
   "name": "Am I Underpaid?",
+  "search": {
+    "placeholder": "Search FAQs...",
+    "noResults": "No FAQs match your search. Try a different keyword."
+  },
   "questions": {
     "section": {
       "general": {
@@ -75,12 +79,40 @@
         "locationImpact": {
           "question": "Does my location affect my MCA Score?",
           "answer": "Absolutely. Our engine applies dynamic regional modifiers. A $100k salary in San Francisco will result in a different MCA Score than the same salary in Austin, reflecting the specific cost of labor in your state or city."
+        },
+        "brackets": {
+          "question": "What are the MCA bracket breakdowns?",
+          "answer": "Your MCA Score places you into one of five brackets, from 'Action Required' up to 'Market Leader'. See our {link} for a full breakdown of each bracket and what to do next.",
+          "linkText": "MCA Score guide"
+        }
+      },
+      "career": {
+        "title": "Career & Negotiation",
+        "shouldSwitch": {
+          "question": "Should I look for a new role?",
+          "answer": "If your MCA Score consistently falls in the 'Below Market' or 'Action Required' range and a conversation with your manager hasn't closed the gap, it may be worth exploring the market. Run your search periodically to track how your alignment changes as market conditions shift."
+        },
+        "liveMarketData": {
+          "question": "Do you use live job market data?",
+          "answer": "Yes. Alongside official ONS benchmarks, we continuously ingest live vacancy data from Adzuna so your MCA Score reflects what employers are hiring for right now, not just historical averages."
+        },
+        "searchDataUsage": {
+          "question": "What do you do with my search data?",
+          "answer": "Your job title, location, and salary inputs are used only to generate your MCA Score and are never sold to recruiters or employers. See our Privacy Policy for the full details on how search data is stored and used."
+        },
+        "negotiationLeverage": {
+          "question": "How can I use this data to negotiate my salary?",
+          "answer": "Bring your MCA Score breakdown to your next review as evidence. Showing your employer exactly where you sit against live vacancies and ONS benchmarks reframes the conversation around market data rather than personal opinion."
         }
       }
     }
   },
   "benchmark": {
     "name": "Benchmark My Role",
+    "search": {
+      "placeholder": "Search FAQs...",
+      "noResults": "No FAQs match your search. Try a different keyword."
+    },
     "questions": {
       "section": {
         "general": {
@@ -142,6 +174,30 @@
           "dataTriangulation": {
             "question": "What are the 'Three Pillars' of the benchmark?",
             "answer": "We triangulate every role using: 1. Micro Data (Specific peer-to-peer job roles), 2. Macro Data (National economic averages), and 3. Live Data (Real-time demand from 700,000+ active listings). This ensures your offer is grounded in both policy and reality."
+          },
+          "brackets": {
+            "question": "What are the MCA bracket breakdowns?",
+            "answer": "Every benchmark result places the offer into one of five alignment brackets, from 'Action Required' up to 'Market Leader'. See our {link} for a full breakdown of each bracket and what it means for your offer.",
+            "linkText": "MCA Score guide"
+          }
+        },
+        "career": {
+          "title": "Career & Negotiation",
+          "roleReview": {
+            "question": "When should I re-benchmark an open role?",
+            "answer": "Re-run the benchmark any time you're struggling to attract applicants, before extending a counter-offer, or at least once a quarter — live market rates shift faster than most internal pay bands are updated."
+          },
+          "liveMarketData": {
+            "question": "Do you use live job market data?",
+            "answer": "Yes. Alongside official ONS benchmarks, we continuously ingest live vacancy data so every benchmark reflects who's actually hiring right now, not just historical averages."
+          },
+          "searchDataUsage": {
+            "question": "What do you do with my search data?",
+            "answer": "The role, location, and salary figures you enter are used only to generate your benchmark and are never shared with candidates or third parties. See our Privacy Policy for full details."
+          },
+          "negotiationLeverage": {
+            "question": "How can I use this data when extending an offer?",
+            "answer": "Share the MCA breakdown with the candidate as objective evidence your offer is grounded in current market data — it closes negotiations faster than a number with no context behind it."
           }
         }
       }

@@ -7,6 +7,20 @@
     "app-name": "Am I Underpaid?",
     "outro": "Our mission is simple: to give every employee the data they need to negotiate with confidence. We believe that when salary data is open and accessible, the pay gap closes and everyone wins."
   },
+  "highlights": {
+    "1": {
+      "title": "Real-Time Data",
+      "body": "Every score blends live Adzuna vacancies with official ONS benchmarks, refreshed continuously."
+    },
+    "2": {
+      "title": "No Guesswork",
+      "body": "Get a definitive MCA Score from 1-99 instead of a vague 'ballpark' salary range."
+    },
+    "3": {
+      "title": "Built For Negotiation",
+      "body": "Walk into your next review with evidence, not just instinct."
+    }
+  },
   "benchmark": {
     "body": {
       "bold": "Data-driven alignment is the key to a fair and efficient job market.",
@@ -14,6 +28,20 @@
       "middle": "{app-name} was developed to bridge this informational gap through real-time data integration.",
       "app-name": "Benchmark My Role",
       "outro": "The platform's mission is to provide an objective, data-backed standard for salary transparency. By cross-referencing 700,000+ active vacancies with official benchmarks, we ensure that every hiring decision and career move is rooted in current market reality, fostering a more equitable landscape for everyone"
+    },
+    "highlights": {
+      "1": {
+        "title": "Live Market Signal",
+        "body": "Every benchmark blends 700,000+ active vacancies with official ONS data, refreshed continuously."
+      },
+      "2": {
+        "title": "Objective Scoring",
+        "body": "Replace 'gut feel' salary bands with a definitive MCA Score employers and candidates both trust."
+      },
+      "3": {
+        "title": "Built For Hiring Decisions",
+        "body": "Validate an offer before you post it, and defend it with confidence when you extend it."
+      }
     }
   }
 }

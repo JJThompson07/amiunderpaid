@@ -6,7 +6,7 @@
         <h1 class="text-3xl font-black text-slate-900 md:text-4xl">{{ $t('about.heading') }}</h1>
       </div>
 
-      <div
+      <article
         class="p-8 space-y-6 leading-relaxed bg-white border shadow-xl md:p-12 rounded-3xl border-slate-200 text-slate-600">
         <p>
           <span class="font-bold text-slate-900">{{
@@ -44,7 +44,33 @@
               : $t('about.benchmark.body.outro')
           }}
         </p>
-      </div>
+      </article>
+
+      <section class="grid grid-cols-1 gap-4 mt-8 sm:grid-cols-3" aria-label="Why it matters">
+        <div
+          v-for="n in ['1', '2', '3']"
+          :key="n"
+          class="p-6 bg-white border shadow-sm rounded-2xl border-slate-200">
+          <h2 class="text-sm font-bold text-slate-900">
+            {{
+              $t(
+                $siteBrand === 'amiunderpaid'
+                  ? `about.highlights.${n}.title`
+                  : `about.benchmark.highlights.${n}.title`
+              )
+            }}
+          </h2>
+          <p class="mt-2 text-sm leading-relaxed text-slate-500">
+            {{
+              $t(
+                $siteBrand === 'amiunderpaid'
+                  ? `about.highlights.${n}.body`
+                  : `about.benchmark.highlights.${n}.body`
+              )
+            }}
+          </p>
+        </div>
+      </section>
     </div>
   </div>
 </template>
