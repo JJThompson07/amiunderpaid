@@ -1,10 +1,11 @@
 {
   "heading": "About Us",
   "body": {
-    "bold": "Salary transparency is broken.",
-    "intro": "Most professionals rely on uncomfortable conversations with coworkers or outdated surveys to figure out their true market value.",
+    "bold": "Striving for salary transparency.",
+    "intro": "Discussing pay has always been awkward, especially when you step into a conversation without knowing where you actually stand. Most people are forced to rely on uncomfortable whispers with colleagues or outdated annual reports to guess their true market value.",
     "middle": "We built {app-name} to change that.",
     "app-name": "Am I Underpaid?",
+    "outro-title": "Our Mission",
     "outro": "Our mission is straightforward: to equip every worker with the hard data needed to negotiate compensation confidently. When pay data is transparent, the wage gap shrinks and everyone benefits."
   },
   "highlights": {
@@ -27,6 +28,7 @@
       "intro": "Historically, a position's true market value has been a moving target, clouded by stale data and unreliable reporting. This disconnect makes it tough for companies to remain competitive and for job seekers to understand their true worth.",
       "middle": "{app-name} was developed to bridge this informational gap through real-time data integration.",
       "app-name": "Benchmark My Role",
+      "outro-title": "Our Mission",
       "outro": "The platform's mission is to provide an objective, data-backed standard for salary transparency. By cross-referencing over 7,000,000 active job openings with federal benchmarks, we ensure every hiring decision and career move is grounded in today's market reality, fostering a more equitable landscape for everyone."
     },
     "highlights": {
