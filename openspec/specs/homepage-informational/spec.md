@@ -31,12 +31,12 @@ The system SHALL display FAQs using an accordion component that smoothly expands
 
 ### Requirement: FAQ Search Functionality
 
-The system SHALL provide a search input above the FAQ section that allows users to instantly filter FAQ items based on keyword matches in either the question or the answer.
+The system SHALL provide a search input above the FAQ section that allows users to filter FAQ items based on keyword matches in either the question or the answer. The filter SHALL be debounced so it does not re-run on every keystroke.
 
 #### Scenario: User searches for a specific FAQ
 
 - **WHEN** a user types a keyword into the FAQ search input
-- **THEN** the FAQ list filters to only show items containing that keyword in the question or answer
+- **THEN** the FAQ list filters to only show items containing that keyword in the question or answer, after a short debounce delay once typing pauses
 
 ### Requirement: Career and Role FAQs
 

@@ -157,9 +157,16 @@ const resolvedSections = computed<Section[]>(() =>
 );
 
 // 3. Client-side search: filters the resolved list by keyword match in question or answer.
+// The query is debounced so filtering doesn't re-run on every keystroke.
 const searchQuery = ref('');
+const debouncedSearchQuery = ref('');
+const updateDebouncedSearchQuery = useDebounceFn((value: string) => {
+  debouncedSearchQuery.value = value;
+}, 300);
+watch(searchQuery, (value) => updateDebouncedSearchQuery(value));
+
 const filteredSections = computed<Section[]>(
-  () => filterFaqSections(resolvedSections.value, searchQuery.value) as Section[]
+  () => filterFaqSections(resolvedSections.value, debouncedSearchQuery.value) as Section[]
 );
 
 // Track which accordions are open. We'll open the first general question by default.
