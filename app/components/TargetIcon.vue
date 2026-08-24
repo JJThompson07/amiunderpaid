@@ -1,9 +1,9 @@
 <template>
-  <div class="relative flex items-center justify-center w-12 h-12">
+  <div class="relative flex items-center justify-center w-8 h-8">
     <img
       :src="`/mca-brackets/${bracketMap[bracket].svg}`"
       alt=""
-      class="absolute object-contain w-8 h-8" />
+      class="absolute inset-0 object-contain w-8 h-8" />
     <component
       :is="bracketMap[bracket].icon"
       class="relative z-10 w-5 h-5"
