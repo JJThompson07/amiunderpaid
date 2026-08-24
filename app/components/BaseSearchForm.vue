@@ -96,7 +96,9 @@
       </form>
     </div>
 
-    <div v-if="mode === 'salary'" class="flex justify-between items-center px-4 py-3 mt-1">
+    <div
+      v-if="mode === 'salary'"
+      class="flex flex-wrap justify-between items-center px-4 py-3 mt-1 gap-y-3">
       <a
         :href="alternateSiteUrl"
         class="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors flex items-center gap-1 group">

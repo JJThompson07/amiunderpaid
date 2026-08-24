@@ -30,3 +30,5 @@ service-account.json
 coverage/
 playwright-report/
 test-results/
+.vercel
+.env*
