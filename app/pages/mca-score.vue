@@ -48,15 +48,18 @@
             :key="bracket"
             class="flex flex-col p-6 shadow-sm transition-shadow rounded-3xl hover:shadow-md"
             :class="bracketStyles[bracket].bg">
-            <div class="flex items-center justify-between mb-3">
-              <span
-                class="px-3 py-1 rounded-full text-xs font-bold"
-                :class="bracketStyles[bracket].badge">
-                {{ $t(`mca.labels.${bracket}`) }}
-              </span>
-              <span class="text-xs font-bold text-slate-400">{{
-                $t(`mca.brackets.${bracket}.range`)
-              }}</span>
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex flex-col items-start gap-2">
+                <span
+                  class="px-3 py-1 rounded-full text-xs font-bold"
+                  :class="bracketStyles[bracket].badge">
+                  {{ $t(`mca.labels.${bracket}`) }}
+                </span>
+                <span class="text-xs font-bold text-slate-400">{{
+                  $t(`mca.brackets.${bracket}.range`)
+                }}</span>
+              </div>
+              <TargetIcon :bracket="bracket" class="shrink-0" />
             </div>
 
             <!-- Inline "you are here" spectrum bar for this bracket -->

@@ -1,11 +1,11 @@
 <template>
   <div
-    class="card-result p-6 border shadow-xl rounded-2xl flex flex-col gap-3 flex-1 justify-between items-center relative select-none"
+    class="card-result p-6 border shadow-sm rounded-3xl flex flex-col gap-3 flex-1 justify-between items-center relative select-none"
     :class="{ 'overflow-hidden': overflowHidden, [cardClasses]: true }">
     <section class="card-result--header flex items-center gap-2 justify-between w-full">
-      <div class="flex flex-row gap-2 items-center">
-        <div class="p-1.5 bg-slate-100 rounded-lg text-slate-600">
-          <component :is="icon" class="w-4 h-4" aria-hidden="true" />
+      <div class="flex flex-row gap-3 items-center">
+        <div class="p-2 bg-slate-100 rounded-xl text-slate-600">
+          <component :is="icon" class="w-5 h-5" aria-hidden="true" />
         </div>
         <h4 class="font-bold text-sm text-slate-900">{{ title }}</h4>
       </div>
@@ -89,11 +89,7 @@ const cardClasses = computed(() => {
   if (!props.userSalary) {
     return 'bg-slate-100 border-slate-200';
   }
-  return props.comparison === 1
-    ? 'bg-linear-to-b from-positive-50/75 via-white to-white border-positive-100'
-    : props.comparison === -1
-      ? 'bg-linear-to-b from-negative-50/75 via-white to-white border-negative-100'
-      : 'bg-linear-to-b from-neutral-100/75 via-white to-white border-neutral-100';
+  return 'bg-white border-slate-200';
 });
 
 const chipData = computed(() => {
