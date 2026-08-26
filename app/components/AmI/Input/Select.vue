@@ -17,7 +17,7 @@
       {{ helper }}
     </span>
 
-    <div class="relative flex mt-1">
+    <div ref="triggerRef" class="relative flex mt-1">
       <div v-if="icon" class="absolute left-3 top-3 z-10 pointer-events-none">
         <component
           :is="icon"
@@ -98,7 +98,8 @@
 
       <div
         v-if="isOpen && filteredOptions.length > 0"
-        class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 py-1.5 custom-scrollbar">
+        class="absolute left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto z-50 py-1.5 custom-scrollbar"
+        :class="dropDirection === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'">
         <button
           v-for="(option, index) in filteredOptions"
           :key="option.value"
@@ -132,7 +133,8 @@
 
       <div
         v-else-if="isOpen && searchQuery && filteredOptions.length === 0"
-        class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-4 text-center text-sm text-slate-500 font-medium">
+        class="absolute left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-4 text-center text-sm text-slate-500 font-medium"
+        :class="dropDirection === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'">
         {{ $t('common.items.none-found', { search: searchQuery }) }}
       </div>
     </div>
@@ -140,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { onClickOutside, useFocus } from '@vueuse/core';
 import type { Component, PropType } from 'vue';
 import { X } from 'lucide-vue-next';
@@ -190,13 +192,37 @@ const emit = defineEmits<{
 
 // Refs
 const containerRef = ref<HTMLElement | null>(null);
+const triggerRef = ref<HTMLElement | null>(null);
 const searchInput = ref<HTMLInputElement | null>(null);
 const isOpen = ref(false);
 const searchQuery = ref('');
 const activeIndex = ref(-1);
+const dropDirection = ref<'down' | 'up'>('down');
 
 // VueUse reactive focus!
 const { focused } = useFocus(searchInput);
+
+// Matches the dropdown panel's max-h-60 (240px) -- flip to opening upward
+// only when there's genuinely less room below the trigger than the panel
+// wants AND more room above, so it doesn't flip needlessly for a panel that
+// would've fit anyway.
+const DROPDOWN_MAX_HEIGHT = 240;
+
+const updateDropDirection = (): void => {
+  if (!import.meta.client || !triggerRef.value) {
+    return;
+  }
+  const rect = triggerRef.value.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+  dropDirection.value = spaceBelow < DROPDOWN_MAX_HEIGHT && spaceAbove > spaceBelow ? 'up' : 'down';
+};
+
+watch(isOpen, (open) => {
+  if (open) {
+    updateDropDirection();
+  }
+});
 
 // Helpers
 const getLabelForValue = (val: string): string => {

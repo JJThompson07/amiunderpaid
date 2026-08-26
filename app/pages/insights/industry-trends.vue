@@ -256,6 +256,11 @@ const formatTooltip = (params: unknown): string => {
   return `<div style="font-weight:700;font-size:13px;">${label}</div>${rowsHtml}${moreHtml}`;
 };
 
+// How far below the lowest plotted value and above the highest to pad the
+// y-axis, so a tight cluster of high salaries (e.g. all above £40k) doesn't
+// get squashed against a y-axis that's always forced down to 0.
+const Y_AXIS_PADDING = 10_000;
+
 const renderChart = (): void => {
   if (!chart.value) {
     return;
@@ -264,6 +269,31 @@ const renderChart = (): void => {
   const months = allMonths.value;
   const slate400 = getThemeColor('--color-slate-400', '#94a3b8');
   const slate100 = getThemeColor('--color-slate-100', '#f1f5f9');
+
+  const series = visibleIndustries.value.map((industry) => {
+    const byMonth = new Map(industry.history.map((point) => [point.month, point.average]));
+    const color = industryScaleMap.value.get(industry.categoryTag)?.['500'];
+    return {
+      name: industry.label,
+      type: 'line',
+      smooth: true,
+      symbol: 'circle',
+      symbolSize: 6,
+      color,
+      lineStyle: { color },
+      itemStyle: { color },
+      data: months.map((month) => byMonth.get(month) ?? null),
+      connectNulls: true
+    };
+  });
+
+  const plottedValues = series
+    .flatMap((s) => s.data)
+    .filter((value): value is number => typeof value === 'number');
+  const yAxisMin =
+    plottedValues.length > 0 ? Math.max(0, Math.min(...plottedValues) - Y_AXIS_PADDING) : undefined;
+  const yAxisMax =
+    plottedValues.length > 0 ? Math.max(...plottedValues) + Y_AXIS_PADDING : undefined;
 
   chart.value.setOption(
     {
@@ -296,27 +326,14 @@ const renderChart = (): void => {
       yAxis: {
         type: 'value',
         name: t('insights.chart.yAxisLabel'),
+        min: yAxisMin,
+        max: yAxisMax,
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: { color: slate400 },
         splitLine: { lineStyle: { type: 'dashed', color: slate100 } }
       },
-      series: visibleIndustries.value.map((industry) => {
-        const byMonth = new Map(industry.history.map((point) => [point.month, point.average]));
-        const color = industryScaleMap.value.get(industry.categoryTag)?.['500'];
-        return {
-          name: industry.label,
-          type: 'line',
-          smooth: true,
-          symbol: 'circle',
-          symbolSize: 6,
-          color,
-          lineStyle: { color },
-          itemStyle: { color },
-          data: months.map((month) => byMonth.get(month) ?? null),
-          connectNulls: true
-        };
-      })
+      series
     },
     true
   );
