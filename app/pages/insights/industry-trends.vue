@@ -64,28 +64,41 @@
             </div>
           </div>
 
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="industry in industries"
-              :key="industry.categoryTag"
-              type="button"
-              class="px-3 py-1.5 text-xs font-bold rounded-full border border-transparent cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0 active:shadow-none"
-              :class="
-                selectedIndustries.includes(industry.categoryTag)
-                  ? 'bg-(--pill-bg) text-(--pill-text) hover:brightness-95'
-                  : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-500'
-              "
-              :style="
-                selectedIndustries.includes(industry.categoryTag)
-                  ? {
-                      '--pill-bg': industryScaleMap.get(industry.categoryTag)?.['100'],
-                      '--pill-text': industryScaleMap.get(industry.categoryTag)?.['800']
-                    }
-                  : {}
-              "
-              @click="toggleIndustry(industry.categoryTag)">
-              {{ industry.label }}
-            </button>
+          <div>
+            <p class="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">
+              {{ $t('insights.controls.showing', { count: visibleIndustries.length }) }}
+            </p>
+            <p v-if="visibleIndustries.length === 0" class="text-xs text-slate-400">
+              {{ $t('insights.controls.noneShowing') }}
+            </p>
+            <div v-else class="flex flex-wrap gap-2">
+              <button
+                v-for="industry in visibleIndustries"
+                :key="industry.categoryTag"
+                type="button"
+                :class="pillClasses(industry.categoryTag)"
+                :style="pillStyle(industry.categoryTag)"
+                @click="toggleIndustry(industry.categoryTag)">
+                {{ industry.label }}
+              </button>
+            </div>
+          </div>
+
+          <div v-if="hiddenIndustries.length > 0" class="pt-4 mt-4 border-t border-slate-100">
+            <p class="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">
+              {{ $t('insights.controls.hidden', { count: hiddenIndustries.length }) }}
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="industry in hiddenIndustries"
+                :key="industry.categoryTag"
+                type="button"
+                :class="pillClasses(industry.categoryTag)"
+                :style="pillStyle(industry.categoryTag)"
+                @click="toggleIndustry(industry.categoryTag)">
+                {{ industry.label }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -176,6 +189,29 @@ const visibleIndustries = computed<IndustryTrendEntry[]>(() =>
   industries.value.filter((industry) => selectedIndustries.value.includes(industry.categoryTag))
 );
 
+const hiddenIndustries = computed<IndustryTrendEntry[]>(() =>
+  industries.value.filter((industry) => !selectedIndustries.value.includes(industry.categoryTag))
+);
+
+// Shared by both the "Showing" and "Hidden" pill groups so their styling
+// can't drift out of sync with each other.
+const pillClasses = (categoryTag: string): string => {
+  const base =
+    'px-3 py-1.5 text-xs font-bold rounded-full border border-transparent cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0 active:shadow-none';
+  const variant = selectedIndustries.value.includes(categoryTag)
+    ? 'bg-(--pill-bg) text-(--pill-text) hover:brightness-95'
+    : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-500';
+  return `${base} ${variant}`;
+};
+
+const pillStyle = (categoryTag: string): Record<string, string> => {
+  if (!selectedIndustries.value.includes(categoryTag)) {
+    return {};
+  }
+  const scale = industryScaleMap.value.get(categoryTag);
+  return { '--pill-bg': scale?.['100'] ?? '', '--pill-text': scale?.['800'] ?? '' };
+};
+
 const allMonths = computed<string[]>(() => {
   const months = new Set<string>();
   for (const industry of visibleIndustries.value) {
@@ -241,7 +277,7 @@ const formatTooltip = (params: unknown): string => {
         typeof row.value === 'number'
           ? `${currencySymbol.value}${Math.round(row.value).toLocaleString()}`
           : '';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:4px;">
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:4px;font-size:12px;">
         <span>${row.marker ?? ''}${row.seriesName ?? ''}</span>
         <strong>${value}</strong>
       </div>`;
@@ -253,7 +289,7 @@ const formatTooltip = (params: unknown): string => {
       ? `<div style="margin-top:6px;color:#94a3b8;font-size:11px;">+${remaining} more</div>`
       : '';
 
-  return `<div style="font-weight:700;">${label}</div>${rowsHtml}${moreHtml}`;
+  return `<div style="font-weight:700;font-size:13px;">${label}</div>${rowsHtml}${moreHtml}`;
 };
 
 const renderChart = (): void => {
@@ -277,7 +313,7 @@ const renderChart = (): void => {
         borderWidth: 0,
         borderRadius: 12,
         padding: 12,
-        textStyle: { color: '#1e293b', fontFamily: 'inherit' },
+        textStyle: { color: '#1e293b', fontFamily: 'inherit', fontSize: 12 },
         extraCssText: 'box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);',
         // A CSS max-height/scroll doesn't actually work here: this tooltip
         // follows the cursor (it's not a fixed overlay), so moving the mouse

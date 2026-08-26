@@ -7,6 +7,9 @@
   "controls": {
     "selectAll": "Select All",
     "clearAll": "Clear All",
+    "showing": "Showing ({count})",
+    "hidden": "Hidden ({count})",
+    "noneShowing": "Nothing selected — pick an industry below to show it on the graph.",
     "timeRange": {
       "label": "Time Range",
       "last6": "Last 6 Months",
