@@ -226,6 +226,11 @@ const navLinks = computed<NavLink[]>(() => [
     ]
   },
   {
+    label: t('navbar.group.insights'),
+    mobileOnly: false,
+    children: [{ to: '/insights/industry-trends', label: t('navbar.industry-trends') }]
+  },
+  {
     label: t('navbar.group.partners'),
     mobileOnly: false,
     children: [{ to: '/recruiter/login', label: t('navbar.recruiters') }]

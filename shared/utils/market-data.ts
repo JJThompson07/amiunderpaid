@@ -59,3 +59,29 @@ export type JobCategoryEntry = {
   label: string;
   tag: string;
 };
+
+/** A single month's average salary data point, as stored/returned for industry trends. */
+export type HistoryPoint = {
+  month: string;
+  average: number;
+};
+
+/** One industry's historical trend data, as returned by /api/market-data/industry-trends. */
+export type IndustryTrendEntry = {
+  categoryTag: string;
+  label: string;
+  history: HistoryPoint[];
+  /**
+   * Count of distinct adzuna_jobs_cache search variants for this category --
+   * a real-user-driven proxy for lookup popularity, used to pick the default
+   * set of industries shown on load. See countCategoryLookups() for what
+   * this does and doesn't measure.
+   */
+  lookupCount: number;
+};
+
+/** Response shape for the /api/market-data/industry-trends endpoint. */
+export type IndustryTrendsResponse = {
+  country: 'gb' | 'us';
+  industries: IndustryTrendEntry[];
+};

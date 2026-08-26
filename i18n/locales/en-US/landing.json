@@ -29,6 +29,11 @@
     "subheading": "Looking to hire? Ensure your offer stands out.",
     "subheading-context": "BenchmarkMyRole compares your open roles against live market vacancies and official BLS benchmarks. Generate an MCA Score for your job descriptions to ensure you are offering a highly competitive package to top US talent."
   },
+  "industryTrendsCta": {
+    "heading": "Wondering how your industry stacks up against the rest of the market?",
+    "body": "Track industry average salaries over time and see how your sector is performing.",
+    "cta": "View Industry Trends"
+  },
   "trending": {
     "heading": "Popular US Salaries",
     "roles": [

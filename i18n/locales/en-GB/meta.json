@@ -61,6 +61,14 @@
       "description": "Understand the Market Compensation Alignment (MCA) Score brackets and what they mean for your hiring decisions."
     }
   },
+  "industry-trends": {
+    "title": "Industry Salary Trends — Am I Underpaid? — UK",
+    "description": "Track how average salaries across UK industries have moved over the last year, powered by live market data.",
+    "benchmark": {
+      "title": "Industry Salary Trends — Benchmark My Role",
+      "description": "Track how average salaries across industries have moved over the last year, powered by live market data."
+    }
+  },
   "about": {
     "title": "About — Am I Underpaid? — UK",
     "description": "Discover the reason for Am I Underpaid?",

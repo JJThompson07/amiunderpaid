@@ -20,6 +20,7 @@ import account from './account.json';
 import toast from './toast.json';
 import auth from './auth.json';
 import admin from './admin.json';
+import insights from './insights.json';
 
 export default defineI18nLocale(async () => {
   return {
@@ -44,6 +45,7 @@ export default defineI18nLocale(async () => {
     account,
     toast,
     auth,
-    admin
+    admin,
+    insights
   };
 });

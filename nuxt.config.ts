@@ -167,7 +167,11 @@ export default defineNuxtConfig({
     stripeSecretKey: process.env.STRIPE_SECRET_KEY,
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     resendApiKey: process.env.RESEND_API_KEY,
-    searchTokenSecret: process.env.SEARCH_TOKEN_SECRET
+    searchTokenSecret: process.env.SEARCH_TOKEN_SECRET,
+    // Named CRON_SECRET (not a custom name) to match Vercel's own reserved
+    // convention: Vercel automatically sends this env var's value as the
+    // Authorization: Bearer header when it invokes a scheduled cron job.
+    cronSecret: process.env.CRON_SECRET
   },
 
   // ** 6. Vite / Tailwind **

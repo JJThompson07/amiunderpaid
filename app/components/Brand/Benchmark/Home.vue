@@ -12,6 +12,9 @@
 
       <SectionAmITrendingSearches />
 
+      <!-- Industry Trends CTA -->
+      <SectionSharedIndustryTrendsCta />
+
       <SectionSharedTrustBadges />
     </main>
   </div>
