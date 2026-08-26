@@ -33,8 +33,8 @@
         <div
           v-if="!loading && !error && industries.length > 0"
           class="p-6 bg-white border shadow-sm rounded-3xl border-slate-200">
-          <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
-            <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-start gap-4">
+            <div class="flex items-center gap-2 shrink-0 pt-2">
               <button
                 type="button"
                 class="px-3 py-1.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
@@ -49,7 +49,15 @@
               </button>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex-1 min-w-50">
+              <AmIInputSelect
+                v-model="selectedIndustries"
+                :options="industryOptions"
+                :chip-color-for="chipColorFor"
+                :placeholder="$t('insights.controls.industriesPlaceholder')" />
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0 pt-2">
               <label for="trends-time-range" class="text-xs font-bold text-slate-400">
                 {{ $t('insights.controls.timeRange.label') }}
               </label>
@@ -63,43 +71,6 @@
               </select>
             </div>
           </div>
-
-          <div>
-            <p class="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">
-              {{ $t('insights.controls.showing', { count: visibleIndustries.length }) }}
-            </p>
-            <p v-if="visibleIndustries.length === 0" class="text-xs text-slate-400">
-              {{ $t('insights.controls.noneShowing') }}
-            </p>
-            <div v-else class="flex flex-wrap gap-2">
-              <button
-                v-for="industry in visibleIndustries"
-                :key="industry.categoryTag"
-                type="button"
-                :class="pillClasses(industry.categoryTag)"
-                :style="pillStyle(industry.categoryTag)"
-                @click="toggleIndustry(industry.categoryTag)">
-                {{ industry.label }}
-              </button>
-            </div>
-          </div>
-
-          <div v-if="hiddenIndustries.length > 0" class="pt-4 mt-4 border-t border-slate-100">
-            <p class="mb-2 text-xs font-bold tracking-wide text-slate-400 uppercase">
-              {{ $t('insights.controls.hidden', { count: hiddenIndustries.length }) }}
-            </p>
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="industry in hiddenIndustries"
-                :key="industry.categoryTag"
-                type="button"
-                :class="pillClasses(industry.categoryTag)"
-                :style="pillStyle(industry.categoryTag)"
-                @click="toggleIndustry(industry.categoryTag)">
-                {{ industry.label }}
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -109,6 +80,7 @@
 <script setup lang="ts">
 import * as echarts from 'echarts';
 import { generateColorScale } from '~~/shared/utils/color';
+import type { AutocompleteOption } from '~/components/AmI/Input/Select.vue';
 import type { ColorScale } from '~~/shared/utils/color';
 import type { IndustryTrendEntry, IndustryTrendsResponse } from '~~/shared/utils/market-data';
 
@@ -189,27 +161,21 @@ const visibleIndustries = computed<IndustryTrendEntry[]>(() =>
   industries.value.filter((industry) => selectedIndustries.value.includes(industry.categoryTag))
 );
 
-const hiddenIndustries = computed<IndustryTrendEntry[]>(() =>
-  industries.value.filter((industry) => !selectedIndustries.value.includes(industry.categoryTag))
+const industryOptions = computed<AutocompleteOption[]>(() =>
+  industries.value.map((industry) => ({ value: industry.categoryTag, label: industry.label }))
 );
 
-// Shared by both the "Showing" and "Hidden" pill groups so their styling
-// can't drift out of sync with each other.
-const pillClasses = (categoryTag: string): string => {
-  const base =
-    'px-3 py-1.5 text-xs font-bold rounded-full border border-transparent cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0 active:shadow-none';
-  const variant = selectedIndustries.value.includes(categoryTag)
-    ? 'bg-(--pill-bg) text-(--pill-text) hover:brightness-95'
-    : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-500';
-  return `${base} ${variant}`;
-};
-
-const pillStyle = (categoryTag: string): Record<string, string> => {
-  if (!selectedIndustries.value.includes(categoryTag)) {
-    return {};
-  }
+// Colours each selected-industry chip in the AmIInputSelect multiselect to
+// match its line on the graph, using the same 50-900 scale the chart itself
+// reads from -- see the industryScaleMap comment above.
+const chipColorFor = (
+  categoryTag: string
+): { bg: string; text: string; border: string } | undefined => {
   const scale = industryScaleMap.value.get(categoryTag);
-  return { '--pill-bg': scale?.['100'] ?? '', '--pill-text': scale?.['800'] ?? '' };
+  if (!scale) {
+    return undefined;
+  }
+  return { bg: scale['100'], text: scale['800'], border: scale['200'] };
 };
 
 const allMonths = computed<string[]>(() => {
@@ -223,15 +189,6 @@ const allMonths = computed<string[]>(() => {
   const limit = monthsBack.value;
   return limit ? sorted.slice(-limit) : sorted;
 });
-
-const toggleIndustry = (categoryTag: string): void => {
-  const idx = selectedIndustries.value.indexOf(categoryTag);
-  if (idx === -1) {
-    selectedIndustries.value.push(categoryTag);
-  } else {
-    selectedIndustries.value.splice(idx, 1);
-  }
-};
 
 const selectAll = (): void => {
   selectedIndustries.value = industries.value.map((industry) => industry.categoryTag);

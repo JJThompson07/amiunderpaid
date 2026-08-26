@@ -40,11 +40,18 @@
           <span
             v-for="val in modelValue"
             :key="val"
-            class="bg-primary-50 text-primary-700 border border-primary-100 rounded-lg flex items-center gap-1 px-2.5 py-1 text-sm font-bold shadow-xs whitespace-nowrap">
+            class="rounded-lg flex items-center gap-1 px-2.5 py-1 text-sm font-bold shadow-xs whitespace-nowrap border"
+            :class="
+              chipColorFor
+                ? 'bg-(--chip-bg) text-(--chip-text) border-(--chip-border)'
+                : 'bg-primary-50 text-primary-700 border-primary-100'
+            "
+            :style="chipStyleFor(val)">
             {{ getLabelForValue(val) }}
             <button
               type="button"
-              class="text-primary-400 hover:text-negative-500 transition-colors ml-1 focus:outline-none"
+              class="hover:text-negative-500 transition-colors ml-1 focus:outline-none"
+              :class="chipColorFor ? '' : 'text-primary-400'"
               @click.stop="removeOption(val)">
               <X class="h-3.5 w-3.5" />
             </button>
@@ -168,7 +175,13 @@ const props = defineProps({
   disabled: { type: Boolean, default: false },
   loading: { type: Boolean, default: false },
   optional: { type: Boolean, default: false },
-  externalList: { type: Boolean, default: false }
+  externalList: { type: Boolean, default: false },
+  chipColorFor: {
+    type: Function as PropType<
+      (value: string) => { bg: string; text: string; border: string } | undefined
+    >,
+    required: false
+  }
 });
 
 const emit = defineEmits<{
@@ -189,6 +202,18 @@ const { focused } = useFocus(searchInput);
 const getLabelForValue = (val: string): string => {
   const found = props.options.find((opt) => opt.value === val);
   return found ? found.label : val;
+};
+
+// When chipColorFor is supplied, chips render with a caller-provided colour
+// (e.g. one series colour per option in a data-viz legend) via CSS custom
+// properties instead of the default primary-coloured badge -- see
+// CODE_STANDARDS.md's dynamic-colour-scale note.
+const chipStyleFor = (val: string): Record<string, string> => {
+  const colour = props.chipColorFor?.(val);
+  if (!colour) {
+    return {};
+  }
+  return { '--chip-bg': colour.bg, '--chip-text': colour.text, '--chip-border': colour.border };
 };
 
 // Computed
