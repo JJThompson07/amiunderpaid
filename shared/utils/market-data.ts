@@ -59,3 +59,22 @@ export type JobCategoryEntry = {
   label: string;
   tag: string;
 };
+
+/** A single month's average salary data point, as stored/returned for industry trends. */
+export type HistoryPoint = {
+  month: string;
+  average: number;
+};
+
+/** One industry's historical trend data, as returned by /api/market-data/industry-trends. */
+export type IndustryTrendEntry = {
+  categoryTag: string;
+  label: string;
+  history: HistoryPoint[];
+};
+
+/** Response shape for the /api/market-data/industry-trends endpoint. */
+export type IndustryTrendsResponse = {
+  country: 'gb' | 'us';
+  industries: IndustryTrendEntry[];
+};

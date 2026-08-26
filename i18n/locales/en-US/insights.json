@@ -1,0 +1,20 @@
+{
+  "header": "Industry Salary Trends",
+  "intro": "Track how average salaries across different industries have moved over the last year, using live market data.",
+  "loading": "Loading industry trends...",
+  "error": "We couldn't load industry trends right now. Please try again shortly.",
+  "empty": "No industry data available yet.",
+  "controls": {
+    "selectAll": "Select All",
+    "clearAll": "Clear All",
+    "timeRange": {
+      "label": "Time Range",
+      "last6": "Last 6 Months",
+      "last12": "Last 12 Months",
+      "allTime": "All Time"
+    }
+  },
+  "chart": {
+    "yAxisLabel": "Average Salary"
+  }
+}

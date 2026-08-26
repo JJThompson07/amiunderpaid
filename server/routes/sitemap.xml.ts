@@ -37,7 +37,8 @@ export default defineEventHandler(async (event): Promise<string> => {
     '/data-sources',
     '/about',
     '/frequently-asked-questions',
-    '/mca-score'
+    '/mca-score',
+    '/insights/industry-trends'
   ];
 
   // 2. Fetch Dynamic Salary Data

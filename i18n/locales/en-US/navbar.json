@@ -3,6 +3,7 @@
   "how-it-works": "How it works",
   "mca-score": "MCA Score Explained",
   "data-sources": "Data Sources",
+  "industry-trends": "Industry Trends",
   "privacy-policy": "Privacy Policy",
   "seeder": "Seeder",
   "coding-index": "Coding Index",
@@ -28,6 +29,7 @@
     "analytics": "Analytics",
     "resources": "Resources",
     "partners": "Partners",
-    "users": "Users"
+    "users": "Users",
+    "insights": "Insights"
   }
 }
