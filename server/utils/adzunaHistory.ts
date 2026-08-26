@@ -45,6 +45,34 @@ export const extractActiveCategoryCountryPairs = (
   return [...seen.values()];
 };
 
+/**
+ * Counts adzuna_jobs_cache documents per categoryTag for one country, as a
+ * real-user-driven proxy for how often each industry gets looked up. Note
+ * this counts distinct search variants (title/location/type/contract
+ * combos), not raw search frequency -- identical repeat searches overwrite
+ * the same cache doc rather than creating a new one or incrementing a
+ * counter, since no such counter exists in this schema.
+ */
+export const countCategoryLookups = (
+  docs: CachedSearchDoc[],
+  country: string
+): Map<string, number> => {
+  const counts = new Map<string, number>();
+
+  for (const doc of docs) {
+    const categoryTag = doc.categoryTag;
+    const docCountry = doc.searchParams?.country?.toLowerCase();
+
+    if (!categoryTag || categoryTag === 'unknown' || docCountry !== country) {
+      continue;
+    }
+
+    counts.set(categoryTag, (counts.get(categoryTag) ?? 0) + 1);
+  }
+
+  return counts;
+};
+
 /** Normalizes a raw country query param the same way market-data/jobs.ts does. */
 export const normalizeCountryCode = (country: unknown): 'gb' | 'us' => {
   const value = String(country || '').toLowerCase();

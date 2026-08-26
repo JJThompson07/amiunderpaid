@@ -5,6 +5,7 @@ type IndustryTrendDoc = {
   categoryTag: string;
   label?: string;
   history?: HistoryPoint[];
+  lookupCount?: number;
 };
 
 const fetchIndustryTrends = defineCachedFunction(
@@ -20,7 +21,12 @@ const fetchIndustryTrends = defineCachedFunction(
       return {
         categoryTag: data.categoryTag,
         label: data.label || data.categoryTag,
-        history: data.history || []
+        history: data.history || [],
+        // Computed and stored by runIndustryTrendsSync during the monthly
+        // sync (reusing that job's own adzuna_jobs_cache read) rather than
+        // re-querying the whole cache collection on every cache-miss here.
+        // Falls back to 0 for docs written before this field existed.
+        lookupCount: data.lookupCount ?? 0
       };
     });
   },

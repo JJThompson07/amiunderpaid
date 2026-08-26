@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   chunkForRateLimit,
+  countCategoryLookups,
   extractActiveCategoryCountryPairs,
   formatHistoryMonths,
   normalizeCountryCode
@@ -72,6 +73,51 @@ describe('adzunaHistory utils', () => {
 
     it('returns an empty array for an empty input', () => {
       expect(extractActiveCategoryCountryPairs([])).toEqual([]);
+    });
+  });
+
+  describe('countCategoryLookups', () => {
+    it('counts docs per categoryTag for the given country', () => {
+      const docs = [
+        { categoryTag: 'it-jobs', searchParams: { country: 'gb' } },
+        { categoryTag: 'it-jobs', searchParams: { country: 'gb' } },
+        { categoryTag: 'sales-jobs', searchParams: { country: 'gb' } }
+      ];
+
+      expect(countCategoryLookups(docs, 'gb')).toEqual(
+        new Map([
+          ['it-jobs', 2],
+          ['sales-jobs', 1]
+        ])
+      );
+    });
+
+    it('excludes docs from a different country', () => {
+      const docs = [
+        { categoryTag: 'it-jobs', searchParams: { country: 'gb' } },
+        { categoryTag: 'it-jobs', searchParams: { country: 'us' } }
+      ];
+
+      expect(countCategoryLookups(docs, 'gb')).toEqual(new Map([['it-jobs', 1]]));
+    });
+
+    it('excludes docs with categoryTag "unknown"', () => {
+      const docs = [{ categoryTag: 'unknown', searchParams: { country: 'gb' } }];
+      expect(countCategoryLookups(docs, 'gb')).toEqual(new Map());
+    });
+
+    it('excludes docs with a missing categoryTag', () => {
+      const docs = [{ searchParams: { country: 'gb' } }];
+      expect(countCategoryLookups(docs, 'gb')).toEqual(new Map());
+    });
+
+    it('normalizes country casing before comparing', () => {
+      const docs = [{ categoryTag: 'it-jobs', searchParams: { country: 'GB' } }];
+      expect(countCategoryLookups(docs, 'gb')).toEqual(new Map([['it-jobs', 1]]));
+    });
+
+    it('returns an empty map for empty input', () => {
+      expect(countCategoryLookups([], 'gb')).toEqual(new Map());
     });
   });
 

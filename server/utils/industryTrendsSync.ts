@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import {
   chunkForRateLimit,
+  countCategoryLookups,
   extractActiveCategoryCountryPairs,
   formatHistoryMonths
 } from './adzunaHistory';
@@ -92,7 +93,8 @@ const syncOne = async (
   months: number,
   appId: string,
   appKey: string,
-  categoryLabels: Map<string, string>
+  categoryLabels: Map<string, string>,
+  lookupCount: number
 ): Promise<SyncOutcome> => {
   const { categoryTag, country } = pair;
   const label = categoryLabels.get(categoryTag) || categoryTag;
@@ -125,6 +127,7 @@ const syncOne = async (
           categoryTag,
           label,
           history: formatted,
+          lookupCount,
           updatedAt: FieldValue.serverTimestamp()
         },
         { merge: true }
@@ -145,6 +148,7 @@ const syncOne = async (
             categoryTag,
             label,
             history: formatHistoryMonths(Object.fromEntries(merged)),
+            lookupCount,
             updatedAt: FieldValue.serverTimestamp()
           },
           { merge: true }
@@ -184,12 +188,17 @@ export const runIndustryTrendsSync = async (months: number): Promise<SyncSummary
     .select('categoryTag', 'searchParams')
     .get();
 
-  const pairs = extractActiveCategoryCountryPairs(cacheSnap.docs.map((doc) => doc.data()));
+  const cacheDocs = cacheSnap.docs.map((doc) => doc.data());
+  const pairs = extractActiveCategoryCountryPairs(cacheDocs);
 
   const countriesInUse = [...new Set(pairs.map((p) => p.country))];
   const labelsByCountry = new Map<string, Map<string, string>>();
+  const lookupCountsByCountry = new Map<string, Map<string, number>>();
   for (const country of countriesInUse) {
     labelsByCountry.set(country, await fetchCategoryLabels(country, appId, appKey));
+    // Reuses the adzuna_jobs_cache read above rather than a second Firestore
+    // query -- see countCategoryLookups for what this measures and why.
+    lookupCountsByCountry.set(country, countCategoryLookups(cacheDocs, country));
   }
 
   const results: SyncOutcome[] = [];
@@ -199,7 +208,14 @@ export const runIndustryTrendsSync = async (months: number): Promise<SyncSummary
     const batchStart = Date.now();
     const batchResults = await Promise.all(
       batches[i]!.map((pair) =>
-        syncOne(pair, months, appId, appKey, labelsByCountry.get(pair.country) || new Map())
+        syncOne(
+          pair,
+          months,
+          appId,
+          appKey,
+          labelsByCountry.get(pair.country) || new Map(),
+          lookupCountsByCountry.get(pair.country)?.get(pair.categoryTag) ?? 0
+        )
       )
     );
     results.push(...batchResults);

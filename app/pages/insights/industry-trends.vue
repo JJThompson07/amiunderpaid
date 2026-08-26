@@ -108,6 +108,13 @@ const timeRange = ref<'6' | '12' | 'all'>('12');
 const chartContainer = ref<HTMLElement | null>(null);
 const chart = shallowRef<echarts.ECharts | null>(null);
 
+const DEFAULT_SELECTED_INDUSTRY_COUNT = 10;
+
+// history is chronologically sorted (see formatHistoryMonths on the server),
+// so the last point is the most recent month's average.
+const latestAverageSalary = (industry: IndustryTrendEntry): number =>
+  industry.history.at(-1)?.average ?? 0;
+
 const getThemeColor = (cssVar: string, fallback: string): string => {
   if (!import.meta.client) {
     return fallback;
@@ -324,7 +331,19 @@ onMounted(async () => {
       params: { country }
     });
     industries.value = response.industries;
-    selectedIndustries.value = response.industries.map((industry) => industry.categoryTag);
+    // Default to the industries most looked-up by real users (see
+    // lookupCount on IndustryTrendEntry) rather than showing all of them at
+    // once. Slicing a shorter array is a no-op, so this always yields
+    // exactly min(10, total) entries. Ties on lookupCount -- most commonly
+    // ties at 0, e.g. industries with no real search data yet -- are broken
+    // by highest current average salary, so the remaining default slots are
+    // filled with the most notable industries rather than arbitrary order.
+    selectedIndustries.value = [...response.industries]
+      .sort(
+        (a, b) => b.lookupCount - a.lookupCount || latestAverageSalary(b) - latestAverageSalary(a)
+      )
+      .slice(0, DEFAULT_SELECTED_INDUSTRY_COUNT)
+      .map((industry) => industry.categoryTag);
   } catch {
     error.value = true;
   } finally {
