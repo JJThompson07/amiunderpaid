@@ -256,10 +256,10 @@ const formatTooltip = (params: unknown): string => {
   return `<div style="font-weight:700;font-size:13px;">${label}</div>${rowsHtml}${moreHtml}`;
 };
 
-// How far below the lowest plotted value and above the highest to pad the
-// y-axis, so a tight cluster of high salaries (e.g. all above £40k) doesn't
-// get squashed against a y-axis that's always forced down to 0.
-const Y_AXIS_PADDING = 10_000;
+// The y-axis snaps to the nearest whole £10k below the lowest plotted value
+// and above the highest, so a tight cluster of high salaries (e.g. all above
+// £40k) doesn't get squashed against a y-axis that's always forced down to 0.
+const Y_AXIS_STEP = 10_000;
 
 const renderChart = (): void => {
   if (!chart.value) {
@@ -291,9 +291,13 @@ const renderChart = (): void => {
     .flatMap((s) => s.data)
     .filter((value): value is number => typeof value === 'number');
   const yAxisMin =
-    plottedValues.length > 0 ? Math.max(0, Math.min(...plottedValues) - Y_AXIS_PADDING) : undefined;
+    plottedValues.length > 0
+      ? Math.max(0, Math.floor(Math.min(...plottedValues) / Y_AXIS_STEP) * Y_AXIS_STEP)
+      : undefined;
   const yAxisMax =
-    plottedValues.length > 0 ? Math.max(...plottedValues) + Y_AXIS_PADDING : undefined;
+    plottedValues.length > 0
+      ? Math.ceil(Math.max(...plottedValues) / Y_AXIS_STEP) * Y_AXIS_STEP
+      : undefined;
 
   chart.value.setOption(
     {
