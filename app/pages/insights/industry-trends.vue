@@ -69,17 +69,17 @@
               v-for="industry in industries"
               :key="industry.categoryTag"
               type="button"
-              class="px-3 py-1.5 text-xs font-bold rounded-full border border-transparent transition-colors"
+              class="px-3 py-1.5 text-xs font-bold rounded-full border border-transparent cursor-pointer transition-all duration-150 hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0 active:shadow-none"
               :class="
                 selectedIndustries.includes(industry.categoryTag)
-                  ? ''
-                  : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                  ? 'bg-(--pill-bg) text-(--pill-text) hover:brightness-95'
+                  : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-500'
               "
               :style="
                 selectedIndustries.includes(industry.categoryTag)
                   ? {
-                      backgroundColor: industryScaleMap.get(industry.categoryTag)?.['100'],
-                      color: industryScaleMap.get(industry.categoryTag)?.['800']
+                      '--pill-bg': industryScaleMap.get(industry.categoryTag)?.['100'],
+                      '--pill-text': industryScaleMap.get(industry.categoryTag)?.['800']
                     }
                   : {}
               "
