@@ -1,79 +1,69 @@
 <template>
-  <div class="min-h-screen pt-24 pb-12">
-    <SectionSharedBackdrop bg-from="from-slate-900/15" />
+  <div>
+    <div
+      class="p-6 mb-8 bg-white border shadow-sm rounded-3xl border-slate-200"
+      :style="cardBackgroundStyle">
+      <div v-if="loading" class="flex items-center justify-center h-125">
+        <AmILoader :message="$t('insights.loading')" />
+      </div>
+      <div
+        v-else-if="error"
+        class="flex items-center justify-center text-sm font-bold h-125 text-slate-400">
+        {{ $t('insights.error') }}
+      </div>
+      <div
+        v-else-if="industries.length === 0"
+        class="flex items-center justify-center text-sm font-bold h-125 text-slate-400">
+        {{ $t('insights.empty') }}
+      </div>
+      <div v-else ref="chartContainer" class="w-full h-125" />
+    </div>
 
-    <section class="relative px-4 pb-12">
-      <div class="max-w-5xl mx-auto">
-        <div class="mb-10 text-center">
-          <h1 class="text-3xl font-black text-slate-900 md:text-4xl">
-            {{ $t('insights.header') }}
-          </h1>
-          <p class="max-w-2xl mx-auto mt-4 text-lg text-slate-500">
-            {{ $t('insights.intro') }}
-          </p>
-        </div>
-
-        <div class="p-6 mb-8 bg-white border shadow-sm rounded-3xl border-slate-200">
-          <div v-if="loading" class="flex items-center justify-center h-125">
-            <AmILoader :message="$t('insights.loading')" />
+    <div
+      v-if="!loading && !error && industries.length > 0"
+      class="p-6 bg-white border shadow-sm rounded-3xl border-slate-200">
+      <div class="flex flex-wrap items-start gap-4">
+        <template v-if="!initialIndustryTag">
+          <div class="flex items-center gap-2 shrink-0 pt-2">
+            <button
+              type="button"
+              class="px-3 py-1.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+              @click="selectAll">
+              {{ $t('insights.controls.selectAll') }}
+            </button>
+            <button
+              type="button"
+              class="px-3 py-1.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+              @click="clearAll">
+              {{ $t('insights.controls.clearAll') }}
+            </button>
           </div>
-          <div
-            v-else-if="error"
-            class="flex items-center justify-center text-sm font-bold h-125 text-slate-400">
-            {{ $t('insights.error') }}
-          </div>
-          <div
-            v-else-if="industries.length === 0"
-            class="flex items-center justify-center text-sm font-bold h-125 text-slate-400">
-            {{ $t('insights.empty') }}
-          </div>
-          <div v-else ref="chartContainer" class="w-full h-125" />
-        </div>
 
-        <div
-          v-if="!loading && !error && industries.length > 0"
-          class="p-6 bg-white border shadow-sm rounded-3xl border-slate-200">
-          <div class="flex flex-wrap items-start gap-4">
-            <div class="flex items-center gap-2 shrink-0 pt-2">
-              <button
-                type="button"
-                class="px-3 py-1.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-                @click="selectAll">
-                {{ $t('insights.controls.selectAll') }}
-              </button>
-              <button
-                type="button"
-                class="px-3 py-1.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-                @click="clearAll">
-                {{ $t('insights.controls.clearAll') }}
-              </button>
-            </div>
-
-            <div class="flex-1 min-w-50">
-              <AmIInputSelect
-                v-model="selectedIndustries"
-                :options="industryOptions"
-                :chip-color-for="chipColorFor"
-                :placeholder="$t('insights.controls.industriesPlaceholder')" />
-            </div>
-
-            <div class="flex items-center gap-2 shrink-0 pt-2">
-              <label for="trends-time-range" class="text-xs font-bold text-slate-400">
-                {{ $t('insights.controls.timeRange.label') }}
-              </label>
-              <select
-                id="trends-time-range"
-                v-model="timeRange"
-                class="px-3 py-1.5 text-xs font-bold border rounded-full text-slate-600 border-slate-200 bg-white">
-                <option value="6">{{ $t('insights.controls.timeRange.last6') }}</option>
-                <option value="12">{{ $t('insights.controls.timeRange.last12') }}</option>
-                <option value="all">{{ $t('insights.controls.timeRange.allTime') }}</option>
-              </select>
-            </div>
+          <div class="flex-1 min-w-50">
+            <AmIInputSelect
+              v-model="selectedIndustries"
+              compact
+              :options="industryOptions"
+              :chip-color-for="chipColorFor"
+              :placeholder="$t('insights.controls.industriesPlaceholder')" />
           </div>
+        </template>
+
+        <div class="flex items-center gap-2 shrink-0 pt-2 ml-auto">
+          <label for="trends-time-range" class="text-xs font-bold text-slate-400">
+            {{ $t('insights.controls.timeRange.label') }}
+          </label>
+          <select
+            id="trends-time-range"
+            v-model="timeRange"
+            class="px-3 py-1.5 text-xs font-bold border rounded-full text-slate-600 border-slate-200 bg-white">
+            <option value="6">{{ $t('insights.controls.timeRange.last6') }}</option>
+            <option value="12">{{ $t('insights.controls.timeRange.last12') }}</option>
+            <option value="all">{{ $t('insights.controls.timeRange.allTime') }}</option>
+          </select>
         </div>
       </div>
-    </section>
+    </div>
   </div>
 </template>
 
@@ -82,28 +72,24 @@ import * as echarts from 'echarts';
 import { generateColorScale } from '~~/shared/utils/color';
 import type { AutocompleteOption } from '~/components/AmI/Input/Select.vue';
 import type { ColorScale } from '~~/shared/utils/color';
-import type { IndustryTrendEntry, IndustryTrendsResponse } from '~~/shared/utils/market-data';
+import type { IndustryTrendEntry } from '~~/shared/utils/market-data';
+
+// When set (the pSEO spoke page, keyed by categoryTag), only this industry is
+// toggled on by default so visitors immediately see its trendline in
+// isolation -- they can still toggle others on for comparison. When omitted
+// (the hub page), the default falls back to the top N by real lookup
+// activity, see DEFAULT_SELECTED_INDUSTRY_COUNT below.
+const props = defineProps<{
+  initialIndustryTag?: string;
+}>();
 
 const { t } = useI18n();
-const { currentCountry, currencySymbol } = useRegion();
-const { $siteBrand } = useNuxtApp();
+const { currencySymbol } = useRegion();
+const { industries, loading, error } = useIndustryTrends();
 
-useSeoMeta({
-  title:
-    $siteBrand === 'benchmarkmyrole'
-      ? t('meta.industry-trends.benchmark.title')
-      : t('meta.industry-trends.title'),
-  description:
-    $siteBrand === 'benchmarkmyrole'
-      ? t('meta.industry-trends.benchmark.description')
-      : t('meta.industry-trends.description')
-});
-
-const loading = ref(true);
-const error = ref(false);
-const industries = ref<IndustryTrendEntry[]>([]);
 const selectedIndustries = ref<string[]>([]);
 const timeRange = ref<'6' | '12' | 'all'>('12');
+const hasInitializedSelection = ref(false);
 
 const chartContainer = ref<HTMLElement | null>(null);
 const chart = shallowRef<echarts.ECharts | null>(null);
@@ -152,6 +138,17 @@ const industryScaleMap = computed<Map<string, ColorScale>>(() => {
     map.set(industry.categoryTag, generateColorScale(palette[index % palette.length]!));
   });
   return map;
+});
+
+// Trial: on the spoke page (initialIndustryTag set), tint the chart card with
+// a subtle gradient in that industry's own colour -- using the scale's
+// lightest stop (50) so it stays a barely-there wash behind the white card
+// rather than competing with the chart lines/axis labels for contrast.
+const cardBackgroundStyle = computed<{ background: string }>(() => {
+  const scale = props.initialIndustryTag
+    ? industryScaleMap.value.get(props.initialIndustryTag)
+    : undefined;
+  return { background: scale ? `linear-gradient(135deg, ${scale['50']} 0%, #ffffff 55%)` : '' };
 });
 
 const monthsBack = computed<number | null>(() => {
@@ -268,7 +265,7 @@ const renderChart = (): void => {
 
   const months = allMonths.value;
   const slate400 = getThemeColor('--color-slate-400', '#94a3b8');
-  const slate100 = getThemeColor('--color-slate-100', '#f1f5f9');
+  const slate200 = getThemeColor('--color-slate-200', '#e2e8f0');
 
   const series = visibleIndustries.value.map((industry) => {
     const byMonth = new Map(industry.history.map((point) => [point.month, point.average]));
@@ -335,7 +332,7 @@ const renderChart = (): void => {
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: { color: slate400 },
-        splitLine: { lineStyle: { type: 'dashed', color: slate100 } }
+        splitLine: { lineStyle: { type: 'dashed', color: slate200 } }
       },
       series
     },
@@ -345,43 +342,82 @@ const renderChart = (): void => {
 
 watch([visibleIndustries, timeRange], renderChart);
 
-onMounted(async () => {
-  try {
-    const country = currentCountry.value === 'USA' ? 'us' : 'gb';
-    const response = await $fetch<IndustryTrendsResponse>('/api/market-data/industry-trends', {
-      params: { country }
-    });
-    industries.value = response.industries;
+// Seeds the default selection as soon as the (SSR-fetched or client-fetched)
+// industries list first becomes non-empty. Also re-runs whenever
+// initialIndustryTag itself changes -- the spoke page's top-right single
+// select switches between two industry URLs client-side, which Vue Router
+// reuses this component instance across (same route record) rather than
+// remounting it, so initialIndustryTag is the only thing that changes.
+// hasInitializedSelection guards just the hub's one-time default-top-N pick,
+// so a later user clearAll() isn't immediately overwritten by this watcher
+// re-firing for an unrelated reason.
+watch(
+  [industries, (): string | undefined => props.initialIndustryTag],
+  ([list, tag]) => {
+    if (list.length === 0) {
+      return;
+    }
+
+    if (tag) {
+      if (list.some((i) => i.categoryTag === tag)) {
+        selectedIndustries.value = [tag];
+      }
+      return;
+    }
+
+    if (hasInitializedSelection.value) {
+      return;
+    }
+    hasInitializedSelection.value = true;
+
     // Default to the industries most looked-up by real users (see
     // lookupCount on IndustryTrendEntry) rather than showing all of them at
-    // once. Slicing a shorter array is a no-op, so this always yields
-    // exactly min(10, total) entries. Ties on lookupCount -- most commonly
-    // ties at 0, e.g. industries with no real search data yet -- are broken
-    // by highest current average salary, so the remaining default slots are
-    // filled with the most notable industries rather than arbitrary order.
-    selectedIndustries.value = [...response.industries]
+    // once. Ties on lookupCount -- most commonly ties at 0, e.g. industries
+    // with no real search data yet -- are broken by highest current average
+    // salary, so the remaining default slots are filled with the most
+    // notable industries rather than arbitrary order.
+    selectedIndustries.value = [...list]
       .sort(
         (a, b) => b.lookupCount - a.lookupCount || latestAverageSalary(b) - latestAverageSalary(a)
       )
       .slice(0, DEFAULT_SELECTED_INDUSTRY_COUNT)
       .map((industry) => industry.categoryTag);
-  } catch {
-    error.value = true;
-  } finally {
-    loading.value = false;
-  }
-
-  await nextTick();
-  if (chartContainer.value) {
-    chart.value = echarts.init(chartContainer.value);
-    renderChart();
-    window.addEventListener('resize', handleResize);
-  }
-});
+  },
+  { immediate: true }
+);
 
 const handleResize = (): void => {
   chart.value?.resize();
 };
+
+// industries now arrives via useIndustryTrends()'s useAsyncData (SSR-fetched
+// or resolved after mount) rather than an awaited onMounted fetch, so the
+// chart-container ref only exists once the template's v-else branch actually
+// renders -- i.e. once loading/error/empty have all cleared. Initialize the
+// chart the first time that happens, rather than once unconditionally on
+// mount.
+const isChartReady = computed(
+  (): boolean => !loading.value && !error.value && industries.value.length > 0
+);
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+
+  watch(
+    isChartReady,
+    async (ready) => {
+      if (!ready || chart.value) {
+        return;
+      }
+      await nextTick();
+      if (chartContainer.value) {
+        chart.value = echarts.init(chartContainer.value);
+        renderChart();
+      }
+    },
+    { immediate: true }
+  );
+});
 
 onBeforeUnmount(() => {
   if (chart.value) {

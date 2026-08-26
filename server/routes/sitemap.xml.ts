@@ -10,6 +10,11 @@ type SitemapJobFields = {
   location?: string;
 };
 
+// Narrow shape of an `adzuna_industry_trends` document as selected below.
+type SitemapIndustryTrendFields = {
+  categoryTag: string;
+};
+
 export default defineEventHandler(async (event): Promise<string> => {
   const url = getRequestURL(event);
   const origin = url.origin;
@@ -70,7 +75,35 @@ export default defineEventHandler(async (event): Promise<string> => {
     return `${routePrefix}/${titleSlug}/${country}`;
   });
 
-  const allRoutes = [...staticRoutes, ...dynamicRoutes];
+  // 2b. Fetch Dynamic Industry Trend Categories (pSEO pages)
+  // adzuna_industry_trends is the source of truth for "active" categories --
+  // it's country-scoped ('gb'/'us') and written by the monthly sync job from
+  // real search activity. Do NOT use adzuna_category here: that collection
+  // only holds per-category cache-duration overrides and nothing marks a
+  // category "active" in it (see server/utils/adzunaHistory.ts).
+  let industryTrendsQuery: Query<SitemapIndustryTrendFields> = db
+    .collection('adzuna_industry_trends')
+    .select('categoryTag') as Query<SitemapIndustryTrendFields>;
+
+  if (!isBenchmark) {
+    if (isAmIUnderpaidUS) {
+      industryTrendsQuery = industryTrendsQuery.where('country', '==', 'us');
+    } else if (isAmIUnderpaidUK) {
+      industryTrendsQuery = industryTrendsQuery.where('country', '==', 'gb');
+    }
+  }
+
+  const industryTrendsSnapshot = await industryTrendsQuery.get();
+
+  const industryTrendRoutes = [
+    ...new Set(
+      industryTrendsSnapshot.docs
+        .map((doc: QueryDocumentSnapshot<SitemapIndustryTrendFields>) => doc.data().categoryTag)
+        .filter((tag): tag is string => Boolean(tag))
+    )
+  ].map((tag) => `/insights/industry-trends/${tag}`);
+
+  const allRoutes = [...staticRoutes, ...dynamicRoutes, ...industryTrendRoutes];
 
   // 3. Generate XML with lastmod
   const today = new Date().toISOString().split('T')[0];

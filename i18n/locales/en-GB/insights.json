@@ -17,5 +17,15 @@
   },
   "chart": {
     "yAxisLabel": "Average Salary"
+  },
+  "jumpToIndustry": "Jump to Industry",
+  "jumpToIndustryPlaceholder": "Select an industry...",
+  "spoke": {
+    "h1": "How well do {industry} roles pay compared to the market?",
+    "title": "Is the market improving in {industry}? — Salary Trends",
+    "benchmarkTitle": "Is the market improving in {industry}? — Benchmark My Role",
+    "description": "Track how average {industry} salaries have moved over the last year, powered by live market data.",
+    "backToHub": "View all industries",
+    "industrySelectLabel": "Industry"
   }
 }

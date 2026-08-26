@@ -9,6 +9,9 @@
       <SectionAmISalarySearch />
       <SectionAmITrendingSearches />
 
+      <!-- Industry Trends CTA -->
+      <SectionSharedIndustryTrendsCta />
+
       <!-- Privacy Note section -->
       <SectionSharedPrivacyNote />
 

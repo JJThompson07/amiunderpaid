@@ -36,24 +36,26 @@
         @click="onFocusContainer">
         <div
           v-if="!externalList && modelValue.length"
-          class="flex flex-wrap items-center gap-1.5 mr-1">
+          class="flex flex-wrap items-center mr-1"
+          :class="compact ? 'gap-1' : 'gap-1.5'">
           <span
             v-for="val in modelValue"
             :key="val"
-            class="rounded-lg flex items-center gap-1 px-2.5 py-1 text-sm font-bold shadow-xs whitespace-nowrap border"
-            :class="
+            class="rounded-lg flex items-center font-bold shadow-xs whitespace-nowrap border"
+            :class="[
+              compact ? 'gap-0.5 px-1.5 py-0.5 text-xs' : 'gap-1 px-2.5 py-1 text-sm',
               chipColorFor
                 ? 'bg-(--chip-bg) text-(--chip-text) border-(--chip-border)'
                 : 'bg-primary-50 text-primary-700 border-primary-100'
-            "
+            ]"
             :style="chipStyleFor(val)">
             {{ getLabelForValue(val) }}
             <button
               type="button"
-              class="hover:text-negative-500 transition-colors ml-1 focus:outline-none"
-              :class="chipColorFor ? '' : 'text-primary-400'"
+              class="hover:text-negative-500 transition-colors focus:outline-none"
+              :class="[compact ? 'ml-0.5' : 'ml-1', chipColorFor ? '' : 'text-primary-400']"
               @click.stop="removeOption(val)">
-              <X class="h-3.5 w-3.5" />
+              <X :class="compact ? 'h-3 w-3' : 'h-3.5 w-3.5'" />
             </button>
           </span>
         </div>
@@ -162,6 +164,7 @@ const props = defineProps({
     default: () => []
   },
   single: { type: Boolean, default: false },
+  compact: { type: Boolean, default: false },
   placeholder: { type: String, default: '' },
   label: { type: String, default: '' },
   labelSize: {
