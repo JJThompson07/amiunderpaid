@@ -41,6 +41,11 @@ When instructed to plan a feature:
 3. Generate a `proposal.md` (defining why, what, scope, and non-goals) and a `tasks.md` (an actionable checklist).
 4. Generate the `specs/**/spec.md` detailing the exact delta (ADDED/MODIFIED/REMOVED).
 
+**Proposal Quality Bar** — a proposal is not done when it reads well; it's done when the implementer can execute `tasks.md` without discovering the plan was wrong about the codebase or the standards it must meet. Before finalizing:
+
+- **The Verify-Don't-Guess Rule:** Never name a specific file, component, endpoint, or Firestore collection in a proposal without first confirming it actually exists and behaves as assumed — read the file, grep the codebase, or (for external APIs) check the real request/response. Do not hedge with placeholders like "(or equivalent)" or "e.g., `AppHeader.vue`" that shift the verification work onto the implementer; find the real name (e.g. the actual navbar is `app/components/AmI/NavBar.vue`, not a guessed `AppHeader.vue`). This is `CODE_STANDARDS.md` §10's Verify-Before-Recommending Rule applied at plan time, not just implementation time — an unverified claim about a Firestore collection's actual contents or an external API's actual parameters is exactly the kind of infrastructure-specific assumption that rule exists to catch, and catching it in `tasks.md` is far cheaper than catching it mid-implementation.
+- **The Standards-Complete Task Rule:** `tasks.md` must translate every applicable rule in `CODE_STANDARDS.md` and this file into a concrete, checkable task — never leave it implicit for the implementer to notice on their own. In particular: any user-facing string needs an explicit i18n task (§6, no hardcoded strings); any new `server/**` utility or `app/composables/**` function needs an explicit unit-test task (§8, plus the 80%-coverage hard blocker in §5 of this file); any call to an external or rate-limited API needs an explicit error-handling/partial-failure task (what happens when the call 429s or errors mid-batch); any new UI needs an explicit multi-tenant/country check (§7 of this file) if it touches country-scoped data. A proposal that is silent on one of these isn't neutral — it's a gap that will either get caught late or shipped broken.
+
 ### Phase 2: Implement (Apply) — Claude's primary responsibility, see `CLAUDE.md`
 
 When instructed to implement:
