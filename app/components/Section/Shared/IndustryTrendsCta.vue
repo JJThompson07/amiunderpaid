@@ -6,7 +6,7 @@
         <h3 class="text-2xl font-black tracking-tight text-secondary-950">
           {{ $t('landing.industryTrendsCta.heading') }}
         </h3>
-        <p class="mt-2 leading-relaxed text-slate-600">
+        <p class="mt-2 text-sm leading-relaxed text-slate-600">
           {{ $t('landing.industryTrendsCta.body') }}
         </p>
       </div>
