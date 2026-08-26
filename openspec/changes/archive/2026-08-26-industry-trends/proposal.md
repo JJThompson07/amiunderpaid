@@ -38,3 +38,20 @@ To establish the platform as an authoritative data source and provide deeper val
 - `server/api/admin/sync-trends.ts` (New)
 - `i18n/locales/en-GB/insights.json`, `i18n/locales/en-US/insights.json` (New)
 - `i18n/locales/en-GB/navbar.json`, `i18n/locales/en-US/navbar.json`
+
+## Post-Archive Follow-Up
+
+This change was archived once the original scope above shipped and passed review. Three real gaps surfaced afterward, from live production use and direct user feedback, and were implemented as follow-up commits on the same already-merged feature rather than a new change proposal (the work is a direct hardening/fix of what's described above, not new scope):
+
+**1. Adzuna rate limiting.** The original "1 API call per category per country per month" framing undersold the real risk: an unpaced full sync across 50 categories hit Adzuna's documented 25 req/min limit and failed 9/50 calls with real HTTP 429s. Fixed by extracting the sync logic into `server/utils/industryTrendsSync.ts`, pacing calls in batches of 20/minute with a retry-with-backoff on 429. Verified live: the same 50-category sync that failed 9/50 unpaced completed 50/50 paced.
+
+**2. Monthly cron scheduling.** The proposal assumed the sync would "just" run monthly but never specified how it would actually be triggered — there was no cron infrastructure in the repo at all. Added `server/api/cron/sync-trends.get.ts` + `vercel.json`, authenticated via `CRON_SECRET` (Vercel's own reserved-name convention for auto-sent cron auth), confirmed against Vercel's docs before implementing (cron always sends GET, not POST; Hobby's 300s default function duration needs no extra config).
+
+**3. Chart/legend color system.** The original design used an ad-hoc 6-8 color palette that ran out and repeated once real data exceeded ~8 industries, and colors weren't stable across toggling (a series' color depended on its index within the currently-visible subset, so deselecting one industry reshuffled every other line's color). Replaced with:
+
+- A 30-color categorical palette (`app/assets/css/main.css`, plain `:root` custom properties — not Tailwind `@theme` tokens, which get tree-shaken unless an actual utility class references them), reordered with a fixed stride so adjacent legend entries land far apart in hue instead of sweeping smoothly through the color wheel.
+- `generateColorScale()` (`shared/utils/color.ts`, unit-tested), which expands a single seed hex into a full Tailwind-style 50-900 tonal scale, so each industry's legend pill can use the same light-tint-background/dark-text badge treatment already used everywhere else in this app (e.g. the MCA bracket badges) instead of a flat single-tone pill.
+- Colors keyed by each industry's index in the _full_ list (not the visible subset), so a line's color — and its pill's color — stay stable regardless of what else is toggled on/off.
+- Tooltip `confine: true` + a max-height/scroll, since an axis tooltip listing 20-30 series can grow taller than the viewport.
+
+Impact additions: `server/utils/industryTrendsSync.ts` (New), `server/api/cron/sync-trends.get.ts` (New), `vercel.json` (New), `shared/utils/color.ts` (New), `CODE_STANDARDS.md` (documents the `generateColorScale()` pattern for future dynamic-color needs).

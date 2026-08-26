@@ -43,3 +43,32 @@ This feature introduces a macro-level data visualization tool to the platform. B
 **7. Internationalization**
 
 - _Decision_: All user-facing strings (page copy, control labels, nav item) go through new `insights.json` locale files and `navbar.json`, per `CODE_STANDARDS.md` §6 — no hardcoded strings, consistent with every other page in this repo.
+
+## Post-Archive Decisions
+
+Added after the change above was implemented and archived — see `proposal.md`'s "Post-Archive Follow-Up" for why.
+
+**8. Rate-Limit Pacing**
+
+- _Decision_: Extracted the sync into `server/utils/industryTrendsSync.ts`, shared by both the admin endpoint and the new cron route. Adzuna calls are paced in batches of 20/minute (`chunkForRateLimit`, pure and unit-tested) with a one-retry-with-10s-backoff on HTTP 429.
+- _Rationale_: Decision 6 above ("bounded concurrency") turned out to be necessary but not sufficient — bounded concurrency alone still fires all chunks back-to-back with no pacing between them, and a real full-catalogue sync (50 categories) hit Adzuna's real rate limit and failed 9/50 calls with genuine 429s.
+- _Verified_: Adzuna's documented limit is 25 requests/minute, 250/day, 1000/week, 2500/month. Batches of 20 leave a safety margin under the per-minute figure, which is the only one a single sync run could plausibly hit (even a larger future category count stays orders of magnitude under the daily/weekly/monthly ceilings for a once-a-month job). Live test: the identical 50-category sync that failed 9/50 unpaced completed 50/50 with this pacing in place.
+
+**9. Cron Trigger & Auth**
+
+- _Decision_: New `server/api/cron/sync-trends.get.ts`, outside `/api/admin/` (so `admin-guard.ts`'s blanket `verifyAdmin` check doesn't reject it), authenticated via a `CRON_SECRET` runtime-config value checked against the request's `Authorization` header. `vercel.json` schedules it for the 1st of each month.
+- _Rationale_: There was no cron infrastructure anywhere in this repo before this. Confirmed against Vercel's own documentation before implementing, not assumed: Vercel Cron always invokes via GET (the existing `sync-trends.post.ts` is POST-only, hence the separate route); it automatically sends whatever value is set for an env var literally named `CRON_SECRET` as `Authorization: Bearer <value>` — that specific name is Vercel's own reserved convention, not an arbitrary choice; Hobby-plan cron schedules are restricted to at most once per day, which a monthly schedule trivially satisfies; Hobby's function duration default (300s) already covers the paced sync's worst-case runtime without extra `maxDuration` configuration.
+- _User confirmed_: given the choice between a dedicated `CRON_SECRET` vs. reusing the existing `NUXT_ADMIN_ACCESS_KEY`, chose the dedicated secret for clean separation of concerns.
+
+**10. Categorical Chart Palette & Legend Color Matching**
+
+- _Decision_: A 30-color palette (`app/assets/css/main.css`, plain `:root` custom properties `--chart-1`..`--chart-30`) on a systematic hue rotation, fixed moderate saturation/lightness (not neon, not washed-out), then re-ordered with a fixed stride (step 13, coprime with 30) so consecutive palette entries land ~156° apart in hue instead of the ~12° they'd be at in raw rotation order.
+- _Rationale_: The first version reused 6-8 existing semantic theme colors (`primary-500`, `positive-500`, etc.), which repeated once real data exceeded that many industries, and a first attempt at 30 colors declared directly inside the Tailwind `@theme` block was silently pruned down to 1 surviving color at build time.
+- _Verified_: confirmed live via the browser's compiled stylesheet that Tailwind v4 tree-shakes `@theme` tokens unless an actual utility class (e.g. `bg-chart-5`) references them somewhere in scanned templates — only `--color-chart-1` survived when all 30 were declared there, since nothing in the codebase uses a `chart-N` utility class (this pattern is now documented in `CODE_STANDARDS.md` §5 for future dynamic-color work). Moving the declarations to a plain `:root` block (outside `@theme`) fixed it, confirmed by re-inspecting the compiled CSS.
+- _Also fixed_: colors were previously assigned by a series' index within the _visible_ (filtered-by-toggle) subset, so deselecting one industry reshuffled every other line's color and the legend pill could never reliably match its line. Colors are now keyed by each industry's index in the _full_ list.
+- _User feedback_: legend pills should use the same light-tint-background/dark-text badge treatment already used elsewhere in the app (e.g. the MCA bracket badges), not a flat single-tone pill or a neutral pill with a color swatch dot. Since only one hex per industry was available, added `generateColorScale()` (`shared/utils/color.ts`, unit-tested) to derive a full Tailwind-style 50-900 tonal scale from that single seed color — the pill uses the `100`/`800` stops, the chart line uses `500`.
+
+**11. Tooltip Overflow**
+
+- _Decision_: `confine: true` plus a `max-height`/`overflow-y: auto` on the tooltip's `extraCssText`.
+- _Rationale_: With 20-30 series selected, ECharts' axis-trigger tooltip lists one row per series and grew taller than the viewport. `confine` keeps it positioned within the chart's own bounds; the height cap makes the overflow scrollable instead of clipped or overflowing the page.
