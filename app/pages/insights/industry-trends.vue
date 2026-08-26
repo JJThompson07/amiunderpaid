@@ -205,6 +205,54 @@ const clearAll = (): void => {
   selectedIndustries.value = [];
 };
 
+// The subset of ECharts' axis-trigger tooltip params this formatter actually
+// reads, kept minimal and local rather than depending on echarts' own
+// (verbose) formatter param types.
+type TooltipRowParam = {
+  marker?: string;
+  seriesName?: string;
+  value?: number | string | null;
+  axisValueLabel?: string;
+  axisValue?: string;
+};
+
+const TOOLTIP_MAX_ROWS = 10;
+
+const formatTooltip = (params: unknown): string => {
+  if (!Array.isArray(params) || params.length === 0) {
+    return '';
+  }
+
+  const rows = params as TooltipRowParam[];
+  const label = rows[0]?.axisValueLabel ?? rows[0]?.axisValue ?? '';
+
+  // Rank by value (highest average salary first) rather than series order --
+  // a more useful "top 10" when there are more industries than fit cleanly.
+  const sorted = [...rows]
+    .filter((row) => typeof row.value === 'number')
+    .sort((a, b) => (b.value as number) - (a.value as number));
+
+  const visible = sorted.slice(0, TOOLTIP_MAX_ROWS);
+  const remaining = sorted.length - visible.length;
+
+  const rowsHtml = visible
+    .map((row) => {
+      const value = typeof row.value === 'number' ? Math.round(row.value).toLocaleString() : '';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:4px;">
+        <span>${row.marker ?? ''}${row.seriesName ?? ''}</span>
+        <strong>${value}</strong>
+      </div>`;
+    })
+    .join('');
+
+  const moreHtml =
+    remaining > 0
+      ? `<div style="margin-top:6px;color:#94a3b8;font-size:11px;">+${remaining} more</div>`
+      : '';
+
+  return `<div style="font-weight:700;">${label}</div>${rowsHtml}${moreHtml}`;
+};
+
 const renderChart = (): void => {
   if (!chart.value) {
     return;
@@ -227,11 +275,13 @@ const renderChart = (): void => {
         borderRadius: 12,
         padding: 12,
         textStyle: { color: '#1e293b', fontFamily: 'inherit' },
-        // With many series selected, an axis tooltip lists one row per series and
-        // can grow taller than the viewport -- confine keeps it within the chart's
-        // bounds horizontally, and this caps its height with a scrollbar instead.
-        extraCssText:
-          'box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1); max-height: 320px; overflow-y: auto;'
+        extraCssText: 'box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);',
+        // A CSS max-height/scroll doesn't actually work here: this tooltip
+        // follows the cursor (it's not a fixed overlay), so moving the mouse
+        // toward a scrollbar just moves the tooltip itself instead of
+        // scrolling its content. With many series selected, cap the rows
+        // shown to the top 10 by value and summarize the rest instead.
+        formatter: (params: unknown): string => formatTooltip(params)
       },
       xAxis: {
         type: 'category',
