@@ -189,6 +189,55 @@
   --secondary-950: #2d2f39;
 }
 
+/* Categorical chart palette: 30 hand-tuned colors on a systematic hue rotation
+   (fixed moderate saturation/lightness band, not neon, not washed-out), used
+   wherever a data visualization needs many distinguishable series -- e.g. the
+   Industry Trends chart. Index-stable: chart-1..chart-30 map 1:1 to whatever
+   is series/legend-item 1..30, so UI elements referencing the same series
+   (a chart line and its legend/toggle pill) can share an exact color by
+   using the same index, rather than each computing their own palette.
+
+   Deliberately declared as plain :root custom properties, NOT inside the
+   @theme block above: Tailwind v4 tree-shakes @theme tokens that aren't
+   referenced by an actual utility class (e.g. bg-chart-5) somewhere in the
+   scanned templates -- confirmed live, only --color-chart-1 survived the
+   build when all 30 were declared in @theme, because nothing in the codebase
+   uses a chart-N utility class. These are read via getComputedStyle() in JS
+   (see app/pages/insights/industry-trends.vue), never as Tailwind classes,
+   so they don't belong in @theme's utility-generation system at all. */
+:root {
+  --chart-1: #bc2f2f;
+  --chart-2: #cc5a3e;
+  --chart-3: #bc672f;
+  --chart-4: #cc933e;
+  --chart-5: #a58c27;
+  --chart-6: #a5a527;
+  --chart-7: #8ca527;
+  --chart-8: #73a527;
+  --chart-9: #59a527;
+  --chart-10: #5acc3e;
+  --chart-11: #2fbc2f;
+  --chart-12: #3ecc5a;
+  --chart-13: #2fbc67;
+  --chart-14: #3ecc93;
+  --chart-15: #2fbca0;
+  --chart-16: #3ecccc;
+  --chart-17: #2fa0bc;
+  --chart-18: #3e93cc;
+  --chart-19: #2f67bc;
+  --chart-20: #3e5acc;
+  --chart-21: #2f2fbc;
+  --chart-22: #5a3ecc;
+  --chart-23: #672fbc;
+  --chart-24: #933ecc;
+  --chart-25: #a02fbc;
+  --chart-26: #cc3ecc;
+  --chart-27: #bc2fa0;
+  --chart-28: #cc3e93;
+  --chart-29: #bc2f67;
+  --chart-30: #cc3e5a;
+}
+
 /* Hide the scrollbar track */
 ::-webkit-scrollbar {
   width: 4px; /* or your preferred width */

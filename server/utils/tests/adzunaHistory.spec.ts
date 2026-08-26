@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  chunkForRateLimit,
   extractActiveCategoryCountryPairs,
   formatHistoryMonths,
   normalizeCountryCode
@@ -86,6 +87,27 @@ describe('adzunaHistory utils', () => {
       expect(normalizeCountryCode('uk')).toBe('gb');
       expect(normalizeCountryCode('')).toBe('gb');
       expect(normalizeCountryCode(undefined)).toBe('gb');
+    });
+  });
+
+  describe('chunkForRateLimit', () => {
+    it('splits items into fixed-size chunks', () => {
+      expect(chunkForRateLimit([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+    });
+
+    it('returns a single chunk when items fit within the size', () => {
+      expect(chunkForRateLimit([1, 2], 20)).toEqual([[1, 2]]);
+    });
+
+    it('returns an empty array for empty input', () => {
+      expect(chunkForRateLimit([], 20)).toEqual([]);
+    });
+
+    it('handles an exact multiple of the chunk size', () => {
+      expect(chunkForRateLimit([1, 2, 3, 4], 2)).toEqual([
+        [1, 2],
+        [3, 4]
+      ]);
     });
   });
 });

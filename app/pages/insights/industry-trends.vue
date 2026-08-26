@@ -69,13 +69,19 @@
               v-for="industry in industries"
               :key="industry.categoryTag"
               type="button"
-              class="px-3 py-1.5 text-xs font-bold rounded-full border transition-colors"
+              class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border transition-colors"
               :class="
                 selectedIndustries.includes(industry.categoryTag)
-                  ? 'bg-primary-50 border-primary-200 text-primary-700'
+                  ? 'bg-slate-50 border-slate-300 text-slate-700'
                   : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
               "
               @click="toggleIndustry(industry.categoryTag)">
+              <span
+                class="w-2.5 h-2.5 rounded-full shrink-0 transition-opacity"
+                :class="
+                  selectedIndustries.includes(industry.categoryTag) ? 'opacity-100' : 'opacity-40'
+                "
+                :style="{ backgroundColor: industryColorMap.get(industry.categoryTag) }" />
               {{ industry.label }}
             </button>
           </div>
@@ -121,16 +127,30 @@ const getThemeColor = (cssVar: string, fallback: string): string => {
   return val || fallback;
 };
 
-const buildPalette = (): string[] => [
-  getThemeColor('--color-primary-500', '#1cabb0'),
-  getThemeColor('--color-secondary-500', '#3c83bb'),
-  getThemeColor('--color-positive-500', '#25c25d'),
-  getThemeColor('--color-warning-500', '#d38e1f'),
-  getThemeColor('--color-negative-500', '#f34040'),
-  getThemeColor('--color-neutral-500', '#2881cf'),
-  getThemeColor('--color-primary-700', '#0f6a6d'),
-  getThemeColor('--color-secondary-700', '#1f4a6b')
-];
+// 30-color categorical palette defined in app/assets/css/main.css (--chart-1..30,
+// plain :root custom properties, not Tailwind @theme tokens -- see that file's
+// comment for why): a systematic hue rotation at a fixed moderate saturation/
+// lightness band, so colors stay distinguishable and accessible without going
+// neon or washed-out.
+const CHART_PALETTE_SIZE = 30;
+const buildPalette = (): string[] =>
+  Array.from({ length: CHART_PALETTE_SIZE }, (_, i) =>
+    getThemeColor(`--chart-${i + 1}`, '#64748b')
+  );
+
+// Stable per-industry color, keyed by each industry's position in the FULL
+// list (not the currently-visible subset) -- otherwise toggling one industry
+// off would shift every other industry's index and reassign its color,
+// so a line's color would keep changing as you toggle others on/off, and the
+// legend pill could never reliably match its line.
+const industryColorMap = computed<Map<string, string>>(() => {
+  const palette = buildPalette();
+  const map = new Map<string, string>();
+  industries.value.forEach((industry, index) => {
+    map.set(industry.categoryTag, palette[index % palette.length]!);
+  });
+  return map;
+});
 
 const monthsBack = computed<number | null>(() => {
   if (timeRange.value === '6') {
@@ -180,25 +200,28 @@ const renderChart = (): void => {
     return;
   }
 
-  const palette = buildPalette();
   const months = allMonths.value;
   const slate400 = getThemeColor('--color-slate-400', '#94a3b8');
   const slate100 = getThemeColor('--color-slate-100', '#f1f5f9');
 
   chart.value.setOption(
     {
-      color: palette,
       animationDuration: 1500,
       animationEasing: 'cubicOut',
       grid: { left: 48, right: 24, top: 24, bottom: 32 },
       tooltip: {
         trigger: 'axis',
+        confine: true,
         backgroundColor: '#ffffff',
         borderWidth: 0,
         borderRadius: 12,
         padding: 12,
         textStyle: { color: '#1e293b', fontFamily: 'inherit' },
-        extraCssText: 'box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);'
+        // With many series selected, an axis tooltip lists one row per series and
+        // can grow taller than the viewport -- confine keeps it within the chart's
+        // bounds horizontally, and this caps its height with a scrollbar instead.
+        extraCssText:
+          'box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1); max-height: 320px; overflow-y: auto;'
       },
       xAxis: {
         type: 'category',
@@ -217,12 +240,16 @@ const renderChart = (): void => {
       },
       series: visibleIndustries.value.map((industry) => {
         const byMonth = new Map(industry.history.map((point) => [point.month, point.average]));
+        const color = industryColorMap.value.get(industry.categoryTag);
         return {
           name: industry.label,
           type: 'line',
           smooth: true,
           symbol: 'circle',
           symbolSize: 6,
+          color,
+          lineStyle: { color },
+          itemStyle: { color },
           data: months.map((month) => byMonth.get(month) ?? null),
           connectNulls: true
         };

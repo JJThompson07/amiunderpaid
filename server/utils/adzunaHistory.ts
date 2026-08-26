@@ -50,3 +50,16 @@ export const normalizeCountryCode = (country: unknown): 'gb' | 'us' => {
   const value = String(country || '').toLowerCase();
   return value === 'usa' || value === 'us' ? 'us' : 'gb';
 };
+
+/**
+ * Splits items into fixed-size chunks, used to pace Adzuna API calls under
+ * its documented 25 requests/minute limit (confirmed by Adzuna support;
+ * batches of 20 leave a safety margin, paced one batch per minute).
+ */
+export const chunkForRateLimit = <T>(items: T[], size: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+};
