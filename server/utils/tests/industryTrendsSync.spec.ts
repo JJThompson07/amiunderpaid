@@ -110,8 +110,22 @@ describe('runIndustryTrendsSync', () => {
       synced: 2,
       failed: 0,
       results: expect.arrayContaining([
-        { categoryTag: 'it-jobs', country: 'gb', status: 'ok' },
-        { categoryTag: 'sales-jobs', country: 'gb', status: 'ok' }
+        {
+          categoryTag: 'it-jobs',
+          country: 'gb',
+          status: 'ok',
+          label: 'IT Jobs',
+          latestMonth: '2026-01',
+          latestAverage: 50000
+        },
+        {
+          categoryTag: 'sales-jobs',
+          country: 'gb',
+          status: 'ok',
+          label: 'Sales Jobs',
+          latestMonth: '2026-01',
+          latestAverage: 50000
+        }
       ])
     });
 
@@ -209,7 +223,8 @@ describe('runIndustryTrendsSync', () => {
       categoryTag: 'it-jobs',
       country: 'gb',
       status: 'error',
-      error: 'boom'
+      error: 'boom',
+      label: 'it-jobs'
     });
   });
 });

@@ -20,6 +20,13 @@ export type SyncOutcome = {
   country: string;
   status: 'ok' | 'error';
   error?: string;
+  label?: string;
+  // The newest data point written this run (monthly delta) or backfilled
+  // (12-month backfill) -- omitted when Adzuna returned no history months to
+  // write. Lets callers (e.g. the cron's summary email) report what new data
+  // actually landed, not just a pass/fail count.
+  latestMonth?: string;
+  latestAverage?: number;
 };
 
 export type SyncSummary = {
@@ -113,7 +120,7 @@ const syncOne = async (
 
     const formatted = formatHistoryMonths(raw?.month || {});
     if (formatted.length === 0) {
-      return { categoryTag, country, status: 'ok' };
+      return { categoryTag, country, status: 'ok', label };
     }
 
     const db = useAdminFirestore();
@@ -156,13 +163,22 @@ const syncOne = async (
       });
     }
 
-    return { categoryTag, country, status: 'ok' };
+    const latest = formatted.at(-1)!;
+    return {
+      categoryTag,
+      country,
+      status: 'ok',
+      label,
+      latestMonth: latest.month,
+      latestAverage: latest.average
+    };
   } catch (e) {
     return {
       categoryTag,
       country,
       status: 'error',
-      error: e instanceof Error ? e.message : 'Unknown error'
+      error: e instanceof Error ? e.message : 'Unknown error',
+      label
     };
   }
 };
