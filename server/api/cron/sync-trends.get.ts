@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import { Resend } from 'resend';
 import { runIndustryTrendsSync } from '../../utils/industryTrendsSync';
 import type { SyncSummary } from '../../utils/industryTrendsSync';
@@ -7,6 +8,23 @@ const ALERT_EMAIL_FROM = 'alerts@amiunderpaid.com';
 
 const formatSalary = (country: string, average: number): string =>
   `${country === 'us' ? '$' : '£'}${Math.round(average).toLocaleString()}`;
+
+// Plain !== short-circuits at the first mismatched byte, which (in
+// principle) leaks how many leading characters of CRON_SECRET a guess got
+// right via response-time differences -- this is a publicly reachable
+// endpoint, so compare in constant time the same way verifySearchToken()
+// does in server/utils/searchToken.ts.
+const isAuthorized = (received: string | undefined, expected: string): boolean => {
+  if (!received) {
+    return false;
+  }
+  const receivedBuf = Buffer.from(received);
+  const expectedBuf = Buffer.from(expected);
+  if (receivedBuf.length !== expectedBuf.length) {
+    return false;
+  }
+  return timingSafeEqual(receivedBuf, expectedBuf);
+};
 
 // Emails a summary on every run (success or failure), not just on failure --
 // this is the only unattended (no human watching) run of this sync (the
@@ -97,7 +115,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const authHeader = getHeader(event, 'authorization');
-  if (authHeader !== `Bearer ${expected}`) {
+  if (!isAuthorized(authHeader, `Bearer ${expected}`)) {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
   }
 

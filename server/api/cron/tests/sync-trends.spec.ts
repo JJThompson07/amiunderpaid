@@ -54,6 +54,23 @@ describe('cron/sync-trends', () => {
     expect(mockRunIndustryTrendsSync).not.toHaveBeenCalled();
   });
 
+  it('rejects a same-length bearer token that still does not match', async () => {
+    // Exercises the timingSafeEqual() branch itself (not just the fast
+    // length-mismatch return) -- "wrong-secret-99" is deliberately the same
+    // length as the configured "cron-secret-123".
+    getHeaderMock.mockReturnValue('Bearer wrong-secret-99');
+
+    await expect(cronHandler({} as H3Event)).rejects.toThrow('Unauthorized');
+    expect(mockRunIndustryTrendsSync).not.toHaveBeenCalled();
+  });
+
+  it('rejects a request with no authorization header at all', async () => {
+    getHeaderMock.mockReturnValue(undefined);
+
+    await expect(cronHandler({} as H3Event)).rejects.toThrow('Unauthorized');
+    expect(mockRunIndustryTrendsSync).not.toHaveBeenCalled();
+  });
+
   it('errors out if CRON_SECRET is not configured', async () => {
     mockConfig.cronSecret = undefined;
 
