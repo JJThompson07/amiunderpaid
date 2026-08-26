@@ -100,7 +100,7 @@ import type { ColorScale } from '~~/shared/utils/color';
 import type { IndustryTrendEntry, IndustryTrendsResponse } from '~~/shared/utils/market-data';
 
 const { t } = useI18n();
-const { currentCountry } = useRegion();
+const { currentCountry, currencySymbol } = useRegion();
 const { $siteBrand } = useNuxtApp();
 
 useSeoMeta({
@@ -237,7 +237,10 @@ const formatTooltip = (params: unknown): string => {
 
   const rowsHtml = visible
     .map((row) => {
-      const value = typeof row.value === 'number' ? Math.round(row.value).toLocaleString() : '';
+      const value =
+        typeof row.value === 'number'
+          ? `${currencySymbol.value}${Math.round(row.value).toLocaleString()}`
+          : '';
       return `<div style="display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:4px;">
         <span>${row.marker ?? ''}${row.seriesName ?? ''}</span>
         <strong>${value}</strong>
