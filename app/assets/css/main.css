@@ -211,7 +211,7 @@
    scanned templates -- confirmed live, only --color-chart-1 survived the
    build when all 30 were declared in @theme, because nothing in the codebase
    uses a chart-N utility class. These are read via getComputedStyle() in JS
-   (see app/pages/insights/industry-trends.vue), never as Tailwind classes,
+   (see app/components/Section/Shared/IndustryTrendsChart.vue), never as Tailwind classes,
    so they don't belong in @theme's utility-generation system at all. */
 :root {
   --chart-1: #bc2f2f;
