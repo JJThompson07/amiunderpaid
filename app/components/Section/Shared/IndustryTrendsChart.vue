@@ -406,7 +406,20 @@ onMounted(() => {
   watch(
     isChartReady,
     async (ready) => {
-      if (!ready || chart.value) {
+      if (!ready) {
+        // The v-else chart-container div unmounts (loading/error/empty took
+        // over) whenever a reactive refetch (e.g. useIndustryTrends()'s
+        // useAsyncData re-running on a country change) flips loading/error
+        // back on. Dispose here rather than only in onBeforeUnmount, or the
+        // ECharts instance keeps a permanent reference to that now-detached
+        // DOM node until the whole component unmounts.
+        if (chart.value) {
+          chart.value.dispose();
+          chart.value = null;
+        }
+        return;
+      }
+      if (chart.value) {
         return;
       }
       await nextTick();
