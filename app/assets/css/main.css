@@ -197,6 +197,14 @@
    (a chart line and its legend/toggle pill) can share an exact color by
    using the same index, rather than each computing their own palette.
 
+   The 30 hues are spread evenly around the wheel (12 degrees apart), but the
+   *assignment order* below is deliberately NOT that smooth rainbow sweep --
+   it's reordered with a fixed stride (step 13, coprime with 30) so each
+   consecutive chart-N jumps ~156 degrees in hue instead of 12. Since colors
+   get assigned to industries/series in array order, adjacent legend entries
+   end up visually far apart (red, then teal, then magenta, ...) rather than
+   drifting through neighboring shades that can look similar side by side.
+
    Deliberately declared as plain :root custom properties, NOT inside the
    @theme block above: Tailwind v4 tree-shakes @theme tokens that aren't
    referenced by an actual utility class (e.g. bg-chart-5) somewhere in the
@@ -207,35 +215,35 @@
    so they don't belong in @theme's utility-generation system at all. */
 :root {
   --chart-1: #bc2f2f;
-  --chart-2: #cc5a3e;
-  --chart-3: #bc672f;
-  --chart-4: #cc933e;
-  --chart-5: #a58c27;
+  --chart-2: #3ecc93;
+  --chart-3: #bc2fa0;
+  --chart-4: #5acc3e;
+  --chart-5: #672fbc;
   --chart-6: #a5a527;
-  --chart-7: #8ca527;
-  --chart-8: #73a527;
-  --chart-9: #59a527;
-  --chart-10: #5acc3e;
+  --chart-7: #2f67bc;
+  --chart-8: #cc5a3e;
+  --chart-9: #2fbca0;
+  --chart-10: #cc3e93;
   --chart-11: #2fbc2f;
-  --chart-12: #3ecc5a;
-  --chart-13: #2fbc67;
-  --chart-14: #3ecc93;
-  --chart-15: #2fbca0;
+  --chart-12: #933ecc;
+  --chart-13: #8ca527;
+  --chart-14: #3e5acc;
+  --chart-15: #bc672f;
   --chart-16: #3ecccc;
-  --chart-17: #2fa0bc;
-  --chart-18: #3e93cc;
-  --chart-19: #2f67bc;
-  --chart-20: #3e5acc;
+  --chart-17: #bc2f67;
+  --chart-18: #3ecc5a;
+  --chart-19: #a02fbc;
+  --chart-20: #73a527;
   --chart-21: #2f2fbc;
-  --chart-22: #5a3ecc;
-  --chart-23: #672fbc;
-  --chart-24: #933ecc;
-  --chart-25: #a02fbc;
+  --chart-22: #cc933e;
+  --chart-23: #2fa0bc;
+  --chart-24: #cc3e5a;
+  --chart-25: #2fbc67;
   --chart-26: #cc3ecc;
-  --chart-27: #bc2fa0;
-  --chart-28: #cc3e93;
-  --chart-29: #bc2f67;
-  --chart-30: #cc3e5a;
+  --chart-27: #59a527;
+  --chart-28: #5a3ecc;
+  --chart-29: #a58c27;
+  --chart-30: #3e93cc;
 }
 
 /* Hide the scrollbar track */

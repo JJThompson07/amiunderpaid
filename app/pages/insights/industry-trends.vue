@@ -69,19 +69,21 @@
               v-for="industry in industries"
               :key="industry.categoryTag"
               type="button"
-              class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border transition-colors"
+              class="px-3 py-1.5 text-xs font-bold rounded-full border border-transparent transition-colors"
               :class="
                 selectedIndustries.includes(industry.categoryTag)
-                  ? 'bg-slate-50 border-slate-300 text-slate-700'
+                  ? ''
                   : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
               "
+              :style="
+                selectedIndustries.includes(industry.categoryTag)
+                  ? {
+                      backgroundColor: industryScaleMap.get(industry.categoryTag)?.['100'],
+                      color: industryScaleMap.get(industry.categoryTag)?.['800']
+                    }
+                  : {}
+              "
               @click="toggleIndustry(industry.categoryTag)">
-              <span
-                class="w-2.5 h-2.5 rounded-full shrink-0 transition-opacity"
-                :class="
-                  selectedIndustries.includes(industry.categoryTag) ? 'opacity-100' : 'opacity-40'
-                "
-                :style="{ backgroundColor: industryColorMap.get(industry.categoryTag) }" />
               {{ industry.label }}
             </button>
           </div>
@@ -93,6 +95,8 @@
 
 <script setup lang="ts">
 import * as echarts from 'echarts';
+import { generateColorScale } from '~~/shared/utils/color';
+import type { ColorScale } from '~~/shared/utils/color';
 import type { IndustryTrendEntry, IndustryTrendsResponse } from '~~/shared/utils/market-data';
 
 const { t } = useI18n();
@@ -138,16 +142,22 @@ const buildPalette = (): string[] =>
     getThemeColor(`--chart-${i + 1}`, '#64748b')
   );
 
-// Stable per-industry color, keyed by each industry's position in the FULL
-// list (not the currently-visible subset) -- otherwise toggling one industry
-// off would shift every other industry's index and reassign its color,
-// so a line's color would keep changing as you toggle others on/off, and the
-// legend pill could never reliably match its line.
-const industryColorMap = computed<Map<string, string>>(() => {
+// Stable per-industry color scale, keyed by each industry's position in the
+// FULL list (not the currently-visible subset) -- otherwise toggling one
+// industry off would shift every other industry's index and reassign its
+// color, so a line's color would keep changing as you toggle others on/off,
+// and the legend pill could never reliably match its line.
+//
+// Each palette entry is expanded into a full 50-900 tonal scale (see
+// shared/utils/color.ts) so the pill can use the same light-tint-background/
+// dark-text badge treatment this app already uses elsewhere (e.g. the MCA
+// bracket badges), rather than a flat single-tone pill -- the chart line
+// itself uses the scale's 500 stop.
+const industryScaleMap = computed<Map<string, ColorScale>>(() => {
   const palette = buildPalette();
-  const map = new Map<string, string>();
+  const map = new Map<string, ColorScale>();
   industries.value.forEach((industry, index) => {
-    map.set(industry.categoryTag, palette[index % palette.length]!);
+    map.set(industry.categoryTag, generateColorScale(palette[index % palette.length]!));
   });
   return map;
 });
@@ -240,7 +250,7 @@ const renderChart = (): void => {
       },
       series: visibleIndustries.value.map((industry) => {
         const byMonth = new Map(industry.history.map((point) => [point.month, point.average]));
-        const color = industryColorMap.value.get(industry.categoryTag);
+        const color = industryScaleMap.value.get(industry.categoryTag)?.['500'];
         return {
           name: industry.label,
           type: 'line',
