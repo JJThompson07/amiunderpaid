@@ -151,7 +151,7 @@ const adminLinks = computed<NavLink[]>(() => [
     children: [
       { to: '/admin/seed', label: t('navbar.seeder') },
       { to: '/admin/adzuna', label: t('navbar.adzuna-api') },
-      { to: '/admin/jobs-cache', label: t('navbar.jobs-cache') },
+      { to: '/admin/admin-actions', label: t('navbar.admin-actions') },
       { to: '/admin/coding-index', label: t('navbar.coding-index') }
     ]
   },
