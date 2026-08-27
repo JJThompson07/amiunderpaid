@@ -37,24 +37,27 @@ describe('useMarketData', () => {
   });
 
   it('resolves UK identity with exact id bypass', async () => {
-    const { resolveUkIdentity, matchedTitle, matchedIdCode } = useMarketData();
+    const { resolveUkIdentity, matchedTitle, matchedIdCode, matchedBenchmarkHit } = useMarketData();
     await resolveUkIdentity('Software Engineer', '1234');
 
     expect(matchedTitle.value).toBe('Software Engineer');
     expect(matchedIdCode.value).toBe('1234');
     expect(mockInitIndex).not.toHaveBeenCalled();
+    expect(matchedBenchmarkHit.value).toBeNull();
   });
 
   it('resolves UK identity via dictionary search with group', async () => {
     mockSearch.mockResolvedValueOnce({
       hits: [{ title: 'Developer', group: 'Software Engineering', soc: '2136' }]
     });
-    const { resolveUkIdentity, matchedTitle, matchedIdCode } = useMarketData();
+    const { resolveUkIdentity, matchedTitle, matchedIdCode, matchedBenchmarkHit } = useMarketData();
     await resolveUkIdentity('Developer (Software Engineering)');
 
     expect(mockInitIndex).toHaveBeenCalledWith('job_titles');
     expect(matchedTitle.value).toBe('Software Engineering');
     expect(matchedIdCode.value).toBe('2136');
+    // job_titles hits don't carry salary fields, so there's nothing to reuse downstream
+    expect(matchedBenchmarkHit.value).toBeNull();
   });
 
   it('resolves UK identity fallback to generic professional on no hits', async () => {
@@ -67,23 +70,27 @@ describe('useMarketData', () => {
   });
 
   it('resolves USA identity with exact id bypass', async () => {
-    const { resolveUsaIdentity, matchedTitle, matchedIdCode } = useMarketData();
+    const { resolveUsaIdentity, matchedTitle, matchedIdCode, matchedBenchmarkHit } =
+      useMarketData();
     await resolveUsaIdentity('Data Scientist', '5678');
 
     expect(matchedTitle.value).toBe('Data Scientist');
     expect(matchedIdCode.value).toBe('5678');
+    expect(matchedBenchmarkHit.value).toBeNull();
   });
 
   it('resolves USA identity via master index search', async () => {
-    mockSearch.mockResolvedValueOnce({
-      hits: [{ title: 'Data Scientist', id_code: '15-1221' }]
-    });
-    const { resolveUsaIdentity, matchedTitle, matchedIdCode } = useMarketData();
+    const usaHit = { title: 'Data Scientist', id_code: '15-1221', avg_salary: 120000 };
+    mockSearch.mockResolvedValueOnce({ hits: [usaHit] });
+    const { resolveUsaIdentity, matchedTitle, matchedIdCode, matchedBenchmarkHit } =
+      useMarketData();
     await resolveUsaIdentity('Data Scientist');
 
     expect(mockInitIndex).toHaveBeenCalledWith('salary_benchmarks');
     expect(matchedTitle.value).toBe('Data Scientist');
     expect(matchedIdCode.value).toBe('15-1221');
+    // The full hit is exposed so useMicroData can skip re-fetching the same record
+    expect(matchedBenchmarkHit.value).toEqual(usaHit);
   });
 
   it('resets identity if title changes in resolveUkIdentity', async () => {
@@ -113,15 +120,18 @@ describe('useMarketData', () => {
   });
 
   it('falls back to national index for UK when job_titles fails', async () => {
+    const nationalHit = { title: 'National Title', id_code: 'NAT-1', avg_salary: 40000 };
     mockSearch
       .mockResolvedValueOnce({ hits: [] }) // job_titles
-      .mockResolvedValueOnce({ hits: [{ title: 'National Title', id_code: 'NAT-1' }] }); // salary_benchmarks
+      .mockResolvedValueOnce({ hits: [nationalHit] }); // salary_benchmarks
 
-    const { resolveUkIdentity, matchedTitle, matchedIdCode } = useMarketData();
+    const { resolveUkIdentity, matchedTitle, matchedIdCode, matchedBenchmarkHit } = useMarketData();
     await resolveUkIdentity('Unknown Job');
 
     expect(matchedTitle.value).toBe('National Title');
     expect(matchedIdCode.value).toBe('NAT-1');
+    // The full hit is exposed so useMicroData can skip re-fetching the same record
+    expect(matchedBenchmarkHit.value).toEqual(nationalHit);
   });
 
   it('handles error in resolveUkIdentity gracefully', async () => {
@@ -150,6 +160,21 @@ describe('useMarketData', () => {
 
     expect(matchedTitle.value).toBe('New Title');
     expect(matchedIdCode.value).toBe('456');
+  });
+
+  it('clears a stale matchedBenchmarkHit when an ambiguity selection bypasses with an id', async () => {
+    // Simulate a prior direct-match resolution that populated matchedBenchmarkHit
+    mockSearch.mockResolvedValueOnce({
+      hits: [{ title: 'Data Scientist', id_code: '15-1221', avg_salary: 120000 }]
+    });
+    const { resolveUsaIdentity, matchedBenchmarkHit } = useMarketData();
+    await resolveUsaIdentity('Data Scientist');
+    expect(matchedBenchmarkHit.value).not.toBeNull();
+
+    // A later ambiguity-modal selection re-resolves via the ID bypass, which never
+    // re-fetches the record -- the earlier hit must not be reused as if it were this one.
+    await resolveUsaIdentity('Data Scientist', '15-1099');
+    expect(matchedBenchmarkHit.value).toBeNull();
   });
 
   it('handles single title hit without ambiguous matches', async () => {

@@ -71,10 +71,14 @@ export const useMacroData = (): {
         // query with no ranking returns an arbitrary subset if this is too low.
         regionalFilter = `country:UK AND searchTitle:"all employees" AND NOT searchLocation:"uk"`;
       }
-      const regionalQuery = regionalIndex.search<AlgoliaBenchmarkHit>('', {
-        filters: regionalFilter,
-        hitsPerPage: 1000
-      });
+      // Skipped entirely when there's no location to look up -- the result would only
+      // ever be discarded (see useLocationEngine.ts's userRegionalData lookup).
+      const regionalQuery = userLocation
+        ? regionalIndex.search<AlgoliaBenchmarkHit>('', {
+            filters: regionalFilter,
+            hitsPerPage: 1000
+          })
+        : Promise.resolve({ hits: [] as AlgoliaBenchmarkHit[] });
 
       // ==========================================
       // 3. EXECUTE IN PARALLEL

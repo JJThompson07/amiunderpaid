@@ -148,7 +148,13 @@ export const useLocationEngine = async (
 
       const [macro, micro] = await Promise.all([
         macroData.fetchMacroBaselines(country.value, location.value),
-        microData.fetchMicroBaselines(country.value, resolvedTitle, location.value, resolvedId)
+        microData.fetchMicroBaselines(
+          country.value,
+          resolvedTitle,
+          location.value,
+          resolvedId,
+          marketData.matchedBenchmarkHit.value
+        )
       ]);
 
       if (micro.officialGroupTitle) {
