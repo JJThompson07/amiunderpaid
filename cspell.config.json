@@ -92,6 +92,7 @@
     "dedup",
     "flitten",
     "nurs",
-    "trendline"
+    "trendline",
+    "maxage"
   ]
 }
