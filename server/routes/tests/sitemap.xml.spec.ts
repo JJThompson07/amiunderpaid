@@ -46,6 +46,19 @@ describe('sitemap.xml', () => {
     });
   };
 
+  it('delegates caching to Vercel Edge via a Host-aware Cache-Control header', async () => {
+    getRequestURLMock.mockReturnValue({ origin: 'https://www.amiunderpaid.co.uk' });
+    mockDb([], []);
+
+    await sitemapHandler({} as unknown as H3Event);
+
+    expect(setHeaderMock).toHaveBeenCalledWith(
+      expect.anything(),
+      'Cache-Control',
+      's-maxage=86400, stale-while-revalidate'
+    );
+  });
+
   it('scopes industry trend routes to gb on the UK amiunderpaid domain and dedupes tags', async () => {
     getRequestURLMock.mockReturnValue({ origin: 'https://www.amiunderpaid.co.uk' });
     mockDb(

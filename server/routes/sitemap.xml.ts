@@ -18,6 +18,14 @@ type SitemapIndustryTrendFields = {
 export default defineEventHandler(async (event): Promise<string> => {
   const url = getRequestURL(event);
   const origin = url.origin;
+
+  // Delegate the 24h cache to Vercel's Host-aware Edge Cache instead of a Nitro
+  // routeRule: Vercel's Edge Network keys by the full request URL (Host + Path),
+  // so each of the three production domains gets its own independent cache entry
+  // rather than sharing one path-only cache that could leak another domain's
+  // resolved origin into this one.
+  setHeader(event, 'Cache-Control', 's-maxage=86400, stale-while-revalidate');
+
   const isBenchmark = origin.includes('benchmarkmyrole');
   const routePrefix = isBenchmark ? '/benchmark' : '/salary';
   const db = useAdminFirestore();

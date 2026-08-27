@@ -54,7 +54,12 @@ export default defineNuxtConfig({
       : {
           '/salary/**': { swr: DAY_IN_S, ssr: true },
           '/benchmark/**': { swr: DAY_IN_S, ssr: true },
-          '/sitemap.xml': { swr: 86400 },
+          // No swr rule here intentionally: Nitro's internal cache is path-only and
+          // doesn't vary by Host, so it would bleed one domain's resolved origin
+          // (e.g. localhost, from whatever request first populates it) into every
+          // other domain's sitemap for the cache's lifetime. Caching is instead
+          // delegated to Vercel's Host-aware Edge Cache via the Cache-Control
+          // header set in server/routes/sitemap.xml.ts.
           // Always disable SSR for highly dynamic, user-specific auth routes
           '/recruiter/**': { ssr: false },
           '/admin/**': { ssr: false }

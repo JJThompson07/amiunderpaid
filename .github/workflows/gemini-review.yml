@@ -32,7 +32,7 @@ jobs:
             - **Readability**: Is the code easy to read and understand?
             - **Performance**: Are there any performance bottlenecks or inefficiencies?
             - **Cleanliness**: Is the code clean and well-organized?
-            - **Coding Standards**: Does it follow modern Vue 3 / Nuxt 3 and TypeScript best practices?
+            - **Coding Standards**: Does it follow modern Vue 3 / Nuxt 4 and TypeScript best practices?
             - **DRY Code**: Is there any unnecessary duplication?
             - **Testing**: Are there sufficient and appropriate tests (e.g., adjacent unit tests)?
             - **Documentation**: Are complex logic and new additions well-commented?
