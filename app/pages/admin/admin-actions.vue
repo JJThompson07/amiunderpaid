@@ -95,13 +95,17 @@ const terminalRef = ref<HTMLElement | null>(null);
 // Industry Trends from also being started.
 const runningActions = reactive<Record<string, boolean>>({});
 
-const addLog = (text: string, type: LogMessage['type']): void => {
+const addLog = async (text: string, type: LogMessage['type']): Promise<void> => {
   logs.value.push({
     id: crypto.randomUUID(),
     timestamp: new Date().toLocaleTimeString(),
     text,
     type
   });
+  await nextTick();
+  if (terminalRef.value) {
+    terminalRef.value.scrollTop = terminalRef.value.scrollHeight;
+  }
 };
 
 const logColorClass = (type: LogMessage['type']): string => {
@@ -113,13 +117,6 @@ const logColorClass = (type: LogMessage['type']): string => {
   }
   return 'text-slate-300';
 };
-
-watch(logs, async () => {
-  await nextTick();
-  if (terminalRef.value) {
-    terminalRef.value.scrollTop = terminalRef.value.scrollHeight;
-  }
-});
 
 // Every action follows the same protocol -- starting log, await, then a
 // success or error log -- so this is the one place that owns it instead of
@@ -133,13 +130,13 @@ const executeAction = async (
     return;
   }
   runningActions[key] = true;
-  addLog(`Starting ${label}...`, 'info');
+  await addLog(`Starting ${label}...`, 'info');
 
   try {
     const successMessage = await apiCall();
-    addLog(successMessage, 'success');
+    await addLog(successMessage, 'success');
   } catch (error) {
-    addLog(error instanceof Error ? error.message : `Failed to run ${label}.`, 'error');
+    await addLog(error instanceof Error ? error.message : `Failed to run ${label}.`, 'error');
   } finally {
     runningActions[key] = false;
   }
