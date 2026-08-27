@@ -45,6 +45,7 @@ const mockMarketData = {
   resolveUsaIdentity: vi.fn(),
   matchedTitle: { value: '' },
   matchedIdCode: { value: '' },
+  matchedBenchmarkHit: { value: null as Record<string, unknown> | null },
   isGenericFallback: { value: false },
   resolving: { value: false }
 };
@@ -103,6 +104,7 @@ describe('useLocationEngine', () => {
 
     mockMarketData.matchedTitle.value = '';
     mockMarketData.matchedIdCode.value = '';
+    mockMarketData.matchedBenchmarkHit.value = null;
     mockMarketData.isGenericFallback.value = false;
 
     mockAdzuna.cachedGovIdCode.value = null;

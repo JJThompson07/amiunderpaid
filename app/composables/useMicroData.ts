@@ -1,5 +1,6 @@
 import type { SearchClient } from 'algoliasearch';
 import type { Ref } from 'vue';
+import type { SalaryBenchmark } from '~/composables/useMarketData';
 import type { PercentileData } from '~~/shared/utils/types';
 
 // Raw shape of a benchmark record as stored in the Algolia `salary_benchmarks` /
@@ -28,7 +29,8 @@ export const useMicroData = (): {
     country: string,
     title: string,
     userLocation?: string | null,
-    idCode?: string | null
+    idCode?: string | null,
+    prefetchedHit?: SalaryBenchmark | null
   ) => Promise<MicroBaselines>;
 } => {
   const { $algolia } = useNuxtApp();
@@ -41,7 +43,8 @@ export const useMicroData = (): {
     country: string,
     title: string,
     userLocation?: string | null,
-    idCode?: string | null
+    idCode?: string | null,
+    prefetchedHit?: SalaryBenchmark | null
   ): Promise<MicroBaselines> => {
     fetching.value = true;
     const client = $algolia as SearchClient;
@@ -78,19 +81,27 @@ export const useMicroData = (): {
       // ==========================================
       // 2. BUILD QUERIES
       // ==========================================
-      const nationalQuery = nationalIndex.search('', {
-        filters: baseNationalFilter,
-        hitsPerPage: 1
-      });
+      // If identity resolution already searched salary_benchmarks for this exact record
+      // (see useMarketData.ts's matchedBenchmarkHit), reuse it instead of re-querying.
+      const nationalQuery = prefetchedHit
+        ? Promise.resolve({ hits: [prefetchedHit] })
+        : nationalIndex.search('', {
+            filters: baseNationalFilter,
+            hitsPerPage: 1
+          });
 
       // For regional, we grab all regions for this specific job.
       // Keep in sync with useMacroData.ts's regional query hitsPerPage —
       // utils/locations/uk.ts carries ~400 ONS regions, and a filter-only
       // query with no ranking returns an arbitrary subset if this is too low.
-      const regionalQuery = regionalIndex.search('', {
-        filters: baseRegionalFilter,
-        hitsPerPage: 1000
-      });
+      // Skipped entirely when there's no location to look up -- the result would
+      // only ever be discarded.
+      const regionalQuery = userLocation
+        ? regionalIndex.search('', {
+            filters: baseRegionalFilter,
+            hitsPerPage: 1000
+          })
+        : Promise.resolve({ hits: [] });
 
       // ==========================================
       // 3. EXECUTE IN PARALLEL

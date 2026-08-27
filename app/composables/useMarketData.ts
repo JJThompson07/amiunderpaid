@@ -28,6 +28,7 @@ export const useMarketData = (): {
   resolving: Ref<boolean>;
   matchedTitle: Ref<string>;
   matchedIdCode: Ref<string | undefined>;
+  matchedBenchmarkHit: Ref<SalaryBenchmark | null>;
   ambiguousMatches: Ref<SalaryBenchmark[]>;
   isGenericFallback: Ref<boolean>;
   resolveUkIdentity: (title: string, idCode?: string) => Promise<void>;
@@ -43,12 +44,18 @@ export const useMarketData = (): {
   // These are the only variables we need to keep! They define "Who" the user is.
   const matchedTitle = useState<string>('market_matched_title', () => '');
   const matchedIdCode = useState<string | undefined>('market_matched_id_code', () => undefined);
+  // The full salary_benchmarks hit, when identity resolution happened to search that index
+  // directly (USA path, UK fallback path) -- lets downstream micro-baseline fetches reuse it
+  // instead of re-querying the same record by id_code. Must be null whenever resolution didn't
+  // search salary_benchmarks (ID bypass, UK dictionary match) so a stale hit is never reused.
+  const matchedBenchmarkHit = useState<SalaryBenchmark | null>('market_matched_hit', () => null);
   const ambiguousMatches = useState<SalaryBenchmark[]>('market_ambiguous_matches', () => []);
   const isGenericFallback = useState<boolean>('market_generic_fallback', () => false);
 
   const resetIdentity = (): void => {
     matchedTitle.value = '';
     matchedIdCode.value = undefined;
+    matchedBenchmarkHit.value = null;
     ambiguousMatches.value = [];
     isGenericFallback.value = false;
   };
@@ -66,6 +73,7 @@ export const useMarketData = (): {
     if (idCode) {
       matchedIdCode.value = String(idCode).trim();
       matchedTitle.value = title;
+      matchedBenchmarkHit.value = null;
     } else {
       // Clean up title and extract any specified group (e.g., "Developer (Software Engineering)")
       let searchTitle = title.replace(/-/g, ' ');
@@ -114,6 +122,8 @@ export const useMarketData = (): {
         if (bestTitleMatch?.soc) {
           matchedIdCode.value = bestTitleMatch.soc;
           matchedTitle.value = bestTitleMatch.group || bestTitleMatch.title || searchTitle;
+          // job_titles hits don't carry salary fields, so there's nothing to reuse downstream
+          matchedBenchmarkHit.value = null;
           return; // Success!
         }
 
@@ -133,6 +143,7 @@ export const useMarketData = (): {
           isGenericFallback.value = true;
           matchedTitle.value = 'Professional (Generic)';
         }
+        matchedBenchmarkHit.value = bestBenchmarkMatch || null;
       } catch (error) {
         // eslint-disable-next-line no-console -- surfaces Algolia fetch failures for server-side debugging
         console.error('Error resolving UK identity:', error);
@@ -156,6 +167,7 @@ export const useMarketData = (): {
     if (idCode) {
       matchedIdCode.value = String(idCode).trim();
       matchedTitle.value = title;
+      matchedBenchmarkHit.value = null;
     } else {
       const searchTitle = title.replace(/-/g, ' ');
 
@@ -181,6 +193,7 @@ export const useMarketData = (): {
           isGenericFallback.value = true;
           matchedTitle.value = 'Professional (Generic)';
         }
+        matchedBenchmarkHit.value = bestBenchmarkMatch || null;
       } catch (error) {
         // eslint-disable-next-line no-console -- surfaces Algolia fetch failures for server-side debugging
         console.error('Error resolving USA identity:', error);
@@ -195,6 +208,7 @@ export const useMarketData = (): {
     resolving,
     matchedTitle,
     matchedIdCode,
+    matchedBenchmarkHit,
     ambiguousMatches,
     isGenericFallback,
     resolveUkIdentity,

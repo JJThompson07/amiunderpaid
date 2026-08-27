@@ -186,4 +186,18 @@ describe('useMacroData', () => {
     expect(result.userRegionalData).toBeNull();
     expect(result.regionalMedianAllRoles).toBeNull();
   });
+
+  it('skips the regional query entirely when no location is provided', async () => {
+    mockNationalSearch.mockResolvedValueOnce({
+      hits: [{ avg_salary: 30000 }]
+    });
+
+    const composable = useMacroData();
+    const result = await composable.fetchMacroBaselines('UK', null);
+
+    expect(mockRegionalSearch).not.toHaveBeenCalled();
+    expect(result.userRegionalData).toBeNull();
+    expect(result.allRegionalData).toEqual({});
+    expect(result.regionalMedianAllRoles).toBeNull();
+  });
 });

@@ -1,10 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMicroData } from '../useMicroData';
 
-const mockSearch = vi.fn();
-const mockInitIndex = vi.fn(() => ({
-  search: mockSearch
-}));
+const mockNationalSearch = vi.fn();
+const mockRegionalSearch = vi.fn();
+
+const mockInitIndex = vi.fn((indexName: string) => {
+  if (indexName === 'salary_benchmarks') {
+    return { search: mockNationalSearch };
+  }
+  if (indexName === 'regional_salary_benchmarks') {
+    return { search: mockRegionalSearch };
+  }
+  return { search: vi.fn() };
+});
 
 vi.stubGlobal('useNuxtApp', () => ({
   $algolia: {
@@ -26,10 +34,10 @@ describe('useMicroData', () => {
   });
 
   it('fetches micro baselines with UK idCode', async () => {
-    mockSearch.mockResolvedValueOnce({
+    mockNationalSearch.mockResolvedValueOnce({
       hits: [{ title: 'Software Developer', salary: 50000, avg_salary: 51000 }]
     });
-    mockSearch.mockResolvedValueOnce({
+    mockRegionalSearch.mockResolvedValueOnce({
       hits: [{ searchLocation: 'London', salary: 60000 }]
     });
 
@@ -39,14 +47,12 @@ describe('useMicroData', () => {
     expect(mockInitIndex).toHaveBeenCalledWith('salary_benchmarks');
     expect(mockInitIndex).toHaveBeenCalledWith('regional_salary_benchmarks');
 
-    // First call (national)
-    expect(mockSearch).toHaveBeenNthCalledWith(1, '', {
+    expect(mockNationalSearch).toHaveBeenCalledWith('', {
       filters: 'country:UK AND id_code:2136',
       hitsPerPage: 1
     });
 
-    // Second call (regional)
-    expect(mockSearch).toHaveBeenNthCalledWith(2, '', {
+    expect(mockRegionalSearch).toHaveBeenCalledWith('', {
       filters: 'country:UK AND id_code:2136',
       hitsPerPage: 1000
     });
@@ -64,13 +70,13 @@ describe('useMicroData', () => {
       searchLocation: `Region ${i}`,
       salary: 40000 + i
     }));
-    mockSearch.mockResolvedValueOnce({ hits: [{ title: 'Nurse', salary: 42000 }] });
-    mockSearch.mockResolvedValueOnce({ hits: manyRegions });
+    mockNationalSearch.mockResolvedValueOnce({ hits: [{ title: 'Nurse', salary: 42000 }] });
+    mockRegionalSearch.mockResolvedValueOnce({ hits: manyRegions });
 
     const { fetchMicroBaselines } = useMicroData();
     const result = await fetchMicroBaselines('UK', 'Nurse', 'Region 249', '2231');
 
-    expect(mockSearch).toHaveBeenNthCalledWith(2, '', {
+    expect(mockRegionalSearch).toHaveBeenCalledWith('', {
       filters: 'country:UK AND id_code:2231',
       hitsPerPage: 1000
     });
@@ -79,10 +85,10 @@ describe('useMicroData', () => {
   });
 
   it('pins microRegionalData for a known occupation/region pair', async () => {
-    mockSearch.mockResolvedValueOnce({
+    mockNationalSearch.mockResolvedValueOnce({
       hits: [{ title: 'Registered Nurse', salary: 36000, avg_salary: 37500 }]
     });
-    mockSearch.mockResolvedValueOnce({
+    mockRegionalSearch.mockResolvedValueOnce({
       hits: [
         { searchLocation: 'North West', salary: 33000 },
         { searchLocation: 'London', salary: 41000, avg_salary: 42500 }
@@ -103,41 +109,76 @@ describe('useMicroData', () => {
   });
 
   it('fetches micro baselines with USA idCode with quotes', async () => {
-    mockSearch.mockResolvedValueOnce({ hits: [] });
-    mockSearch.mockResolvedValueOnce({ hits: [] });
+    mockNationalSearch.mockResolvedValueOnce({ hits: [] });
+    mockRegionalSearch.mockResolvedValueOnce({ hits: [] });
 
     const { fetchMicroBaselines } = useMicroData();
-    await fetchMicroBaselines('USA', 'Data Scientist', null, '15-1221');
+    await fetchMicroBaselines('USA', 'Data Scientist', 'New York', '15-1221');
 
-    expect(mockSearch).toHaveBeenNthCalledWith(1, '', {
+    expect(mockNationalSearch).toHaveBeenCalledWith('', {
       filters: 'country:USA AND (id_code:"15-1221")',
       hitsPerPage: 1
     });
   });
 
   it('fetches micro baselines with text fallback', async () => {
-    mockSearch.mockResolvedValueOnce({ hits: [] });
-    mockSearch.mockResolvedValueOnce({ hits: [] });
+    mockNationalSearch.mockResolvedValueOnce({ hits: [] });
+    mockRegionalSearch.mockResolvedValueOnce({ hits: [] });
 
     const { fetchMicroBaselines } = useMicroData();
-    await fetchMicroBaselines('UK', 'Data "Scientist"', null, null);
+    await fetchMicroBaselines('UK', 'Data "Scientist"', 'London', null);
 
-    expect(mockSearch).toHaveBeenNthCalledWith(1, '', {
+    expect(mockNationalSearch).toHaveBeenCalledWith('', {
       filters: 'country:UK AND searchTitle:"data \\"scientist\\""',
       hitsPerPage: 1
     });
   });
 
   it('handles search errors gracefully', async () => {
-    mockSearch.mockRejectedValueOnce(new Error('Algolia Error'));
+    mockNationalSearch.mockRejectedValueOnce(new Error('Algolia Error'));
+    mockRegionalSearch.mockResolvedValueOnce({ hits: [] });
 
     const { fetchMicroBaselines, fetching } = useMicroData();
-    const result = await fetchMicroBaselines('UK', 'Job');
+    const result = await fetchMicroBaselines('UK', 'Job', 'London');
 
     expect(result.microNationalData).toBeNull();
     expect(result.microRegionalData).toBeNull();
     expect(result.allRegionalMicroData).toEqual({});
     expect(result.officialGroupTitle).toBeNull();
     expect(fetching.value).toBe(false);
+  });
+
+  it('skips the national query and reuses a prefetched hit when one is provided', async () => {
+    mockRegionalSearch.mockResolvedValueOnce({
+      hits: [{ searchLocation: 'New York', salary: 128000 }]
+    });
+    const prefetchedHit = { title: 'Data Scientist', salary: 130000, avg_salary: 135000 };
+
+    const { fetchMicroBaselines } = useMicroData();
+    const result = await fetchMicroBaselines(
+      'USA',
+      'Data Scientist',
+      'New York',
+      '15-1221',
+      prefetchedHit
+    );
+
+    expect(mockNationalSearch).not.toHaveBeenCalled();
+    expect(mockRegionalSearch).toHaveBeenCalled();
+    expect(result.microNationalData?.mean).toBe(135000);
+    expect(result.officialGroupTitle).toBe('Data Scientist');
+  });
+
+  it('skips the regional query entirely when no location is provided', async () => {
+    mockNationalSearch.mockResolvedValueOnce({
+      hits: [{ title: 'Nurse', salary: 42000 }]
+    });
+
+    const { fetchMicroBaselines } = useMicroData();
+    const result = await fetchMicroBaselines('UK', 'Nurse', null, '2231');
+
+    expect(mockRegionalSearch).not.toHaveBeenCalled();
+    expect(result.microRegionalData).toBeNull();
+    expect(result.allRegionalMicroData).toEqual({});
   });
 });
