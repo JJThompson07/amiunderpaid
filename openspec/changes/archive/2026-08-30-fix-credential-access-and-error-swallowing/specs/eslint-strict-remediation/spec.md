@@ -1,10 +1,4 @@
-# eslint-strict-remediation Specification
-
-## Purpose
-
-TBD - created by archiving change strict-typescript-remediation. Update Purpose after archive.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Strict Codebase Typing
 
@@ -24,12 +18,3 @@ The codebase SHALL strictly enforce all ESLint TypeScript rules without disablin
 
 - **WHEN** the `pnpm lint` pipeline runs its `spellcheck` (cspell) step, which executes before typecheck and ESLint
 - **THEN** it completes with exit code 0, reporting 0 unknown-word findings across all files it scans
-
-### Requirement: Vue Component Emit Typings
-
-All Vue 3 components using the Composition API `defineEmits` macro SHALL use type-based syntax to declare emit parameters rather than the untyped string array syntax, rendering `vue/require-emit-validator` obsolete.
-
-#### Scenario: Emitting an event from a Vue component
-
-- **WHEN** a component emits an event (e.g., `emit('user-select', user)`)
-- **THEN** the emit parameters MUST be statically validated by TypeScript, and the component MUST NOT raise a `vue/require-emit-validator` error.

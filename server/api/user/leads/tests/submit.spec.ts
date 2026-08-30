@@ -66,11 +66,12 @@ describe('user leads/submit endpoint', () => {
     await expect(handler(event)).rejects.toThrow('Invalid email format');
   });
 
-  it('wraps a missing recruiter in the generic 500 (the bare catch swallows the 404)', async () => {
+  it('propagates a 404 when the recruiter does not exist, instead of masking it as a 500', async () => {
     mockRecruiterGet.mockResolvedValue({ exists: false });
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('Internal server error processing lead');
+    await expect(handler(event)).rejects.toThrow('Recruiter not found');
+    await expect(handler(event)).rejects.toMatchObject({ statusCode: 404 });
   });
 
   it('sanitizes the name, saves the lead, and emails both the recruiter and candidate', async () => {
@@ -97,7 +98,10 @@ describe('user leads/submit endpoint', () => {
       email: 'jane@example.com',
       recruiterId: 'rec_1'
     });
-    mockRecruiterGet.mockResolvedValue({ exists: true, data: () => ({ email: 'account@agency.com' }) });
+    mockRecruiterGet.mockResolvedValue({
+      exists: true,
+      data: () => ({ email: 'account@agency.com' })
+    });
     const event = {} as unknown as H3Event;
 
     await handler(event);

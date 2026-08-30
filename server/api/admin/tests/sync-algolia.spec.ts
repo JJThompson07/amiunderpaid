@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Error, H3Event } from 'h3';
 
 type SyncAlgoliaHandler = (
@@ -16,6 +16,9 @@ vi.mock('h3', () => ({
   readBody: mockReadBody
 }));
 
+let mockConfig: { algoliaAdminApiKey?: string; algoliaApplicationId?: string };
+vi.stubGlobal('useRuntimeConfig', () => mockConfig);
+
 const mockSetSettings = vi.fn();
 const mockSaveObjects = vi.fn();
 const mockInitIndex = vi.fn(() => ({ setSettings: mockSetSettings, saveObjects: mockSaveObjects }));
@@ -28,18 +31,16 @@ describe('admin sync-algolia endpoint', () => {
 
   beforeEach(async (): Promise<void> => {
     vi.clearAllMocks();
-    vi.stubEnv('ALGOLIA_ADMIN_KEY', 'admin_key');
-    vi.stubEnv('ALGOLIA_APPLICATION_ID', 'app_id');
+    mockConfig = { algoliaAdminApiKey: 'admin_key', algoliaApplicationId: 'app_id' };
     const mod = await import('../sync-algolia.post');
     handler = mod.default as unknown as SyncAlgoliaHandler;
 
-    mockReadBody.mockResolvedValue({ data: [{ objectID: '1', title: 'Engineer' }], indexName: 'salary_search' });
+    mockReadBody.mockResolvedValue({
+      data: [{ objectID: '1', title: 'Engineer' }],
+      indexName: 'salary_search'
+    });
     mockSetSettings.mockResolvedValue(undefined);
     mockSaveObjects.mockResolvedValue({ objectIDs: ['1'] });
-  });
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
   });
 
   it('rejects a non-array data payload', async () => {
@@ -50,10 +51,12 @@ describe('admin sync-algolia endpoint', () => {
   });
 
   it('fails with a 500 when Algolia credentials are missing from the environment', async () => {
-    vi.stubEnv('ALGOLIA_ADMIN_KEY', '');
+    mockConfig = { algoliaApplicationId: 'app_id' };
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('Algolia credentials missing in server environment');
+    await expect(handler(event)).rejects.toThrow(
+      'Algolia credentials missing in server environment'
+    );
   });
 
   it('syncs data and returns the saved object count', async () => {

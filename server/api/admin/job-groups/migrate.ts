@@ -12,8 +12,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // 1. ENVIRONMENT CHECK
-    const appId = process.env.ALGOLIA_APPLICATION_ID;
-    const adminKey = process.env.ALGOLIA_ADMIN_KEY;
+    const config = useRuntimeConfig();
+    const appId = config.algoliaApplicationId;
+    const adminKey = config.algoliaAdminApiKey;
 
     if (!appId || !adminKey) {
       throw new Error('Algolia credentials missing from .env variables');

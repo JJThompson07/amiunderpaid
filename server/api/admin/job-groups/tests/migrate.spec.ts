@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Error, H3Event } from 'h3';
 
 type MigrateHandler = (event: H3Event) => Promise<{ success: boolean; count: number }>;
@@ -8,6 +8,9 @@ vi.stubGlobal('createError', (err: Partial<H3Error>) => new Error(err.message));
 
 const mockReadBody = vi.fn();
 vi.stubGlobal('readBody', mockReadBody);
+
+let mockConfig: { algoliaApplicationId?: string; algoliaAdminApiKey?: string };
+vi.stubGlobal('useRuntimeConfig', () => mockConfig);
 
 const mockGet = vi.fn();
 const mockCollection = vi.fn(() => ({ get: mockGet }));
@@ -30,18 +33,13 @@ describe('admin job-groups/migrate (Algolia sync) endpoint', () => {
 
   beforeEach(async (): Promise<void> => {
     vi.clearAllMocks();
-    vi.stubEnv('ALGOLIA_APPLICATION_ID', 'app_id');
-    vi.stubEnv('ALGOLIA_ADMIN_KEY', 'admin_key');
+    mockConfig = { algoliaApplicationId: 'app_id', algoliaAdminApiKey: 'admin_key' };
     const mod = await import('../migrate');
     handler = mod.default as unknown as MigrateHandler;
 
     mockReadBody.mockResolvedValue({ country: 'UK' });
     mockSetSettings.mockResolvedValue(undefined);
     mockReplaceAllObjects.mockResolvedValue({ objectIDs: ['2136'] });
-  });
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
   });
 
   it('requires a country in the request body', async () => {
@@ -52,7 +50,7 @@ describe('admin job-groups/migrate (Algolia sync) endpoint', () => {
   });
 
   it('fails with a 500 when Algolia credentials are missing from the environment', async () => {
-    vi.stubEnv('ALGOLIA_APPLICATION_ID', '');
+    mockConfig = { algoliaAdminApiKey: 'admin_key' };
     const event = {} as unknown as H3Event;
 
     await expect(handler(event)).rejects.toThrow('Algolia credentials missing from .env variables');
@@ -62,7 +60,9 @@ describe('admin job-groups/migrate (Algolia sync) endpoint', () => {
     mockGet.mockResolvedValue({ empty: true, docs: [] });
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('No documents found in Firestore collection: uk_job_groups');
+    await expect(handler(event)).rejects.toThrow(
+      'No documents found in Firestore collection: uk_job_groups'
+    );
   });
 
   it('chunks a group with more than 200 titles across multiple Algolia records', async () => {

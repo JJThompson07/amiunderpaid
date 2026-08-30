@@ -14,14 +14,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Invalid data format' });
   }
 
-  if (!process.env.ALGOLIA_ADMIN_KEY || !process.env.ALGOLIA_APPLICATION_ID) {
+  const config = useRuntimeConfig();
+
+  if (!config.algoliaAdminApiKey || !config.algoliaApplicationId) {
     throw createError({
       statusCode: 500,
       message: 'Algolia credentials missing in server environment'
     });
   }
 
-  const client = algoliasearch(process.env.ALGOLIA_APPLICATION_ID, process.env.ALGOLIA_ADMIN_KEY);
+  const client = algoliasearch(config.algoliaApplicationId, config.algoliaAdminApiKey);
   const index = client.initIndex(indexName);
 
   try {

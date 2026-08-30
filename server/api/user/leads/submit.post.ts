@@ -97,7 +97,10 @@ export default defineEventHandler(async (event) => {
     });
 
     return { success: true, leadId: leadRef.id };
-  } catch {
+  } catch (error) {
+    if (typeof (error as { statusCode?: unknown })?.statusCode === 'number') {
+      throw error;
+    }
     throw createError({ statusCode: 500, message: 'Internal server error processing lead' });
   }
 });
