@@ -5,12 +5,15 @@ type WebhookHandler = (event: H3Event) => Promise<{ received: boolean }>;
 
 // 1. Stub Globals
 vi.stubGlobal('defineEventHandler', (fn: WebhookHandler) => fn);
-vi.stubGlobal('useRuntimeConfig', () => ({
+const mockUseRuntimeConfig = vi.fn<
+  () => { stripeSecretKey: string; stripeWebhookSecret: string; resendApiKey: string | undefined }
+>(() => ({
   stripeSecretKey: 'sk_test_123',
   // cspell:disable-next-line
   stripeWebhookSecret: 'whsec_123',
   resendApiKey: 're_test_123'
 }));
+vi.stubGlobal('useRuntimeConfig', mockUseRuntimeConfig);
 vi.stubGlobal('readRawBody', async () => 'raw_body_string');
 vi.stubGlobal('getHeader', () => 'signature_123');
 vi.stubGlobal(
@@ -142,6 +145,12 @@ describe('Stripe Webhook', () => {
 
   beforeEach(async (): Promise<void> => {
     vi.clearAllMocks();
+    mockUseRuntimeConfig.mockReturnValue({
+      stripeSecretKey: 'sk_test_123',
+      // cspell:disable-next-line
+      stripeWebhookSecret: 'whsec_123',
+      resendApiKey: 're_test_123'
+    });
     const mod = await import('../webhook.post');
     handler = mod.default;
 
@@ -479,5 +488,283 @@ describe('Stripe Webhook', () => {
     expect(mockRefundsCreate).not.toHaveBeenCalled();
     expect(mockSubscriptionsCancel).not.toHaveBeenCalled();
     expect(mockResendSend).not.toHaveBeenCalled();
+  });
+
+  it('returns received:true without running a transaction for event types it does not handle', async () => {
+    mockConstructEvent.mockReturnValueOnce({
+      id: 'evt_other',
+      type: 'payment_intent.succeeded',
+      data: { object: {} }
+    });
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ received: true });
+    expect(mockRunTransaction).not.toHaveBeenCalled();
+  });
+
+  it('returns a 500 when the session is missing required metadata', async () => {
+    mockConstructEvent.mockReturnValueOnce({
+      id: 'evt_no_meta',
+      type: 'checkout.session.completed',
+      data: {
+        object: { id: 'cs_no_meta', mode: 'payment', payment_intent: 'pi_no_meta', metadata: {} }
+      }
+    });
+
+    const event = {} as unknown as H3Event;
+
+    await expect(handler(event)).rejects.toThrow('Database fulfillment failed');
+  });
+
+  it('skips claim writes for a cart item with no basic flag and no exclusive months, defaulting an empty category code', async () => {
+    mockConstructEvent.mockReturnValueOnce({
+      id: 'evt_sparse',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_sparse',
+          mode: 'payment',
+          payment_intent: 'pi_sparse',
+          metadata: { userId: 'user_123', cart: '1:dev:1:2024-01,2::0:none' }
+        }
+      }
+    });
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ received: true });
+    expect(mockRefundsCreate).not.toHaveBeenCalled();
+  });
+
+  it('merges an upgrade into an existing user territory instead of pushing a duplicate', async () => {
+    mockConstructEvent.mockReturnValueOnce({
+      id: 'evt_upgrade',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_upgrade',
+          mode: 'payment',
+          payment_intent: 'pi_upgrade',
+          metadata: { userId: 'user_123', cart: '1:dev:1:2024-01' }
+        }
+      }
+    });
+    mockTransaction.get.mockResolvedValueOnce({
+      data: () => ({
+        activeTerritories: [
+          { territoryId: 1, categoryValue: 'dev', isBasic: false, exclusiveMonths: ['2024-03'] }
+        ]
+      })
+    });
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ received: true });
+    expect(mockTransaction.set).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({
+        activeTerritories: [
+          {
+            territoryId: 1,
+            categoryValue: 'dev',
+            isBasic: true,
+            exclusiveMonths: ['2024-03', '2024-01']
+          }
+        ]
+      }),
+      { merge: true }
+    );
+  });
+
+  it('alerts instead of refunding when a conflicting payment-mode session has no payment_intent to refund', async () => {
+    mockConstructEvent.mockReturnValueOnce({
+      id: 'evt_no_pi',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_no_pi',
+          mode: 'payment',
+          metadata: { userId: 'user_123', cart: '1:dev:1:2024-01' }
+        }
+      }
+    });
+    mockTransaction.getAll.mockResolvedValueOnce([
+      {
+        id: '1_dev',
+        exists: true,
+        data: (): { takenExclusiveMonths: Record<string, string> } => ({
+          takenExclusiveMonths: { '2024-01': 'other_user' }
+        })
+      }
+    ]);
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ received: true });
+    expect(mockRefundsCreate).not.toHaveBeenCalled();
+    expect(mockResendSend).toHaveBeenCalledWith(
+      expect.objectContaining({ text: expect.stringContaining('no payment_intent to refund') })
+    );
+  });
+
+  it('alerts when a conflicting session is in neither payment nor subscription mode', async () => {
+    mockConstructEvent.mockReturnValueOnce({
+      id: 'evt_setup',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_setup',
+          mode: 'setup',
+          metadata: { userId: 'user_123', cart: '1:dev:1:2024-01' }
+        }
+      }
+    });
+    mockTransaction.getAll.mockResolvedValueOnce([
+      {
+        id: '1_dev',
+        exists: true,
+        data: (): { takenExclusiveMonths: Record<string, string> } => ({
+          takenExclusiveMonths: { '2024-01': 'other_user' }
+        })
+      }
+    ]);
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ received: true });
+    expect(mockResendSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: expect.stringContaining('no payment_intent or subscription to refund/cancel')
+      })
+    );
+  });
+
+  it('alerts when a paid invoice has no resolvable invoice payment to refund', async () => {
+    mockConstructEvent.mockReturnValueOnce({
+      id: 'evt_unresolvable',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_unresolvable',
+          mode: 'subscription',
+          subscription: 'sub_unresolvable',
+          metadata: { userId: 'user_123', cart: '1:dev:1:2024-01' }
+        }
+      }
+    });
+    mockTransaction.getAll.mockResolvedValueOnce([
+      {
+        id: '1_dev',
+        exists: true,
+        data: (): { takenExclusiveMonths: Record<string, string> } => ({
+          takenExclusiveMonths: { '2024-01': 'other_user' }
+        })
+      }
+    ]);
+    mockSubscriptionsRetrieve.mockResolvedValueOnce({
+      latest_invoice: { id: 'in_unresolvable', amount_paid: 5000 }
+    });
+    mockInvoicePaymentsList.mockResolvedValueOnce({ data: [] });
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ received: true });
+    expect(mockSubscriptionsCancel).not.toHaveBeenCalled();
+    expect(mockResendSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: expect.stringContaining('no resolvable invoice payment')
+      })
+    );
+  });
+
+  it('does not send an alert email when RESEND_API_KEY is not configured, only logs', async () => {
+    mockUseRuntimeConfig.mockReturnValue({
+      stripeSecretKey: 'sk_test_123',
+      // cspell:disable-next-line
+      stripeWebhookSecret: 'whsec_123',
+      resendApiKey: undefined
+    });
+    mockTransaction.getAll.mockResolvedValueOnce([
+      {
+        id: '1_dev',
+        exists: true,
+        data: (): { takenExclusiveMonths: Record<string, string> } => ({
+          takenExclusiveMonths: { '2024-01': 'other_user' }
+        })
+      }
+    ]);
+    mockRefundsCreate.mockRejectedValueOnce(new Error('refund also failed'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ received: true });
+    expect(mockResendSend).not.toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('No RESEND_API_KEY configured')
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it('stringifies a non-Error refund rejection in the alert email body', async () => {
+    mockTransaction.getAll.mockResolvedValueOnce([
+      {
+        id: '1_dev',
+        exists: true,
+        data: (): { takenExclusiveMonths: Record<string, string> } => ({
+          takenExclusiveMonths: { '2024-01': 'other_user' }
+        })
+      }
+    ]);
+    mockRefundsCreate.mockRejectedValueOnce('rate limited by Stripe');
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ received: true });
+    expect(mockResendSend).toHaveBeenCalledWith(
+      expect.objectContaining({ text: expect.stringContaining('rate limited by Stripe') })
+    );
+  });
+
+  it('treats a non-Error thrown value as not an already-exists error and returns a 500', async () => {
+    mockRunTransaction.mockRejectedValueOnce('boom');
+
+    const event = {} as unknown as H3Event;
+
+    await expect(handler(event)).rejects.toThrow('Database fulfillment failed');
+  });
+
+  it('records stripeSubscriptionId on the user profile after a clean subscription checkout', async () => {
+    mockConstructEvent.mockReturnValueOnce({
+      id: 'evt_clean_sub',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_clean_sub',
+          mode: 'subscription',
+          subscription: 'sub_clean_123',
+          metadata: { userId: 'user_123', cart: '1:dev:1:2024-01' }
+        }
+      }
+    });
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ received: true });
+    expect(mockTransaction.set).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ stripeSubscriptionId: 'sub_clean_123' }),
+      { merge: true }
+    );
   });
 });

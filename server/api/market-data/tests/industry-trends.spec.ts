@@ -3,7 +3,13 @@ import type { H3Event } from 'h3';
 import type { IndustryTrendsResponse } from '~~/shared/utils/market-data';
 
 vi.stubGlobal('defineEventHandler', <T>(fn: T): T => fn);
-vi.stubGlobal('defineCachedFunction', <T>(fn: T): T => fn);
+vi.stubGlobal(
+  'defineCachedFunction',
+  <T, O extends { getKey?: (...args: never[]) => string }>(fn: T, options?: O): T => {
+    options?.getKey?.('gb' as never);
+    return fn;
+  }
+);
 const useAdminFirestoreMock = vi.fn();
 vi.stubGlobal('useAdminFirestore', useAdminFirestoreMock);
 const getQueryMock = vi.fn();
@@ -65,5 +71,14 @@ describe('industry-trends API', () => {
     const result = await industryTrendsHandler({} as unknown as H3Event);
 
     expect(result.industries[0]?.label).toBe('it-jobs');
+  });
+
+  it('defaults history to an empty array for docs written before that field existed', async () => {
+    getQueryMock.mockReturnValue({ country: 'gb' });
+    mockTrendsDocs([{ categoryTag: 'it-jobs', label: 'IT Jobs', lookupCount: 5 }]);
+
+    const result = await industryTrendsHandler({} as unknown as H3Event);
+
+    expect(result.industries[0]?.history).toEqual([]);
   });
 });

@@ -113,4 +113,72 @@ describe('sitemap.xml', () => {
     expect(xml).not.toContain('/insights/industry-trends/undefined');
     expect(xml).toContain('/insights/industry-trends</loc>');
   });
+
+  it('builds a dynamic salary route from a job doc, slugifying the title and defaulting the country to UK', async () => {
+    getRequestURLMock.mockReturnValue({ origin: 'https://www.amiunderpaid.co.uk' });
+    mockDb([{ data: (): { title: string } => ({ title: 'Senior UI/UX Designer' }) }], []);
+
+    const xml = await sitemapHandler({} as unknown as H3Event);
+
+    expect(xml).toContain('<loc>https://www.amiunderpaid.co.uk/salary/senior-ui-ux-designer/UK</loc>');
+  });
+
+  it('appends a slugified location segment when the job doc has one', async () => {
+    getRequestURLMock.mockReturnValue({ origin: 'https://www.amiunderpaid.co.uk' });
+    mockDb(
+      [
+        {
+          data: (): { title: string; country: string; location: string } => ({
+            title: 'Software Engineer',
+            country: 'UK',
+            location: 'Greater London'
+          })
+        }
+      ],
+      []
+    );
+
+    const xml = await sitemapHandler({} as unknown as H3Event);
+
+    expect(xml).toContain(
+      '<loc>https://www.amiunderpaid.co.uk/salary/software-engineer/UK/greater-london</loc>'
+    );
+  });
+
+  it('scopes jobs to USA and uses /salary on the US amiunderpaid domain', async () => {
+    getRequestURLMock.mockReturnValue({ origin: 'https://www.amiunderpaid.com' });
+    const jobsDocs = [{ data: (): { title: string; country: string } => ({ title: 'Nurse', country: 'USA' }) }];
+    const jobsQuery = makeChainableQuery(jobsDocs);
+    const industryQuery = makeChainableQuery([]);
+    useAdminFirestoreMock.mockReturnValue({
+      collection: vi.fn((name: string) => (name === 'adzuna_industry_trends' ? industryQuery : jobsQuery))
+    });
+
+    const xml = await sitemapHandler({} as unknown as H3Event);
+
+    expect(jobsQuery.where).toHaveBeenCalledWith('country', '==', 'USA');
+    expect(xml).toContain('<loc>https://www.amiunderpaid.com/salary/nurse/USA</loc>');
+  });
+
+  it('does not scope jobs by country on an unrecognized domain', async () => {
+    getRequestURLMock.mockReturnValue({ origin: 'https://localhost:3000' });
+    const jobsQuery = makeChainableQuery([]);
+    const industryQuery = makeChainableQuery([]);
+    useAdminFirestoreMock.mockReturnValue({
+      collection: vi.fn((name: string) => (name === 'adzuna_industry_trends' ? industryQuery : jobsQuery))
+    });
+
+    await sitemapHandler({} as unknown as H3Event);
+
+    expect(jobsQuery.where).not.toHaveBeenCalled();
+  });
+
+  it('uses the /benchmark route prefix and does not scope jobs by country on the benchmark domain', async () => {
+    getRequestURLMock.mockReturnValue({ origin: 'https://www.benchmarkmyrole.com' });
+    mockDb([{ data: (): { title: string; country: string } => ({ title: 'Nurse', country: 'UK' }) }], []);
+
+    const xml = await sitemapHandler({} as unknown as H3Event);
+
+    expect(xml).toContain('<loc>https://www.benchmarkmyrole.com/benchmark/nurse/UK</loc>');
+  });
 });

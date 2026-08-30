@@ -1,13 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Event } from 'h3';
 
 type CheckoutBody = {
   currency?: string;
   territories?: {
     territoryId: number;
-    categoryValue: string;
+    categoryValue?: string;
     isBasic: boolean;
-    exclusiveMonths: string[];
+    exclusiveMonths?: string[];
   }[];
 };
 type CheckoutHandler = (event: H3Event) => Promise<{ url: string | null }>;
@@ -15,7 +15,8 @@ type CheckoutHandler = (event: H3Event) => Promise<{ url: string | null }>;
 // 1. Stub Globals
 vi.stubGlobal('defineEventHandler', (fn: CheckoutHandler) => fn);
 vi.stubGlobal('useRuntimeConfig', () => ({ stripeSecretKey: 'sk_test_123' }));
-vi.stubGlobal('getRequestHeader', () => 'Bearer test_token');
+const mockGetRequestHeader = vi.fn<() => string | undefined>(() => 'Bearer test_token');
+vi.stubGlobal('getRequestHeader', mockGetRequestHeader);
 vi.stubGlobal('getRequestProtocol', () => 'https');
 vi.stubGlobal('getRequestHost', () => 'app.example.com');
 vi.stubGlobal(
@@ -71,6 +72,7 @@ describe('create-checkout', () => {
 
   beforeEach(async (): Promise<void> => {
     vi.clearAllMocks();
+    mockGetRequestHeader.mockReturnValue('Bearer test_token');
     const mod = await import('../create-checkout.post');
     handler = mod.default;
 
@@ -86,6 +88,10 @@ describe('create-checkout', () => {
     mockPricingGet.mockResolvedValue({ exists: false });
     mockUserGet.mockResolvedValue({ data: () => ({}) });
     mockSessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/test' });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('creates a subscription-mode session with a $0 line item for a 100% basicDiscount account', async () => {
@@ -137,6 +143,15 @@ describe('create-checkout', () => {
     expect(mockSessionsCreate).not.toHaveBeenCalled();
   });
 
+  it('throws a 500 when the pricing document exists but is missing the country key entirely', async () => {
+    mockPricingGet.mockResolvedValue({ exists: true, data: () => ({}) });
+
+    const event = {} as unknown as H3Event;
+
+    await expect(handler(event)).rejects.toThrow('Pricing bands for UK not found.');
+    expect(mockSessionsCreate).not.toHaveBeenCalled();
+  });
+
   it('throws a distinct error when exclusive months were selected but priced to zero', async () => {
     mockUserGet.mockResolvedValue({ data: () => ({ exclusiveDiscount: 100 }) });
     requestBody = {
@@ -152,5 +167,273 @@ describe('create-checkout', () => {
       'Exclusive month pricing resolved to zero and cannot be processed as-is.'
     );
     expect(mockSessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it('throws 401 when the authorization header is missing', async () => {
+    mockGetRequestHeader.mockReturnValue(undefined);
+
+    const event = {} as unknown as H3Event;
+
+    await expect(handler(event)).rejects.toThrow('Unauthorized: Missing auth token');
+    expect(mockSessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it('throws 401 when the authorization header is not a Bearer token', async () => {
+    mockGetRequestHeader.mockReturnValue('Basic abc123');
+
+    const event = {} as unknown as H3Event;
+
+    await expect(handler(event)).rejects.toThrow('Unauthorized: Missing auth token');
+  });
+
+  it('throws 401 and warns when token verification fails', async () => {
+    mockVerifyIdToken.mockRejectedValueOnce(new Error('invalid signature'));
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const event = {} as unknown as H3Event;
+
+    await expect(handler(event)).rejects.toThrow('Unauthorized: Invalid token');
+    expect(warnSpy).toHaveBeenCalledWith('Stripe checkout auth warning:', expect.any(Error));
+    expect(mockSessionsCreate).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('defaults currency to gbp when the request body omits it', async () => {
+    requestBody = {
+      territories: [{ territoryId: 999, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }]
+    };
+
+    const event = {} as unknown as H3Event;
+    await handler(event);
+
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [
+          expect.objectContaining({
+            price_data: expect.objectContaining({ currency: 'gbp', unit_amount: 5000 })
+          })
+        ]
+      })
+    );
+  });
+
+  it('normalizes an uppercase currency and looks up the real USA territory band', async () => {
+    // Territory 201 (Alabama) resolves to band3 via US_TERRITORY_BAND_MAP,
+    // not the band1 default — DEFAULT_PRICING USA band3 basic is 25.
+    requestBody = {
+      currency: 'USD',
+      territories: [{ territoryId: 201, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }]
+    };
+
+    const event = {} as unknown as H3Event;
+    await handler(event);
+
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [
+          expect.objectContaining({
+            price_data: expect.objectContaining({ currency: 'usd', unit_amount: 2500 })
+          })
+        ]
+      })
+    );
+  });
+
+  it('resolves the price band via real UK territory data and tolerates a missing user document body', async () => {
+    // Territory 1 (Bedfordshire) resolves to band3 via TERRITORY_BAND_MAP,
+    // not the band1 default — DEFAULT_PRICING UK band3 basic is 20.
+    mockUserGet.mockResolvedValue({ data: () => undefined });
+    requestBody = {
+      currency: 'gbp',
+      territories: [{ territoryId: 1, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }]
+    };
+
+    const event = {} as unknown as H3Event;
+    await handler(event);
+
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [
+          expect.objectContaining({
+            price_data: expect.objectContaining({ unit_amount: 2000 })
+          })
+        ]
+      })
+    );
+  });
+
+  it('uses the Firestore-stored pricing document instead of DEFAULT_PRICING when it exists', async () => {
+    mockPricingGet.mockResolvedValue({
+      exists: true,
+      data: () => ({ UK: { band1: { basic: 99, exclusive: 499 } } })
+    });
+
+    const event = {} as unknown as H3Event;
+    await handler(event);
+
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [
+          expect.objectContaining({
+            price_data: expect.objectContaining({ unit_amount: 9900 })
+          })
+        ]
+      })
+    );
+  });
+
+  it('builds an upfront line item and uses payment mode for an exclusive-only cart', async () => {
+    requestBody = {
+      currency: 'gbp',
+      // Not the current calendar month, so the halfway discount never applies.
+      territories: [
+        { territoryId: 1, categoryValue: 'IT', isBasic: false, exclusiveMonths: ['2020-01'] }
+      ]
+    };
+
+    const event = {} as unknown as H3Event;
+    await handler(event);
+
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: 'payment',
+        line_items: [
+          expect.objectContaining({
+            price_data: expect.objectContaining({
+              unit_amount: 10000
+            })
+          })
+        ]
+      })
+    );
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.not.objectContaining({ subscription_data: expect.anything() })
+    );
+  });
+
+  it('compresses the cart metadata with ALL/0/none fallbacks for a bare territory entry', async () => {
+    requestBody = {
+      currency: 'gbp',
+      territories: [
+        { territoryId: 999, isBasic: false },
+        {
+          territoryId: 1,
+          categoryValue: 'IT',
+          isBasic: true,
+          exclusiveMonths: ['2020-01', '2020-02']
+        }
+      ]
+    };
+
+    const event = {} as unknown as H3Event;
+    await handler(event);
+
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          cart: '999:ALL:0:none,1:IT:1:2020-01~2020-02'
+        })
+      })
+    );
+  });
+
+  it('applies the 50% halfway-of-month discount to the current month only', async () => {
+    // Aug 20 2026 is past the halfway point of a 31-day month.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 20));
+
+    requestBody = {
+      currency: 'gbp',
+      territories: [
+        { territoryId: 1, categoryValue: 'IT', isBasic: false, exclusiveMonths: ['2026-08'] }
+      ]
+    };
+
+    const event = {} as unknown as H3Event;
+    await handler(event);
+
+    // Band3 exclusive (100) halved by the halfway discount.
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [
+          expect.objectContaining({
+            price_data: expect.objectContaining({ unit_amount: 5000 })
+          })
+        ]
+      })
+    );
+  });
+
+  it('grants a calendar free trial ending the 1st of next month when comfortably >48h away', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 1));
+
+    requestBody = {
+      currency: 'gbp',
+      territories: [{ territoryId: 1, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }]
+    };
+
+    const event = {} as unknown as H3Event;
+    await handler(event);
+
+    const expectedTrialEnd = Math.floor(new Date(2026, 8, 1).getTime() / 1000);
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subscription_data: { trial_end: expectedTrialEnd }
+      })
+    );
+  });
+
+  it('rolls the trial to the month after next when the 1st is under Stripe’s 48-hour minimum', async () => {
+    // Aug 31 2026, 10:00 local — under 48h before Sept 1 00:00.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 31, 10, 0, 0));
+
+    requestBody = {
+      currency: 'gbp',
+      territories: [{ territoryId: 1, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }]
+    };
+
+    const event = {} as unknown as H3Event;
+    await handler(event);
+
+    const expectedTrialEnd = Math.floor(new Date(2026, 9, 1).getTime() / 1000);
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subscription_data: { trial_end: expectedTrialEnd }
+      })
+    );
+  });
+
+  it('omits customer_email when the decoded token has no email', async () => {
+    mockVerifyIdToken.mockResolvedValue({ uid: 'user_123' });
+
+    const event = {} as unknown as H3Event;
+    await handler(event);
+
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ customer_email: undefined })
+    );
+  });
+
+  it('wraps a Stripe session-creation failure in a 500 using the underlying error message', async () => {
+    mockSessionsCreate.mockRejectedValueOnce(new Error('card declined'));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const event = {} as unknown as H3Event;
+
+    await expect(handler(event)).rejects.toThrow('card declined');
+    expect(errorSpy).toHaveBeenCalledWith('Stripe Error:', 'card declined');
+    errorSpy.mockRestore();
+  });
+
+  it('falls back to a generic message when Stripe rejects with a non-Error value', async () => {
+    mockSessionsCreate.mockRejectedValueOnce('network blip');
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const event = {} as unknown as H3Event;
+
+    await expect(handler(event)).rejects.toThrow('Failed to create checkout session.');
+    errorSpy.mockRestore();
   });
 });

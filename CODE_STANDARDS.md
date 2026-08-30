@@ -68,6 +68,7 @@ You are an AI assistant helping to build a dual-tenant, server-side rendered (SS
 - **Requirement:** Unit tests are strictly required for all new core utilities (`~/shared/utils/`, `~/server/utils/`) and composables (`~/app/composables/`).
 - **Execution:** All changes MUST pass the test suite (`pnpm vitest run`) before being committed or archived.
 - **Location:** Tests should be located in a `tests/` directory adjacent to the file being tested (e.g., `~/shared/utils/tests/math.spec.ts`).
+- **Coverage threshold vs. static lookup-table data:** `vitest.config.ts` enforces 80% coverage on all four metrics per file. For files that are purely static lookup tables (e.g. `utils/locations/uk.ts`/`usa.ts`, each territory entry expressed as its own `MAP[id] || DEFAULT` fallback), the fallback side of every entry's branch is only reachable for an id that doesn't exist in the map — not a meaningful behavior to unit test. Add such files to `coverage.exclude` (see the existing `shared/utils/market-data.ts`/`utils/seedData.ts` entries) rather than writing tests against nonexistent IDs to satisfy the threshold. This does not apply to composables or logic-bearing files with genuinely untested `if`/`else` branches — those must be tested, not excluded.
 
 ## 9. Security & Credentials
 

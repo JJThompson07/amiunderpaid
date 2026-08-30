@@ -105,4 +105,67 @@ describe('Analytics Session API', () => {
       { merge: true }
     );
   });
+
+  it('falls back to Unknown when the country header sanitizes down to an empty string', async () => {
+    const event = {
+      node: {
+        req: {
+          headers: {
+            'x-vercel-ip-country': '!!!',
+            'x-vercel-ip-city': '???'
+          }
+        }
+      }
+    } as unknown as H3Event;
+
+    await sessionEndpoint(event);
+
+    expect(setMock).toHaveBeenCalledWith(
+      {
+        total: 'increment(1)',
+        locations: {
+          Unknown: {
+            Unknown: 'increment(1)'
+          }
+        }
+      },
+      { merge: true }
+    );
+  });
+
+  it('recovers from a malformed percent-encoded header instead of throwing', async () => {
+    const event = {
+      node: {
+        req: {
+          headers: {
+            'x-vercel-ip-country': '%E0%A4%A',
+            'x-vercel-ip-city': 'London'
+          }
+        }
+      }
+    } as unknown as H3Event;
+
+    const result = await sessionEndpoint(event);
+
+    expect(result).toEqual({ status: 200, message: 'Session logged' });
+    expect(setMock).toHaveBeenCalled();
+  });
+
+  it('logs and swallows a Firestore write failure so the client is never impacted', async () => {
+    setMock.mockRejectedValueOnce(new Error('firestore down'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const event = {
+      node: {
+        req: {
+          headers: { 'x-vercel-ip-country': 'GB', 'x-vercel-ip-city': 'London' }
+        }
+      }
+    } as unknown as H3Event;
+
+    const result = await sessionEndpoint(event);
+
+    expect(result).toEqual({ status: 200, message: 'Session logged' });
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to log user session:', expect.any(Error));
+    consoleSpy.mockRestore();
+  });
 });
