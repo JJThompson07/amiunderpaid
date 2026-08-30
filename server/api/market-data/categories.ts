@@ -1,5 +1,3 @@
-import { FetchError } from 'ofetch';
-
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const query = getQuery(event);
@@ -12,7 +10,7 @@ export default defineEventHandler(async (event) => {
   if (!appId || !appKey) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Adzuna API credentials are not configured.'
+      statusMessage: 'Market data credentials are not configured.'
     });
   }
 
@@ -28,12 +26,10 @@ export default defineEventHandler(async (event) => {
       }
     );
     return response;
-  } catch (e) {
-    const isFetchError = e instanceof FetchError;
+  } catch {
     throw createError({
-      statusCode: (isFetchError && e.response?.status) || 500,
-      statusMessage: `Failed to fetch Adzuna categories for ${targetCountry}`,
-      data: isFetchError ? e.data : undefined
+      statusCode: 503,
+      statusMessage: 'Market data temporarily unavailable.'
     });
   }
 });

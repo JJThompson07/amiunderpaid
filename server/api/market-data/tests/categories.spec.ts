@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Event } from 'h3';
-import { FetchError } from 'ofetch';
 
 type CategoriesHandler = (event: H3Event) => Promise<unknown>;
 
@@ -36,7 +35,7 @@ describe('market-data categories endpoint', () => {
     mockConfig = {};
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('Adzuna API credentials are not configured.');
+    await expect(handler(event)).rejects.toThrow('Market data credentials are not configured.');
   });
 
   it('defaults to gb and returns the fetched categories', async () => {
@@ -59,24 +58,27 @@ describe('market-data categories endpoint', () => {
 
     await handler(event);
 
-    expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/us/categories'), expect.anything());
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/us/categories'),
+      expect.anything()
+    );
   });
 
-  it('maps a 429 provider error to that status code with the FetchError data', async () => {
-    const err = Object.assign(new FetchError('rate limited'), {
+  it('wraps a rate-limited provider failure in an opaque 503 without leaking provider details', async () => {
+    const err = Object.assign(new Error('rate limited'), {
       response: { status: 429 },
       data: { reason: 'rate limit' }
     });
     mockFetch.mockRejectedValueOnce(err);
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow();
+    await expect(handler(event)).rejects.toThrow('Market data temporarily unavailable.');
   });
 
-  it('maps a generic failure to a 500', async () => {
+  it('wraps a generic provider failure in an opaque 503', async () => {
     mockFetch.mockRejectedValueOnce(new Error('boom'));
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow();
+    await expect(handler(event)).rejects.toThrow('Market data temporarily unavailable.');
   });
 });

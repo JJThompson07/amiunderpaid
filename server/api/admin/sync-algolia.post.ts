@@ -1,4 +1,4 @@
-import { createError, defineEventHandler, readBody } from 'h3';
+import { createError, defineEventHandler, isError, readBody } from 'h3';
 import algoliasearch from 'algoliasearch';
 
 type SyncAlgoliaRequestBody = {
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   if (!config.algoliaAdminApiKey || !config.algoliaApplicationId) {
     throw createError({
       statusCode: 500,
-      message: 'Algolia credentials missing in server environment'
+      message: 'Search index credentials are not configured.'
     });
   }
 
@@ -53,10 +53,9 @@ export default defineEventHandler(async (event) => {
       message: `Synced ${objectIDs.length} records to Algolia index '${indexName}'`
     };
   } catch (error) {
-    throw createError({
-      statusCode: 500,
-      message: error instanceof Error ? error.message : 'Error syncing algolia index',
-      cause: error
-    });
+    if (isError(error)) {
+      throw error;
+    }
+    throw createError({ statusCode: 500, message: 'Error syncing search index' });
   }
 });

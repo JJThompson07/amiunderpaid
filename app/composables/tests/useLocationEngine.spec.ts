@@ -106,6 +106,7 @@ vi.stubGlobal('formatMcaScoreForUi', mockFormatMcaScoreForUi);
 describe('useLocationEngine', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    watchCallbacks.length = 0;
     mockRoute.query = {};
     mockRoute.params = { title: 'software-engineer', country: 'uk' };
 

@@ -9,6 +9,7 @@ vi.stubGlobal('createError', (err: Partial<H3Error>) => {
   e.statusCode = err.statusCode;
   return e;
 });
+vi.stubGlobal('isError', (e: unknown) => e instanceof Error && 'statusCode' in e);
 
 const mockReadBody = vi.fn();
 vi.stubGlobal('readBody', mockReadBody);

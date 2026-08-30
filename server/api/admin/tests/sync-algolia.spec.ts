@@ -13,6 +13,7 @@ vi.mock('h3', () => ({
     e.statusCode = err.statusCode;
     return e;
   },
+  isError: (e: unknown): boolean => e instanceof Error && 'statusCode' in e,
   readBody: mockReadBody
 }));
 
@@ -54,9 +55,7 @@ describe('admin sync-algolia endpoint', () => {
     mockConfig = { algoliaApplicationId: 'app_id' };
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow(
-      'Algolia credentials missing in server environment'
-    );
+    await expect(handler(event)).rejects.toThrow('Search index credentials are not configured.');
   });
 
   it('syncs data and returns the saved object count', async () => {
@@ -71,10 +70,10 @@ describe('admin sync-algolia endpoint', () => {
     });
   });
 
-  it('wraps a saveObjects failure with the underlying error message', async () => {
+  it('wraps a saveObjects failure in an opaque 500 without leaking the underlying error message', async () => {
     mockSaveObjects.mockRejectedValueOnce(new Error('quota exceeded'));
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('quota exceeded');
+    await expect(handler(event)).rejects.toThrow('Error syncing search index');
   });
 });

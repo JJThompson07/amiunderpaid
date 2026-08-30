@@ -4,7 +4,12 @@ import type { H3Error, H3Event } from 'h3';
 type MigrateHandler = (event: H3Event) => Promise<{ success: boolean; count: number }>;
 
 vi.stubGlobal('defineEventHandler', <T>(fn: T): T => fn);
-vi.stubGlobal('createError', (err: Partial<H3Error>) => new Error(err.message));
+vi.stubGlobal('createError', (err: Partial<H3Error>) => {
+  const e = new Error(err.message) as Error & { statusCode?: number };
+  e.statusCode = err.statusCode;
+  return e;
+});
+vi.stubGlobal('isError', (e: unknown) => e instanceof Error && 'statusCode' in e);
 
 const mockReadBody = vi.fn();
 vi.stubGlobal('readBody', mockReadBody);
@@ -53,16 +58,14 @@ describe('admin job-groups/migrate (Algolia sync) endpoint', () => {
     mockConfig = { algoliaAdminApiKey: 'admin_key' };
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('Algolia credentials missing from .env variables');
+    await expect(handler(event)).rejects.toThrow('Search index credentials are not configured.');
   });
 
   it('fails when the Firestore collection is empty', async () => {
     mockGet.mockResolvedValue({ empty: true, docs: [] });
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow(
-      'No documents found in Firestore collection: uk_job_groups'
-    );
+    await expect(handler(event)).rejects.toThrow('No job group records found to sync.');
   });
 
   it('chunks a group with more than 200 titles across multiple Algolia records', async () => {
@@ -97,7 +100,7 @@ describe('admin job-groups/migrate (Algolia sync) endpoint', () => {
     expect(res).toEqual({ success: true, count: 1 });
   });
 
-  it('wraps an Algolia push failure in a 500', async () => {
+  it('wraps an Algolia push failure in an opaque 500 without leaking the underlying error message', async () => {
     mockGet.mockResolvedValue({
       empty: false,
       docs: [{ id: '2136', data: () => ({ group_name: 'Software Devs', titles: ['engineer'] }) }]
@@ -105,6 +108,6 @@ describe('admin job-groups/migrate (Algolia sync) endpoint', () => {
     mockReplaceAllObjects.mockRejectedValueOnce(new Error('algolia down'));
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('algolia down');
+    await expect(handler(event)).rejects.toThrow('Failed to sync job groups to search index.');
   });
 });
