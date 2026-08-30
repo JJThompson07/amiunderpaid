@@ -110,15 +110,18 @@ describe('admin recruiters listing endpoint', () => {
         basicDiscount: 0,
         exclusiveDiscount: 0
       }),
-      expect.objectContaining({ id: 'rec-inactive', status: 'inactive', verified: false, monthlyInvoice: 0 })
+      expect.objectContaining({
+        id: 'rec-inactive',
+        status: 'inactive',
+        verified: false,
+        monthlyInvoice: 0
+      })
     ]);
   });
 
   it('excludes requested/rejected recruiters from the email-verification lookup', async () => {
     mockUsersGet.mockResolvedValue({
-      docs: [
-        { id: 'rec2', data: () => ({ status: 'requested', email: 'pending@example.com' }) }
-      ]
+      docs: [{ id: 'rec2', data: () => ({ status: 'requested', email: 'pending@example.com' }) }]
     });
     const event = {} as unknown as H3Event;
 

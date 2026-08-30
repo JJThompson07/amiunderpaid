@@ -93,9 +93,7 @@ describe('admin recruiters/accept endpoint', () => {
     expect(mockDocUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'active', requiresPasswordChange: true })
     );
-    expect(mockMailAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'rec@example.com' })
-    );
+    expect(mockMailAdd).toHaveBeenCalledWith(expect.objectContaining({ to: 'rec@example.com' }));
   });
 
   it('reports an unknown status when the recruiter has no status field', async () => {

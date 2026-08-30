@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Error, H3Event } from 'h3';
 import * as XLSX from 'xlsx';
 
-type ParseHandler = (event: H3Event) => Promise<{ success: boolean; count: number; data: unknown[] }>;
+type ParseHandler = (
+  event: H3Event
+) => Promise<{ success: boolean; count: number; data: unknown[] }>;
 type MultipartItem = { name: string; data: Buffer };
 
 const mockReadMultipartFormData = vi.fn();
@@ -83,8 +85,28 @@ describe('admin parse (salary regional) endpoint', () => {
 
   it('parses a USA (BLS) sheet using the default year when unspecified', async () => {
     const rows = [
-      ['OCC_TITLE', 'AREA_TITLE', 'A_MEDIAN', 'A_MEAN', 'OCC_CODE', 'A_PCT10', 'A_PCT25', 'A_PCT75', 'A_PCT90'],
-      ['Software Engineer', 'California', '95000', '98000', '15-1252', '70000', '80000', '110000', '130000']
+      [
+        'OCC_TITLE',
+        'AREA_TITLE',
+        'A_MEDIAN',
+        'A_MEAN',
+        'OCC_CODE',
+        'A_PCT10',
+        'A_PCT25',
+        'A_PCT75',
+        'A_PCT90'
+      ],
+      [
+        'Software Engineer',
+        'California',
+        '95000',
+        '98000',
+        '15-1252',
+        '70000',
+        '80000',
+        '110000',
+        '130000'
+      ]
     ];
     mockReadMultipartFormData.mockResolvedValue([
       part('country', 'USA'),
@@ -184,7 +206,10 @@ describe('admin parse (salary regional) endpoint', () => {
   });
 
   it('rejects a UK sheet missing the ONS header structure', async () => {
-    const rows = [['nothing', 'recognisable'], ['still', 'nothing']];
+    const rows = [
+      ['nothing', 'recognisable'],
+      ['still', 'nothing']
+    ];
     mockReadMultipartFormData.mockResolvedValue([
       part('country', 'UK'),
       { name: 'file', data: bookBuffer(rows) }
@@ -195,7 +220,10 @@ describe('admin parse (salary regional) endpoint', () => {
   });
 
   it('rejects a USA sheet missing required BLS columns', async () => {
-    const rows = [['SOMETHING', 'ELSE'], ['a', 'b']];
+    const rows = [
+      ['SOMETHING', 'ELSE'],
+      ['a', 'b']
+    ];
     mockReadMultipartFormData.mockResolvedValue([
       part('country', 'USA'),
       { name: 'file', data: bookBuffer(rows) }

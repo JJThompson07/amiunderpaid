@@ -69,7 +69,11 @@ describe('admin recruiters/discount endpoint', () => {
   });
 
   it('normalizes non-numeric discounts to 0 and updates the recruiter document', async () => {
-    mockReadBody.mockResolvedValue({ uid: 'rec_1', basicDiscount: 'oops', exclusiveDiscount: undefined });
+    mockReadBody.mockResolvedValue({
+      uid: 'rec_1',
+      basicDiscount: 'oops',
+      exclusiveDiscount: undefined
+    });
     const event = {} as unknown as H3Event;
 
     const res = await handler(event);

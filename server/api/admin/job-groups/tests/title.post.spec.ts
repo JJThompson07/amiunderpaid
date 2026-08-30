@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Error, H3Event } from 'h3';
 
-type TitlePostHandler = (
-  event: H3Event
-) => Promise<{ success: boolean; message?: string }>;
+type TitlePostHandler = (event: H3Event) => Promise<{ success: boolean; message?: string }>;
 
 vi.stubGlobal('defineEventHandler', <T>(fn: T): T => fn);
 vi.stubGlobal('createError', (err: Partial<H3Error>) => new Error(err.message));
@@ -26,7 +24,11 @@ describe('admin job-groups/title (post) endpoint', () => {
     const mod = await import('../title.post');
     handler = mod.default as unknown as TitlePostHandler;
 
-    mockReadBody.mockResolvedValue({ country: 'UK', idCode: '2136', newTitle: ' Senior Engineer ' });
+    mockReadBody.mockResolvedValue({
+      country: 'UK',
+      idCode: '2136',
+      newTitle: ' Senior Engineer '
+    });
     mockSet.mockResolvedValue(undefined);
   });
 

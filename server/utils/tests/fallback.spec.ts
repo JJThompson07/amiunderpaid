@@ -24,9 +24,20 @@ describe('server/utils/fallback', () => {
       const { executeMarketFallback } = await import('../fallback');
       const { fetchJoobleData } = await import('../jooble');
 
-      const result = await executeMarketFallback('engineer', 'new york', 'us', 'full-time', 'permanent');
+      const result = await executeMarketFallback(
+        'engineer',
+        'new york',
+        'us',
+        'full-time',
+        'permanent'
+      );
 
-      expect(fetchJoobleData).toHaveBeenCalledWith('engineer', 'new york', 'full-time', 'permanent');
+      expect(fetchJoobleData).toHaveBeenCalledWith(
+        'engineer',
+        'new york',
+        'full-time',
+        'permanent'
+      );
       expect(result.provider).toBe('jooble');
     });
 

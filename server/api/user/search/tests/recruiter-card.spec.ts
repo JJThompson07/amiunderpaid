@@ -164,7 +164,11 @@ describe('user search/recruiter-card endpoint', () => {
     const res = await handler(event);
 
     expect(res.cards[0]).toEqual(
-      expect.objectContaining({ recruiterId: 'owner_f', title: 'Base Title', agencyName: 'Base Agency' })
+      expect.objectContaining({
+        recruiterId: 'owner_f',
+        title: 'Base Title',
+        agencyName: 'Base Agency'
+      })
     );
   });
 });

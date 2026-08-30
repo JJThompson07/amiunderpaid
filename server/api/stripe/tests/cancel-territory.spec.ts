@@ -409,7 +409,7 @@ describe('cancel-territory', () => {
     expect(mockBatchUpdate).toHaveBeenCalledTimes(1); // only the user-doc update, not the claim doc
   });
 
-  it('surgically removes only this user\'s claim fields when other owners remain on the claim doc', async () => {
+  it("surgically removes only this user's claim fields when other owners remain on the claim doc", async () => {
     mockClaimGet.mockResolvedValue({
       exists: true,
       data: () => ({

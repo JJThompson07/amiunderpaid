@@ -120,7 +120,9 @@ describe('sitemap.xml', () => {
 
     const xml = await sitemapHandler({} as unknown as H3Event);
 
-    expect(xml).toContain('<loc>https://www.amiunderpaid.co.uk/salary/senior-ui-ux-designer/UK</loc>');
+    expect(xml).toContain(
+      '<loc>https://www.amiunderpaid.co.uk/salary/senior-ui-ux-designer/UK</loc>'
+    );
   });
 
   it('appends a slugified location segment when the job doc has one', async () => {
@@ -147,11 +149,15 @@ describe('sitemap.xml', () => {
 
   it('scopes jobs to USA and uses /salary on the US amiunderpaid domain', async () => {
     getRequestURLMock.mockReturnValue({ origin: 'https://www.amiunderpaid.com' });
-    const jobsDocs = [{ data: (): { title: string; country: string } => ({ title: 'Nurse', country: 'USA' }) }];
+    const jobsDocs = [
+      { data: (): { title: string; country: string } => ({ title: 'Nurse', country: 'USA' }) }
+    ];
     const jobsQuery = makeChainableQuery(jobsDocs);
     const industryQuery = makeChainableQuery([]);
     useAdminFirestoreMock.mockReturnValue({
-      collection: vi.fn((name: string) => (name === 'adzuna_industry_trends' ? industryQuery : jobsQuery))
+      collection: vi.fn((name: string) =>
+        name === 'adzuna_industry_trends' ? industryQuery : jobsQuery
+      )
     });
 
     const xml = await sitemapHandler({} as unknown as H3Event);
@@ -165,7 +171,9 @@ describe('sitemap.xml', () => {
     const jobsQuery = makeChainableQuery([]);
     const industryQuery = makeChainableQuery([]);
     useAdminFirestoreMock.mockReturnValue({
-      collection: vi.fn((name: string) => (name === 'adzuna_industry_trends' ? industryQuery : jobsQuery))
+      collection: vi.fn((name: string) =>
+        name === 'adzuna_industry_trends' ? industryQuery : jobsQuery
+      )
     });
 
     await sitemapHandler({} as unknown as H3Event);
@@ -175,7 +183,10 @@ describe('sitemap.xml', () => {
 
   it('uses the /benchmark route prefix and does not scope jobs by country on the benchmark domain', async () => {
     getRequestURLMock.mockReturnValue({ origin: 'https://www.benchmarkmyrole.com' });
-    mockDb([{ data: (): { title: string; country: string } => ({ title: 'Nurse', country: 'UK' }) }], []);
+    mockDb(
+      [{ data: (): { title: string; country: string } => ({ title: 'Nurse', country: 'UK' }) }],
+      []
+    );
 
     const xml = await sitemapHandler({} as unknown as H3Event);
 

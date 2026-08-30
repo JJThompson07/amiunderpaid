@@ -35,9 +35,9 @@ describe('server/plugins/1.firebaseInit', () => {
 
   it('decodes a valid base64 service account into GOOGLE_APPLICATION_CREDENTIALS', () => {
     const serviceAccount = { project_id: 'test-project' };
-    process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 = Buffer.from(JSON.stringify(serviceAccount)).toString(
-      'base64'
-    );
+    process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 = Buffer.from(
+      JSON.stringify(serviceAccount)
+    ).toString('base64');
 
     plugin();
 
@@ -75,6 +75,8 @@ describe('server/plugins/1.firebaseInit', () => {
       throw new Error('bad credentials');
     });
 
-    expect(() => plugin()).toThrow('Server configuration error: Failed to initialize Firebase Admin.');
+    expect(() => plugin()).toThrow(
+      'Server configuration error: Failed to initialize Firebase Admin.'
+    );
   });
 });

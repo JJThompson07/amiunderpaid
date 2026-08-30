@@ -69,7 +69,11 @@ describe('user suggestion endpoint', () => {
   });
 
   it('recognizes US country aliases', async () => {
-    mockReadBody.mockResolvedValue({ search_term: 'engineer', target_id_code: '15-1252', country: 'USA' });
+    mockReadBody.mockResolvedValue({
+      search_term: 'engineer',
+      target_id_code: '15-1252',
+      country: 'USA'
+    });
     const event = {} as unknown as H3Event;
 
     await handler(event);

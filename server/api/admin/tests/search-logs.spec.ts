@@ -162,7 +162,13 @@ describe('Admin Search Logs Endpoint', () => {
 
   it('ignores a cursor pointing at a non-existent document', async (): Promise<void> => {
     mockQuery = { cursor: 'missing' };
-    getQueue = [countSnap(0), { empty: true, docs: [] }, countSnap(0), countSnap(0), { empty: false, docs: [] }];
+    getQueue = [
+      countSnap(0),
+      { empty: true, docs: [] },
+      countSnap(0),
+      countSnap(0),
+      { empty: false, docs: [] }
+    ];
     docGetQueue = [{ exists: false }];
 
     await (handler as SearchLogsHandler)({} as unknown as H3Event);

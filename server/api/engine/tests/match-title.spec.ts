@@ -31,7 +31,10 @@ describe('engine match-title endpoint', () => {
     handler = mod.default as unknown as MatchTitleHandler;
 
     getQueryMock.mockReturnValue({ title: 'Software Engineer', country: 'UK' });
-    mockGet.mockResolvedValue({ empty: false, docs: [{ id: 'soc_1', data: () => ({ group_name: 'Engineers' }) }] });
+    mockGet.mockResolvedValue({
+      empty: false,
+      docs: [{ id: 'soc_1', data: () => ({ group_name: 'Engineers' }) }]
+    });
   });
 
   it('returns success: false with no matches when title is missing', async () => {
@@ -51,7 +54,10 @@ describe('engine match-title endpoint', () => {
 
     expect(mockCollection).toHaveBeenCalledWith('uk_job_groups');
     expect(mockWhere).toHaveBeenCalledWith('titles', 'array-contains', 'software engineer');
-    expect(res).toEqual({ success: true, matches: [{ id_code: 'soc_1', group_name: 'Engineers' }] });
+    expect(res).toEqual({
+      success: true,
+      matches: [{ id_code: 'soc_1', group_name: 'Engineers' }]
+    });
   });
 
   it('queries the usa_job_groups collection when country is USA', async () => {

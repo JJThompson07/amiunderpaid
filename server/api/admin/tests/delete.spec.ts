@@ -47,7 +47,9 @@ describe('admin delete endpoint', () => {
     mockReadBody.mockResolvedValue({ collectionName: 'adzuna_jobs_cache', filters: {} });
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('Filters are required to prevent full collection wipe');
+    await expect(handler(event)).rejects.toThrow(
+      'Filters are required to prevent full collection wipe'
+    );
     expect(mockBatchDelete).not.toHaveBeenCalled();
   });
 

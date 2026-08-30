@@ -48,7 +48,9 @@ const makeChain = (name: string): unknown => {
     doc: vi.fn(() => ({
       get: vi.fn(() =>
         Promise.resolve(
-          docGetQueues[name]?.length ? docGetQueues[name].shift() : { exists: false, data: () => undefined }
+          docGetQueues[name]?.length
+            ? docGetQueues[name].shift()
+            : { exists: false, data: () => undefined }
         )
       ),
       set: name === 'search_history' ? searchHistorySetSpy : vi.fn().mockResolvedValue(undefined)
@@ -272,7 +274,12 @@ describe('admin backfill-searches endpoint', () => {
       }
     ];
     docGetQueues.adzuna_distribution_cache = [
-      { exists: true, data: (): never => { throw new Error('corrupt cache doc'); } }
+      {
+        exists: true,
+        data: (): never => {
+          throw new Error('corrupt cache doc');
+        }
+      }
     ];
 
     const event = {} as unknown as H3Event;
@@ -552,7 +559,10 @@ describe('admin backfill-searches endpoint', () => {
     docGetQueues.adzuna_jobs_cache = [
       {
         exists: true,
-        data: () => ({ data: { results: [{}, { salary_max: 50000 }], count: 2 }, gov_id_code: '2136' })
+        data: () => ({
+          data: { results: [{}, { salary_max: 50000 }], count: 2 },
+          gov_id_code: '2136'
+        })
       }
     ];
     queryQueues.salary_benchmarks = [
@@ -619,7 +629,12 @@ describe('admin backfill-searches endpoint', () => {
       }
     ];
     docGetQueues.adzuna_distribution_cache = [
-      { exists: true, data: (): never => { throw 'a string failure'; } }
+      {
+        exists: true,
+        data: (): never => {
+          throw 'a string failure';
+        }
+      }
     ];
 
     const event = {} as unknown as H3Event;

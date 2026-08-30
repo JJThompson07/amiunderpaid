@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Error, H3Event } from 'h3';
 
-type JobGroupsHandler = (
-  event: H3Event
-) => Promise<{ success: boolean; groups: { id_code: string; group_name: string; titles: string[] }[] }>;
+type JobGroupsHandler = (event: H3Event) => Promise<{
+  success: boolean;
+  groups: { id_code: string; group_name: string; titles: string[] }[];
+}>;
 
 vi.stubGlobal('defineEventHandler', <T>(fn: T): T => fn);
 vi.stubGlobal('createError', (err: Partial<H3Error>) => new Error(err.message));

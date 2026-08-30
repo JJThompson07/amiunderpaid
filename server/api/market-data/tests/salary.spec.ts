@@ -59,9 +59,8 @@ vi.mock('../../../utils/jooble', () => ({
 }));
 
 vi.mock('../../../utils/fallback', async () => {
-  const actual = await vi.importActual<typeof import('../../../utils/fallback')>(
-    '../../../utils/fallback'
-  );
+  const actual =
+    await vi.importActual<typeof import('../../../utils/fallback')>('../../../utils/fallback');
   return {
     ...actual,
     getMockFallbackHistogram: vi.fn((provider: string) => ({
@@ -259,7 +258,10 @@ describe('market-data salary endpoint', () => {
   });
 
   it('steals the categoryTag from the matching jobs cache entry for an Adzuna-sourced response', async () => {
-    jobsCacheDocRef.get.mockResolvedValue({ exists: true, data: () => ({ categoryTag: 'it-jobs' }) });
+    jobsCacheDocRef.get.mockResolvedValue({
+      exists: true,
+      data: () => ({ categoryTag: 'it-jobs' })
+    });
     categoryDocRef.get.mockResolvedValue({ exists: true, data: () => ({ cache: 45 }) });
 
     const before = Date.now();

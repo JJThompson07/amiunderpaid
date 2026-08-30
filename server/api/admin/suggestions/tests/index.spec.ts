@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Error } from 'h3';
 
-type SuggestionsHandler = () => Promise<{ success: boolean; suggestions: Record<string, unknown>[] }>;
+type SuggestionsHandler = () => Promise<{
+  success: boolean;
+  suggestions: Record<string, unknown>[];
+}>;
 
 vi.stubGlobal('defineEventHandler', <T>(fn: T): T => fn);
 vi.stubGlobal('createError', (err: Partial<H3Error>) => new Error(err.message));

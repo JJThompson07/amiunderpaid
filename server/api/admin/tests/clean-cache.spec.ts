@@ -22,7 +22,11 @@ const mockBatchDelete = vi.fn();
 const mockBatch = vi.fn(() => ({ delete: mockBatchDelete, commit: mockBatchCommit }));
 
 type SnapshotDoc = { ref: string };
-const makeSnapshot = (docs: SnapshotDoc[]) => ({ empty: docs.length === 0, size: docs.length, docs });
+const makeSnapshot = (docs: SnapshotDoc[]) => ({
+  empty: docs.length === 0,
+  size: docs.length,
+  docs
+});
 
 let jobsQueueSnapshots: ReturnType<typeof makeSnapshot>[];
 let distQueueSnapshots: ReturnType<typeof makeSnapshot>[];
@@ -55,7 +59,10 @@ describe('admin clean-cache endpoint', () => {
       batch: mockBatch,
       collection: vi.fn((name: string) => ({
         where: vi.fn(() => ({
-          limit: name === 'adzuna_jobs_cache' ? mockLimit({ queue: jobsQueueSnapshots }) : mockLimit({ queue: distQueueSnapshots })
+          limit:
+            name === 'adzuna_jobs_cache'
+              ? mockLimit({ queue: jobsQueueSnapshots })
+              : mockLimit({ queue: distQueueSnapshots })
         }))
       }))
     });

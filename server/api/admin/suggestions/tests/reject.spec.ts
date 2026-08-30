@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Error, H3Event } from 'h3';
 
-type RejectSuggestionHandler = (
-  event: H3Event
-) => Promise<{ success: boolean; message: string }>;
+type RejectSuggestionHandler = (event: H3Event) => Promise<{ success: boolean; message: string }>;
 
 vi.stubGlobal('defineEventHandler', <T>(fn: T): T => fn);
 vi.stubGlobal('createError', (err: Partial<H3Error>) => {

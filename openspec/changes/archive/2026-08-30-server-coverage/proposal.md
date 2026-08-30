@@ -5,10 +5,12 @@ The backend (`server/**`) currently has a relaxed starting threshold of 0% for t
 ## What Changes
 
 **1. Configuration Enforcement (`vitest.config.ts` & `AGENTS.md`)**
+
 - We will remove the `server/**/*.ts` threshold override (currently set to 0) in `vitest.config.ts`, forcing it to inherit the global 80% limit.
 - We will update the `AGENTS.md` documentation to remove the explicit 0% exemption clause, asserting that all backend endpoints must now meet the 80% bar before any future PRs can be merged.
 
 **2. Test Implementation for Untested Endpoints**
+
 - We will systematically scaffold and write missing unit tests (`.spec.ts`) for all untested server routes and utilities, leveraging existing mock patterns (e.g., `useAdminFirestore` mocks, `$algolia` mocks, and `h3` event mocks).
 - Primary areas of focus include:
   - `server/api/admin/**` (Cache cleaning, algolia syncing, parsed metrics)
@@ -22,11 +24,13 @@ The backend (`server/**`) currently has a relaxed starting threshold of 0% for t
   - `server/constants/locations.ts`
 
 **3. Coverage Verification**
+
 - The execution phase will iteratively run `pnpm test:coverage` to track progress and ensure all 4 metrics (statements, branches, functions, lines) exceed 80% across the board.
 
 ## Capabilities
 
 ### Modified Capabilities
+
 - `server-coverage`: Strict enforcement of CI test thresholds across all Nuxt Nitro server endpoints.
 
 ## Impact

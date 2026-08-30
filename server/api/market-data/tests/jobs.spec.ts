@@ -68,9 +68,8 @@ vi.mock('../../../utils/jooble', () => ({
 }));
 
 vi.mock('../../../utils/fallback', async () => {
-  const actual = await vi.importActual<typeof import('../../../utils/fallback')>(
-    '../../../utils/fallback'
-  );
+  const actual =
+    await vi.importActual<typeof import('../../../utils/fallback')>('../../../utils/fallback');
   return {
     ...actual,
     getMockFallbackJobs: vi.fn((provider: string) => ({
@@ -291,7 +290,9 @@ describe('market-data jobs endpoint', () => {
 
     expect($fetchMock).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ params: expect.objectContaining({ where: 'London', distance: 20 }) })
+      expect.objectContaining({
+        params: expect.objectContaining({ where: 'London', distance: 20 })
+      })
     );
   });
 

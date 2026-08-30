@@ -97,8 +97,28 @@ describe('admin parse-region endpoint', () => {
 
   it('parses a USA regional (BLS) sheet with percentile columns', async () => {
     const rows = [
-      ['OCC_TITLE', 'AREA_TITLE', 'A_MEDIAN', 'A_MEAN', 'OCC_CODE', 'A_PCT10', 'A_PCT25', 'A_PCT75', 'A_PCT90'],
-      ['Software Engineer', 'Texas', '90000', '92000', '15-1252', '65000', '75000', '105000', '125000']
+      [
+        'OCC_TITLE',
+        'AREA_TITLE',
+        'A_MEDIAN',
+        'A_MEAN',
+        'OCC_CODE',
+        'A_PCT10',
+        'A_PCT25',
+        'A_PCT75',
+        'A_PCT90'
+      ],
+      [
+        'Software Engineer',
+        'Texas',
+        '90000',
+        '92000',
+        '15-1252',
+        '65000',
+        '75000',
+        '105000',
+        '125000'
+      ]
     ];
     mockReadMultipartFormData.mockResolvedValue([
       part('country', 'USA'),
@@ -120,7 +140,9 @@ describe('admin parse-region endpoint', () => {
       ['', '', '', '', '', '', '', ''],
       ['E2', 'Region Two', 48000, 50000, 30000, 35000, 60000, 70000]
     ];
-    mockReadMultipartFormData.mockResolvedValue([{ name: 'file', data: bookBuffer(rows, 'Sheet1') }]);
+    mockReadMultipartFormData.mockResolvedValue([
+      { name: 'file', data: bookBuffer(rows, 'Sheet1') }
+    ]);
     const event = {} as unknown as H3Event;
 
     const res = await handler(event);
