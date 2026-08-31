@@ -6,7 +6,7 @@ type ClearAlgoliaHandler = (event: H3Event) => Promise<{ success: boolean }>;
 const mockReadBody = vi.fn();
 vi.mock('h3', () => ({
   defineEventHandler: <T>(fn: T): T => fn,
-  createError: (err: Partial<H3Error>) => {
+  createError: (err: Partial<H3Error>): Error => {
     const e = new Error(err.message) as Error & { statusCode?: number };
     e.statusCode = err.statusCode;
     return e;

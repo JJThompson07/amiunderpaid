@@ -5,8 +5,8 @@ const mockGetRequestURL = vi.fn();
 const mockSendRedirect = vi.fn();
 vi.mock('h3', () => ({
   defineEventHandler: <T>(fn: T): T => fn,
-  getRequestURL: (...args: unknown[]) => mockGetRequestURL(...args),
-  sendRedirect: (...args: unknown[]) => mockSendRedirect(...args)
+  getRequestURL: (...args: unknown[]): unknown => mockGetRequestURL(...args),
+  sendRedirect: (...args: unknown[]): unknown => mockSendRedirect(...args)
 }));
 
 type FaviconHandler = (event: H3Event) => Promise<unknown>;

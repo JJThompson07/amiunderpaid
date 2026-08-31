@@ -53,10 +53,10 @@ describe('admin job-groups/migrate-old endpoint', () => {
     mockReadBody.mockResolvedValue({ country: 'UK' });
     mockBenchmarksGet.mockResolvedValue({
       empty: false,
-      docs: [{ data: () => ({ id_code: '2136', title: 'Software Developers' }) }]
+      docs: [{ data: (): unknown => ({ id_code: '2136', title: 'Software Developers' }) }]
     });
     mockTitlesGet.mockResolvedValue({
-      docs: [{ data: () => ({ soc: '2136', title: ' Senior Engineer ' }) }]
+      docs: [{ data: (): unknown => ({ soc: '2136', title: ' Senior Engineer ' }) }]
     });
     const event = {} as unknown as H3Event;
 
@@ -77,7 +77,7 @@ describe('admin job-groups/migrate-old endpoint', () => {
     mockReadBody.mockResolvedValue({ country: 'USA' });
     mockBenchmarksGet.mockResolvedValue({
       empty: false,
-      docs: [{ data: () => ({ id_code: '15-1252', title: 'Software Engineers' }) }]
+      docs: [{ data: (): unknown => ({ id_code: '15-1252', title: 'Software Engineers' }) }]
     });
     const event = {} as unknown as H3Event;
 
@@ -92,16 +92,16 @@ describe('admin job-groups/migrate-old endpoint', () => {
     mockBenchmarksGet.mockResolvedValue({
       empty: false,
       docs: [
-        { data: () => ({ id_code: '', title: 'No Code' }) },
-        { data: () => ({ id_code: '2136', title: 'Software Developers' }) },
-        { data: () => ({ id_code: '2136' }) }
+        { data: (): unknown => ({ id_code: '', title: 'No Code' }) },
+        { data: (): unknown => ({ id_code: '2136', title: 'Software Developers' }) },
+        { data: (): unknown => ({ id_code: '2136' }) }
       ]
     });
     mockTitlesGet.mockResolvedValue({
       docs: [
-        { data: () => ({ soc: '', title: 'Missing SOC' }) },
-        { data: () => ({ soc: '9999' }) },
-        { data: () => ({ soc: '9999', title: 'Unmatched Synonym' }) }
+        { data: (): unknown => ({ soc: '', title: 'Missing SOC' }) },
+        { data: (): unknown => ({ soc: '9999' }) },
+        { data: (): unknown => ({ soc: '9999', title: 'Unmatched Synonym' }) }
       ]
     });
     const event = {} as unknown as H3Event;
@@ -124,7 +124,7 @@ describe('admin job-groups/migrate-old endpoint', () => {
     mockBenchmarksGet.mockResolvedValue({
       empty: false,
       docs: Array.from({ length: 450 }, (_, i) => ({
-        data: () => ({ id_code: `code-${i}`, title: `Title ${i}` })
+        data: (): unknown => ({ id_code: `code-${i}`, title: `Title ${i}` })
       }))
     });
     const event = {} as unknown as H3Event;

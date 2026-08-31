@@ -5,8 +5,8 @@ const mockGetRequestURL = vi.fn();
 const mockSetHeader = vi.fn();
 vi.mock('h3', () => ({
   defineEventHandler: <T>(fn: T): T => fn,
-  getRequestURL: (...args: unknown[]) => mockGetRequestURL(...args),
-  setHeader: (...args: unknown[]) => mockSetHeader(...args)
+  getRequestURL: (...args: unknown[]): unknown => mockGetRequestURL(...args),
+  setHeader: (...args: unknown[]): unknown => mockSetHeader(...args)
 }));
 
 type RobotsHandler = (event: H3Event) => string;

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Error, H3Event } from 'h3';
 import { verifyAdmin } from '../../../utils/firebase';
+import handler from '../search-logs.get';
 
 type SearchLogsHandler = (event: H3Event) => Promise<{
   success: boolean;
@@ -16,15 +17,13 @@ type SearchLogsHandler = (event: H3Event) => Promise<{
 let mockQuery: Record<string, string>;
 vi.mock('h3', () => ({
   defineEventHandler: <T>(fn: T): T => fn,
-  getQuery: () => mockQuery,
-  createError: (err: Partial<H3Error>) => {
+  getQuery: (): Record<string, string> => mockQuery,
+  createError: (err: Partial<H3Error>): Error => {
     const e = new Error(err.message) as Error & { statusCode?: number };
     e.statusCode = err.statusCode;
     return e;
   }
 }));
-
-import handler from '../search-logs.get';
 
 let mockConfig: { algoliaApplicationId?: string; algoliaAdminApiKey?: string };
 vi.stubGlobal('useRuntimeConfig', () => mockConfig);
@@ -67,7 +66,9 @@ vi.mock('algoliasearch', () => ({
   default: vi.fn(() => ({ initIndex: mockInitIndex }))
 }));
 
-const countSnap = (count: number) => ({ data: () => ({ count }) });
+const countSnap = (count: number): { data: () => { count: number } } => ({
+  data: (): { count: number } => ({ count })
+});
 
 describe('Admin Search Logs Endpoint', () => {
   beforeEach((): void => {
@@ -90,12 +91,12 @@ describe('Admin Search Logs Endpoint', () => {
 
   it('lists logs via native pagination, mapping populated and sparse docs', async (): Promise<void> => {
     const oldestTimestamp = {
-      toDate: () => new Date('2024-01-01T00:00:00Z'),
-      toMillis: () => new Date('2024-01-01T00:00:00Z').getTime()
+      toDate: (): Date => new Date('2024-01-01T00:00:00Z'),
+      toMillis: (): number => new Date('2024-01-01T00:00:00Z').getTime()
     };
     getQueue = [
       countSnap(42),
-      { empty: false, docs: [{ data: () => ({ timestamp: oldestTimestamp }) }] },
+      { empty: false, docs: [{ data: (): unknown => ({ timestamp: oldestTimestamp }) }] },
       countSnap(3),
       countSnap(5),
       {
@@ -103,7 +104,7 @@ describe('Admin Search Logs Endpoint', () => {
         docs: [
           {
             id: 'log1',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Engineer',
               country: 'UK',
               location: 'London',
@@ -117,10 +118,10 @@ describe('Admin Search Logs Endpoint', () => {
               searchSuccess: true,
               historical_fetched_MCA: true,
               provider: 'adzuna',
-              timestamp: { toDate: () => new Date('2024-06-01T12:00:00Z') }
+              timestamp: { toDate: (): Date => new Date('2024-06-01T12:00:00Z') }
             })
           },
-          { id: 'log2', data: () => ({}) }
+          { id: 'log2', data: (): unknown => ({}) }
         ]
       }
     ];
@@ -149,7 +150,7 @@ describe('Admin Search Logs Endpoint', () => {
       { empty: true, docs: [] },
       countSnap(0),
       countSnap(0),
-      { empty: false, docs: [{ id: 'log2', data: () => ({}) }] }
+      { empty: false, docs: [{ id: 'log2', data: (): unknown => ({}) }] }
     ];
     docGetQueue = [{ exists: true }];
 

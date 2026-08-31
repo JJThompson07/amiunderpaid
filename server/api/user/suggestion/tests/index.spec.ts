@@ -84,7 +84,7 @@ describe('user suggestion endpoint', () => {
   it('increments the count on an existing pending suggestion instead of creating a new one', async () => {
     mockExistingGet.mockResolvedValue({
       empty: false,
-      docs: [{ id: 'existing_sugg', data: () => ({ count: 4 }) }]
+      docs: [{ id: 'existing_sugg', data: (): unknown => ({ count: 4 }) }]
     });
     const event = {} as unknown as H3Event;
 

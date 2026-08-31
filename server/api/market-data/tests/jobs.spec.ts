@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Error, H3Event } from 'h3';
 import type { JobSearchResponse } from '~~/shared/utils/market-data';
+import type * as FallbackUtils from '../../../utils/fallback';
 
 vi.mock('firebase-admin/firestore', () => ({
   FieldValue: {
@@ -68,8 +69,7 @@ vi.mock('../../../utils/jooble', () => ({
 }));
 
 vi.mock('../../../utils/fallback', async () => {
-  const actual =
-    await vi.importActual<typeof import('../../../utils/fallback')>('../../../utils/fallback');
+  const actual = await vi.importActual<typeof FallbackUtils>('../../../utils/fallback');
   return {
     ...actual,
     getMockFallbackJobs: vi.fn((provider: string) => ({
@@ -160,7 +160,7 @@ describe('market-data jobs endpoint', () => {
     jobsCacheDocRef.get.mockResolvedValue({
       exists: true,
       data: () => ({
-        expiresAt: { toMillis: () => Date.now() + 100000 },
+        expiresAt: { toMillis: (): number => Date.now() + 100000 },
         data: { count: 1, results: [], cached: true },
         gov_id_code: 'soc_1',
         is_admin_verified: true
@@ -179,7 +179,7 @@ describe('market-data jobs endpoint', () => {
     jobsCacheDocRef.get.mockResolvedValue({
       exists: true,
       data: () => ({
-        expiresAt: { toMillis: () => Date.now() - 100000 },
+        expiresAt: { toMillis: (): number => Date.now() - 100000 },
         data: { count: 1, results: [] }
       })
     });
@@ -193,7 +193,7 @@ describe('market-data jobs endpoint', () => {
     jobsCacheDocRef.get.mockResolvedValue({
       exists: true,
       data: () => ({
-        timestamp: { toMillis: () => Date.now() },
+        timestamp: { toMillis: (): number => Date.now() },
         categoryTag: 'it-jobs',
         data: { count: 1, results: [], cached: true }
       })
@@ -210,7 +210,7 @@ describe('market-data jobs endpoint', () => {
     jobsCacheDocRef.get.mockResolvedValue({
       exists: true,
       data: () => ({
-        timestamp: { toMillis: () => Date.now() },
+        timestamp: { toMillis: (): number => Date.now() },
         data: { count: 1, results: [], categoryTag: 'sales-jobs', cached: true }
       })
     });
@@ -225,7 +225,7 @@ describe('market-data jobs endpoint', () => {
     jobsCacheDocRef.get.mockResolvedValue({
       exists: true,
       data: () => ({
-        timestamp: { toMillis: () => Date.now() - 200 * 24 * 60 * 60 * 1000 },
+        timestamp: { toMillis: (): number => Date.now() - 200 * 24 * 60 * 60 * 1000 },
         categoryTag: '',
         data: { count: 1, results: [] }
       })

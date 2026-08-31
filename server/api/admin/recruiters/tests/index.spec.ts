@@ -54,7 +54,7 @@ describe('admin recruiters listing endpoint', () => {
       docs: [
         {
           id: 'rec1',
-          data: () => ({
+          data: (): unknown => ({
             status: 'active',
             email: 'rec@example.com',
             agency_name: 'Acme Recruiting',
@@ -85,11 +85,11 @@ describe('admin recruiters listing endpoint', () => {
       docs: [
         {
           id: 'rec-sparse',
-          data: () => ({})
+          data: (): unknown => ({})
         },
         {
           id: 'rec-inactive',
-          data: () => ({ status: 'inactive', activeTerritories: [{ isBasic: false }] })
+          data: (): unknown => ({ status: 'inactive', activeTerritories: [{ isBasic: false }] })
         }
       ]
     });
@@ -121,7 +121,9 @@ describe('admin recruiters listing endpoint', () => {
 
   it('excludes requested/rejected recruiters from the email-verification lookup', async () => {
     mockUsersGet.mockResolvedValue({
-      docs: [{ id: 'rec2', data: () => ({ status: 'requested', email: 'pending@example.com' }) }]
+      docs: [
+        { id: 'rec2', data: (): unknown => ({ status: 'requested', email: 'pending@example.com' }) }
+      ]
     });
     const event = {} as unknown as H3Event;
 

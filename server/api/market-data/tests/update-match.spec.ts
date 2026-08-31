@@ -82,7 +82,7 @@ describe('market-data update-match endpoint', () => {
   it('increments the count on an existing pending suggestion instead of creating a new one', async () => {
     mockGet.mockResolvedValue({
       empty: false,
-      docs: [{ id: 'existing_1', data: () => ({ count: 4 }) }]
+      docs: [{ id: 'existing_1', data: (): unknown => ({ count: 4 }) }]
     });
     const event = {} as unknown as H3Event;
 
@@ -97,7 +97,7 @@ describe('market-data update-match endpoint', () => {
   it('defaults the existing count to 1 before incrementing when count is absent on the doc', async () => {
     mockGet.mockResolvedValue({
       empty: false,
-      docs: [{ id: 'existing_1', data: () => ({}) }]
+      docs: [{ id: 'existing_1', data: (): unknown => ({}) }]
     });
     const event = {} as unknown as H3Event;
 

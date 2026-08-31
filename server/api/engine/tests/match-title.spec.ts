@@ -33,7 +33,7 @@ describe('engine match-title endpoint', () => {
     getQueryMock.mockReturnValue({ title: 'Software Engineer', country: 'UK' });
     mockGet.mockResolvedValue({
       empty: false,
-      docs: [{ id: 'soc_1', data: () => ({ group_name: 'Engineers' }) }]
+      docs: [{ id: 'soc_1', data: (): unknown => ({ group_name: 'Engineers' }) }]
     });
   });
 

@@ -27,7 +27,7 @@ describe('admin suggestions listing endpoint', () => {
 
   it('returns pending suggestions with their document id', async () => {
     mockGet.mockResolvedValue({
-      docs: [{ id: 'sugg_1', data: () => ({ searchTerm: 'Senior Dev', count: 3 }) }]
+      docs: [{ id: 'sugg_1', data: (): unknown => ({ searchTerm: 'Senior Dev', count: 3 }) }]
     });
 
     const res = await handler();

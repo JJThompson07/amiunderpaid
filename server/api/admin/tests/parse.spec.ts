@@ -10,12 +10,12 @@ type MultipartItem = { name: string; data: Buffer };
 const mockReadMultipartFormData = vi.fn();
 vi.mock('h3', () => ({
   defineEventHandler: <T>(fn: T): T => fn,
-  createError: (err: Partial<H3Error>) => {
+  createError: (err: Partial<H3Error>): Error => {
     const e = new Error(err.message) as Error & { statusCode?: number };
     e.statusCode = err.statusCode;
     return e;
   },
-  isError: (e: unknown) => e instanceof Error && 'statusCode' in e,
+  isError: (e: unknown): boolean => e instanceof Error && 'statusCode' in e,
   readMultipartFormData: mockReadMultipartFormData
 }));
 

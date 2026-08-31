@@ -29,8 +29,11 @@ describe('admin job-groups listing endpoint', () => {
     mockQuery = {};
     mockGet.mockResolvedValue({
       docs: [
-        { id: '2136', data: () => ({ group_name: 'Software Developers', titles: ['engineer'] }) },
-        { id: '1136', data: () => ({}) }
+        {
+          id: '2136',
+          data: (): unknown => ({ group_name: 'Software Developers', titles: ['engineer'] })
+        },
+        { id: '1136', data: (): unknown => ({}) }
       ]
     });
   });

@@ -22,16 +22,17 @@ const mockBatchDelete = vi.fn();
 const mockBatch = vi.fn(() => ({ delete: mockBatchDelete, commit: mockBatchCommit }));
 
 type SnapshotDoc = { ref: string };
-const makeSnapshot = (docs: SnapshotDoc[]) => ({
+type Snapshot = { empty: boolean; size: number; docs: SnapshotDoc[] };
+const makeSnapshot = (docs: SnapshotDoc[]): Snapshot => ({
   empty: docs.length === 0,
   size: docs.length,
   docs
 });
 
-let jobsQueueSnapshots: ReturnType<typeof makeSnapshot>[];
-let distQueueSnapshots: ReturnType<typeof makeSnapshot>[];
+let jobsQueueSnapshots: Snapshot[];
+let distQueueSnapshots: Snapshot[];
 
-const mockLimit = (queueRef: { queue: ReturnType<typeof makeSnapshot>[] }) =>
+const mockLimit = (queueRef: { queue: Snapshot[] }): ReturnType<typeof vi.fn> =>
   vi.fn(() => ({
     get: vi.fn(() =>
       Promise.resolve(queueRef.queue.length > 0 ? queueRef.queue.shift() : makeSnapshot([]))

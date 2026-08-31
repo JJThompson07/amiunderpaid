@@ -14,7 +14,7 @@ vi.stubGlobal('defineEventHandler', <T>(fn: T): T => fn);
 
 const mockReadMultipartFormData = vi.fn();
 vi.mock('h3', () => ({
-  createError: (err: Partial<H3Error>) => {
+  createError: (err: Partial<H3Error>): Error => {
     const e = new Error(err.message) as Error & { statusCode?: number };
     e.statusCode = err.statusCode;
     return e;

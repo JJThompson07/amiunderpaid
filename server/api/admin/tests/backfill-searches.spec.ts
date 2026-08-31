@@ -50,7 +50,7 @@ const makeChain = (name: string): unknown => {
         Promise.resolve(
           docGetQueues[name]?.length
             ? docGetQueues[name].shift()
-            : { exists: false, data: () => undefined }
+            : { exists: false, data: (): unknown => undefined }
         )
       ),
       set: name === 'search_history' ? searchHistorySetSpy : vi.fn().mockResolvedValue(undefined)
@@ -93,7 +93,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc1',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Software Engineer',
               country: 'UK',
               location: 'london',
@@ -109,11 +109,11 @@ describe('admin backfill-searches endpoint', () => {
         ]
       }
     ];
-    docGetQueues.adzuna_distribution_cache = [{ exists: false, data: () => undefined }];
+    docGetQueues.adzuna_distribution_cache = [{ exists: false, data: (): unknown => undefined }];
     docGetQueues.adzuna_jobs_cache = [
       {
         exists: true,
-        data: () => ({
+        data: (): unknown => ({
           data: { results: [{ salary_max: 60000 }, { salary_max: 80000 }], count: 5 },
           gov_id_code: '2136'
         })
@@ -124,7 +124,7 @@ describe('admin backfill-searches endpoint', () => {
         empty: false,
         docs: [
           {
-            data: () => ({
+            data: (): unknown => ({
               avg_salary: 55000,
               salary: 52000,
               salary_10_pt: 40000,
@@ -140,7 +140,7 @@ describe('admin backfill-searches endpoint', () => {
         empty: false,
         docs: [
           {
-            data: () => ({
+            data: (): unknown => ({
               avg_salary: 48000,
               salary: 45000,
               salary_10_pt: 30000,
@@ -181,7 +181,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc2',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Engineer',
               country: 'UK',
               historical_fetched_MCA: true,
@@ -210,7 +210,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc3',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Engineer',
               country: 'UK',
               historical_fetched_MCA_v2: false,
@@ -236,7 +236,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc4',
-            data: () => ({
+            data: (): unknown => ({
               title: '',
               country: 'UK',
               historical_fetched_MCA_v2: false,
@@ -262,7 +262,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc5',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Engineer',
               country: 'UK',
               historical_fetched_MCA_v2: false,
@@ -296,7 +296,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc6',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Software Engineer',
               country: 'USA',
               location: 'usa',
@@ -311,11 +311,11 @@ describe('admin backfill-searches endpoint', () => {
         ]
       }
     ];
-    docGetQueues.adzuna_distribution_cache = [{ exists: false, data: () => undefined }];
+    docGetQueues.adzuna_distribution_cache = [{ exists: false, data: (): unknown => undefined }];
     docGetQueues.adzuna_jobs_cache = [
       {
         exists: true,
-        data: () => ({
+        data: (): unknown => ({
           data: { results: [{ salary_max: 100000 }], count: 3 },
           gov_id_code: null
         })
@@ -326,7 +326,7 @@ describe('admin backfill-searches endpoint', () => {
         empty: false,
         docs: [
           {
-            data: () => ({
+            data: (): unknown => ({
               avg_salary: 95000,
               salary: 92000,
               salary_10_pt: 70000,
@@ -342,7 +342,7 @@ describe('admin backfill-searches endpoint', () => {
         empty: false,
         docs: [
           {
-            data: () => ({
+            data: (): unknown => ({
               avg_salary: 88000,
               salary: 85000,
               salary_10_pt: 60000,
@@ -378,7 +378,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc7',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Rare Job Title',
               country: 'UK',
               salary: 0,
@@ -390,8 +390,8 @@ describe('admin backfill-searches endpoint', () => {
         ]
       }
     ];
-    docGetQueues.adzuna_distribution_cache = [{ exists: false, data: () => undefined }];
-    docGetQueues.adzuna_jobs_cache = [{ exists: false, data: () => undefined }];
+    docGetQueues.adzuna_distribution_cache = [{ exists: false, data: (): unknown => undefined }];
+    docGetQueues.adzuna_jobs_cache = [{ exists: false, data: (): unknown => undefined }];
 
     const event = {} as unknown as H3Event;
     const res = await handler(event);
@@ -406,9 +406,9 @@ describe('admin backfill-searches endpoint', () => {
   });
 
   it('stops scanning once 50 docs needing backfill are found', async () => {
-    const makeDoc = (id: string) => ({
+    const makeDoc = (id: string): { id: string; data: () => unknown } => ({
       id,
-      data: () => ({
+      data: (): unknown => ({
         title: 'Engineer',
         country: 'UK',
         historical_fetched_MCA_v2: false,
@@ -436,7 +436,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc8',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Software Engineer',
               country: 'UK',
               location: 'london',
@@ -449,18 +449,25 @@ describe('admin backfill-searches endpoint', () => {
         ]
       }
     ];
-    docGetQueues.adzuna_distribution_cache = [{ exists: false, data: () => undefined }];
+    docGetQueues.adzuna_distribution_cache = [{ exists: false, data: (): unknown => undefined }];
     docGetQueues.adzuna_jobs_cache = [
       {
         exists: true,
-        data: () => ({ data: { results: [{ salary_max: 60000 }], count: 2 }, gov_id_code: null })
+        data: (): unknown => ({
+          data: { results: [{ salary_max: 60000 }], count: 2 },
+          gov_id_code: null
+        })
       }
     ];
-    queryQueues.job_titles = [{ empty: false, docs: [{ data: () => ({ soc: '2136' }) }] }];
+    queryQueues.job_titles = [{ empty: false, docs: [{ data: (): unknown => ({ soc: '2136' }) }] }];
     queryQueues.salary_benchmarks = [
       {
         empty: false,
-        docs: [{ data: () => ({ avg_salary: 55000, salary: 52000, title: 'Software Developer' }) }]
+        docs: [
+          {
+            data: (): unknown => ({ avg_salary: 55000, salary: 52000, title: 'Software Developer' })
+          }
+        ]
       },
       { empty: true, docs: [] }
     ];
@@ -482,7 +489,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc-excluded',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Already Done',
               country: 'UK',
               historical_fetched_MCA_v2: false,
@@ -507,7 +514,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc-sparse',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Sparse Role',
               salary: 40000,
               historical_fetched_MCA_v2: false,
@@ -518,12 +525,12 @@ describe('admin backfill-searches endpoint', () => {
         ]
       }
     ];
-    docGetQueues.adzuna_distribution_cache = [{ exists: true, data: () => ({}) }];
-    docGetQueues.adzuna_jobs_cache = [{ exists: true, data: () => ({}) }];
-    queryQueues.job_titles = [{ empty: false, docs: [{ data: () => ({ soc: '2136' }) }] }];
+    docGetQueues.adzuna_distribution_cache = [{ exists: true, data: (): unknown => ({}) }];
+    docGetQueues.adzuna_jobs_cache = [{ exists: true, data: (): unknown => ({}) }];
+    queryQueues.job_titles = [{ empty: false, docs: [{ data: (): unknown => ({ soc: '2136' }) }] }];
     queryQueues.salary_benchmarks = [
-      { empty: false, docs: [{ data: () => ({ salary: 30000 }) }] },
-      { empty: false, docs: [{ data: () => ({}) }] }
+      { empty: false, docs: [{ data: (): unknown => ({ salary: 30000 }) }] },
+      { empty: false, docs: [{ data: (): unknown => ({}) }] }
     ];
 
     const event = {} as unknown as H3Event;
@@ -543,7 +550,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc-live-avg',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Engineer',
               country: 'UK',
               salary: 45000,
@@ -555,11 +562,11 @@ describe('admin backfill-searches endpoint', () => {
         ]
       }
     ];
-    docGetQueues.adzuna_distribution_cache = [{ exists: false, data: () => undefined }];
+    docGetQueues.adzuna_distribution_cache = [{ exists: false, data: (): unknown => undefined }];
     docGetQueues.adzuna_jobs_cache = [
       {
         exists: true,
-        data: () => ({
+        data: (): unknown => ({
           data: { results: [{}, { salary_max: 50000 }], count: 2 },
           gov_id_code: '2136'
         })
@@ -583,7 +590,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc-usa-sparse',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Engineer',
               country: 'USA',
               salary: 70000,
@@ -595,13 +602,16 @@ describe('admin backfill-searches endpoint', () => {
         ]
       }
     ];
-    docGetQueues.adzuna_distribution_cache = [{ exists: false, data: () => undefined }];
+    docGetQueues.adzuna_distribution_cache = [{ exists: false, data: (): unknown => undefined }];
     docGetQueues.adzuna_jobs_cache = [
-      { exists: true, data: () => ({ data: { results: [{ salary_max: 75000 }], count: 1 } }) }
+      {
+        exists: true,
+        data: (): unknown => ({ data: { results: [{ salary_max: 75000 }], count: 1 } })
+      }
     ];
     queryQueues.salary_benchmarks = [
       { empty: true, docs: [] },
-      { empty: false, docs: [{ data: () => ({}) }] }
+      { empty: false, docs: [{ data: (): unknown => ({}) }] }
     ];
 
     const event = {} as unknown as H3Event;
@@ -617,7 +627,7 @@ describe('admin backfill-searches endpoint', () => {
         docs: [
           {
             id: 'doc-non-error',
-            data: () => ({
+            data: (): unknown => ({
               title: 'Engineer',
               country: 'UK',
               historical_fetched_MCA_v2: false,

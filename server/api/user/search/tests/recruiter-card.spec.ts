@@ -29,7 +29,13 @@ vi.mock('firebase-admin/firestore', () => ({
   getFirestore: vi.fn(() => ({ collection: mockCollection }))
 }));
 
-const makeUserDoc = (id: string, data: Record<string, unknown>) => ({ id, data: () => data });
+const makeUserDoc = (
+  id: string,
+  data: Record<string, unknown>
+): { id: string; data: () => Record<string, unknown> } => ({
+  id,
+  data: (): Record<string, unknown> => data
+});
 
 describe('user search/recruiter-card endpoint', () => {
   let handler: RecruiterCardHandler;

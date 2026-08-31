@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { H3Error, H3Event } from 'h3';
+import type * as FallbackUtils from '../../../utils/fallback';
 
 vi.mock('firebase-admin/firestore', () => ({
   FieldValue: {
@@ -59,8 +60,7 @@ vi.mock('../../../utils/jooble', () => ({
 }));
 
 vi.mock('../../../utils/fallback', async () => {
-  const actual =
-    await vi.importActual<typeof import('../../../utils/fallback')>('../../../utils/fallback');
+  const actual = await vi.importActual<typeof FallbackUtils>('../../../utils/fallback');
   return {
     ...actual,
     getMockFallbackHistogram: vi.fn((provider: string) => ({
@@ -174,7 +174,7 @@ describe('market-data salary endpoint', () => {
     distributionCacheDocRef.get.mockResolvedValue({
       exists: true,
       data: () => ({
-        expiresAt: { toMillis: () => Date.now() + 100000 },
+        expiresAt: { toMillis: (): number => Date.now() + 100000 },
         data: { histogram: { '50000': 9 }, cached: true },
         gov_id_code: 'soc_1'
       })
@@ -190,7 +190,7 @@ describe('market-data salary endpoint', () => {
     distributionCacheDocRef.get.mockResolvedValue({
       exists: true,
       data: () => ({
-        expiresAt: { toMillis: () => Date.now() - 100000 },
+        expiresAt: { toMillis: (): number => Date.now() - 100000 },
         data: { histogram: {} }
       })
     });
@@ -204,7 +204,7 @@ describe('market-data salary endpoint', () => {
     distributionCacheDocRef.get.mockResolvedValue({
       exists: true,
       data: () => ({
-        timestamp: { toMillis: () => Date.now() },
+        timestamp: { toMillis: (): number => Date.now() },
         categoryTag: 'it-jobs',
         data: { histogram: { '50000': 9 }, cached: true }
       })
@@ -221,7 +221,7 @@ describe('market-data salary endpoint', () => {
     distributionCacheDocRef.get.mockResolvedValue({
       exists: true,
       data: () => ({
-        timestamp: { toMillis: () => Date.now() },
+        timestamp: { toMillis: (): number => Date.now() },
         data: { histogram: { '50000': 9 }, categoryTag: 'sales-jobs', cached: true }
       })
     });
@@ -236,7 +236,7 @@ describe('market-data salary endpoint', () => {
     distributionCacheDocRef.get.mockResolvedValue({
       exists: true,
       data: () => ({
-        timestamp: { toMillis: () => Date.now() - 200 * 24 * 60 * 60 * 1000 },
+        timestamp: { toMillis: (): number => Date.now() - 200 * 24 * 60 * 60 * 1000 },
         categoryTag: '',
         data: { histogram: {} }
       })

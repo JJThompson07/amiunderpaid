@@ -72,7 +72,9 @@ describe('admin job-groups/migrate (Algolia sync) endpoint', () => {
     const manyTitles = Array.from({ length: 250 }, (_, i) => `title-${i}`);
     mockGet.mockResolvedValue({
       empty: false,
-      docs: [{ id: '2136', data: () => ({ group_name: 'Software Devs', titles: manyTitles }) }]
+      docs: [
+        { id: '2136', data: (): unknown => ({ group_name: 'Software Devs', titles: manyTitles }) }
+      ]
     });
     const event = {} as unknown as H3Event;
 
@@ -91,7 +93,7 @@ describe('admin job-groups/migrate (Algolia sync) endpoint', () => {
   it('pushes a group with an empty titles array as a single record', async () => {
     mockGet.mockResolvedValue({
       empty: false,
-      docs: [{ id: '9999', data: () => ({ group_name: 'Empty Group', titles: [] }) }]
+      docs: [{ id: '9999', data: (): unknown => ({ group_name: 'Empty Group', titles: [] }) }]
     });
     const event = {} as unknown as H3Event;
 
@@ -103,7 +105,9 @@ describe('admin job-groups/migrate (Algolia sync) endpoint', () => {
   it('wraps an Algolia push failure in an opaque 500 without leaking the underlying error message', async () => {
     mockGet.mockResolvedValue({
       empty: false,
-      docs: [{ id: '2136', data: () => ({ group_name: 'Software Devs', titles: ['engineer'] }) }]
+      docs: [
+        { id: '2136', data: (): unknown => ({ group_name: 'Software Devs', titles: ['engineer'] }) }
+      ]
     });
     mockReplaceAllObjects.mockRejectedValueOnce(new Error('algolia down'));
     const event = {} as unknown as H3Event;
