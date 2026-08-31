@@ -15,7 +15,7 @@ Either agent can cross into the other's lane when explicitly asked — Claude ca
 
 - **Core Stack:** Nuxt 4 (Nitro), Vue 3 (Composition API), Tailwind CSS v4, and TypeScript.
 - **Package Manager:** You MUST strictly use `pnpm` for all dependency management and script execution. Never run `npm` or `yarn`.
-- **Use Package Scripts:** Prefer the `package.json` scripts (e.g. `pnpm test`, `pnpm test:e2e`, `pnpm test:coverage`, `pnpm lint`, `pnpm lint:fix`, `pnpm typecheck`, `pnpm format`) over invoking the underlying tools (`vitest`, `playwright`, `eslint`, `prettier`, `tsc`) directly, so runs stay consistent with the flags and config the scripts already encode.
+- **Use Package Scripts:** Prefer the `package.json` scripts (e.g. `pnpm test:verify`, `pnpm test`, `pnpm test:e2e`, `pnpm test:coverage`, `pnpm lint`, `pnpm lint:fix`, `pnpm typecheck`, `pnpm format`) over invoking the underlying tools (`vitest`, `playwright`, `eslint`, `prettier`, `tsc`) directly, so runs stay consistent with the flags and config the scripts already encode.
 - **Database & Auth:** Firebase (Firestore, Auth) using `vuefire` on the client and `firebase-admin` on the server.
 - **Strict Guidelines:** You MUST consult and obey the `CODE_STANDARDS.md` file before proposing or applying any changes.
 - **The Golden Rule:** NEVER use `useFirebaseAuth()?.currentUser` for UI reactivity. Always use `useCurrentUser()`.
@@ -60,9 +60,8 @@ When instructed to implement:
 When instructed to validate:
 
 1. Map the acceptance criteria from the spec to the implemented code.
-2. Run standard local verification commands using pnpm (e.g., `pnpm nuxi typecheck` or standard build steps) to ensure the build is not broken.
-3. Run the project's unit test suite using `pnpm vitest run` and ensure ALL tests pass before proceeding.
-4. Report any gaps between the initial specification and the current execution.
+2. Run `pnpm test:verify` — it chains `pnpm lint` (spellcheck, typecheck, Prettier, structure-lint, check-standards, ESLint), `pnpm test:coverage` (unit tests with the 80% per-file coverage gate), `pnpm test:e2e` (Playwright), and `pnpm test:rules` (Firestore rules tests) into a single pass/fail run. Ensure it passes before proceeding.
+3. Report any gaps between the initial specification and the current execution.
 
 ### Phase 4: Archive — Claude's primary responsibility, see `CLAUDE.md`
 
@@ -77,9 +76,9 @@ When a change is fully verified and approved:
 
 ## 5. CI / Testing Enforcement
 
-- **Test Verification:** Before concluding ANY task, proposing a change, or asking the user to push a branch, you MUST run both `pnpm test` (Unit Tests) and `pnpm test:e2e` (Playwright tests).
-- **Hard Blocker:** If ANY test fails during execution, this blocks further execution. You must fix the regression before proceeding or explicitly ask the user for guidance if you are stuck.
-- **Coverage Enforcement:** The repository strictly requires **80% minimum coverage** on all four metrics (statements, branches, functions, and lines) on a per-file basis. You MUST run `pnpm run test:coverage` to verify this criteria is met for any modified or new files before concluding a task. PRs will fail if any file drops below 80% coverage. This applies to `server/**` as well as every other included directory — there is no relaxed threshold for server routes.
+- **Test Verification:** Before concluding ANY task, proposing a change, or asking the user to push a branch, you MUST run `pnpm test:verify`. It chains every check that has to pass before a branch is push-ready — `pnpm lint` (spellcheck, `pnpm typecheck`, Prettier, structure-lint, check-standards, ESLint), `pnpm test:coverage` (unit tests, superset of plain `pnpm test`), `pnpm test:e2e` (Playwright), and `pnpm test:rules` (Firestore rules tests) — into one pass/fail command. CI itself still runs each of these as a separate job; `test:verify` exists only to make local verification a single gate instead of remembering to run each script individually.
+- **Hard Blocker:** If ANY check inside `pnpm test:verify` fails, this blocks further execution. You must fix the regression before proceeding or explicitly ask the user for guidance if you are stuck.
+- **Coverage Enforcement:** The repository strictly requires **80% minimum coverage** on all four metrics (statements, branches, functions, and lines) on a per-file basis, enforced by `pnpm test:coverage` (included in `pnpm test:verify`). PRs will fail if any file drops below 80% coverage. This applies to `server/**` as well as every other included directory — there is no relaxed threshold for server routes.
 
 ## 6. Coding Standards & Linting
 
