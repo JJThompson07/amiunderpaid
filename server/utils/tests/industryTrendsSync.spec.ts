@@ -227,4 +227,142 @@ describe('runIndustryTrendsSync', () => {
       label: 'it-jobs'
     });
   });
+
+  it('falls back to the tag as label when a categories entry is missing its tag or label', async () => {
+    $fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({
+          results: [{ tag: 'it-jobs' }, { label: 'Sales Jobs (unmatched)' }]
+        });
+      }
+      return Promise.resolve({ month: { '2026-01': 40000 } });
+    });
+
+    await runIndustryTrendsSync(12);
+
+    expect(docRefs.get('gb_it-jobs')?.set).toHaveBeenCalledWith(
+      expect.objectContaining({ label: 'it-jobs' }),
+      { merge: true }
+    );
+    expect(docRefs.get('gb_sales-jobs')?.set).toHaveBeenCalledWith(
+      expect.objectContaining({ label: 'sales-jobs' }),
+      { merge: true }
+    );
+  });
+
+  it('treats a history response with no month field as having zero history points', async () => {
+    $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      if (opts?.params?.category === 'it-jobs') {
+        return Promise.resolve({});
+      }
+      return Promise.resolve({ month: { '2026-01': 40000 } });
+    });
+
+    const summary = await runIndustryTrendsSync(12);
+
+    expect(summary.synced).toBe(2);
+    expect(docRefs.has('gb_it-jobs')).toBe(false);
+  });
+
+  it('de-duplicates merged history by month, keeping the freshest average for the current period', async () => {
+    runTransactionMock.mockImplementationOnce(async (callback: (tx: unknown) => Promise<void>) => {
+      const tx = {
+        get: vi.fn().mockResolvedValue({
+          data: () => ({
+            history: [
+              { month: '2026-01', average: 40000 },
+              { month: '2026-02', average: 41000 }
+            ]
+          })
+        }),
+        set: vi.fn((ref: MockDocRef, data: unknown) => ref.set(data, { merge: true }))
+      };
+      await callback(tx);
+    });
+    $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      if (opts?.params?.category === 'it-jobs') {
+        return Promise.resolve({ month: { '2026-02': 52000 } });
+      }
+      return Promise.resolve({ month: {} });
+    });
+
+    await runIndustryTrendsSync(1);
+
+    expect(docRefs.get('gb_it-jobs')?.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        history: [
+          { month: '2026-01', average: 40000 },
+          { month: '2026-02', average: 52000 }
+        ]
+      }),
+      { merge: true }
+    );
+  });
+
+  it('records "Unknown error" when a history fetch rejects with a non-Error value', async () => {
+    $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      if (opts?.params?.category === 'it-jobs') {
+        return Promise.reject('rate limit exceeded');
+      }
+      return Promise.resolve({ month: { '2026-01': 40000 } });
+    });
+
+    const summary = await runIndustryTrendsSync(12);
+
+    expect(summary.results).toContainEqual(
+      expect.objectContaining({ categoryTag: 'it-jobs', status: 'error', error: 'Unknown error' })
+    );
+  });
+
+  it('paces requests into multiple batches when more pairs exist than the per-minute rate limit', async () => {
+    const manyCacheDocs = Array.from({ length: 21 }, (_, i) => ({
+      categoryTag: `cat-${i}`,
+      searchParams: { country: 'gb' }
+    }));
+    useAdminFirestoreMock.mockReturnValue({
+      collection: vi.fn((name: string) => {
+        if (name === 'adzuna_jobs_cache') {
+          return {
+            select: vi.fn(() => ({ get: vi.fn().mockResolvedValue(makeSnapshot(manyCacheDocs)) }))
+          };
+        }
+        if (name === 'adzuna_industry_trends') {
+          return {
+            doc: vi.fn((id: string) => {
+              if (!docRefs.has(id)) {
+                docRefs.set(id, { set: vi.fn().mockResolvedValue(undefined) });
+              }
+              return docRefs.get(id)!;
+            })
+          };
+        }
+        throw new Error(`unexpected collection: ${name}`);
+      }),
+      runTransaction: (cb: (tx: unknown) => Promise<void>) => runTransactionMock(cb)
+    });
+    $fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      return Promise.resolve({ month: { '2026-01': 40000 } });
+    });
+
+    vi.useFakeTimers();
+    const promise = runIndustryTrendsSync(12);
+    await vi.advanceTimersByTimeAsync(60_000);
+    const summary = await promise;
+    vi.useRealTimers();
+
+    expect(summary.results).toHaveLength(21);
+    expect(summary.failed).toBe(0);
+  });
 });

@@ -1,4 +1,4 @@
-import { createError, defineEventHandler, readBody } from 'h3';
+import { createError, defineEventHandler, isError, readBody } from 'h3';
 import algoliasearch from 'algoliasearch';
 
 type SyncAlgoliaRequestBody = {
@@ -14,14 +14,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Invalid data format' });
   }
 
-  if (!process.env.ALGOLIA_ADMIN_KEY || !process.env.ALGOLIA_APPLICATION_ID) {
+  const config = useRuntimeConfig();
+
+  if (!config.algoliaAdminApiKey || !config.algoliaApplicationId) {
     throw createError({
       statusCode: 500,
-      message: 'Algolia credentials missing in server environment'
+      message: 'Search index credentials are not configured.'
     });
   }
 
-  const client = algoliasearch(process.env.ALGOLIA_APPLICATION_ID, process.env.ALGOLIA_ADMIN_KEY);
+  const client = algoliasearch(config.algoliaApplicationId, config.algoliaAdminApiKey);
   const index = client.initIndex(indexName);
 
   try {
@@ -51,10 +53,9 @@ export default defineEventHandler(async (event) => {
       message: `Synced ${objectIDs.length} records to Algolia index '${indexName}'`
     };
   } catch (error) {
-    throw createError({
-      statusCode: 500,
-      message: error instanceof Error ? error.message : 'Error syncing algolia index',
-      cause: error
-    });
+    if (isError(error)) {
+      throw error;
+    }
+    throw createError({ statusCode: 500, message: 'Error syncing search index' });
   }
 });

@@ -61,6 +61,34 @@ describe('track-search endpoint', () => {
     expect(mockGenerateSearchToken).toHaveBeenCalledWith('doc_123', 'test-secret');
   });
 
+  it('normalizes every optional field when provided', async () => {
+    mockReadBody.mockResolvedValue({
+      title: 'Software Engineer',
+      country: 'gb',
+      location: 'London',
+      salary: '50000',
+      schedule: 'Full-Time',
+      contract: 'Permanent',
+      brand: 'AmIUnderpaid'
+    });
+    const event = {} as unknown as H3Event;
+
+    const res = await handler(event);
+
+    expect(res).toEqual({ success: true, id: 'doc_123', token: 'generated-token' });
+    expect(mockAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'software engineer',
+        country: 'GB',
+        location: 'london',
+        salary: 50000,
+        schedule: 'full-time',
+        contract: 'permanent',
+        brand: 'AmIUnderpaid'
+      })
+    );
+  });
+
   it('returns success: false when required fields are missing', async () => {
     mockReadBody.mockResolvedValue({ title: '', country: '' });
     const event = {} as unknown as H3Event;

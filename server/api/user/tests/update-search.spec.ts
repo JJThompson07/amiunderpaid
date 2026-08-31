@@ -79,6 +79,46 @@ describe('update-search endpoint', () => {
     expect(mockUpdate).toHaveBeenCalledWith({ mcaScore: 42 });
   });
 
+  it('persists every optional field when all are provided', async () => {
+    mockReadBody.mockResolvedValue({
+      id: 'doc_123',
+      token: 'valid-token',
+      mcaScore: 42,
+      marketAverage: 50000,
+      governmentAverage: 48000,
+      microPercentile: 60,
+      macroPercentile: 55,
+      livePercentile: 70,
+      searchSuccess: true,
+      provider: 'adzuna'
+    });
+    const event = {} as unknown as H3Event;
+
+    const res = await handler(event);
+
+    expect(res).toEqual({ success: true });
+    expect(mockUpdate).toHaveBeenCalledWith({
+      mcaScore: 42,
+      marketAverage: 50000,
+      governmentAverage: 48000,
+      microPercentile: 60,
+      macroPercentile: 55,
+      livePercentile: 70,
+      searchSuccess: true,
+      provider: 'adzuna'
+    });
+  });
+
+  it('skips the Firestore update entirely when no updatable fields are provided', async () => {
+    mockReadBody.mockResolvedValue({ id: 'doc_123', token: 'valid-token' });
+    const event = {} as unknown as H3Event;
+
+    const res = await handler(event);
+
+    expect(res).toEqual({ success: true });
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
   it('silently returns success: false if the Firestore update fails', async () => {
     mockUpdate.mockRejectedValueOnce(new Error('Firestore is down'));
     const event = {} as unknown as H3Event;

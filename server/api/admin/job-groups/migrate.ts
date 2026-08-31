@@ -8,15 +8,19 @@ export default defineEventHandler(async (event) => {
     const country = body?.country;
 
     if (!country) {
-      throw new Error('Country is missing from request body');
+      throw createError({ statusCode: 400, message: 'Country is missing from request body' });
     }
 
     // 1. ENVIRONMENT CHECK
-    const appId = process.env.ALGOLIA_APPLICATION_ID;
-    const adminKey = process.env.ALGOLIA_ADMIN_KEY;
+    const config = useRuntimeConfig();
+    const appId = config.algoliaApplicationId;
+    const adminKey = config.algoliaAdminApiKey;
 
     if (!appId || !adminKey) {
-      throw new Error('Algolia credentials missing from .env variables');
+      throw createError({
+        statusCode: 500,
+        message: 'Search index credentials are not configured.'
+      });
     }
 
     const client = algoliasearch(appId, adminKey);
@@ -30,7 +34,7 @@ export default defineEventHandler(async (event) => {
     const snapshot = await db.collection(collectionName).get();
 
     if (snapshot.empty) {
-      throw new Error(`No documents found in Firestore collection: ${collectionName}`);
+      throw createError({ statusCode: 500, message: 'No job group records found to sync.' });
     }
 
     // 3. DATA MAPPING
@@ -78,10 +82,9 @@ export default defineEventHandler(async (event) => {
     return { success: true, count: response.objectIDs.length };
   } catch (error) {
     // 5. ERROR CATCHER
-
-    throw createError({
-      statusCode: 500,
-      message: error instanceof Error ? error.message : 'Failed to sync with Algolia.'
-    });
+    if (isError(error)) {
+      throw error;
+    }
+    throw createError({ statusCode: 500, message: 'Failed to sync job groups to search index.' });
   }
 });

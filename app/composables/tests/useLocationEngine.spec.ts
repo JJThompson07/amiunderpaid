@@ -96,9 +96,17 @@ const mockNavigateTo = vi.fn();
 vi.stubGlobal('navigateTo', mockNavigateTo);
 vi.stubGlobal('$fetch', vi.fn());
 
+const mockCalculateUKBenchmarkScore = vi.fn(() => ({ score: 'uk-result' }));
+const mockCalculateUSABenchmarkScore = vi.fn(() => ({ score: 'usa-result' }));
+const mockFormatMcaScoreForUi = vi.fn(() => ({ formatted: true }));
+vi.stubGlobal('calculateUKBenchmarkScore', mockCalculateUKBenchmarkScore);
+vi.stubGlobal('calculateUSABenchmarkScore', mockCalculateUSABenchmarkScore);
+vi.stubGlobal('formatMcaScoreForUi', mockFormatMcaScoreForUi);
+
 describe('useLocationEngine', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    watchCallbacks.length = 0;
     mockRoute.query = {};
     mockRoute.params = { title: 'software-engineer', country: 'uk' };
 
@@ -299,5 +307,89 @@ describe('useLocationEngine', () => {
     mockAdzuna.jobsData.value = { results: [{ salary_max: 100 }, { salary_max: 200 }] };
     const engine = await useLocationEngine('salary');
     expect(engine.jobListings.value[0]?.salary_max).toBe(200);
+  });
+
+  it('defaults diffPercent to 0 and jobListings to an empty array when there is no comparison salary or job data', async () => {
+    const engine = await useLocationEngine('salary');
+    expect(engine.diffPercent.value).toBe(0);
+    expect(engine.jobListings.value).toEqual([]);
+  });
+
+  it('falls back to 0 for regional salary percentiles the API omits', async () => {
+    mockRoute.params = { title: 'software-engineer', country: 'uk', location: 'london-city' };
+    mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({
+      microRegionalData: { p50: 100, mean: 120 }
+    });
+    const engine = await useLocationEngine('salary');
+    expect(engine.regionalData.value).toEqual(
+      expect.objectContaining({
+        salary_10_pt: 0,
+        salary_25_pt: 0,
+        salary_75_pt: 0,
+        salary_90_pt: 0
+      })
+    );
+  });
+
+  it('strips oversized regional payloads from macro and micro data without breaking the score calculation', async () => {
+    mockMacroData.fetchMacroBaselines.mockResolvedValueOnce({
+      macroNationalData: { mean: 1 },
+      allRegionalData: { huge: 'payload' }
+    });
+    mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({
+      microNationalData: { mean: 1 },
+      allRegionalMicroData: { huge: 'payload' }
+    });
+
+    const engine = await useLocationEngine('salary');
+
+    expect(engine.mcaScore.value).toEqual({ formatted: true });
+  });
+
+  it('scores via the live-data path when histogram data exists but no micro national data does', async () => {
+    mockMacroData.fetchMacroBaselines.mockResolvedValueOnce({ macroNationalData: { mean: 1 } });
+    mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({ microNationalData: null });
+    mockAdzuna.histogramTotalCount.value = 5;
+
+    const engine = await useLocationEngine('salary');
+
+    expect(engine.mcaScore.value).toEqual({ formatted: true });
+    expect(mockCalculateUKBenchmarkScore).toHaveBeenCalled();
+  });
+
+  it('uses the USA scorer for a USA country context', async () => {
+    mockRoute.params = { title: 'teacher', country: 'usa' };
+    mockMacroData.fetchMacroBaselines.mockResolvedValueOnce({ macroNationalData: { mean: 1 } });
+    mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({ microNationalData: { mean: 1 } });
+
+    const engine = await useLocationEngine('salary');
+
+    expect(engine.mcaScore.value).toEqual({ formatted: true });
+    expect(mockCalculateUSABenchmarkScore).toHaveBeenCalled();
+    expect(mockCalculateUKBenchmarkScore).not.toHaveBeenCalled();
+  });
+
+  it('sends the USA country code when resolving an ambiguity match from a USA context', async () => {
+    mockRoute.params = { title: 'teacher', country: 'usa' };
+    const engine = await useLocationEngine('salary');
+
+    await engine.handleAmbiguitySelect({ id_code: '456', title: 'Teacher' });
+
+    expect($fetch).toHaveBeenCalledWith(
+      '/api/market-data/update-match',
+      expect.objectContaining({ body: expect.objectContaining({ country: 'USA' }) })
+    );
+  });
+
+  it('clears the compare query param when userSalary is watched back down to zero', async () => {
+    const engine = await useLocationEngine('salary');
+
+    engine.userSalary.value = 0;
+    watchCallbacks.forEach((cb) => cb(0));
+
+    expect(mockNavigateTo).toHaveBeenCalledWith(
+      { query: expect.not.objectContaining({ compare: expect.anything() }) },
+      { replace: true }
+    );
   });
 });

@@ -20,6 +20,11 @@ The codebase SHALL strictly enforce all ESLint TypeScript rules without disablin
 - **WHEN** the `pnpm lint` pipeline reaches the ESLint check step (`eslint --max-warnings 0`)
 - **THEN** it completes with exit code 0, reporting 0 errors and 0 warnings.
 
+#### Scenario: Running `pnpm lint`'s spellcheck step
+
+- **WHEN** the `pnpm lint` pipeline runs its `spellcheck` (cspell) step, which executes before typecheck and ESLint
+- **THEN** it completes with exit code 0, reporting 0 unknown-word findings across all files it scans
+
 ### Requirement: Vue Component Emit Typings
 
 All Vue 3 components using the Composition API `defineEmits` macro SHALL use type-based syntax to declare emit parameters rather than the untyped string array syntax, rendering `vue/require-emit-validator` obsolete.

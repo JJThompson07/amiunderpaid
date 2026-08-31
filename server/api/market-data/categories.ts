@@ -1,18 +1,16 @@
-import { FetchError } from 'ofetch';
-
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const query = getQuery(event);
   const country = query.country ? String(query.country).toLowerCase() : 'gb';
   const targetCountry = country === 'usa' || country === 'us' ? 'us' : 'gb';
 
-  const appId = config.adzunaAppId || config.public?.adzunaAppId || process.env.adzunaAppId;
-  const appKey = config.adzunaAppKey || config.public?.adzunaAppKey || process.env.adzunaAppKey;
+  const appId = config.adzunaAppId;
+  const appKey = config.adzunaAppKey;
 
   if (!appId || !appKey) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Adzuna API credentials are not configured.'
+      statusMessage: 'Market data credentials are not configured.'
     });
   }
 
@@ -28,12 +26,10 @@ export default defineEventHandler(async (event) => {
       }
     );
     return response;
-  } catch (e) {
-    const isFetchError = e instanceof FetchError;
+  } catch {
     throw createError({
-      statusCode: (isFetchError && e.response?.status) || 500,
-      statusMessage: `Failed to fetch Adzuna categories for ${targetCountry}`,
-      data: isFetchError ? e.data : undefined
+      statusCode: 503,
+      statusMessage: 'Market data temporarily unavailable.'
     });
   }
 });

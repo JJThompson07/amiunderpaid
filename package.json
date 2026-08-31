@@ -25,7 +25,8 @@
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
     "test:rules": "npx -y firebase-tools@latest emulators:exec \"vitest run tests/firestore.spec.ts -c vitest.rules.config.ts\"",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:verify": "pnpm lint && pnpm test:coverage && pnpm test:e2e && pnpm test:rules"
   },
   "dependencies": {
     "@nuxtjs/algolia": "^1.11.2",

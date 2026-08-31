@@ -40,6 +40,7 @@ rules:
   tasks:
     - Break implementation down into actionable, sequential checkboxes.
     - Name concrete repo-relative files.
+    - When enforcement is per-file across a directory/glob (e.g. lifting a coverage exemption, tightening a lint rule), enumerate every file the real directory/glob currently matches — not a representative sample — before scoping tasks.
     - Include test authoring in the same task step as the feature code.
     - The final task MUST be a gate check task (e.g., "Run local verification `pnpm vitest run`").
     - Any task that is irreversible (data deletion/migration), flips a failure mode from silent to loud, or depends on infrastructure specifics (hosting platform, trusted proxy headers, deployed env vars) MUST be preceded by an explicit verification/pre-flight task that confirms the real current state before the risky task runs.
