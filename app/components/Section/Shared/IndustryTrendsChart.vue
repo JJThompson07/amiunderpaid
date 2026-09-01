@@ -49,7 +49,7 @@
           </div>
         </template>
 
-        <div class="flex items-center gap-3 shrink-0 pt-2 ml-auto w-full sm:w-80">
+        <div class="flex flex-col gap-1 shrink-0 pt-2 ml-auto w-full sm:w-80">
           <label class="text-xs font-bold text-slate-400 whitespace-nowrap">
             {{ $t('insights.controls.timeRange.label') }}
           </label>
