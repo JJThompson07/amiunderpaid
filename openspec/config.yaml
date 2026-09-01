@@ -21,7 +21,7 @@ context: |
 
   DEFINITION OF A SUCCESSFUL CHANGE:
   - Code changes MUST include corresponding tests.
-  - Unit tests strictly required for new core utilities (`~/utils/`) and composables (`~/composables/`) in adjacent `tests/` directories.
+  - Unit tests strictly required for new core utilities (`~/utils/`) and composables (`~/composables/`) in adjacent `tests/` directories, and for reusable `AmI/**` base components that carry real logic (not thin presentational wrappers).
   - All changes MUST pass the test suite (`pnpm vitest run`) and standard build steps.
 
   VERIFY BEFORE RECOMMENDING (CODE_STANDARDS.md §10):
