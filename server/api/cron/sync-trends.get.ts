@@ -120,9 +120,13 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // Always a monthly delta here (months=1), never a 12-month backfill -- the
-    // one-time historical backfill is a manual admin action via sync-trends.post.ts.
-    const summary = await runIndustryTrendsSync(1);
+    // Monthly delta here, never a 12-month backfill -- the one-time historical
+    // backfill is a manual admin action via sync-trends.post.ts. Requesting
+    // months=1 from Adzuna's /history endpoint returns an empty {} every time
+    // (confirmed live against the real API) -- months=2 is the smallest value
+    // that actually returns data, so we ask for 2 and let syncOne's existing
+    // merge-by-month-key logic de-dupe the overlap with what's already stored.
+    const summary = await runIndustryTrendsSync(2);
 
     if (summary.failed > 0) {
       // This is the only record of a sync failure that the response body

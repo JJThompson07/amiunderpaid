@@ -27,20 +27,20 @@ describe('admin sync-trends endpoint', () => {
     mockVerifyAdmin.mockResolvedValue(undefined);
     vi.mocked(runIndustryTrendsSync).mockResolvedValue({
       success: true,
-      months: 1,
+      months: 2,
       synced: 1,
       failed: 0,
       results: []
     });
   });
 
-  it('defaults to a 1-month sync when months is not exactly 12', async () => {
+  it('defaults to a 2-month sync when months is not exactly 12', async () => {
     mockReadBody.mockResolvedValue({});
     const event = {} as unknown as H3Event;
 
     await handler(event);
 
-    expect(runIndustryTrendsSync).toHaveBeenCalledWith(1);
+    expect(runIndustryTrendsSync).toHaveBeenCalledWith(2);
   });
 
   it('runs a 12-month backfill when months is 12', async () => {
@@ -58,6 +58,6 @@ describe('admin sync-trends endpoint', () => {
 
     await handler(event);
 
-    expect(runIndustryTrendsSync).toHaveBeenCalledWith(1);
+    expect(runIndustryTrendsSync).toHaveBeenCalledWith(2);
   });
 });

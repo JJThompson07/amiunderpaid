@@ -80,7 +80,7 @@ describe('cron/sync-trends', () => {
   it('emails a success summary including newly synced data on a clean run', async () => {
     const summary: SyncSummary = {
       success: true,
-      months: 1,
+      months: 2,
       synced: 1,
       failed: 0,
       results: [
@@ -99,6 +99,10 @@ describe('cron/sync-trends', () => {
     const result = await cronHandler({} as H3Event);
 
     expect(result).toEqual(summary);
+    // Locks in the fix for the real bug this test suite didn't catch: months=1
+    // returns an empty {} from Adzuna's live /history endpoint, so the cron
+    // must request at least 2 months to actually get new data back.
+    expect(mockRunIndustryTrendsSync).toHaveBeenCalledWith(2);
     expect(mockResendSend).toHaveBeenCalledWith(
       expect.objectContaining({
         to: 'support@amiunderpaid.com',
@@ -112,7 +116,7 @@ describe('cron/sync-trends', () => {
   it('emails a failure summary including the error message and still returns the summary', async () => {
     const summary: SyncSummary = {
       success: true,
-      months: 1,
+      months: 2,
       synced: 0,
       failed: 1,
       results: [
@@ -155,7 +159,7 @@ describe('cron/sync-trends', () => {
     mockConfig.resendApiKey = undefined;
     mockRunIndustryTrendsSync.mockResolvedValue({
       success: true,
-      months: 1,
+      months: 2,
       synced: 0,
       failed: 0,
       results: []
