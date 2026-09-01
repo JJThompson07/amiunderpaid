@@ -49,18 +49,15 @@
           </div>
         </template>
 
-        <div class="flex items-center gap-2 shrink-0 pt-2 ml-auto">
-          <label for="trends-time-range" class="text-xs font-bold text-slate-400">
+        <div class="flex flex-col gap-1 shrink-0 pt-2 ml-auto w-full sm:w-80">
+          <label class="text-xs font-bold text-slate-400 whitespace-nowrap">
             {{ $t('insights.controls.timeRange.label') }}
           </label>
-          <select
-            id="trends-time-range"
-            v-model="timeRange"
-            class="px-3 py-1.5 text-xs font-bold border rounded-full text-slate-600 border-slate-200 bg-white">
-            <option value="6">{{ $t('insights.controls.timeRange.last6') }}</option>
-            <option value="12">{{ $t('insights.controls.timeRange.last12') }}</option>
-            <option value="all">{{ $t('insights.controls.timeRange.allTime') }}</option>
-          </select>
+          <AmIInputRangeSlider
+            v-model="rangeIndices"
+            :labels="monthLabels"
+            :from-aria-label="$t('insights.controls.timeRange.from')"
+            :to-aria-label="$t('insights.controls.timeRange.to')" />
         </div>
       </div>
     </div>
@@ -83,13 +80,16 @@ const props = defineProps<{
   initialIndustryTag?: string;
 }>();
 
-const { t } = useI18n();
+const { locale, t } = useI18n();
 const { currencySymbol } = useRegion();
 const { industries, loading, error } = useIndustryTrends();
 
 const selectedIndustries = ref<string[]>([]);
-const timeRange = ref<'6' | '12' | 'all'>('12');
+// [fromIndex, toIndex] into fullMonths -- seeded once fullMonths first
+// becomes non-empty, see the hasInitializedRange watcher below.
+const rangeIndices = ref<[number, number]>([0, 0]);
 const hasInitializedSelection = ref(false);
+const hasInitializedRange = ref(false);
 
 const chartContainer = ref<HTMLElement | null>(null);
 const chart = shallowRef<echarts.ECharts | null>(null);
@@ -151,19 +151,39 @@ const cardBackgroundStyle = computed<{ background: string }>(() => {
   return { background: scale ? `linear-gradient(135deg, ${scale['50']} 0%, #ffffff 55%)` : '' };
 });
 
-const monthsBack = computed<number | null>(() => {
-  if (timeRange.value === '6') {
-    return 6;
-  }
-  if (timeRange.value === '12') {
-    return 12;
-  }
-  return null;
-});
-
 const visibleIndustries = computed<IndustryTrendEntry[]>(() =>
   industries.value.filter((industry) => selectedIndustries.value.includes(industry.categoryTag))
 );
+
+// The FULL set of months across every tracked industry, not just the
+// currently-visible/selected ones -- keeps the slider's bounds stable as the
+// user toggles industries on/off instead of the range shifting under them.
+const fullMonths = computed<string[]>(() => {
+  const months = new Set<string>();
+  for (const industry of industries.value) {
+    for (const point of industry.history) {
+      months.add(point.month);
+    }
+  }
+  return [...months].sort();
+});
+
+// Human-readable "Aug 2025" labels for the slider handles, parallel to
+// fullMonths (same length/order) so a rangeIndices index into one is valid
+// for the other -- the chart's x-axis keeps using the raw "YYYY-MM" keys via
+// allMonths/fullMonths, unaffected by this, since that's pre-existing
+// behavior this change isn't touching.
+const monthLabels = computed<string[]>(() => {
+  // Instantiated once per computed re-run, not once per month -- Intl
+  // formatter construction is comparatively expensive to just calling
+  // .format() on an already-built instance.
+  const formatter = new Intl.DateTimeFormat(locale.value, {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC'
+  });
+  return fullMonths.value.map((month) => formatter.format(new Date(`${month}-01T00:00:00Z`)));
+});
 
 const industryOptions = computed<AutocompleteOption[]>(() =>
   industries.value.map((industry) => ({ value: industry.categoryTag, label: industry.label }))
@@ -182,17 +202,34 @@ const chipColorFor = (
   return { bg: scale['100'], text: scale['800'], border: scale['200'] };
 };
 
-const allMonths = computed<string[]>(() => {
-  const months = new Set<string>();
-  for (const industry of visibleIndustries.value) {
-    for (const point of industry.history) {
-      months.add(point.month);
+// The chart's x-axis: the slice of fullMonths the user has selected via the
+// range slider. renderChart() looks up each visible industry's value for
+// each of these months (falling back to null / connectNulls), so a month
+// with no data point for a given industry is already handled there -- this
+// computed only needs to produce the ordered list of month keys.
+const allMonths = computed<string[]>(() =>
+  fullMonths.value.slice(rangeIndices.value[0], rangeIndices.value[1] + 1)
+);
+
+const DEFAULT_RANGE_MONTHS = 12;
+
+// Seeds the default range to the most recent 12 months (or the full span if
+// fewer exist) the first time real month data arrives -- reproduces the old
+// dropdown's "Last 12 Months" default rather than defaulting to "all time"
+// and changing what returning visitors see on load. Guarded the same way as
+// hasInitializedSelection so a later user drag isn't overwritten by this
+// watcher re-firing (e.g. when fullMonths gains a new month after a sync).
+watch(
+  fullMonths,
+  (months) => {
+    if (months.length === 0 || hasInitializedRange.value) {
+      return;
     }
-  }
-  const sorted = [...months].sort();
-  const limit = monthsBack.value;
-  return limit ? sorted.slice(-limit) : sorted;
-});
+    hasInitializedRange.value = true;
+    rangeIndices.value = [Math.max(0, months.length - DEFAULT_RANGE_MONTHS), months.length - 1];
+  },
+  { immediate: true }
+);
 
 const selectAll = (): void => {
   selectedIndustries.value = industries.value.map((industry) => industry.categoryTag);
@@ -340,7 +377,7 @@ const renderChart = (): void => {
   );
 };
 
-watch([visibleIndustries, timeRange], renderChart);
+watch([visibleIndustries, rangeIndices], renderChart);
 
 // Seeds the default selection as soon as the (SSR-fetched or client-fetched)
 // industries list first becomes non-empty. Also re-runs whenever

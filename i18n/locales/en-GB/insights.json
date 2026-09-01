@@ -10,9 +10,8 @@
     "industriesPlaceholder": "Search industries...",
     "timeRange": {
       "label": "Time Range",
-      "last6": "Last 6 Months",
-      "last12": "Last 12 Months",
-      "allTime": "All Time"
+      "from": "From month",
+      "to": "To month"
     }
   },
   "chart": {

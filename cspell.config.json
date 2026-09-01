@@ -37,6 +37,7 @@
     "labelledby",
     "describedby",
     "activedescendant",
+    "valuetext",
     "typecheck",
     "vuefire",
     "firestore",
