@@ -69,6 +69,16 @@ describe('AmI/Input/RangeSlider', () => {
     expect(inputs[1]?.attributes('max')).toBe('0');
   });
 
+  it('sets aria-valuetext to the current label so screen readers announce the month, not the raw index', () => {
+    const wrapper = mount(RangeSlider, {
+      props: { modelValue: [1, 4], labels: LABELS }
+    });
+
+    const [fromInput, toInput] = wrapper.findAll('input[type="range"]');
+    expect(fromInput?.attributes('aria-valuetext')).toBe('2025-09');
+    expect(toInput?.attributes('aria-valuetext')).toBe('2025-12');
+  });
+
   it('passes fromAriaLabel/toAriaLabel through to the respective inputs', () => {
     const wrapper = mount(RangeSlider, {
       props: {

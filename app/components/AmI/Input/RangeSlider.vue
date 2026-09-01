@@ -15,6 +15,7 @@
         :max="maxIndex"
         step="1"
         :aria-label="fromAriaLabel"
+        :aria-valuetext="fromLabel"
         class="ami-range-slider-input" />
       <input
         v-model.number="toIndex"
@@ -23,6 +24,7 @@
         :max="maxIndex"
         step="1"
         :aria-label="toAriaLabel"
+        :aria-valuetext="toLabel"
         class="ami-range-slider-input ami-range-slider-input--top" />
     </div>
 

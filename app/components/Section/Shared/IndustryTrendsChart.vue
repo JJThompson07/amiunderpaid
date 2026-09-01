@@ -173,14 +173,17 @@ const fullMonths = computed<string[]>(() => {
 // for the other -- the chart's x-axis keeps using the raw "YYYY-MM" keys via
 // allMonths/fullMonths, unaffected by this, since that's pre-existing
 // behavior this change isn't touching.
-const formatMonthLabel = (month: string, localeCode: string): string =>
-  new Intl.DateTimeFormat(localeCode, { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(
-    new Date(`${month}-01T00:00:00Z`)
-  );
-
-const monthLabels = computed<string[]>(() =>
-  fullMonths.value.map((month) => formatMonthLabel(month, locale.value))
-);
+const monthLabels = computed<string[]>(() => {
+  // Instantiated once per computed re-run, not once per month -- Intl
+  // formatter construction is comparatively expensive to just calling
+  // .format() on an already-built instance.
+  const formatter = new Intl.DateTimeFormat(locale.value, {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC'
+  });
+  return fullMonths.value.map((month) => formatter.format(new Date(`${month}-01T00:00:00Z`)));
+});
 
 const industryOptions = computed<AutocompleteOption[]>(() =>
   industries.value.map((industry) => ({ value: industry.categoryTag, label: industry.label }))
