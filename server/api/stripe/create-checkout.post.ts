@@ -2,6 +2,8 @@
 import Stripe from 'stripe';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { sendBillingFailureAlert } from '~~/server/utils/billingAlerts';
+import { computeTerritoryFulfillment } from '~~/server/utils/territoryFulfillment';
 import { RECRUITER_TERRITORIES_UK } from '~~/utils/locations/uk';
 import { RECRUITER_TERRITORIES_USA } from '~~/utils/locations/usa';
 import type { TerritoryClaim } from '~~/shared/utils/types';
@@ -98,6 +100,14 @@ export default defineEventHandler(async (event) => {
   const basicDiscount = clampPercent(userData.basicDiscount);
   const exclusiveDiscount = clampPercent(userData.exclusiveDiscount);
 
+  // National confirmation: a recruiter with a 'pending' grant for THIS checkout's
+  // own country (matching currency/countryKey) is confirming it here -- see
+  // shared/utils/types.ts's NationalStatus and set-national.post.ts. Only the
+  // matching country is ever folded into a single checkout (a recruiter with both
+  // countries pending confirms them one at a time, each in its own currency).
+  const thisCountryStatusKey = countryKey === 'UK' ? 'ukNationalStatus' : 'usaNationalStatus';
+  const isConfirmingNational = userData[thisCountryStatusKey] === 'pending';
+
   // ==========================================
   // 3. CALCULATE TOTALS (Based on Bands)
   // ==========================================
@@ -163,6 +173,313 @@ export default defineEventHandler(async (event) => {
       });
     }
   });
+
+  // Fold the flat Band 1 national charge into the same recurring total as any
+  // territories in the cart -- applies uniformly to both the existing-subscription
+  // branch below (which recomputes its own grand total independently and ignores
+  // monthlyTotal, but shares this basicCount bump so its empty-cart guard doesn't
+  // fire for a national-only confirmation) and the new-Checkout-Session branch
+  // further down (which uses monthlyTotal/basicCount directly).
+  if (isConfirmingNational) {
+    const band1Data = countryPricing.band1;
+    if (!band1Data) {
+      throw createError({
+        statusCode: 500,
+        message: `Pricing band band1 for ${countryKey} not found.`
+      });
+    }
+    monthlyTotal += Math.max(0, band1Data.basic * (1 - basicDiscount / 100));
+    basicCount += 1;
+  }
+
+  // ==========================================
+  // 3.5 EXISTING SUBSCRIPTION: UPDATE IN PLACE, DON'T CREATE A SECOND ONE
+  // ==========================================
+  // `customer_email` below does not reuse an existing Stripe Customer the way
+  // passing `customer:` (an ID) would -- a recruiter who already has a live
+  // subscription must never be routed through Checkout Session creation
+  // again, or their first subscription is silently orphaned (still billing,
+  // no longer referenced anywhere) while a second one is created alongside it.
+  const existingSubscriptionId: string | undefined = userData.stripeSubscriptionId;
+
+  if (existingSubscriptionId) {
+    if (basicCount === 0 && upfrontTotal === 0) {
+      if (exclusiveMonthsTotal > 0) {
+        throw createError({
+          statusCode: 400,
+          message: 'Exclusive month pricing resolved to zero and cannot be processed as-is.'
+        });
+      }
+      throw createError({ statusCode: 400, message: 'No items selected in cart.' });
+    }
+
+    let subscription: Stripe.Subscription;
+    try {
+      subscription = await stripe.subscriptions.retrieve(existingSubscriptionId);
+    } catch {
+      throw createError({
+        statusCode: 500,
+        message: 'Failed to load existing billing subscription.'
+      });
+    }
+    const customerId = subscription.customer as string;
+
+    // Pre-check for exclusive-month conflicts before charging anything.
+    const claimDocIds = Array.from(
+      new Set(
+        territories.map((t: TerritoryClaim) => `${t.territoryId}_${t.categoryValue || 'ALL'}`)
+      )
+    ) as string[];
+    const claimDocsData: Record<string, FirebaseFirestore.DocumentData | null> = {};
+    await Promise.all(
+      claimDocIds.map(async (claimDocId) => {
+        const snap = await db.collection('territory_category_owners').doc(claimDocId).get();
+        claimDocsData[claimDocId] = snap.exists ? (snap.data() ?? null) : null;
+      })
+    );
+
+    const existingTerritories: TerritoryClaim[] = userData.activeTerritories || [];
+    const preCheck = computeTerritoryFulfillment(
+      existingTerritories,
+      territories,
+      claimDocsData,
+      userId
+    );
+
+    if (preCheck.conflict) {
+      throw createError({
+        statusCode: 409,
+        message:
+          'One or more selected exclusive months are no longer available. Please refresh and try again.'
+      });
+    }
+
+    // Recompute the GRAND total recurring price across every basic territory
+    // the recruiter will hold after this purchase (existing + new), mirroring
+    // cancel-territory.post.ts's banded pricing/discount logic. Re-resolve the
+    // band from the static territory lists for every entry rather than
+    // trusting a stored `band` field, same as the cart-only loop above.
+    const resolveBandData = (territoryId: number): PricingBand => {
+      const foundTerritory = allTerritories.find((tt) => tt.id === territoryId);
+      const safeBand = foundTerritory ? foundTerritory.band || 1 : 1;
+      const bandKey = `band${safeBand}`;
+      const bandData = countryPricing[bandKey];
+      if (!bandData) {
+        throw createError({
+          statusCode: 500,
+          message: `Pricing band ${bandKey} for ${countryKey} not found.`
+        });
+      }
+      return bandData;
+    };
+
+    let grandMonthlyTotal = 0;
+    preCheck.updatedTerritories.forEach((t: TerritoryClaim) => {
+      if (!t.isBasic) {
+        return;
+      }
+      grandMonthlyTotal += Math.max(
+        0,
+        resolveBandData(t.territoryId).basic * (1 - basicDiscount / 100)
+      );
+    });
+
+    // Count every BILLED national flag this recruiter will hold after this
+    // checkout: the other country if already 'active', THIS country if already
+    // 'active' (a normal repeat purchase by a nationally-active recruiter), or
+    // THIS country if it's the 'pending' grant being confirmed right now
+    // (isConfirmingNational, computed above from the checkout's own countryKey).
+    // 'pending' on the OTHER country never counts here -- it isn't billed until
+    // confirmed through its own checkout.
+    const otherCountryStatusKey = countryKey === 'UK' ? 'usaNationalStatus' : 'ukNationalStatus';
+    const otherCountryAlreadyActive = userData[otherCountryStatusKey] === 'active';
+    const thisCountryAlreadyActive = userData[thisCountryStatusKey] === 'active';
+    const totalNationalFlags =
+      (thisCountryAlreadyActive ? 1 : 0) +
+      (isConfirmingNational ? 1 : 0) +
+      (otherCountryAlreadyActive ? 1 : 0);
+    if (totalNationalFlags > 0) {
+      const band1Data = countryPricing.band1;
+      if (!band1Data) {
+        throw createError({
+          statusCode: 500,
+          message: `Pricing band band1 for ${countryKey} not found.`
+        });
+      }
+      grandMonthlyTotal +=
+        Math.max(0, band1Data.basic * (1 - basicDiscount / 100)) * totalNationalFlags;
+    }
+
+    let paidInvoiceId: string | null = null;
+    try {
+      const currentItem = subscription.items.data[0];
+      await stripe.subscriptions.update(existingSubscriptionId, {
+        items: [
+          {
+            id: currentItem?.id,
+            price_data: {
+              currency,
+              product: currentItem?.price.product as string,
+              recurring: { interval: 'month' },
+              unit_amount: Math.round(grandMonthlyTotal * 100)
+            }
+          }
+        ],
+        proration_behavior: 'none'
+      });
+
+      if (upfrontTotal > 0) {
+        await stripe.invoiceItems.create({
+          customer: customerId,
+          amount: Math.round(upfrontTotal * 100),
+          currency,
+          description: `${exclusiveMonthsTotal} exclusive month(s) secured across your territories.`
+        });
+
+        // Verified against this account's live test-mode API: without
+        // `pending_invoice_items_behavior: 'include'`, the created invoice
+        // does NOT auto-attach the pending invoice item above -- it comes
+        // back with 0 line items and a $0 total, which then finalizes as
+        // trivially "paid" with nothing actually charged.
+        const invoice = await stripe.invoices.create({
+          customer: customerId,
+          collection_method: 'charge_automatically',
+          auto_advance: false,
+          pending_invoice_items_behavior: 'include'
+        });
+
+        // Verified against this account's live test-mode API (not just the
+        // generic docs): with `collection_method: 'charge_automatically'` and
+        // a default payment method on file, `finalizeInvoice` already charges
+        // the invoice synchronously and returns it as `paid` -- calling `pay`
+        // on an already-paid invoice throws "Invoice is already paid". Only
+        // fall back to an explicit `pay` call if finalization left it unpaid
+        // (e.g. no default payment method yet), so this stays correct even if
+        // that behavior ever differs.
+        const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id as string);
+        const paidInvoice =
+          finalizedInvoice.status === 'paid'
+            ? finalizedInvoice
+            : await stripe.invoices.pay(invoice.id as string);
+
+        if (paidInvoice.status !== 'paid') {
+          throw new Error(
+            `Invoice ${invoice.id} did not settle synchronously (status: ${paidInvoice.status})`
+          );
+        }
+        paidInvoiceId = invoice.id as string;
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console -- surfaces Stripe billing failures for debugging; no dedicated server-side error-logging utility exists
+      console.error('Stripe existing-subscription billing error:', error);
+      throw createError({
+        statusCode: 500,
+        message: 'Failed to process payment for this purchase.'
+      });
+    }
+
+    // Stripe billing succeeded -- now safe to commit the Firestore
+    // fulfillment, with a final in-transaction conflict re-check. Charging
+    // first and fulfilling second is this repo's existing accepted risk
+    // model for the Checkout+webhook path too (see webhook.post.ts), so this
+    // isn't a new risk class.
+    const userRef = db.collection('users').doc(userId);
+    try {
+      await db.runTransaction(async (t) => {
+        const freshUserDoc = await t.get(userRef);
+        const freshUserData = freshUserDoc.data() || {};
+        const freshExistingTerritories: TerritoryClaim[] = freshUserData.activeTerritories || [];
+
+        const claimRefs: Record<string, FirebaseFirestore.DocumentReference> = {};
+        for (const claimDocId of claimDocIds) {
+          claimRefs[claimDocId] = db.collection('territory_category_owners').doc(claimDocId);
+        }
+        const freshSnapshots = await t.getAll(...Object.values(claimRefs));
+        const freshClaimDocsData: Record<string, FirebaseFirestore.DocumentData | null> = {};
+        freshSnapshots.forEach((snap) => {
+          freshClaimDocsData[snap.id] = snap.exists ? (snap.data() ?? null) : null;
+        });
+
+        const freshComputation = computeTerritoryFulfillment(
+          freshExistingTerritories,
+          territories,
+          freshClaimDocsData,
+          userId
+        );
+
+        if (freshComputation.conflict) {
+          throw freshComputation.error;
+        }
+
+        for (const { claimDocId, updates } of freshComputation.claimWrites) {
+          t.set(claimRefs[claimDocId]!, updates, { merge: true });
+        }
+
+        t.set(
+          userRef,
+          {
+            activeTerritories: freshComputation.updatedTerritories,
+            ...(isConfirmingNational ? { [thisCountryStatusKey]: 'active' } : {}),
+            updatedAt: new Date().toISOString()
+          },
+          { merge: true }
+        );
+      });
+    } catch (error) {
+      // A concurrent purchase claimed the same exclusive month between our
+      // pre-check and this commit. The customer was already charged/repriced
+      // above -- reverse it and alert ops, mirroring webhook.post.ts's
+      // queueRefundAndAlert pattern for the equivalent risk on that path.
+      let reversalError: unknown = null;
+      try {
+        if (paidInvoiceId) {
+          const payments = await stripe.invoicePayments.list({ invoice: paidInvoiceId });
+          const paymentIntentId = payments.data[0]?.payment?.payment_intent;
+          if (typeof paymentIntentId === 'string') {
+            await stripe.refunds.create({ payment_intent: paymentIntentId });
+          } else {
+            throw new Error(`Invoice ${paidInvoiceId} has no resolvable invoice payment to refund`);
+          }
+        }
+        // Revert the recurring line item back to its pre-purchase total.
+        const revertItem = subscription.items.data[0];
+        await stripe.subscriptions.update(existingSubscriptionId, {
+          items: [
+            {
+              id: revertItem?.id,
+              price_data: {
+                currency,
+                product: revertItem?.price.product as string,
+                recurring: { interval: 'month' },
+                unit_amount: revertItem?.price.unit_amount ?? 0
+              }
+            }
+          ],
+          proration_behavior: 'none'
+        });
+      } catch (err) {
+        reversalError = err;
+      }
+
+      const reason = error instanceof Error ? error.message : String(error);
+      if (reversalError) {
+        // eslint-disable-next-line no-console
+        console.error(
+          `🚨 ALERT: Automated reversal failed for user ${userId}. Reason: ${reason}`,
+          reversalError
+        );
+        await sendBillingFailureAlert(config.resendApiKey, `user ${userId}`, reason, reversalError);
+      }
+
+      throw createError({
+        statusCode: 409,
+        message:
+          'One or more selected exclusive months became unavailable during checkout. Any charge has been refunded and will not be billed further.'
+      });
+    }
+
+    return { url: null };
+  }
 
   // ==========================================
   // 4. BUILD STRIPE LINE ITEMS
@@ -291,7 +608,8 @@ export default defineEventHandler(async (event) => {
       cancel_url: `${baseUrl}/recruiter/territories?checkout_cancelled=true`,
       metadata: {
         userId,
-        cart: compressedCart
+        cart: compressedCart,
+        ...(isConfirmingNational ? { nationalCountry: countryKey } : {})
       }
     });
 

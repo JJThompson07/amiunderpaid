@@ -38,6 +38,11 @@ export type TerritoryClaim = {
   band?: number;
 };
 
+// A recruiter's national coverage grant for a country: 'pending' until they
+// confirm and pay via Stripe Checkout, 'active' once billing is live. Absent
+// entirely means no national grant exists for that country.
+export type NationalStatus = 'pending' | 'active';
+
 // Recruiter user profile as stored in the `users` Firestore collection.
 export type UserProfile = {
   uid?: string;
@@ -49,6 +54,8 @@ export type UserProfile = {
   coveredCategories?: string[];
   activeTerritories?: TerritoryClaim[];
   claims?: TerritoryClaim[];
+  ukNationalStatus?: NationalStatus;
+  usaNationalStatus?: NationalStatus;
 };
 
 // A recruiter/agency lead-gen card, as returned by /api/user/search/recruiter-card

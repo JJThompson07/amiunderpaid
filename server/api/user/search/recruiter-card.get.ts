@@ -2,11 +2,16 @@ import { FieldPath, getFirestore } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
-  const territoryId = Number(query.territoryId);
+  const territoryId = query.territoryId ? Number(query.territoryId) : null;
+  const country = query.country ? String(query.country).toUpperCase() : null;
   const category = String(query.category);
 
-  if (!territoryId || !category) {
-    throw createError({ statusCode: 400, message: 'Missing territoryId or category' });
+  // territoryId resolves a specific local territory (and so a local claim doc);
+  // country is the fallback used when a search location can't be resolved to a
+  // specific territory but the country is still known -- national recruiters
+  // must still surface in that case, so at least one of the two is required.
+  if ((!territoryId && !country) || !category) {
+    throw createError({ statusCode: 400, message: 'Missing territoryId/country or category' });
   }
 
   const db = getFirestore();
@@ -14,26 +19,46 @@ export default defineEventHandler(async (event) => {
   const now = new Date();
   const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-  const claimDocId = `${territoryId}_${category}`;
-  const claimSnap = await db.collection('territory_category_owners').doc(claimDocId).get();
+  // National coverage isn't tied to a claim doc -- it rides on a live status +
+  // the recruiter's own coveredCategories -- so it must be looked up even when
+  // no local claim doc exists for this territory/category at all. Only 'active'
+  // (paid) grants surface here -- a 'pending' recruiter hasn't confirmed/paid
+  // for national coverage yet and must not appear in lead-gen search results.
+  const targetStatusKey = (territoryId ? territoryId < 200 : country !== 'USA')
+    ? 'ukNationalStatus'
+    : 'usaNationalStatus';
 
-  if (!claimSnap.exists) {
-    return { success: true, cards: [] };
-  }
+  const [claimSnap, nationalSnap] = await Promise.all([
+    // No specific territory was resolved -- there's no local claim doc to look
+    // up, only the country-wide national query below.
+    territoryId
+      ? db.collection('territory_category_owners').doc(`${territoryId}_${category}`).get()
+      : null,
+    db
+      .collection('users')
+      .where(targetStatusKey, '==', 'active')
+      .where('coveredCategories', 'array-contains', category)
+      .limit(10)
+      .get()
+  ]);
 
-  const claimData = claimSnap.data() || {};
+  const claimData = claimSnap?.exists ? claimSnap.data() || {} : {};
   const takenMonths = claimData.takenExclusiveMonths || {};
-  const basicOwners = claimData.basicOwners || [];
+  const localBasicOwners: string[] = claimData.basicOwners || [];
+  const nationalOwnerUids = nationalSnap.docs.map((doc) => doc.id);
+  const basicOwners = Array.from(new Set([...localBasicOwners, ...nationalOwnerUids]));
 
   const exclusiveOwnerUid = takenMonths[currentMonthStr] || null;
 
   let selectedOwnerUids: string[] = [];
 
-  // 1. Prioritise Exclusive Owner
+  // 1. Prioritise Exclusive Owner -- national recruiters yield entirely when a
+  // local Exclusive owner holds the current month, same as local Basic owners.
   if (exclusiveOwnerUid) {
     selectedOwnerUids.push(exclusiveOwnerUid);
   } else if (basicOwners.length > 0) {
-    // 2. If no exclusive, randomly distribute between Basic owners
+    // 2. If no exclusive, randomly distribute between Basic owners (including
+    // any nationally-flagged recruiters merged in above)
     const shuffled = basicOwners.sort(() => 0.5 - Math.random());
     selectedOwnerUids = shuffled.slice(0, 3);
   }

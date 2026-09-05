@@ -68,9 +68,14 @@
               class="w-3.5 h-3.5"
               :class="isBasicLocked(asRow(row).id) ? 'text-emerald-500' : 'text-positive-400'" />
             <CircleIcon v-else class="w-3.5 h-3.5 text-slate-400" />
-            <span v-if="isBasicLocked(asRow(row).id)" class="uppercase tracking-wider text-2xs">{{
-              $t('recruiter.schedule.owned')
+            <span v-if="isBasicNational(asRow(row).id)" class="uppercase tracking-wider text-2xs">{{
+              $t('recruiter.schedule.national')
             }}</span>
+            <span
+              v-else-if="isBasicLocked(asRow(row).id)"
+              class="uppercase tracking-wider text-2xs">
+              {{ $t('recruiter.schedule.owned') }}
+            </span>
             <span v-else>{{ $t('recruiter.schedule.ongoing') }}</span>
           </div>
           <span
@@ -311,6 +316,7 @@ const {
   isBasic,
   isMonthSelected,
   isBasicLocked,
+  isBasicNational,
   isMonthLocked,
   isMonthTaken,
   getMonthDisplayPrice,

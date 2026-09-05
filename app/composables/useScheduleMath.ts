@@ -14,6 +14,11 @@ type RowConfig = {
   selectedMonths: Set<string>;
   lockedBasic: boolean;
   lockedMonths: Set<string>;
+  // True when this row's Basic lock comes from national coverage rather than
+  // a real, individually-purchased TerritoryClaim -- national is billed as a
+  // single flat charge elsewhere, so these rows must never be re-billed for
+  // Basic through this cart (see isNationallyCovered below).
+  isNational: boolean;
 };
 
 type CategoryOption = { label: string; value: string };
@@ -47,6 +52,7 @@ type UseScheduleMathReturn = {
   isBasic: (rowId: string) => boolean;
   isMonthSelected: (rowId: string, monthValue: string) => boolean;
   isBasicLocked: (rowId: string) => boolean;
+  isBasicNational: (rowId: string) => boolean;
   isMonthLocked: (rowId: string, monthValue: string) => boolean;
   isMonthTaken: (rowId: string, monthStr: string) => boolean;
   getMonthDisplayPrice: (
@@ -116,6 +122,19 @@ export const useScheduleMath = (
     return found ? found.label : val;
   };
 
+  // Matches the UK/USA territoryId boundary used server-side in
+  // recruiter-card.get.ts: RECRUITER_TERRITORIES_UK ids run 1-108,
+  // RECRUITER_TERRITORIES_USA ids run 190-254.
+  // Locks on 'pending' too, not just 'active' -- once the recruiter confirms a
+  // pending grant, webhook.post.ts wipes any local Basic territory it finds in
+  // the target country with no refund, so a local Basic purchase made while
+  // national is merely pending would otherwise be silently lost.
+  const isNationallyCovered = (territoryId: number): boolean => {
+    return territoryId < 200
+      ? Boolean(userProfile.value?.ukNationalStatus)
+      : Boolean(userProfile.value?.usaNationalStatus);
+  };
+
   const matrixRows = computed((): MatrixRow[] => {
     const rows: MatrixRow[] = [];
     for (const territory of props.territories) {
@@ -130,11 +149,16 @@ export const useScheduleMath = (
 
         if (!rowConfigs.value.has(rowId)) {
           const owned = getOwnedTerritory(territory.id, category);
+          // National coverage only locks the Basic column when there's no
+          // real claim already recorded for this exact territory+category --
+          // a real claim's own isBasic/lockedBasic state always wins.
+          const nationallyCovered = !owned && isNationallyCovered(territory.id);
           rowConfigs.value.set(rowId, {
-            isBasic: owned ? owned.isBasic : false,
+            isBasic: owned ? owned.isBasic : nationallyCovered,
             selectedMonths: new Set(owned?.exclusiveMonths || []),
-            lockedBasic: owned ? owned.isBasic : false,
-            lockedMonths: new Set(owned?.exclusiveMonths || [])
+            lockedBasic: owned ? owned.isBasic : nationallyCovered,
+            lockedMonths: new Set(owned?.exclusiveMonths || []),
+            isNational: nationallyCovered
           });
         }
       }
@@ -241,6 +265,8 @@ export const useScheduleMath = (
     rowConfigs.value.get(rowId)?.selectedMonths.has(monthValue) || false;
   const isBasicLocked = (rowId: string): boolean =>
     rowConfigs.value.get(rowId)?.lockedBasic || false;
+  const isBasicNational = (rowId: string): boolean =>
+    rowConfigs.value.get(rowId)?.isNational || false;
   const isMonthLocked = (rowId: string, monthValue: string): boolean =>
     rowConfigs.value.get(rowId)?.lockedMonths.has(monthValue) || false;
 
@@ -257,8 +283,14 @@ export const useScheduleMath = (
       }
 
       const prices = getRowPricing(row.territory.band);
+      // National coverage grants this row's Basic tier through a separate
+      // flat charge (see set-national.post.ts) -- it must never be re-billed
+      // as a per-territory Basic purchase here, even though `config.isBasic`
+      // stays true internally so the exclusive-month "upgrade" discount below
+      // still applies correctly.
+      const billableBasic = config.isBasic && !config.isNational;
 
-      if (config.isBasic || config.selectedMonths.size > 0) {
+      if (billableBasic || config.selectedMonths.size > 0) {
         let rowTotalCost = 0;
         const upfrontUpgradeCost = config.isBasic
           ? prices.exclusive - prices.basic
@@ -278,7 +310,7 @@ export const useScheduleMath = (
                 isFirstMonth && isPastHalfway.value ? upfrontUpgradeCost / 2 : upfrontUpgradeCost;
               calcPayNow += upfrontCost;
             }
-          } else if (config.isBasic) {
+          } else if (billableBasic) {
             // UPDATED MATH: Do not charge for this month if it's taken
             const isTaken = isMonthTaken(row.id, month.value);
             visualMonthCost = isFirstMonth || isTaken ? 0 : prices.basic;
@@ -288,7 +320,7 @@ export const useScheduleMath = (
         });
 
         calcMatrixTotal += rowTotalCost;
-        if (config.isBasic) {
+        if (billableBasic) {
           calcNextMonth += prices.basic;
         }
 
@@ -297,7 +329,7 @@ export const useScheduleMath = (
           territoryName: row.territory.name,
           band: row.territory.band || 1,
           categoryValue: row.categoryValue,
-          isBasic: config.isBasic,
+          isBasic: billableBasic,
           exclusiveMonths: Array.from(config.selectedMonths),
           rowCost: rowTotalCost
         });
@@ -336,6 +368,7 @@ export const useScheduleMath = (
     isBasic,
     isMonthSelected,
     isBasicLocked,
+    isBasicNational,
     isMonthLocked,
     isMonthTaken,
     getMonthDisplayPrice,

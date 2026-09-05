@@ -15,7 +15,8 @@
   "dashboard": {
     "title": "Recruiter Dashboard",
     "welcome": "Welcome back, {name}",
-    "loading": "Loading profile..."
+    "loading": "Loading profile...",
+    "nationalBanner": "You have National coverage across {country}"
   },
   "account": {
     "heading": "Agency Profile",
@@ -81,7 +82,8 @@
       "finalize": "Finalize Claims",
       "clear-all": "Clear All",
       "search-industries": "Search industries...",
-      "limit-warning": "You have selected more than 10 territories. Exclusive month availability data may be incomplete for territories beyond the first 10."
+      "limit-warning": "You have selected more than 10 territories. Exclusive month availability data may be incomplete for territories beyond the first 10.",
+      "purchase-success": "Your new territories have been added to your existing subscription."
     },
     "edit": {
       "title": "Edit Schedule",
@@ -99,6 +101,7 @@
     "basic-plan": "Basic Plan",
     "ongoing": "Ongoing",
     "owned": "Owned",
+    "national": "National",
     "taken": "Taken",
     "in-cart": "In Cart",
     "free": "Free",
@@ -148,6 +151,7 @@
     "fields": {
       "logo": "Company Logo",
       "upload-logo": "Upload Logo (.png, .jpg)",
+      "change-logo": "Click to upload a new image",
       "title": "Lead Contact Card Title",
       "content": "Lead Contact Card Content",
       "content-placeholder": "Why should candidates contact you...",

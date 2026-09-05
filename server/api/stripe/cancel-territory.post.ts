@@ -108,10 +108,38 @@ export default defineEventHandler(async (event) => {
     }
   });
 
+  // National coverage is a single flat Band 1 basic charge per ACTIVE (billed)
+  // status, added once here (not inside the per-territory forEach above) -- see
+  // design.md's "Dual-Flag Currency Edge Case" for the known single-currency
+  // limitation if a recruiter ever holds both ukNationalStatus and
+  // usaNationalStatus active. 'pending' grants aren't billed yet, so excluded.
+  const activeNationalFlags =
+    (userData.ukNationalStatus === 'active' ? 1 : 0) +
+    (userData.usaNationalStatus === 'active' ? 1 : 0);
+  if (activeNationalFlags > 0) {
+    const band1Data = countryPricing.band1;
+    if (!band1Data) {
+      throw createError({
+        statusCode: 500,
+        message: `Pricing band band1 for ${userData.billingCountry} not found.`
+      });
+    }
+    let nationalBasicPrice = band1Data.basic;
+    if (basicDiscount > 0) {
+      nationalBasicPrice = nationalBasicPrice * (1 - basicDiscount / 100);
+    }
+    newMonthlyTotal += Math.max(0, nationalBasicPrice) * activeNationalFlags;
+  }
+
   // 4. UPDATE STRIPE
   if (stripeSubId) {
     try {
-      if (newMonthlyTotal === 0) {
+      // A nationally-flagged recruiter with a 100% basicDiscount can legitimately
+      // compute a $0 total here, but they still hold a live national grant (billed
+      // through this same subscription) -- cancelling the subscription entirely
+      // would leave that grant with no subscription object to reprice later, the
+      // same reasoning create-checkout.post.ts already applies to a $0 basic plan.
+      if (newMonthlyTotal === 0 && activeNationalFlags === 0) {
         // If they canceled their last basic plan, kill the subscription entirely!
         await stripe.subscriptions.cancel(stripeSubId);
         // Remove the sub ID from the database

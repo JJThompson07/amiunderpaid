@@ -24,9 +24,37 @@
           :data="recruiters"
           empty-message="No recruiters found on the platform yet.">
           <template #agency="{ row }">
-            <div class="flex flex-col">
+            <div class="flex flex-col gap-1">
               <span class="text-sm font-bold text-slate-900">{{ asRow(row).agencyName }}</span>
               <span class="text-xs text-slate-500">{{ asRow(row).email }}</span>
+              <div
+                v-if="asRow(row).ukNationalStatus || asRow(row).usaNationalStatus"
+                class="flex gap-1">
+                <span
+                  v-if="asRow(row).ukNationalStatus"
+                  :class="
+                    asRow(row).ukNationalStatus === 'pending'
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-indigo-100 text-indigo-700'
+                  "
+                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-2xs font-black uppercase tracking-wider">
+                  <Globe class="w-3 h-3" /> UK National{{
+                    asRow(row).ukNationalStatus === 'pending' ? ' (Pending)' : ''
+                  }}
+                </span>
+                <span
+                  v-if="asRow(row).usaNationalStatus"
+                  :class="
+                    asRow(row).usaNationalStatus === 'pending'
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-indigo-100 text-indigo-700'
+                  "
+                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-2xs font-black uppercase tracking-wider">
+                  <Globe class="w-3 h-3" /> USA National{{
+                    asRow(row).usaNationalStatus === 'pending' ? ' (Pending)' : ''
+                  }}
+                </span>
+              </div>
             </div>
           </template>
 
@@ -165,6 +193,12 @@
               </template>
               <template v-else>
                 <button
+                  class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                  title="Manage National Coverage"
+                  @click="openNationalModal(asRow(row))">
+                  <Globe class="w-4 h-4" />
+                </button>
+                <button
                   class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors cursor-pointer"
                   title="Edit Discounts"
                   @click="openDiscountModal(asRow(row))">
@@ -222,11 +256,63 @@
         </div>
       </div>
     </div>
+
+    <!-- National Coverage Modal -->
+    <div
+      v-if="showNationalModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div
+        class="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="text-xl font-black text-slate-900">Manage National Coverage</h3>
+          <button class="text-slate-400 hover:text-slate-600" @click="showNationalModal = false">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+        <p class="text-sm text-slate-500 mb-6">
+          Grants Basic-tier visibility across every territory in a country for
+          <strong class="text-slate-800">{{ selectedRecruiter?.agencyName }}</strong
+          >'s covered industries, at a flat Band 1 price. Granting wipes any existing local
+          territories in that country.
+        </p>
+
+        <div class="space-y-3 mb-8">
+          <div
+            v-for="option in nationalOptions"
+            :key="option.country"
+            class="flex items-center justify-between p-3 rounded-xl border border-slate-200">
+            <span class="text-sm font-bold text-slate-700 flex items-center gap-2">
+              {{ option.label }}
+              <span
+                v-if="option.status === 'pending'"
+                class="text-2xs font-black uppercase tracking-wider text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                Pending
+              </span>
+            </span>
+            <AmIButton
+              :loading="nationalActionCountry === option.country"
+              :class="option.status ? '!bg-red-600 hover:!bg-red-700' : ''"
+              @click="toggleNational(option.country, !option.status)">
+              {{ option.status ? 'Revoke' : 'Grant' }}
+            </AmIButton>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Check, CheckCircle2, CheckSquare, HelpCircle, Tag, X, XCircle } from 'lucide-vue-next';
+import {
+  Check,
+  CheckCircle2,
+  CheckSquare,
+  Globe,
+  HelpCircle,
+  Tag,
+  X,
+  XCircle
+} from 'lucide-vue-next';
 import { FetchError } from 'ofetch';
 import type { TerritoryClaim } from '~~/shared/utils/types';
 
@@ -244,7 +330,11 @@ type AdminRecruiterRow = {
   billingCountry: string;
   basicDiscount: number;
   exclusiveDiscount: number;
+  ukNationalStatus: 'pending' | 'active' | null;
+  usaNationalStatus: 'pending' | 'active' | null;
 };
+
+type NationalCountry = 'UK' | 'USA';
 
 definePageMeta({ middleware: 'admin' });
 
@@ -378,6 +468,77 @@ const openDiscountModal = (recruiter: AdminRecruiterRow): void => {
   editBasic.value = recruiter.basicDiscount || '';
   editExclusive.value = recruiter.exclusiveDiscount || '';
   showModal.value = true;
+};
+
+// National Coverage Modal State
+const showNationalModal = ref(false);
+const nationalActionCountry = ref<NationalCountry | null>(null);
+
+const nationalOptions = computed(() => {
+  if (!selectedRecruiter.value) {
+    return [];
+  }
+  return [
+    {
+      country: 'UK' as NationalCountry,
+      label: 'UK National',
+      status: selectedRecruiter.value.ukNationalStatus
+    },
+    {
+      country: 'USA' as NationalCountry,
+      label: 'USA National',
+      status: selectedRecruiter.value.usaNationalStatus
+    }
+  ];
+});
+
+const openNationalModal = (recruiter: AdminRecruiterRow): void => {
+  selectedRecruiter.value = recruiter;
+  showNationalModal.value = true;
+};
+
+const toggleNational = async (country: NationalCountry, active: boolean): Promise<void> => {
+  if (!selectedRecruiter.value || nationalActionCountry.value) {
+    return;
+  }
+
+  if (
+    !confirm(
+      active
+        ? `Grant ${country} National coverage to ${selectedRecruiter.value.agencyName}? This wipes any existing local ${country} territories. If they have an active subscription this bills a flat Band 1 charge immediately; otherwise it's granted pending their confirmation via Stripe Checkout.`
+        : `Revoke ${country} National coverage from ${selectedRecruiter.value.agencyName}? They will lose all coverage in ${country} until they re-purchase territories.`
+    )
+  ) {
+    return;
+  }
+
+  nationalActionCountry.value = country;
+  try {
+    const res = await adminFetch<{ success: boolean; status: 'pending' | 'active' | null }>(
+      '/api/admin/recruiters/set-national',
+      {
+        method: 'POST',
+        body: { uid: selectedRecruiter.value.id, country, active }
+      }
+    );
+    const outcome =
+      active && res?.status === 'pending'
+        ? 'granted (pending confirmation)'
+        : active
+          ? 'granted'
+          : 'revoked';
+    showToast('Success', `${country} National coverage ${outcome}.`, 'success');
+    showNationalModal.value = false;
+    await refresh();
+  } catch (err) {
+    const msg =
+      err instanceof FetchError && err.data?.message
+        ? err.data.message
+        : 'Failed to update national coverage.';
+    showToast('Error', msg, 'error');
+  } finally {
+    nationalActionCountry.value = null;
+  }
 };
 
 const saveDiscount = async (): Promise<void> => {

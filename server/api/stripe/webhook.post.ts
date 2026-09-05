@@ -1,10 +1,8 @@
 import Stripe from 'stripe';
-import { Resend } from 'resend';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { sendBillingFailureAlert } from '~~/server/utils/billingAlerts';
+import { computeTerritoryFulfillment } from '~~/server/utils/territoryFulfillment';
 import type { TerritoryClaim } from '~~/shared/utils/types';
-
-const ALERT_EMAIL_TO = 'support@amiunderpaid.com';
-const ALERT_EMAIL_FROM = 'alerts@amiunderpaid.com';
 
 function isAlreadyExistsError(error: unknown): boolean {
   if (!(error instanceof Error)) {
@@ -12,38 +10,6 @@ function isAlreadyExistsError(error: unknown): boolean {
   }
   const code = (error as { code?: number | string }).code;
   return code === 6 || code === 'already-exists' || /already exists/i.test(error.message);
-}
-
-async function sendHumanAlert(
-  resendApiKey: string | undefined,
-  session: Stripe.Checkout.Session,
-  reason: string,
-  refundError: unknown
-): Promise<void> {
-  if (!resendApiKey) {
-    // eslint-disable-next-line no-console
-    console.error('🚨 No RESEND_API_KEY configured; refund failure was not escalated beyond logs.');
-    return;
-  }
-
-  try {
-    const resend = new Resend(resendApiKey);
-    await resend.emails.send({
-      from: ALERT_EMAIL_FROM,
-      to: ALERT_EMAIL_TO,
-      subject: `Stripe territory conflict refund failed - session ${session.id}`,
-      text: [
-        `A Stripe checkout session hit a territory conflict and the automated refund/cancellation did not succeed.`,
-        `Session: ${session.id}`,
-        `Reason: ${reason}`,
-        `Refund error: ${refundError instanceof Error ? refundError.message : String(refundError)}`,
-        `This customer was charged and needs a manual refund.`
-      ].join('\n')
-    });
-  } catch (alertError) {
-    // eslint-disable-next-line no-console
-    console.error('Failed to send refund failure alert email', alertError);
-  }
 }
 
 async function queueRefundAndAlert(
@@ -102,7 +68,7 @@ async function queueRefundAndAlert(
       `🚨 ALERT: Automated refund failed for session ${session.id}. Reason: ${reason}`,
       refundError
     );
-    await sendHumanAlert(resendApiKey, session, reason, refundError);
+    await sendBillingFailureAlert(resendApiKey, `session ${session.id}`, reason, refundError);
   }
 }
 
@@ -148,21 +114,41 @@ export default defineEventHandler(async (event) => {
     try {
       const userId = session.metadata?.userId;
       const rawCart = session.metadata?.cart;
+      // A national-only confirmation checkout (see create-checkout.post.ts) has no
+      // territories, so `cart` compresses to an empty string -- only require it
+      // when there's no national confirmation to fall back on.
+      const nationalCountry = session.metadata?.nationalCountry;
 
-      if (!userId || !rawCart) {
+      if (!userId || (!rawCart && !nationalCountry)) {
         throw new Error('Missing metadata in Stripe session');
       }
 
       // UN-COMPRESS THE CART
-      const purchasedItems: TerritoryClaim[] = rawCart.split(',').map((itemStr) => {
-        const [tId, catCode, hasBasic, excMonths] = itemStr.split(':');
-        return {
-          territoryId: Number(tId),
-          categoryValue: catCode || '',
-          isBasic: hasBasic === '1',
-          exclusiveMonths: !excMonths || excMonths === 'none' ? [] : excMonths.split('~')
-        };
-      });
+      const purchasedItems: TerritoryClaim[] = !rawCart
+        ? []
+        : rawCart.split(',').map((itemStr) => {
+            const [tId, catCode, hasBasic, excMonths] = itemStr.split(':');
+            return {
+              territoryId: Number(tId),
+              categoryValue: catCode || '',
+              isBasic: hasBasic === '1',
+              exclusiveMonths: !excMonths || excMonths === 'none' ? [] : excMonths.split('~')
+            };
+          });
+
+      const nationalStatusKey =
+        nationalCountry === 'UK'
+          ? 'ukNationalStatus'
+          : nationalCountry === 'USA'
+            ? 'usaNationalStatus'
+            : null;
+      // Defensive: a subscription-less recruiter (the only way to reach a
+      // national-confirmation checkout) cannot hold a real local claim in the
+      // target country -- every local claim requires a prior checkout, which
+      // requires a subscription -- but strip any anyway rather than trust that
+      // invariant blindly at write time.
+      const isInNationalCountry = (territoryId: number): boolean =>
+        nationalCountry === 'UK' ? territoryId < 200 : territoryId >= 200;
 
       const outcome: FulfilmentOutcome = await db.runTransaction(
         async (t): Promise<FulfilmentOutcome> => {
@@ -172,7 +158,6 @@ export default defineEventHandler(async (event) => {
           const userData = userDoc.data() || {};
 
           const existingTerritories: TerritoryClaim[] = userData.activeTerritories || [];
-          const updatedTerritories = [...existingTerritories];
 
           // PRE-FETCH ALL CLAIM DOCUMENTS
           const claimRefs: Record<string, FirebaseFirestore.DocumentReference> = {};
@@ -202,96 +187,42 @@ export default defineEventHandler(async (event) => {
             processedAt: FieldValue.serverTimestamp()
           });
 
-          // First pass: compute every write in memory without staging anything,
-          // so a conflict partway through the cart can't leave earlier items'
-          // claim writes staged for commit alongside the conflict outcome below.
-          const claimWrites: {
-            ref: FirebaseFirestore.DocumentReference;
-            updates: {
-              takenExclusiveMonths?: Record<string, string>;
-              basicOwners?: FirebaseFirestore.FieldValue;
-              territoryId?: number;
-              categoryValue?: string;
-              updatedAt?: string;
-            };
-          }[] = [];
+          // Compute every write in memory without staging anything, so a
+          // conflict partway through the cart can't leave earlier items'
+          // claim writes staged for commit alongside the conflict outcome
+          // below. Shared with the existing-subscription checkout path via
+          // computeTerritoryFulfillment so both enforce identical conflict
+          // detection.
+          const computation = computeTerritoryFulfillment(
+            existingTerritories,
+            purchasedItems,
+            claimDocs,
+            userId
+          );
 
-          try {
-            for (const item of purchasedItems) {
-              // --- UPDATE 1: THE USER'S PROFILE DATA ---
-              const existingIndex = updatedTerritories.findIndex(
-                (tItem) =>
-                  tItem.territoryId === item.territoryId &&
-                  tItem.categoryValue === item.categoryValue
-              );
-
-              if (existingIndex > -1) {
-                // Upgrade existing territory
-                const existingTerritory = updatedTerritories[existingIndex]!;
-                existingTerritory.isBasic = item.isBasic || existingTerritory.isBasic;
-                const combinedMonths = new Set([
-                  ...(existingTerritory.exclusiveMonths || []),
-                  ...item.exclusiveMonths
-                ]);
-                existingTerritory.exclusiveMonths = Array.from(combinedMonths);
-              } else {
-                // Brand new territory
-                updatedTerritories.push(item);
-              }
-
-              // --- UPDATE 2: THE GLOBAL LOCK & BASIC OWNERS ---
-              const claimDocId = `${item.territoryId}_${item.categoryValue}`;
-              const existingClaimData = claimDocs[claimDocId] || {};
-              const updates: {
-                takenExclusiveMonths?: Record<string, string>;
-                basicOwners?: FirebaseFirestore.FieldValue;
-                territoryId?: number;
-                categoryValue?: string;
-                updatedAt?: string;
-              } = {};
-
-              if (item.exclusiveMonths && item.exclusiveMonths.length > 0) {
-                const takenMonths = existingClaimData.takenExclusiveMonths || {};
-                const newExclusiveLocks: Record<string, string> = {};
-                for (const month of item.exclusiveMonths) {
-                  if (takenMonths[month] && takenMonths[month] !== userId) {
-                    throw new Error(`Territory ${claimDocId} is already taken for month ${month}`);
-                  }
-                  newExclusiveLocks[month] = userId;
-                }
-                updates.takenExclusiveMonths = newExclusiveLocks;
-              }
-
-              if (item.isBasic) {
-                updates.basicOwners = FieldValue.arrayUnion(userId);
-              }
-
-              if (Object.keys(updates).length > 0) {
-                updates.territoryId = item.territoryId;
-                updates.categoryValue = item.categoryValue;
-                updates.updatedAt = new Date().toISOString();
-                claimWrites.push({ ref: claimRefs[claimDocId]!, updates });
-              }
-            }
-          } catch (error) {
-            if (error instanceof Error && error.message.startsWith('Territory ')) {
-              t.set(
-                seen,
-                {
-                  type: stripeEvent.type,
-                  outcome: 'conflict',
-                  processedAt: FieldValue.serverTimestamp()
-                },
-                { merge: true }
-              );
-              return { conflict: true, error };
-            }
-            throw error;
+          if (computation.conflict) {
+            t.set(
+              seen,
+              {
+                type: stripeEvent.type,
+                outcome: 'conflict',
+                processedAt: FieldValue.serverTimestamp()
+              },
+              { merge: true }
+            );
+            return { conflict: true, error: computation.error };
           }
 
-          // Second pass: no conflicts anywhere in the cart, safe to stage writes.
-          for (const { ref, updates } of claimWrites) {
-            t.set(ref, updates, { merge: true });
+          const { claimWrites } = computation;
+          const updatedTerritories = nationalStatusKey
+            ? computation.updatedTerritories.filter(
+                (claim) => !isInNationalCountry(claim.territoryId)
+              )
+            : computation.updatedTerritories;
+
+          // No conflicts anywhere in the cart, safe to stage writes.
+          for (const { claimDocId, updates } of claimWrites) {
+            t.set(claimRefs[claimDocId]!, updates, { merge: true });
           }
 
           t.set(
@@ -301,6 +232,7 @@ export default defineEventHandler(async (event) => {
               ...(session.subscription
                 ? { stripeSubscriptionId: session.subscription as string }
                 : {}),
+              ...(nationalStatusKey ? { [nationalStatusKey]: 'active' } : {}),
               updatedAt: new Date().toISOString()
             },
             { merge: true }

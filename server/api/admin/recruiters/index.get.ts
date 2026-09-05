@@ -50,6 +50,20 @@ export default defineEventHandler(async (event) => {
       }
     });
 
+    // National coverage is a flat Band 1 basic charge per ACTIVE (billed) status,
+    // added once (not per-territory) -- must be reflected here too or this admin
+    // listing under-reports a nationally-flagged recruiter's real monthly total.
+    // 'pending' grants aren't billed yet, so they're excluded.
+    const activeNationalFlags =
+      (data.ukNationalStatus === 'active' ? 1 : 0) + (data.usaNationalStatus === 'active' ? 1 : 0);
+    if (activeNationalFlags > 0) {
+      let nationalBasicPrice = countryPricing.band1?.basic || 0;
+      if (data.basicDiscount) {
+        nationalBasicPrice = nationalBasicPrice * (1 - data.basicDiscount / 100);
+      }
+      monthlyTotal += nationalBasicPrice * activeNationalFlags;
+    }
+
     return {
       id: doc.id,
       email: data.email,
@@ -62,7 +76,9 @@ export default defineEventHandler(async (event) => {
       monthlyInvoice: monthlyTotal,
       billingCountry,
       basicDiscount: data.basicDiscount || 0,
-      exclusiveDiscount: data.exclusiveDiscount || 0
+      exclusiveDiscount: data.exclusiveDiscount || 0,
+      ukNationalStatus: data.ukNationalStatus || null,
+      usaNationalStatus: data.usaNationalStatus || null
     };
   });
 

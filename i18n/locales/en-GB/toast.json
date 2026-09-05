@@ -9,6 +9,14 @@
       "error": "Email not verified yet. Please check your inbox or resend the email."
     }
   },
+  "national-confirmation": {
+    "title": "Confirm your {country} National coverage",
+    "message": "Your agency has been granted National coverage across {country}. Confirm below to activate it via a one-time checkout.",
+    "action": {
+      "confirm": "Confirm & Checkout",
+      "error": "Failed to start checkout for National coverage. Please try again."
+    }
+  },
   "type": {
     "success": "Success",
     "error": "Error",

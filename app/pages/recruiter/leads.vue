@@ -140,7 +140,12 @@
               <AmIInputImage
                 :label="$t('recruiter.leads.fields.logo', 'Company Logo')"
                 :placeholder="$t('recruiter.leads.fields.upload-logo', 'Upload Logo (.png, .jpg)')"
-                :file-name="logoFileName"
+                :change-hint="
+                  $t('recruiter.leads.fields.change-logo', 'Click to upload a new image')
+                "
+                :file-name="logoDisplayName"
+                :file="logoFile"
+                :existing-url="contactSettings?.logoUrl || ''"
                 @change="onLogoSelect" />
 
               <AmIInputGeneric
@@ -377,6 +382,7 @@ import { ChevronDown, Copy } from 'lucide-vue-next';
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage';
 import { collection, limit, orderBy, query, where } from 'firebase/firestore';
 import { useCollection, useCurrentUser, useFirestore } from 'vuefire';
+import { getFileNameFromUrl } from '~~/shared/utils/file';
 
 definePageMeta({ middleware: 'recruiters' });
 
@@ -449,6 +455,12 @@ const leadsData = computed(() => {
 const isSaving = ref(false);
 const logoFile = ref<File | null>(null);
 const logoFileName = ref('');
+
+// The name shown next to the logo thumbnail: the newly selected file's name,
+// or (once saved) the file name derived from the existing uploaded URL.
+const logoDisplayName = computed(
+  () => logoFileName.value || getFileNameFromUrl(contactSettings.value?.logoUrl || '')
+);
 
 const form = reactive({
   title: '',

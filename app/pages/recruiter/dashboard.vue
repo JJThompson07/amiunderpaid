@@ -40,6 +40,25 @@
         </div>
       </header>
 
+      <div
+        v-if="
+          userProfile?.ukNationalStatus === 'active' || userProfile?.usaNationalStatus === 'active'
+        "
+        class="flex flex-col sm:flex-row gap-3">
+        <div
+          v-if="userProfile?.ukNationalStatus === 'active'"
+          class="flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-2.5 rounded-2xl font-bold text-sm">
+          <Globe class="w-4 h-4 shrink-0" />
+          {{ $t('recruiter.dashboard.nationalBanner', { country: $t('common.uk') }) }}
+        </div>
+        <div
+          v-if="userProfile?.usaNationalStatus === 'active'"
+          class="flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-2.5 rounded-2xl font-bold text-sm">
+          <Globe class="w-4 h-4 shrink-0" />
+          {{ $t('recruiter.dashboard.nationalBanner', { country: $t('common.usa') }) }}
+        </div>
+      </div>
+
       <!-- Territories section -->
       <div class="bg-white p-0 md:p-8 rounded-3xl shadow-xs border border-slate-200">
         <div
@@ -114,11 +133,12 @@
       @confirm="executeCancel" />
 
     <ToastEmailVerification />
+    <ToastNationalConfirmation />
   </div>
 </template>
 
 <script setup lang="ts">
-import { MapPin } from 'lucide-vue-next'; // Mail icon removed since it's in the toast now
+import { Globe, MapPin } from 'lucide-vue-next'; // Mail icon removed since it's in the toast now
 
 definePageMeta({
   middleware: 'recruiters'

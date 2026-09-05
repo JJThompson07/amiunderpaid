@@ -353,7 +353,7 @@ const submitSchedule = async (): Promise<void> => {
     const targetCurrency = userProfile.value?.billingCountry === 'USA' ? 'usd' : 'gbp';
 
     // Call your Stripe endpoint, passing the detailed schedule matrix!
-    const response = await $fetch<{ url: string }>('/api/stripe/create-checkout', {
+    const response = await $fetch<{ url: string | null }>('/api/stripe/create-checkout', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`
@@ -366,9 +366,14 @@ const submitSchedule = async (): Promise<void> => {
       }
     });
 
-    // Redirect the user to the Stripe hosted checkout page
     if (response.url) {
+      // Redirect the user to the Stripe hosted checkout page
       window.location.href = response.url;
+    } else {
+      // Returning recruiter: billed against their existing subscription
+      // directly, no Checkout redirect to follow.
+      showToast('Success', t('recruiter.territories.claim.purchase-success'), 'success');
+      await navigateTo('/recruiter/dashboard');
     }
   } catch (error) {
     // eslint-disable-next-line no-console -- surfaces checkout initialization failures for debugging; no dedicated error-logging utility for this page
