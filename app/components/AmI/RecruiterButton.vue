@@ -1,41 +1,36 @@
 <template>
-  <div class="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden">
-    <div
-      class="flex flex-col gap-4 p-5"
-      :style="{
-        backgroundColor: `${card.brandBgColour || '#4f46e5'}22`
-      }">
-      <div class="flex items-center gap-4">
-        <img
-          v-if="card.logoUrl"
-          :src="card.logoUrl"
-          class="w-12 h-12 rounded-xl object-cover border border-slate-100"
-          :style="{
-            backgroundColor: card.brandBgColour || '#4f46e5',
-            color: card.brandTextColour || '#ffffff'
-          }" />
-        <div
-          v-else
-          class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-          <BriefcaseBusiness class="w-6 h-6 text-slate-300" />
-        </div>
-        <div class="flex-1 min-w-0">
-          <h4 class="font-black text-slate-900 text-sm truncate">
-            {{ card.agencyName || 'Hiring Expert' }}
-          </h4>
-          <p class="text-xs text-slate-600 truncate">{{ displayTitle }}</p>
-        </div>
-      </div>
-      <button
-        class="w-full py-2.5 px-4 rounded-xl font-bold text-sm transition-opacity hover:opacity-90 shadow-sm"
+  <div
+    class="h-full flex flex-col gap-4 p-4 md:p-5 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+    <div class="flex items-center gap-3">
+      <img
+        v-if="card.logoUrl"
+        :src="card.logoUrl"
+        class="w-10 h-10 rounded-full object-cover border border-slate-100 shrink-0" />
+      <div
+        v-else
+        class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
         :style="{
-          backgroundColor: card.brandBgColour || '#4f46e5',
-          color: card.brandTextColour || '#ffffff'
-        }"
-        @click="$emit('click', card)">
-        {{ displayButtonText }}
-      </button>
+          backgroundColor: `${card.brandBgColour || '#4f46e5'}1a`,
+          color: card.brandBgColour || '#4f46e5'
+        }">
+        <BriefcaseBusiness class="w-5 h-5" />
+      </div>
+      <div class="flex-1 min-w-0">
+        <h4 class="font-bold text-slate-900 text-sm truncate">
+          {{ card.agencyName || 'Hiring Expert' }}
+        </h4>
+        <p class="text-xs text-slate-500 truncate">{{ displayTitle }}</p>
+      </div>
     </div>
+    <button
+      class="mt-auto w-full py-2.5 px-4 rounded-xl font-bold text-sm transition-opacity hover:opacity-90 shadow-sm"
+      :style="{
+        backgroundColor: card.brandBgColour || '#4f46e5',
+        color: card.brandTextColour || '#ffffff'
+      }"
+      @click="$emit('click', card)">
+      {{ displayButtonText }}
+    </button>
   </div>
 </template>
 

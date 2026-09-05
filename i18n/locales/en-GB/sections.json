@@ -18,6 +18,11 @@
     "high": "High",
     "average": "AVG"
   },
+  "kpi": {
+    "live-market": "Live Market Average",
+    "ceiling-label": "{percentile} Percentile Ceiling",
+    "ceiling-description": "Top-tier pay for this role"
+  },
   "gov-user-selection": {
     "title": "No Official Government Data",
     "content": "This is a highly specialised role without a direct government classification. The insights provided are calculated in real-time from active market listings in the {category} sector. To view official benchmarks, please search for the closest government category below:",

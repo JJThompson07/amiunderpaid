@@ -72,6 +72,11 @@
     "macro": {
       "label": "National Economy Baseline",
       "description": "How you compare to the broader national average across all occupations"
+    },
+    "modifier": {
+      "label": "Regional Cost of Living",
+      "above": "{percent}% above the national baseline for this location",
+      "below": "{percent}% below the national baseline for this location"
     }
   }
 }

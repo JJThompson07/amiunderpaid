@@ -1,17 +1,4 @@
-## Purpose
-
-Defines the requirements for fixing the mobile UI layout of the search form and resolving the whitespace and color clash issues on the Salary Results page.
-
-## Requirements
-
-### Requirement: Search Form Mobile Responsiveness
-
-The system SHALL ensure the site switcher link and "Salary Converter" button inside the search form do not overlap or break layout on mobile viewports.
-
-#### Scenario: User views search form on a mobile device
-
-- **WHEN** a user loads the homepage on a small screen
-- **THEN** the site switcher text is concise and the action buttons wrap or stack cleanly without horizontal overflow.
+## MODIFIED Requirements
 
 ### Requirement: Results Page Color Hierarchy
 

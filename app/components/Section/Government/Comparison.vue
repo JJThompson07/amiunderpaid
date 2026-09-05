@@ -7,6 +7,7 @@
     :user-salary="userSalary"
     :market-average="marketAverage"
     :currency-symbol="currencySymbol"
+    :show-user-salary="false"
     :warning="
       isFallback &&
       Boolean(

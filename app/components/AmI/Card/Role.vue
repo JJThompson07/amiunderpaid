@@ -1,49 +1,60 @@
 <template>
   <div
-    class="ami-role relative rounded-2xl flex flex-col flex-1 bg-white shadow-md overflow-hidden">
-    <header class="flex gap-2 py-2 px-4 justify-between bg-secondary-50">
-      <div class="ami-role-describe w-full">
-        <h3 class="font-semibold line-clamp-1">{{ title }}</h3>
-        <div class="flex flex-row gap-1 justify-between items-center w-full text-slate-500">
-          <span class="text-2xs flex-1 line-clamp-1">{{ company }}</span>
-          <span class="text-2xs flex gap-1 items-center line-clamp-1"
-            ><MapPinIcon class="w-3 h-3" />{{ location }}</span
-          >
+    class="ami-role relative rounded-2xl flex flex-col flex-1 bg-white border border-slate-200 shadow-md overflow-hidden">
+    <header class="flex gap-3 py-3 px-4 items-start justify-between">
+      <div class="flex gap-3 items-center min-w-0">
+        <div
+          class="shrink-0 w-10 h-10 rounded-full bg-secondary-100 text-secondary-700 flex items-center justify-center font-bold text-sm uppercase">
+          {{ companyInitial }}
         </div>
-      </div>
-    </header>
-    <section class="ami-role-range flex flex-col gap-2 py-2 px-4">
-      <div class="flex flex-col">
-        <span class="uppercase text-2xs text-slate-400">{{ $t('card.role.salary') }}</span>
-        <div class="flex flex-row items-center justify-between min-h-7">
-          <span :class="isSalaryProvided ? 'text-xl font-bold' : 'text-slate-400 text-xs italic'">{{
-            salaryRange
-          }}</span>
-          <div>
-            <div
-              v-if="userSalary && isSalaryProvided"
-              class="flex flex-col items-end gap-1 text-sm text-right relative">
-              <AmIChip v-bind="comparisonChipAttributes">{{ salaryMaxComparison }}%</AmIChip>
-              <span
-                class="text-2xs absolute top-full right-1/2 translate-x-1/2 w-max"
-                :class="
-                  salaryMaxComparison === 0
-                    ? 'text-slate-400'
-                    : salaryMaxComparison < 0
-                      ? 'text-negative-900'
-                      : 'text-positive-900'
-                "
-                >{{
-                  salaryMaxComparison === 0
-                    ? $t(`card.role.${$siteBrand}.compare.no-change`)
-                    : salaryMaxComparison < 0
-                      ? $t(`card.role.${$siteBrand}.compare.pay-cut`)
-                      : $t(`card.role.${$siteBrand}.compare.pay-rise`)
-                }}
-              </span>
-            </div>
+        <div class="ami-role-describe min-w-0">
+          <h3 class="font-semibold line-clamp-1">{{ title }}</h3>
+          <div class="flex flex-row gap-2 items-center text-slate-500 min-w-0">
+            <span class="text-2xs line-clamp-1">{{ company }}</span>
+            <span class="text-2xs flex gap-1 items-center line-clamp-1 shrink-0"
+              ><MapPinIcon class="w-3 h-3" />{{ location }}</span
+            >
           </div>
         </div>
+      </div>
+      <AmIChip
+        v-if="userSalary && isSalaryProvided"
+        v-bind="comparisonChipAttributes"
+        class="shrink-0"
+        >{{ salaryMaxComparison }}%</AmIChip
+      >
+    </header>
+    <section class="ami-role-range flex flex-col gap-2 py-2 px-4">
+      <div class="flex flex-col gap-1 bg-slate-50 rounded-xl p-3">
+        <span class="uppercase text-2xs text-slate-400 font-bold tracking-wide">{{
+          $t('card.role.salary')
+        }}</span>
+        <span
+          :class="
+            isSalaryProvided
+              ? 'text-2xl font-black text-slate-900'
+              : 'text-slate-400 text-xs italic'
+          "
+          >{{ salaryRange }}</span
+        >
+        <span
+          v-if="userSalary && isSalaryProvided"
+          class="text-2xs font-bold"
+          :class="
+            salaryMaxComparison === 0
+              ? 'text-slate-400'
+              : salaryMaxComparison < 0
+                ? 'text-negative-700'
+                : 'text-positive-700'
+          "
+          >{{
+            salaryMaxComparison === 0
+              ? $t(`card.role.${$siteBrand}.compare.no-change`)
+              : salaryMaxComparison < 0
+                ? $t(`card.role.${$siteBrand}.compare.pay-cut`)
+                : $t(`card.role.${$siteBrand}.compare.pay-rise`)
+          }}</span
+        >
       </div>
       <div class="flex flex-row flex-wrap gap-1">
         <AmIChip
@@ -136,6 +147,10 @@ const props = defineProps({
 
 const { trackViewRole } = useAnalytics();
 const { $siteBrand } = useNuxtApp();
+
+const companyInitial = computed<string>(
+  () => props.company?.trim()?.charAt(0)?.toUpperCase() || '?'
+);
 
 const hasRange = computed<boolean>(() => {
   return (
