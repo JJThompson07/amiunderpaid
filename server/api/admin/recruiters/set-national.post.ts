@@ -82,13 +82,19 @@ export default defineEventHandler(async (event) => {
     const targetClaims = currentTerritories.filter((t) => isInTargetCountry(t.territoryId));
     updatedTerritories = currentTerritories.filter((t) => !isInTargetCountry(t.territoryId));
 
-    for (const claim of targetClaims) {
-      const claimDocId = `${claim.territoryId}_${claim.categoryValue}`;
-      const claimRef = db.collection('territory_category_owners').doc(claimDocId);
-      const claimSnap = await claimRef.get();
+    // Read every target claim doc concurrently instead of sequentially awaiting
+    // each `.get()` in the loop -- a recruiter with many territories otherwise
+    // pays for N round-trips back-to-back instead of one.
+    const targetClaimRefs = targetClaims.map((claim) =>
+      db.collection('territory_category_owners').doc(`${claim.territoryId}_${claim.categoryValue}`)
+    );
+    const targetClaimSnaps = await Promise.all(targetClaimRefs.map((ref) => ref.get()));
+
+    for (const [index, claimSnap] of targetClaimSnaps.entries()) {
       if (!claimSnap.exists) {
         continue;
       }
+      const claimRef = targetClaimRefs[index]!;
 
       const claimData = claimSnap.data() || {};
       const takenMonths: Record<string, string> = claimData.takenExclusiveMonths || {};
@@ -127,7 +133,7 @@ export default defineEventHandler(async (event) => {
   if (!countryPricing) {
     throw createError({
       statusCode: 500,
-      message: `Pricing bands for ${userData.billingCountry} not found.`
+      message: 'Failed to process pricing.'
     });
   }
 
@@ -141,7 +147,7 @@ export default defineEventHandler(async (event) => {
       if (!bandData) {
         throw createError({
           statusCode: 500,
-          message: `Pricing band ${bandKey} for ${userData.billingCountry} not found.`
+          message: 'Failed to process pricing.'
         });
       }
       let basicPrice = bandData.basic;
@@ -163,7 +169,7 @@ export default defineEventHandler(async (event) => {
     if (!band1Data) {
       throw createError({
         statusCode: 500,
-        message: `Pricing band band1 for ${userData.billingCountry} not found.`
+        message: 'Failed to process pricing.'
       });
     }
     let nationalBasicPrice = band1Data.basic;

@@ -20,13 +20,14 @@ const mockContactSettingsGet = vi.fn();
 // it's a dynamic field name (ukNationalStatus / usaNationalStatus) chosen at runtime.
 const nationalQuerySpies = {
   flagWhere: vi.fn(),
-  categoryWhere: vi.fn(),
-  limit: vi.fn()
+  categoryWhere: vi.fn()
 };
 const inQuerySpy = vi.fn();
 
 // The `users` collection is queried two different ways in this handler:
-// 1. `.where(flag, '==', true).where('coveredCategories', 'array-contains', category).limit(10).get()`
+// 1. `.where(flag, '==', true).where('coveredCategories', 'array-contains', category).get()`
+//    (deliberately unlimited -- see recruiter-card.get.ts's comment on why capping
+//    this query would starve national recruiters past the cap out of search results)
 // 2. `.where(FieldPath.documentId(), 'in', uids).get()` (FieldPath.documentId() is stubbed to 'documentId')
 const mockWhere = vi.fn((field: unknown, op?: unknown, value?: unknown) => {
   if (field === 'documentId') {
@@ -37,12 +38,7 @@ const mockWhere = vi.fn((field: unknown, op?: unknown, value?: unknown) => {
   return {
     where: vi.fn((field2: unknown, op2: unknown, value2: unknown) => {
       nationalQuerySpies.categoryWhere(field2, op2, value2);
-      return {
-        limit: vi.fn((n: number) => {
-          nationalQuerySpies.limit(n);
-          return { get: mockNationalGet };
-        })
-      };
+      return { get: mockNationalGet };
     })
   };
 });
@@ -131,7 +127,6 @@ describe('user search/recruiter-card endpoint', () => {
       'array-contains',
       'engineering'
     );
-    expect(nationalQuerySpies.limit).toHaveBeenCalledWith(10);
 
     vi.clearAllMocks();
     mockClaimGet.mockResolvedValue({ exists: false });

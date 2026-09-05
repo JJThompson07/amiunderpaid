@@ -382,7 +382,7 @@ describe('set-national', () => {
     });
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('Pricing bands for UK not found.');
+    await expect(handler(event)).rejects.toThrow('Failed to process pricing.');
     expect(mockSubUpdate).not.toHaveBeenCalled();
   });
 });

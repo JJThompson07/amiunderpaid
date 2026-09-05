@@ -34,11 +34,16 @@ export default defineEventHandler(async (event) => {
     territoryId
       ? db.collection('territory_category_owners').doc(`${territoryId}_${category}`).get()
       : null,
+    // No .limit() here: Firestore sorts by document ID ascending by default,
+    // so capping this query would always return the same doc-ID-ordered
+    // prefix of national recruiters and starve everyone past it out of
+    // search results entirely. Every match is merged into basicOwners below
+    // and only shuffled/sliced to 3 after that, so the full pool is fetched
+    // but only a small, fairly-randomized subset is ever returned.
     db
       .collection('users')
       .where(targetStatusKey, '==', 'active')
       .where('coveredCategories', 'array-contains', category)
-      .limit(10)
       .get()
   ]);
 

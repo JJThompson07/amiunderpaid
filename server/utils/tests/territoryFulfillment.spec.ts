@@ -85,6 +85,31 @@ describe('server/utils/territoryFulfillment', () => {
       expect(result.conflict).toBe(true);
     });
 
+    it('does not mutate the caller-supplied existingTerritories entries when upgrading a territory', () => {
+      const originalEntry: TerritoryClaim = {
+        territoryId: 10,
+        categoryValue: 'IT',
+        isBasic: false,
+        exclusiveMonths: ['2026-01']
+      };
+      const existingTerritories: TerritoryClaim[] = [originalEntry];
+      const purchasedItems: TerritoryClaim[] = [
+        { territoryId: 10, categoryValue: 'IT', isBasic: true, exclusiveMonths: ['2026-02'] }
+      ];
+
+      const result = computeTerritoryFulfillment(existingTerritories, purchasedItems, {}, 'user-1');
+
+      expect(result.conflict).toBe(false);
+      // The pre-check's input object must be left exactly as the caller passed it.
+      expect(originalEntry.isBasic).toBe(false);
+      expect(originalEntry.exclusiveMonths).toEqual(['2026-01']);
+      if (result.conflict) {
+        return;
+      }
+      expect(result.updatedTerritories[0]!.isBasic).toBe(true);
+      expect(result.updatedTerritories[0]!.exclusiveMonths.sort()).toEqual(['2026-01', '2026-02']);
+    });
+
     it('produces no claim write for a territory purchased with neither basic nor exclusive months', () => {
       const purchasedItems: TerritoryClaim[] = [
         { territoryId: 10, categoryValue: 'IT', isBasic: false, exclusiveMonths: [] }

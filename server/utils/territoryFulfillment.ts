@@ -42,14 +42,20 @@ export function computeTerritoryFulfillment(
     );
 
     if (existingIndex > -1) {
-      // Upgrade existing territory
-      const existingTerritory = updatedTerritories[existingIndex]!;
-      existingTerritory.isBasic = item.isBasic || existingTerritory.isBasic;
+      // Upgrade existing territory. Clone before mutating -- updatedTerritories
+      // is only a shallow copy of existingTerritories, so its entries are the
+      // same object references as the caller's input; mutating in place would
+      // silently corrupt the pre-check input the caller still holds a reference to.
+      const priorTerritory = updatedTerritories[existingIndex]!;
       const combinedMonths = new Set([
-        ...(existingTerritory.exclusiveMonths || []),
+        ...(priorTerritory.exclusiveMonths || []),
         ...item.exclusiveMonths
       ]);
-      existingTerritory.exclusiveMonths = Array.from(combinedMonths);
+      updatedTerritories[existingIndex] = {
+        ...priorTerritory,
+        isBasic: item.isBasic || priorTerritory.isBasic,
+        exclusiveMonths: Array.from(combinedMonths)
+      };
     } else {
       // Brand new territory
       updatedTerritories.push(item);

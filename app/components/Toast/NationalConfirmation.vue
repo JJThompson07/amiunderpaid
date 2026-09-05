@@ -87,6 +87,17 @@ const handleConfirm = async (country: PendingCountry): Promise<void> => {
 
     if (response.url) {
       window.location.href = response.url;
+    } else {
+      // No redirect URL means this recruiter already had a live subscription --
+      // create-checkout.post.ts billed the flat national charge into it directly
+      // and flipped the status to 'active' -- so give explicit success feedback
+      // here instead of leaving the toast spinning until Vuefire's reactive
+      // userProfile update makes it disappear on its own.
+      showToast(
+        t('toast.type.success'),
+        t('toast.national-confirmation.action.success', { country: t(country.labelKey) }),
+        'success'
+      );
     }
   } catch {
     showToast(t('toast.type.error'), t('toast.national-confirmation.action.error'), 'error');

@@ -99,6 +99,22 @@ describe('Toast/NationalConfirmation', () => {
     expect(window.location.href).toBe('https://checkout.stripe.com/test');
   });
 
+  it('shows a success toast instead of navigating when checkout returns no URL (already-subscribed recruiter)', async () => {
+    mockUserProfile.value = { ukNationalStatus: 'pending' };
+    mockFetch.mockResolvedValueOnce({ url: null });
+    const wrapper = mountComponent();
+
+    await wrapper.find('button').trigger('click');
+    await flushPromises();
+
+    expect(mockShowToast).toHaveBeenCalledWith(
+      'toast.type.success',
+      'toast.national-confirmation.action.success',
+      'success'
+    );
+    expect(window.location.href).toBe('');
+  });
+
   it('shows an error toast and does not navigate when the checkout request fails', async () => {
     mockUserProfile.value = { ukNationalStatus: 'pending' };
     mockFetch.mockRejectedValueOnce(new Error('network error'));

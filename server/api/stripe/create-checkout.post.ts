@@ -83,7 +83,7 @@ export default defineEventHandler(async (event) => {
   if (!countryPricing) {
     // eslint-disable-next-line no-console -- surfaces missing pricing configuration for debugging; no dedicated server-side error-logging utility exists
     console.error(`Pricing object for ${countryKey} missing in Firestore!`);
-    throw createError({ statusCode: 500, message: `Pricing bands for ${countryKey} not found.` });
+    throw createError({ statusCode: 500, message: 'Failed to process pricing.' });
   }
 
   // ==========================================
@@ -138,7 +138,7 @@ export default defineEventHandler(async (event) => {
     if (!bandData) {
       throw createError({
         statusCode: 500,
-        message: `Pricing band ${bandKey} for ${countryKey} not found.`
+        message: 'Failed to process pricing.'
       });
     }
     let basicPrice = bandData.basic;
@@ -185,7 +185,7 @@ export default defineEventHandler(async (event) => {
     if (!band1Data) {
       throw createError({
         statusCode: 500,
-        message: `Pricing band band1 for ${countryKey} not found.`
+        message: 'Failed to process pricing.'
       });
     }
     monthlyTotal += Math.max(0, band1Data.basic * (1 - basicDiscount / 100));
@@ -267,7 +267,7 @@ export default defineEventHandler(async (event) => {
       if (!bandData) {
         throw createError({
           statusCode: 500,
-          message: `Pricing band ${bandKey} for ${countryKey} not found.`
+          message: 'Failed to process pricing.'
         });
       }
       return bandData;
@@ -303,7 +303,7 @@ export default defineEventHandler(async (event) => {
       if (!band1Data) {
         throw createError({
           statusCode: 500,
-          message: `Pricing band band1 for ${countryKey} not found.`
+          message: 'Failed to process pricing.'
         });
       }
       grandMonthlyTotal +=
@@ -311,8 +311,9 @@ export default defineEventHandler(async (event) => {
     }
 
     let paidInvoiceId: string | null = null;
+    let subscriptionUpdated = false;
+    const currentItem = subscription.items.data[0];
     try {
-      const currentItem = subscription.items.data[0];
       await stripe.subscriptions.update(existingSubscriptionId, {
         items: [
           {
@@ -327,6 +328,7 @@ export default defineEventHandler(async (event) => {
         ],
         proration_behavior: 'none'
       });
+      subscriptionUpdated = true;
 
       if (upfrontTotal > 0) {
         await stripe.invoiceItems.create({
@@ -372,6 +374,38 @@ export default defineEventHandler(async (event) => {
     } catch (error) {
       // eslint-disable-next-line no-console -- surfaces Stripe billing failures for debugging; no dedicated server-side error-logging utility exists
       console.error('Stripe existing-subscription billing error:', error);
+
+      // The recurring line item was already repriced above before the upfront
+      // invoice failed -- revert it so a declined card never leaves the
+      // recruiter permanently upgraded to the higher recurring tier without
+      // actually receiving the territories.
+      if (subscriptionUpdated) {
+        try {
+          await stripe.subscriptions.update(existingSubscriptionId, {
+            items: [
+              {
+                id: currentItem?.id,
+                price_data: {
+                  currency,
+                  product: currentItem?.price.product as string,
+                  recurring: { interval: 'month' },
+                  unit_amount: currentItem?.price.unit_amount ?? 0
+                }
+              }
+            ],
+            proration_behavior: 'none'
+          });
+        } catch (revertError) {
+          const reason = error instanceof Error ? error.message : String(error);
+          // eslint-disable-next-line no-console
+          console.error(
+            `🚨 ALERT: Automated subscription-tier reversal failed for user ${userId}. Reason: ${reason}`,
+            revertError
+          );
+          await sendBillingFailureAlert(config.resendApiKey, `user ${userId}`, reason, revertError);
+        }
+      }
+
       throw createError({
         statusCode: 500,
         message: 'Failed to process payment for this purchase.'
@@ -394,11 +428,18 @@ export default defineEventHandler(async (event) => {
         for (const claimDocId of claimDocIds) {
           claimRefs[claimDocId] = db.collection('territory_category_owners').doc(claimDocId);
         }
-        const freshSnapshots = await t.getAll(...Object.values(claimRefs));
+        // A national-only confirmation has no territories, so claimDocIds is
+        // empty here -- the real @google-cloud/firestore SDK throws
+        // "Transaction.getAll() requires at least 1 argument" when called
+        // with zero refs, so this must be skipped rather than called blindly.
         const freshClaimDocsData: Record<string, FirebaseFirestore.DocumentData | null> = {};
-        freshSnapshots.forEach((snap) => {
-          freshClaimDocsData[snap.id] = snap.exists ? (snap.data() ?? null) : null;
-        });
+        const claimRefsArray = Object.values(claimRefs);
+        if (claimRefsArray.length > 0) {
+          const freshSnapshots = await t.getAll(...claimRefsArray);
+          freshSnapshots.forEach((snap) => {
+            freshClaimDocsData[snap.id] = snap.exists ? (snap.data() ?? null) : null;
+          });
+        }
 
         const freshComputation = computeTerritoryFulfillment(
           freshExistingTerritories,

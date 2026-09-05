@@ -14,7 +14,8 @@
     "message": "Your agency has been granted National coverage across {country}. Confirm below to activate it via a one-time checkout.",
     "action": {
       "confirm": "Confirm & Checkout",
-      "error": "Failed to start checkout for National coverage. Please try again."
+      "error": "Failed to start checkout for National coverage. Please try again.",
+      "success": "National coverage across {country} is now active."
     }
   },
   "type": {

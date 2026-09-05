@@ -55,4 +55,62 @@ describe('AmI/Input/Image', () => {
 
     expect(wrapper.emitted('change')).toHaveLength(1);
   });
+
+  it('revokes the previous Blob URL when a new file replaces it', async () => {
+    let nextUrl = 'blob:first-file';
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: vi.fn(() => nextUrl),
+      revokeObjectURL
+    });
+
+    const wrapper = mount(AmIInputImage, {
+      props: { file: new File(['a'], 'first.png', { type: 'image/png' }) }
+    });
+    expect(wrapper.find('img').attributes('src')).toBe('blob:first-file');
+
+    nextUrl = 'blob:second-file';
+    await wrapper.setProps({ file: new File(['b'], 'second.png', { type: 'image/png' }) });
+
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:first-file');
+    expect(wrapper.find('img').attributes('src')).toBe('blob:second-file');
+  });
+
+  it('revokes the Blob URL on unmount', () => {
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: vi.fn(() => 'blob:mounted-file'),
+      revokeObjectURL
+    });
+
+    const wrapper = mount(AmIInputImage, {
+      props: { file: new File(['a'], 'mounted.png', { type: 'image/png' }) }
+    });
+    wrapper.unmount();
+
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mounted-file');
+  });
+
+  it('does not revoke anything when a file is cleared back to an existing URL', async () => {
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: vi.fn(() => 'blob:cleared-file'),
+      revokeObjectURL
+    });
+
+    const wrapper = mount(AmIInputImage, {
+      props: {
+        file: new File(['a'], 'cleared.png', { type: 'image/png' }),
+        existingUrl: 'https://example.com/saved.png'
+      }
+    });
+
+    await wrapper.setProps({ file: null });
+
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:cleared-file');
+    expect(wrapper.find('img').attributes('src')).toBe('https://example.com/saved.png');
+  });
 });

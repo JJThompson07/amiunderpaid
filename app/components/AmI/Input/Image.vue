@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { onBeforeUnmount, ref, watch } from 'vue';
 import type { PropType } from 'vue';
 import { UploadCloud } from 'lucide-vue-next';
 
@@ -55,10 +55,33 @@ defineEmits<{
   (e: 'change', event: Event): void;
 }>();
 
-const previewUrl = computed(() => {
-  if (props.file instanceof File) {
-    return URL.createObjectURL(props.file);
+const previewUrl = ref('');
+// Tracks the Blob URL this component created (not the prop), so it -- and only
+// it -- gets revoked when superseded, since a computed re-running on every
+// file change previously created a new Blob URL each time without ever
+// revoking the last one, leaking memory for the SPA's lifetime.
+let createdObjectUrl: string | null = null;
+
+watch(
+  [(): File | null => props.file, (): string => props.existingUrl],
+  ([file, existingUrl]): void => {
+    if (createdObjectUrl) {
+      URL.revokeObjectURL(createdObjectUrl);
+      createdObjectUrl = null;
+    }
+    if (file instanceof File) {
+      createdObjectUrl = URL.createObjectURL(file);
+      previewUrl.value = createdObjectUrl;
+    } else {
+      previewUrl.value = existingUrl || '';
+    }
+  },
+  { immediate: true }
+);
+
+onBeforeUnmount(() => {
+  if (createdObjectUrl) {
+    URL.revokeObjectURL(createdObjectUrl);
   }
-  return props.existingUrl || '';
 });
 </script>

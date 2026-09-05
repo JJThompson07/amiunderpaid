@@ -179,7 +179,19 @@ describe('create-checkout', () => {
     });
     mockRefundsCreate.mockResolvedValue({});
     mockTransaction.get.mockResolvedValue({ data: () => ({ activeTerritories: [] }) });
-    mockTransaction.getAll.mockResolvedValue([]);
+    // Mirrors the real @google-cloud/firestore SDK, which throws
+    // "Transaction.getAll() requires at least 1 argument" when called with
+    // zero refs -- a plain `vi.fn().mockResolvedValue([])` would blindly
+    // accept a 0-arg call and mask a national-only confirmation's empty
+    // claimRefs from ever reaching production code un-caught.
+    mockTransaction.getAll.mockImplementation((...refs: unknown[]) => {
+      if (refs.length === 0) {
+        return Promise.reject(
+          new Error("Function 'Transaction.getAll()' requires at least 1 argument.")
+        );
+      }
+      return Promise.resolve([]);
+    });
   });
 
   afterEach(() => {
@@ -231,7 +243,7 @@ describe('create-checkout', () => {
 
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('Pricing band band1 for UK not found.');
+    await expect(handler(event)).rejects.toThrow('Failed to process pricing.');
     expect(mockSessionsCreate).not.toHaveBeenCalled();
   });
 
@@ -240,7 +252,7 @@ describe('create-checkout', () => {
 
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('Pricing bands for UK not found.');
+    await expect(handler(event)).rejects.toThrow('Failed to process pricing.');
     expect(mockSessionsCreate).not.toHaveBeenCalled();
   });
 
@@ -777,7 +789,7 @@ describe('create-checkout', () => {
 
       const event = {} as unknown as H3Event;
 
-      await expect(handler(event)).rejects.toThrow('Pricing band band1 for UK not found.');
+      await expect(handler(event)).rejects.toThrow('Failed to process pricing.');
       expect(mockSubUpdate).not.toHaveBeenCalled();
     });
 
@@ -797,6 +809,68 @@ describe('create-checkout', () => {
       const event = {} as unknown as H3Event;
 
       await expect(handler(event)).rejects.toThrow('Failed to process payment for this purchase.');
+      errorSpy.mockRestore();
+    });
+
+    it('reverts the already-applied subscription upgrade when the upfront invoice fails to pay', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockInvoiceItemsCreate.mockRejectedValueOnce(new Error('card declined'));
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      requestBody = {
+        currency: 'gbp',
+        territories: [
+          { territoryId: 999, categoryValue: 'IT', isBasic: true, exclusiveMonths: ['2020-01'] }
+        ]
+      };
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow('Failed to process payment for this purchase.');
+      // Called twice: the upgrade that already went through, then the revert
+      // back to the subscription's pre-purchase price -- otherwise the
+      // recruiter would be permanently billed at the higher tier without
+      // ever receiving the territories, since the upfront charge never went through.
+      expect(mockSubUpdate).toHaveBeenCalledTimes(2);
+      expect(mockSubUpdate).toHaveBeenLastCalledWith(
+        'sub_123',
+        expect.objectContaining({
+          items: [
+            expect.objectContaining({
+              id: 'si_123',
+              price_data: expect.objectContaining({ unit_amount: 5000 })
+            })
+          ]
+        })
+      );
+      expect(mockRunTransaction).not.toHaveBeenCalled();
+      errorSpy.mockRestore();
+    });
+
+    it('alerts ops when both the upfront invoice and the subscription-tier reversal fail', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockInvoiceItemsCreate.mockRejectedValueOnce(new Error('card declined'));
+      mockSubUpdate.mockResolvedValueOnce({}); // the initial upgrade succeeds
+      mockSubUpdate.mockRejectedValueOnce(new Error('stripe down')); // the revert fails
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      requestBody = {
+        currency: 'gbp',
+        territories: [
+          { territoryId: 999, categoryValue: 'IT', isBasic: true, exclusiveMonths: ['2020-01'] }
+        ]
+      };
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow('Failed to process payment for this purchase.');
+      expect(mockResendSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: expect.stringContaining('Stripe territory conflict refund failed')
+        })
+      );
       errorSpy.mockRestore();
     });
 
