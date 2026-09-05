@@ -14,6 +14,8 @@ type MockUserProfile = {
   exclusiveDiscount?: number;
   activeTerritories?: TerritoryClaim[];
   claims?: TerritoryClaim[];
+  ukNationalStatus?: 'pending' | 'active';
+  usaNationalStatus?: 'pending' | 'active';
 };
 
 type TestProps = {
@@ -238,6 +240,122 @@ describe('useScheduleMath', () => {
     // Revert
     props.territories.pop();
     props.categories.pop();
+  });
+
+  it('locks Basic (as national, not owned) for a UK territory when the recruiter holds an active ukNationalStatus', () => {
+    mockUserProfile.value = {
+      billingCountry: 'UK',
+      activeTerritories: [],
+      claims: [],
+      ukNationalStatus: 'active'
+    };
+    const { isBasic, isBasicLocked, isBasicNational, toggleBasic } = useScheduleMath(
+      props,
+      emitMock
+    );
+    const rowId = '1|IT';
+
+    expect(isBasic(rowId)).toBe(true);
+    expect(isBasicLocked(rowId)).toBe(true);
+    expect(isBasicNational(rowId)).toBe(true);
+
+    toggleBasic(rowId);
+    expect(isBasic(rowId)).toBe(true);
+  });
+
+  it('also locks Basic as national when ukNationalStatus is merely pending, not just active', () => {
+    // A pending grant isn't billed yet, but confirming it later wipes any local
+    // Basic territory in the target country with no refund -- so it must lock
+    // the same as an active grant to avoid a redundant, later-discarded purchase.
+    mockUserProfile.value = {
+      billingCountry: 'UK',
+      activeTerritories: [],
+      claims: [],
+      ukNationalStatus: 'pending'
+    };
+    const { isBasic, isBasicLocked, isBasicNational } = useScheduleMath(props, emitMock);
+    const rowId = '1|IT';
+
+    expect(isBasic(rowId)).toBe(true);
+    expect(isBasicLocked(rowId)).toBe(true);
+    expect(isBasicNational(rowId)).toBe(true);
+  });
+
+  it('does not lock Basic as national for a USA territory when only ukNationalStatus is set', () => {
+    props.territories = [{ id: 210, name: 'California', band: 1 }];
+    mockUserProfile.value = {
+      billingCountry: 'UK',
+      activeTerritories: [],
+      claims: [],
+      ukNationalStatus: 'active'
+    };
+    const { isBasicNational } = useScheduleMath(props, emitMock);
+    expect(isBasicNational('210|IT')).toBe(false);
+  });
+
+  it('prefers a real owned claim over national coverage for the lock reason', () => {
+    mockUserProfile.value = {
+      billingCountry: 'UK',
+      activeTerritories: [
+        { territoryId: 1, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }
+      ],
+      ukNationalStatus: 'active'
+    };
+    const { isBasicLocked, isBasicNational } = useScheduleMath(props, emitMock);
+    const rowId = '1|IT';
+
+    expect(isBasicLocked(rowId)).toBe(true);
+    expect(isBasicNational(rowId)).toBe(false);
+  });
+
+  it('never emits a billable Basic purchase for a nationally-covered row with no exclusive months selected', () => {
+    mockUserProfile.value = {
+      billingCountry: 'UK',
+      activeTerritories: [],
+      claims: [],
+      ukNationalStatus: 'active'
+    };
+    mockPricingData.value = { UK: { band1: { basic: 100, exclusive: 500 } } };
+    useScheduleMath(props, emitMock);
+
+    // emitUpdates runs immediately via the watch() stub; the national-only row
+    // (no exclusive months selected) must not appear in the emitted payload at all.
+    const [, payload] = vi
+      .mocked(emitMock)
+      .mock.calls.find((call) => (call[0] as string) === 'update:selections') as unknown as [
+      string,
+      { territoryId: number; categoryValue: string }[]
+    ];
+    expect(payload.some((item) => item.territoryId === 1 && item.categoryValue === 'IT')).toBe(
+      false
+    );
+  });
+
+  it('still allows selecting an exclusive month on a nationally-covered row, billed at the upgrade price (not full price)', () => {
+    mockUserProfile.value = {
+      billingCountry: 'UK',
+      activeTerritories: [],
+      claims: [],
+      ukNationalStatus: 'active'
+    };
+    mockPricingData.value = { UK: { band1: { basic: 100, exclusive: 500 } } };
+    const { toggleMonth, upcomingMonths } = useScheduleMath(props, emitMock);
+    const rowId = '1|IT';
+    const secondMonth = upcomingMonths.value[1]!.value;
+
+    toggleMonth(rowId, secondMonth);
+
+    const selectionCalls = vi
+      .mocked(emitMock)
+      .mock.calls.filter((call) => (call[0] as string) === 'update:selections');
+    const [, payload] = selectionCalls.at(-1) as unknown as [
+      string,
+      { territoryId: number; categoryValue: string; isBasic: boolean; exclusiveMonths: string[] }[]
+    ];
+    const row = payload.find((item) => item.territoryId === 1 && item.categoryValue === 'IT');
+    expect(row).toBeDefined();
+    expect(row?.isBasic).toBe(false);
+    expect(row?.exclusiveMonths).toEqual([secondMonth]);
   });
 
   it('calculates calcPayNow correctly for selected months that are not locked', () => {

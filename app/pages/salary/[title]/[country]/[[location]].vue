@@ -330,6 +330,7 @@ const { recruiterCards } = await useRecruiterCards(
   location,
   matchedLocation,
   adzunaCategory,
+  country,
   'salary'
 );
 

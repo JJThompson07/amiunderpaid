@@ -119,6 +119,62 @@ describe('admin recruiters listing endpoint', () => {
     ]);
   });
 
+  it('folds a flat Band 1 national charge into the reported monthly invoice', async () => {
+    mockUsersGet.mockResolvedValue({
+      docs: [
+        {
+          id: 'rec-national',
+          data: (): unknown => ({
+            status: 'active',
+            billingCountry: 'UK',
+            ukNationalStatus: 'active',
+            activeTerritories: []
+          })
+        }
+      ]
+    });
+    const event = {} as unknown as H3Event;
+
+    const res = await handler(event);
+
+    expect(res.recruiters).toEqual([
+      expect.objectContaining({
+        id: 'rec-national',
+        monthlyInvoice: 100,
+        ukNationalStatus: 'active',
+        usaNationalStatus: null
+      })
+    ]);
+  });
+
+  it('excludes a pending (unpaid) national status from the reported monthly invoice', async () => {
+    mockUsersGet.mockResolvedValue({
+      docs: [
+        {
+          id: 'rec-pending',
+          data: (): unknown => ({
+            status: 'active',
+            billingCountry: 'UK',
+            ukNationalStatus: 'pending',
+            activeTerritories: []
+          })
+        }
+      ]
+    });
+    const event = {} as unknown as H3Event;
+
+    const res = await handler(event);
+
+    expect(res.recruiters).toEqual([
+      expect.objectContaining({
+        id: 'rec-pending',
+        monthlyInvoice: 0,
+        ukNationalStatus: 'pending',
+        usaNationalStatus: null
+      })
+    ]);
+  });
+
   it('excludes requested/rejected recruiters from the email-verification lookup', async () => {
     mockUsersGet.mockResolvedValue({
       docs: [

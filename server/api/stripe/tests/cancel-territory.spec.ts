@@ -445,6 +445,76 @@ describe('cancel-territory', () => {
     );
   });
 
+  it('adds a flat Band 1 national charge on top of remaining local territories when ukNationalStatus is active', async () => {
+    mockUserGet.mockResolvedValue({
+      data: () => ({
+        billingCountry: 'UK',
+        stripeSubscriptionId: 'sub_123',
+        ukNationalStatus: 'active',
+        activeTerritories: [
+          makeTerritory({ territoryId: 999, isBasic: true, band: 1 }),
+          makeTerritory({ territoryId: 1000, isBasic: true, band: 1 })
+        ]
+      })
+    });
+    requestBody = { territoryId: 999 };
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    // Remaining local territory (band1, 50) + flat national charge (band1, 50) = 100
+    expect(res).toEqual({ success: true, newTotal: 100 });
+  });
+
+  it('excludes a pending (unpaid) national status from the flat charge', async () => {
+    mockUserGet.mockResolvedValue({
+      data: () => ({
+        billingCountry: 'UK',
+        stripeSubscriptionId: 'sub_123',
+        ukNationalStatus: 'pending',
+        activeTerritories: [
+          makeTerritory({ territoryId: 999, isBasic: true, band: 1 }),
+          makeTerritory({ territoryId: 1000, isBasic: true, band: 1 })
+        ]
+      })
+    });
+    requestBody = { territoryId: 999 };
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    // Remaining local territory only (band1, 50) -- the pending grant isn't billed yet.
+    expect(res).toEqual({ success: true, newTotal: 50 });
+  });
+
+  it('does not cancel the subscription when the total is 0 but the recruiter still holds a national flag', async () => {
+    mockUserGet.mockResolvedValue({
+      data: () => ({
+        billingCountry: 'UK',
+        stripeSubscriptionId: 'sub_123',
+        basicDiscount: 100,
+        ukNationalStatus: 'active',
+        activeTerritories: [makeTerritory({ territoryId: 999, isBasic: true, band: 1 })]
+      })
+    });
+    requestBody = { territoryId: 999 };
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ success: true, newTotal: 0 });
+    expect(mockSubCancel).not.toHaveBeenCalled();
+    expect(mockUserRefUpdate).not.toHaveBeenCalledWith({ stripeSubscriptionId: null });
+    expect(mockSubUpdate).toHaveBeenCalledWith(
+      'sub_123',
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({ price_data: expect.objectContaining({ unit_amount: 0 }) })
+        ]
+      })
+    );
+  });
+
   it('skips the territory_category_owners claim doc lookup entirely when it does not exist', async () => {
     mockClaimGet.mockResolvedValue({ exists: false });
     mockUserGet.mockResolvedValue({

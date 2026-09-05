@@ -518,6 +518,71 @@ describe('Stripe Webhook', () => {
     await expect(handler(event)).rejects.toThrow('Database fulfillment failed');
   });
 
+  it('confirms a pending national grant from a national-only checkout with no cart metadata', async () => {
+    mockConstructEvent.mockReturnValueOnce({
+      id: 'evt_national',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_national',
+          mode: 'subscription',
+          subscription: 'sub_national_123',
+          metadata: { userId: 'user_123', cart: '', nationalCountry: 'UK' }
+        }
+      }
+    });
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ received: true });
+    expect(mockTransaction.set).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({
+        ukNationalStatus: 'active',
+        stripeSubscriptionId: 'sub_national_123'
+      }),
+      { merge: true }
+    );
+  });
+
+  it('strips any local target-country territories when confirming a national grant', async () => {
+    mockConstructEvent.mockReturnValueOnce({
+      id: 'evt_national_wipe',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_national_wipe',
+          mode: 'subscription',
+          subscription: 'sub_national_wipe',
+          metadata: { userId: 'user_123', cart: '', nationalCountry: 'UK' }
+        }
+      }
+    });
+    mockTransaction.get.mockResolvedValueOnce({
+      data: () => ({
+        activeTerritories: [
+          { territoryId: 5, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }, // UK -- stripped
+          { territoryId: 210, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] } // USA -- kept
+        ]
+      })
+    });
+
+    const event = {} as unknown as H3Event;
+    await handler(event);
+
+    expect(mockTransaction.set).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({
+        activeTerritories: [
+          { territoryId: 210, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }
+        ],
+        ukNationalStatus: 'active'
+      }),
+      { merge: true }
+    );
+  });
+
   it('skips claim writes for a cart item with no basic flag and no exclusive months, defaulting an empty category code', async () => {
     mockConstructEvent.mockReturnValueOnce({
       id: 'evt_sparse',

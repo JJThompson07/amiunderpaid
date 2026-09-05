@@ -7,7 +7,17 @@ const mockRef = (value: string | null): Ref<string | null> =>
   ({ value }) as unknown as Ref<string | null>;
 
 const mockRoute = { fullPath: '/test-path' };
-const mockTerritories = [{ id: 1, name: 'London' }];
+const mockTerritories = [
+  { id: 1, name: 'London' },
+  {
+    id: 18,
+    name: 'Greater London',
+    ons_matches: [
+      { id: 202, name: 'London' },
+      { id: 203, name: 'Inner London' }
+    ]
+  }
+];
 
 vi.stubGlobal('useRoute', () => mockRoute);
 vi.stubGlobal('useTerritories', () => ({ allTerritories: mockTerritories }));
@@ -49,6 +59,13 @@ describe('useRecruiterCards', () => {
     expect(territoryId.value).toBe(1);
   });
 
+  it('computes territoryId via ons_matches when no territory name matches directly', async () => {
+    location.value = 'Inner London';
+    adzunaCategory.value = 'IT';
+    const { territoryId } = await useRecruiterCards(location, matchedLocation, adzunaCategory);
+    expect(territoryId.value).toBe(18);
+  });
+
   it('computes territoryId as null when location is National', async () => {
     location.value = 'National';
     const { territoryId } = await useRecruiterCards(location, matchedLocation, adzunaCategory);
@@ -77,12 +94,46 @@ describe('useRecruiterCards', () => {
       location,
       matchedLocation,
       adzunaCategory,
+      undefined,
       'custom-prefix'
     );
 
     expect(fetchMock).toHaveBeenCalledWith('/api/user/search/recruiter-card', {
-      query: { territoryId: 1, category: 'IT' }
+      query: { category: 'IT', territoryId: 1 }
     });
     expect(recruiterCards.value).toEqual([{ id: '123' }]);
+  });
+
+  it('falls back to country when the location resolves to no territory, so national recruiters still surface', async () => {
+    location.value = 'A village not in any territory list';
+    adzunaCategory.value = 'IT';
+    const country = mockRef('UK');
+    const { territoryId, recruiterCards } = await useRecruiterCards(
+      location,
+      matchedLocation,
+      adzunaCategory,
+      country
+    );
+
+    expect(territoryId.value).toBeNull();
+    expect(fetchMock).toHaveBeenCalledWith('/api/user/search/recruiter-card', {
+      query: { category: 'IT', country: 'UK' }
+    });
+    expect(recruiterCards.value).toEqual([{ id: '123' }]);
+  });
+
+  it('still returns empty cards when neither territoryId nor country is known', async () => {
+    location.value = 'National';
+    adzunaCategory.value = 'IT';
+    const country = mockRef(null);
+    const { recruiterCards } = await useRecruiterCards(
+      location,
+      matchedLocation,
+      adzunaCategory,
+      country
+    );
+
+    expect(recruiterCards.value).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

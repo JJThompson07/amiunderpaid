@@ -14,7 +14,10 @@ type CheckoutHandler = (event: H3Event) => Promise<{ url: string | null }>;
 
 // 1. Stub Globals
 vi.stubGlobal('defineEventHandler', (fn: CheckoutHandler) => fn);
-vi.stubGlobal('useRuntimeConfig', () => ({ stripeSecretKey: 'sk_test_123' }));
+vi.stubGlobal('useRuntimeConfig', () => ({
+  stripeSecretKey: 'sk_test_123',
+  resendApiKey: 're_test_123'
+}));
 const mockGetRequestHeader = vi.fn<() => string | undefined>(() => 'Bearer test_token');
 vi.stubGlobal('getRequestHeader', mockGetRequestHeader);
 vi.stubGlobal('getRequestProtocol', () => 'https');
@@ -29,31 +32,100 @@ let requestBody: CheckoutBody = {};
 vi.stubGlobal('readBody', async (): Promise<CheckoutBody> => requestBody);
 
 // 2. Mock external dependencies
-const { mockVerifyIdToken, mockPricingGet, mockUserGet, mockGetFirestore, mockSessionsCreate } =
-  vi.hoisted(() => {
-    const mockPricingGet = vi.fn();
-    const mockUserGet = vi.fn();
-    const mockCollection = vi.fn((path: string) => {
-      if (path === 'platform_settings') {
-        return { doc: (): { get: typeof mockPricingGet } => ({ get: mockPricingGet }) };
-      }
-      if (path === 'users') {
-        return { doc: (): { get: typeof mockUserGet } => ({ get: mockUserGet }) };
-      }
-      return { doc: (): { get: ReturnType<typeof vi.fn> } => ({ get: vi.fn() }) };
-    });
-    return {
-      mockVerifyIdToken: vi.fn(),
-      mockPricingGet,
-      mockUserGet,
-      mockGetFirestore: vi.fn(() => ({ collection: mockCollection })),
-      mockSessionsCreate: vi.fn()
-    };
+const {
+  mockVerifyIdToken,
+  mockPricingGet,
+  mockUserGet,
+  mockClaimGet,
+  mockGetFirestore,
+  mockSessionsCreate,
+  mockTransaction,
+  mockRunTransaction,
+  mockSubRetrieve,
+  mockSubUpdate,
+  mockInvoiceItemsCreate,
+  mockInvoicesCreate,
+  mockInvoiceFinalize,
+  mockInvoicePay,
+  mockInvoicePaymentsList,
+  mockRefundsCreate,
+  mockResendSend
+} = vi.hoisted(() => {
+  const mockPricingGet = vi.fn();
+  const mockUserGet = vi.fn();
+  // Keyed by claim doc id (e.g. "10_IT") so tests can configure per-territory
+  // conflict state; defaults to "no doc" for any id a test doesn't touch.
+  const mockClaimGet = new Map<string, ReturnType<typeof vi.fn>>();
+  const getClaimMock = (id: string): ReturnType<typeof vi.fn> => {
+    let mock = mockClaimGet.get(id);
+    if (!mock) {
+      mock = vi.fn().mockResolvedValue({ exists: false, data: () => undefined });
+      mockClaimGet.set(id, mock);
+    }
+    return mock;
+  };
+  const mockCollection = vi.fn((path: string) => {
+    if (path === 'platform_settings') {
+      return { doc: (): { get: typeof mockPricingGet } => ({ get: mockPricingGet }) };
+    }
+    if (path === 'users') {
+      return { doc: (): { get: typeof mockUserGet } => ({ get: mockUserGet }) };
+    }
+    if (path === 'territory_category_owners') {
+      return {
+        doc: (id: string): { get: ReturnType<typeof vi.fn> } => ({ get: getClaimMock(id) })
+      };
+    }
+    return { doc: (): { get: ReturnType<typeof vi.fn> } => ({ get: vi.fn() }) };
   });
+
+  const mockTransaction = { get: vi.fn(), getAll: vi.fn(), set: vi.fn() };
+  const mockRunTransaction = vi.fn((callback: (t: typeof mockTransaction) => unknown) =>
+    callback(mockTransaction)
+  );
+
+  return {
+    mockVerifyIdToken: vi.fn(),
+    mockPricingGet,
+    mockUserGet,
+    mockClaimGet,
+    mockGetFirestore: vi.fn(() => ({
+      collection: mockCollection,
+      runTransaction: mockRunTransaction
+    })),
+    mockSessionsCreate: vi.fn(),
+    mockTransaction,
+    mockRunTransaction,
+    mockSubRetrieve: vi.fn(),
+    mockSubUpdate: vi.fn(),
+    mockInvoiceItemsCreate: vi.fn(),
+    mockInvoicesCreate: vi.fn(),
+    mockInvoiceFinalize: vi.fn(),
+    mockInvoicePay: vi.fn(),
+    mockInvoicePaymentsList: vi.fn(),
+    mockRefundsCreate: vi.fn(),
+    mockResendSend: vi.fn()
+  };
+});
 
 vi.mock('stripe', () => ({
   default: class Stripe {
     checkout = { sessions: { create: mockSessionsCreate } };
+    subscriptions = { retrieve: mockSubRetrieve, update: mockSubUpdate };
+    invoiceItems = { create: mockInvoiceItemsCreate };
+    invoices = {
+      create: mockInvoicesCreate,
+      finalizeInvoice: mockInvoiceFinalize,
+      pay: mockInvoicePay
+    };
+    invoicePayments = { list: mockInvoicePaymentsList };
+    refunds = { create: mockRefundsCreate };
+  }
+}));
+
+vi.mock('resend', () => ({
+  Resend: class Resend {
+    emails = { send: mockResendSend };
   }
 }));
 
@@ -64,7 +136,8 @@ vi.mock('firebase-admin/auth', () => ({
 }));
 
 vi.mock('firebase-admin/firestore', () => ({
-  getFirestore: mockGetFirestore
+  getFirestore: mockGetFirestore,
+  FieldValue: { arrayUnion: (...args: unknown[]): unknown => ({ __arrayUnion: args }) }
 }));
 
 describe('create-checkout', () => {
@@ -72,6 +145,7 @@ describe('create-checkout', () => {
 
   beforeEach(async (): Promise<void> => {
     vi.clearAllMocks();
+    mockClaimGet.clear();
     mockGetRequestHeader.mockReturnValue('Bearer test_token');
     const mod = await import('../create-checkout.post');
     handler = mod.default;
@@ -88,6 +162,36 @@ describe('create-checkout', () => {
     mockPricingGet.mockResolvedValue({ exists: false });
     mockUserGet.mockResolvedValue({ data: () => ({}) });
     mockSessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/test' });
+
+    // Existing-subscription branch defaults; only exercised when a test sets
+    // `stripeSubscriptionId` on the user doc.
+    mockSubRetrieve.mockResolvedValue({
+      customer: 'cus_123',
+      items: { data: [{ id: 'si_123', price: { product: 'prod_123', unit_amount: 5000 } }] }
+    });
+    mockSubUpdate.mockResolvedValue({});
+    mockInvoiceItemsCreate.mockResolvedValue({});
+    mockInvoicesCreate.mockResolvedValue({ id: 'in_123' });
+    mockInvoiceFinalize.mockResolvedValue({ status: 'open' });
+    mockInvoicePay.mockResolvedValue({ status: 'paid' });
+    mockInvoicePaymentsList.mockResolvedValue({
+      data: [{ payment: { payment_intent: 'pi_123' } }]
+    });
+    mockRefundsCreate.mockResolvedValue({});
+    mockTransaction.get.mockResolvedValue({ data: () => ({ activeTerritories: [] }) });
+    // Mirrors the real @google-cloud/firestore SDK, which throws
+    // "Transaction.getAll() requires at least 1 argument" when called with
+    // zero refs -- a plain `vi.fn().mockResolvedValue([])` would blindly
+    // accept a 0-arg call and mask a national-only confirmation's empty
+    // claimRefs from ever reaching production code un-caught.
+    mockTransaction.getAll.mockImplementation((...refs: unknown[]) => {
+      if (refs.length === 0) {
+        return Promise.reject(
+          new Error("Function 'Transaction.getAll()' requires at least 1 argument.")
+        );
+      }
+      return Promise.resolve([]);
+    });
   });
 
   afterEach(() => {
@@ -139,7 +243,7 @@ describe('create-checkout', () => {
 
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('Pricing band band1 for UK not found.');
+    await expect(handler(event)).rejects.toThrow('Failed to process pricing.');
     expect(mockSessionsCreate).not.toHaveBeenCalled();
   });
 
@@ -148,7 +252,7 @@ describe('create-checkout', () => {
 
     const event = {} as unknown as H3Event;
 
-    await expect(handler(event)).rejects.toThrow('Pricing bands for UK not found.');
+    await expect(handler(event)).rejects.toThrow('Failed to process pricing.');
     expect(mockSessionsCreate).not.toHaveBeenCalled();
   });
 
@@ -435,5 +539,464 @@ describe('create-checkout', () => {
 
     await expect(handler(event)).rejects.toThrow('Failed to create checkout session.');
     errorSpy.mockRestore();
+  });
+
+  it('confirms a pending national grant with no existing subscription: builds a Checkout Session priced for the flat national charge with an empty territories cart', async () => {
+    mockUserGet.mockResolvedValue({ data: () => ({ ukNationalStatus: 'pending' }) });
+    requestBody = { currency: 'gbp', territories: [] };
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ url: 'https://checkout.stripe.com/test' });
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: 'subscription',
+        line_items: [
+          expect.objectContaining({
+            price_data: expect.objectContaining({
+              unit_amount: 5000,
+              recurring: { interval: 'month' }
+            })
+          })
+        ],
+        metadata: expect.objectContaining({ cart: '', nationalCountry: 'UK' })
+      })
+    );
+  });
+
+  it('does not fold a national charge into a fresh Checkout Session when no country is pending confirmation', async () => {
+    mockUserGet.mockResolvedValue({ data: () => ({}) });
+
+    const event = {} as unknown as H3Event;
+    await handler(event);
+
+    expect(mockSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.not.objectContaining({ nationalCountry: expect.anything() })
+      })
+    );
+  });
+
+  describe('existing subscription (returning recruiter)', () => {
+    it('updates the existing subscription recurring total instead of creating a new Checkout Session', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      requestBody = {
+        currency: 'gbp',
+        territories: [{ territoryId: 999, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }]
+      };
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ url: null });
+      expect(mockSessionsCreate).not.toHaveBeenCalled();
+      expect(mockSubUpdate).toHaveBeenCalledWith(
+        'sub_123',
+        expect.objectContaining({
+          items: [
+            expect.objectContaining({
+              id: 'si_123',
+              price_data: expect.objectContaining({ unit_amount: 5000 })
+            })
+          ]
+        })
+      );
+    });
+
+    it('charges an upfront invoice via invoiceItems.create + finalizeInvoice + pay for an exclusive-only purchase', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      requestBody = {
+        currency: 'gbp',
+        territories: [
+          { territoryId: 1, categoryValue: 'IT', isBasic: false, exclusiveMonths: ['2020-01'] }
+        ]
+      };
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ url: null });
+      expect(mockInvoiceItemsCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ customer: 'cus_123', amount: 10000, currency: 'gbp' })
+      );
+      expect(mockInvoicesCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          customer: 'cus_123',
+          collection_method: 'charge_automatically',
+          auto_advance: false,
+          // Verified against Stripe's live test-mode API: without this, the
+          // invoice does not auto-attach the pending invoice item created
+          // just above and settles at a $0 total.
+          pending_invoice_items_behavior: 'include'
+        })
+      );
+      expect(mockInvoiceFinalize).toHaveBeenCalledWith('in_123');
+      expect(mockInvoicePay).toHaveBeenCalledWith('in_123');
+    });
+
+    it('skips the explicit pay() call when finalizeInvoice already settles the invoice as paid', async () => {
+      // Verified against Stripe's live test-mode API: with a default payment
+      // method on file, finalizeInvoice synchronously charges the invoice --
+      // calling pay() on an already-paid invoice throws "Invoice is already
+      // paid", so the code must skip it in this case.
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockInvoiceFinalize.mockResolvedValueOnce({ status: 'paid' });
+      requestBody = {
+        currency: 'gbp',
+        territories: [
+          { territoryId: 1, categoryValue: 'IT', isBasic: false, exclusiveMonths: ['2020-01'] }
+        ]
+      };
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ url: null });
+      expect(mockInvoicePay).not.toHaveBeenCalled();
+    });
+
+    it('throws "No items selected in cart" for an existing-subscription empty cart', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      requestBody = { currency: 'gbp', territories: [] };
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow('No items selected in cart.');
+      expect(mockSubRetrieve).not.toHaveBeenCalled();
+    });
+
+    it('throws the zero-priced-exclusive error for an existing-subscription cart with a 100% exclusiveDiscount', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({
+          stripeSubscriptionId: 'sub_123',
+          activeTerritories: [],
+          exclusiveDiscount: 100
+        })
+      });
+      requestBody = {
+        currency: 'gbp',
+        territories: [
+          { territoryId: 1, categoryValue: 'IT', isBasic: false, exclusiveMonths: ['2020-01'] }
+        ]
+      };
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow(
+        'Exclusive month pricing resolved to zero and cannot be processed as-is.'
+      );
+      expect(mockSubRetrieve).not.toHaveBeenCalled();
+    });
+
+    it('folds a flat national charge into the recurring total when the recruiter holds an active national status', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({
+          stripeSubscriptionId: 'sub_123',
+          activeTerritories: [],
+          ukNationalStatus: 'active'
+        })
+      });
+      mockClaimGet.set(
+        '999_IT',
+        vi.fn().mockResolvedValue({ exists: true, data: () => ({ basicOwners: ['someone-else'] }) })
+      );
+      requestBody = {
+        currency: 'gbp',
+        territories: [{ territoryId: 999, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }]
+      };
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ url: null });
+      // Band1 basic (50) for the new territory + Band1 basic (50) flat national charge.
+      expect(mockSubUpdate).toHaveBeenCalledWith(
+        'sub_123',
+        expect.objectContaining({
+          items: [
+            expect.objectContaining({ price_data: expect.objectContaining({ unit_amount: 10000 }) })
+          ]
+        })
+      );
+    });
+
+    it('confirms a pending national grant through the existing-subscription branch: empty cart bypasses the "no items" guard, bills the flat charge, and flips the status to active', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({
+          stripeSubscriptionId: 'sub_123',
+          activeTerritories: [],
+          ukNationalStatus: 'pending'
+        })
+      });
+      requestBody = { currency: 'gbp', territories: [] };
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ url: null });
+      expect(mockSubUpdate).toHaveBeenCalledWith(
+        'sub_123',
+        expect.objectContaining({
+          items: [
+            expect.objectContaining({ price_data: expect.objectContaining({ unit_amount: 5000 }) })
+          ]
+        })
+      );
+      expect(mockTransaction.set).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ ukNationalStatus: 'active' }),
+        { merge: true }
+      );
+    });
+
+    it('falls back to the "ALL" category code when a cart item omits categoryValue', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      requestBody = {
+        currency: 'gbp',
+        territories: [{ territoryId: 999, isBasic: true, exclusiveMonths: [] }]
+      };
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ url: null });
+      expect(mockSubUpdate).toHaveBeenCalled();
+    });
+
+    it('throws a 500 when the resolved band for a new territory is missing from the country pricing', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockPricingGet.mockResolvedValue({
+        exists: true,
+        data: () => ({ UK: { band2: { basic: 30, exclusive: 150 } } })
+      });
+      requestBody = {
+        currency: 'gbp',
+        territories: [{ territoryId: 999, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }]
+      };
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow('Failed to process pricing.');
+      expect(mockSubUpdate).not.toHaveBeenCalled();
+    });
+
+    it('throws a 500 when the invoice does not settle synchronously after pay()', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockInvoicePay.mockResolvedValueOnce({ status: 'open' });
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      requestBody = {
+        currency: 'gbp',
+        territories: [
+          { territoryId: 1, categoryValue: 'IT', isBasic: false, exclusiveMonths: ['2020-01'] }
+        ]
+      };
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow('Failed to process payment for this purchase.');
+      errorSpy.mockRestore();
+    });
+
+    it('reverts the already-applied subscription upgrade when the upfront invoice fails to pay', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockInvoiceItemsCreate.mockRejectedValueOnce(new Error('card declined'));
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      requestBody = {
+        currency: 'gbp',
+        territories: [
+          { territoryId: 999, categoryValue: 'IT', isBasic: true, exclusiveMonths: ['2020-01'] }
+        ]
+      };
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow('Failed to process payment for this purchase.');
+      // Called twice: the upgrade that already went through, then the revert
+      // back to the subscription's pre-purchase price -- otherwise the
+      // recruiter would be permanently billed at the higher tier without
+      // ever receiving the territories, since the upfront charge never went through.
+      expect(mockSubUpdate).toHaveBeenCalledTimes(2);
+      expect(mockSubUpdate).toHaveBeenLastCalledWith(
+        'sub_123',
+        expect.objectContaining({
+          items: [
+            expect.objectContaining({
+              id: 'si_123',
+              price_data: expect.objectContaining({ unit_amount: 5000 })
+            })
+          ]
+        })
+      );
+      expect(mockRunTransaction).not.toHaveBeenCalled();
+      errorSpy.mockRestore();
+    });
+
+    it('alerts ops when both the upfront invoice and the subscription-tier reversal fail', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockInvoiceItemsCreate.mockRejectedValueOnce(new Error('card declined'));
+      mockSubUpdate.mockResolvedValueOnce({}); // the initial upgrade succeeds
+      mockSubUpdate.mockRejectedValueOnce(new Error('stripe down')); // the revert fails
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      requestBody = {
+        currency: 'gbp',
+        territories: [
+          { territoryId: 999, categoryValue: 'IT', isBasic: true, exclusiveMonths: ['2020-01'] }
+        ]
+      };
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow('Failed to process payment for this purchase.');
+      expect(mockResendSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: expect.stringContaining('Stripe territory conflict refund failed')
+        })
+      );
+      errorSpy.mockRestore();
+    });
+
+    it('rejects with 409 pre-charge when the cart conflicts with an existing exclusive-month lock', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockClaimGet.set(
+        '1_IT',
+        vi.fn().mockResolvedValue({
+          exists: true,
+          data: () => ({ takenExclusiveMonths: { '2020-01': 'other-user' } })
+        })
+      );
+      requestBody = {
+        currency: 'gbp',
+        territories: [
+          { territoryId: 1, categoryValue: 'IT', isBasic: false, exclusiveMonths: ['2020-01'] }
+        ]
+      };
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow(
+        'One or more selected exclusive months are no longer available. Please refresh and try again.'
+      );
+      expect(mockSubUpdate).not.toHaveBeenCalled();
+      expect(mockInvoiceItemsCreate).not.toHaveBeenCalled();
+    });
+
+    it('throws a 500 and never runs the Firestore fulfilment transaction when the Stripe subscription update fails', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockSubUpdate.mockRejectedValueOnce(new Error('stripe down'));
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow('Failed to process payment for this purchase.');
+      expect(mockRunTransaction).not.toHaveBeenCalled();
+      errorSpy.mockRestore();
+    });
+
+    it('refunds and reverts the subscription on a late-discovered conflict inside the fulfilment transaction', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      requestBody = {
+        currency: 'gbp',
+        territories: [
+          { territoryId: 1, categoryValue: 'IT', isBasic: false, exclusiveMonths: ['2020-01'] }
+        ]
+      };
+      // A concurrent purchase claims the same exclusive month between the
+      // pre-check (no conflict, so the charge above succeeds) and the
+      // fulfilment transaction's fresh read.
+      mockTransaction.getAll.mockResolvedValueOnce([
+        {
+          id: '1_IT',
+          exists: true,
+          data: (): { takenExclusiveMonths: Record<string, string> } => ({
+            takenExclusiveMonths: { '2020-01': 'other-user' }
+          })
+        }
+      ]);
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow(
+        'One or more selected exclusive months became unavailable during checkout. Any charge has been refunded and will not be billed further.'
+      );
+
+      expect(mockRefundsCreate).toHaveBeenCalledWith({ payment_intent: 'pi_123' });
+      // Called twice: the original purchase's recurring update, then the revert.
+      expect(mockSubUpdate).toHaveBeenCalledTimes(2);
+      expect(mockSubUpdate).toHaveBeenLastCalledWith(
+        'sub_123',
+        expect.objectContaining({
+          items: [
+            expect.objectContaining({ price_data: expect.objectContaining({ unit_amount: 5000 }) })
+          ]
+        })
+      );
+      expect(mockResendSend).not.toHaveBeenCalled();
+    });
+
+    it('alerts ops when the refund reversal cannot resolve a payment intent to refund', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      // No items on the subscription -- exercises the revertItem-undefined
+      // fallback (unit_amount defaults to 0) alongside the unresolvable
+      // invoice-payment branch below.
+      mockSubRetrieve.mockResolvedValue({ customer: 'cus_123', items: { data: [] } });
+      mockInvoicePaymentsList.mockResolvedValueOnce({ data: [] });
+      requestBody = {
+        currency: 'gbp',
+        territories: [
+          { territoryId: 1, categoryValue: 'IT', isBasic: false, exclusiveMonths: ['2020-01'] }
+        ]
+      };
+      mockTransaction.get.mockResolvedValueOnce({ data: () => undefined });
+      mockTransaction.getAll.mockResolvedValueOnce([
+        {
+          id: '1_IT',
+          exists: true,
+          data: (): { takenExclusiveMonths: Record<string, string> } => ({
+            takenExclusiveMonths: { '2020-01': 'other-user' }
+          })
+        }
+      ]);
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow(
+        'One or more selected exclusive months became unavailable during checkout. Any charge has been refunded and will not be billed further.'
+      );
+      expect(mockRefundsCreate).not.toHaveBeenCalled();
+      expect(mockResendSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: expect.stringContaining('Stripe territory conflict refund failed')
+        })
+      );
+      errorSpy.mockRestore();
+    });
   });
 });
