@@ -71,4 +71,19 @@ describe('Section/Results/KpiSummary', () => {
 
     expect(wrapper.find('.text-negative-600').exists()).toBe(true);
   });
+
+  it('does not double up the negative sign in the government variance percentage', () => {
+    const wrapper = mountComponent({ diffPercentGov: -3.4 });
+
+    expect(wrapper.text()).toContain('(3.4%)');
+    expect(wrapper.text()).not.toContain('(-3.4%)');
+  });
+
+  it('does not double up the negative sign in the live-market variance percentage', () => {
+    // userSalary (65000) below liveMarketAverage (70000) yields a negative diff percent.
+    const wrapper = mountComponent({ userSalary: 65000, liveMarketAverage: 70000 });
+
+    expect(wrapper.text()).toMatch(/\(\d+(\.\d+)?%\)/);
+    expect(wrapper.text()).not.toMatch(/\(-\d/);
+  });
 });

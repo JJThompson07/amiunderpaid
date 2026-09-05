@@ -60,6 +60,15 @@ describe('Section/Score/Mca', () => {
     expect(wrapper.text()).not.toContain('1.00x');
   });
 
+  it('omits the modifier row when the modifier is float-imprecisely off 1 by less than a percent', () => {
+    // Not exactly 1, but rounds to a 0% modifier -- a raw `!== 1` check would
+    // let this through and render an awkward "0% above the national baseline".
+    const wrapper = mountComponent({ ...baseVerdict, modifier: 1.0000000000000002 });
+
+    expect(wrapper.text()).not.toContain('mca.breakdowns.modifier.above');
+    expect(wrapper.text()).not.toContain('mca.breakdowns.modifier.below');
+  });
+
   it('renders the score, label, and confidence bar unaffected by the modifier row', () => {
     const wrapper = mountComponent({ ...baseVerdict, modifier: 1.1 });
 

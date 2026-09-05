@@ -106,7 +106,7 @@
               :label="$t('mca.breakdowns.macro.label')"
               :description="$t('mca.breakdowns.macro.description')" />
 
-            <div v-if="verdict.modifier !== 1" class="w-full">
+            <div v-if="hasModifier" class="w-full">
               <div class="flex justify-between items-end mb-2">
                 <span class="text-sm font-bold text-slate-700 truncate mr-2">{{
                   $t('mca.breakdowns.modifier.label')
@@ -237,11 +237,20 @@ const modifierMultiplierLabel = computed<string>(
   () => `${(props.verdict?.modifier ?? 1).toFixed(2)}x`
 );
 
+// Rounded to the percent the UI actually displays, so a modifier that's only
+// float-imprecisely off 1 (e.g. 1.0000000000000002) doesn't slip past the
+// `!== 1` check below and render an awkward "0% above the national baseline".
+const modifierPercent = computed<number>(() => {
+  const modifier = props.verdict?.modifier ?? 1;
+  return Math.round(Math.abs(1 - modifier) * 100);
+});
+
+const hasModifier = computed<boolean>(() => modifierPercent.value > 0);
+
 const modifierDescription = computed<string>(() => {
   const modifier = props.verdict?.modifier ?? 1;
-  const percent = Math.round(Math.abs(1 - modifier) * 100);
   const key = modifier > 1 ? 'mca.breakdowns.modifier.above' : 'mca.breakdowns.modifier.below';
-  return t(key, { percent });
+  return t(key, { percent: modifierPercent.value });
 });
 
 // ==========================================

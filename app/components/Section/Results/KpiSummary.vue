@@ -35,7 +35,7 @@
         class="text-xs font-bold"
         :class="liveVarianceColour">
         {{ liveDiffPercent < 0 ? '-' : '+' }}{{ currencySymbol }}{{ liveDiff.toLocaleString() }} ({{
-          liveDiffPercent
+          Math.abs(liveDiffPercent)
         }}%)
       </span>
     </div>
@@ -59,7 +59,7 @@
         class="text-xs font-bold"
         :class="govVarianceColour">
         {{ diffPercentGov < 0 ? '-' : '+' }}{{ currencySymbol }}{{ govDiff.toLocaleString() }} ({{
-          diffPercentGov
+          Math.abs(diffPercentGov)
         }}%)
       </span>
     </div>
