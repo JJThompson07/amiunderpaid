@@ -105,6 +105,22 @@
               mca
               :label="$t('mca.breakdowns.macro.label')"
               :description="$t('mca.breakdowns.macro.description')" />
+
+            <div v-if="verdict.modifier !== 1" class="w-full">
+              <div class="flex justify-between items-end mb-2">
+                <span class="text-sm font-bold text-slate-700 truncate mr-2">{{
+                  $t('mca.breakdowns.modifier.label')
+                }}</span>
+                <span
+                  aria-hidden="true"
+                  class="text-xs sm:text-sm font-bold text-slate-900 shrink-0">
+                  {{ modifierMultiplierLabel }}
+                </span>
+              </div>
+              <p class="text-2xs sm:text-xs text-slate-500 font-medium mt-2 leading-tight">
+                {{ modifierDescription }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -212,6 +228,20 @@ const confidenceDescription = computed(() => {
     return t('mca.confidence.desc_medium');
   }
   return t('mca.confidence.desc_low');
+});
+
+// ==========================================
+// 🌍 REGIONAL MODIFIER
+// ==========================================
+const modifierMultiplierLabel = computed<string>(
+  () => `${(props.verdict?.modifier ?? 1).toFixed(2)}x`
+);
+
+const modifierDescription = computed<string>(() => {
+  const modifier = props.verdict?.modifier ?? 1;
+  const percent = Math.round(Math.abs(1 - modifier) * 100);
+  const key = modifier > 1 ? 'mca.breakdowns.modifier.above' : 'mca.breakdowns.modifier.below';
+  return t(key, { percent });
 });
 
 // ==========================================

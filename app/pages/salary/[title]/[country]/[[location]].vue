@@ -31,7 +31,18 @@
     <div
       v-show="!pending && (hasGovernmentData || hasJobsData)"
       class="relative flex flex-col gap-6 lg:gap-8 px-4 xl:px-0 mt-2 w-full">
-      <!-- 1. MCA Score -->
+      <!-- 1. KPI Summary Row -->
+      <SectionResultsKpiSummary
+        :user-salary="userSalary"
+        :currency-symbol="currencySymbol"
+        :has-jobs-data="hasJobsData"
+        :live-market-average="meanSalary"
+        :has-government-data="hasGovernmentData"
+        :gov-market-average="marketAverage"
+        :market-high="marketHigh"
+        :diff-percent-gov="diffPercent" />
+
+      <!-- 2. MCA Score -->
       <div class="w-full">
         <SectionScoreMca
           v-if="mcaScore && userSalary"
@@ -42,7 +53,7 @@
           :location="location" />
       </div>
 
-      <!-- 2. Basic Recruiters Grid -->
+      <!-- 3. Take Action / Basic Recruiters Grid -->
       <div v-if="hasRecruiters" class="flex flex-col gap-4 mt-2 w-full">
         <div class="px-1">
           <h3 class="text-xl md:text-2xl text-slate-900 font-bold">
@@ -62,7 +73,7 @@
         </div>
       </div>
 
-      <!-- 3. Market Data -->
+      <!-- 4. Market Data (Adzuna distribution + Government benchmark) -->
       <div class="flex flex-col md:flex-row gap-6 w-full">
         <div v-if="hasJobsData" class="flex flex-col flex-1 min-w-0 gap-3 adzuna-section">
           <LazySectionAdzunaComparison
@@ -117,7 +128,7 @@
         </div>
       </div>
 
-      <!-- 4. Job Listings (With AmICarousel Restored!) -->
+      <!-- 5. Job Listings (With AmICarousel Restored!) -->
       <div v-if="jobListings.length" class="w-full flex flex-col gap-3 min-w-0">
         <h3 class="relative text-xl md:text-2xl text-slate-900 font-bold sm:whitespace-nowrap px-1">
           <a
@@ -178,7 +189,7 @@
         </AmICarousel>
       </div>
 
-      <!-- 5. Action / Negotiation (Hidden if recruiter exists) -->
+      <!-- 6. Action / Negotiation (Hidden if recruiter exists) -->
       <div v-if="!hasRecruiters" class="flex flex-col gap-6 w-full mt-4">
         <LazyAmICardAction
           v-if="country === 'UK' && isXl"

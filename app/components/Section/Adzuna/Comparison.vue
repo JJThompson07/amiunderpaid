@@ -8,7 +8,8 @@
     :user-salary="currentSalary"
     :market-average="averageSalary"
     :currency-symbol="currencySymbol"
-    :comparison="comparison">
+    :comparison="comparison"
+    :show-user-salary="false">
     <template #info>
       <h4 class="font-bold text-xl lg:text-2xl md:line-clamp-1" :title="displayTitle">
         {{ displayTitle }}

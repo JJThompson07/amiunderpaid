@@ -26,7 +26,9 @@
       </div>
     </section>
 
-    <section class="card-result--salaries w-full flex flex-row justify-between items-center mb-2">
+    <section
+      v-if="showUserSalary"
+      class="card-result--salaries w-full flex flex-row justify-between items-center mb-2">
       <div class="flex flex-col text-start flex-1">
         <span class="text-xs text-slate-500">{{ $t('card.result.your-salary') }}</span>
         <span class="font-black text-xl lg:text-3xl"
@@ -40,6 +42,12 @@
           >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
         >
       </div>
+    </section>
+    <section v-else class="card-result--market-only w-full flex flex-col items-center mb-2">
+      <span class="text-xs text-slate-500">{{ $t('card.result.market-average') }}</span>
+      <span class="font-black text-xl lg:text-3xl"
+        >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
+      >
     </section>
 
     <section class="card-result--verdict w-full flex-1">
@@ -82,6 +90,10 @@ const props = defineProps({
   currencySymbol: {
     type: String,
     default: ''
+  },
+  showUserSalary: {
+    type: Boolean,
+    default: true
   }
 });
 
