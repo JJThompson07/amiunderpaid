@@ -25,6 +25,7 @@ type AdzunaSearchParams = {
   permanent?: number;
   where?: string;
   distance?: number;
+  category?: string;
 };
 
 // Duck-typed shape covering both an ofetch `FetchError` (`.response.status`)
@@ -46,7 +47,8 @@ const fetchFromProviders = defineCachedFunction(
     contractStr: string,
     limit: number,
     isDevOrE2e: boolean,
-    devProviderOverride?: string
+    devProviderOverride?: string,
+    categoryStr?: string
   ) => {
     try {
       // e2e runs never hit the real Reed/Jooble APIs — return a static fixture
@@ -89,7 +91,8 @@ const fetchFromProviders = defineCachedFunction(
           locationStr,
           countryCode,
           typeStr,
-          contractStr
+          contractStr,
+          categoryStr
         );
 
         return {
@@ -114,16 +117,17 @@ const fetchFromProviders = defineCachedFunction(
       contractStr,
       limit,
       isDevOrE2e,
-      devProviderOverride
+      devProviderOverride,
+      categoryStr
     ) =>
-      `${titleStr}-${locationStr}-${countryCode}-${typeStr}-${contractStr}-${limit}-${devProviderOverride || 'none'}`
+      `${titleStr}-${locationStr}-${countryCode}-${typeStr}-${contractStr}-${limit}-${devProviderOverride || 'none'}-${categoryStr || 'none'}`
   }
 );
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const query = getQuery(event);
-  const { title, location, country, resultsPerPage, jobType, contractType } = query;
+  const { title, location, country, resultsPerPage, jobType, contractType, category } = query;
 
   if (!title) {
     throw createError({ statusCode: 400, statusMessage: 'Job title is required' });
@@ -133,6 +137,10 @@ export default defineEventHandler(async (event) => {
   const titleStr = String(title).toLowerCase().trim();
   const typeStr = String(jobType || 'full-time').toLowerCase();
   const contractStr = String(contractType || 'permanent').toLowerCase();
+  // The user-supplied industry filter -- kept distinct from the `categoryTag`
+  // below, which is derived from result data and only used for cache-TTL
+  // lookups against the `adzuna_category` collection.
+  const categoryStr = category ? String(category).toLowerCase().trim() : '';
 
   const countryParam = String(country || 'gb').toLowerCase();
   const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
@@ -151,7 +159,7 @@ export default defineEventHandler(async (event) => {
 
   // 1. Check Cache
   const db = useAdminFirestore();
-  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode)}-${typeStr}-${contractStr}-${limit}`;
+  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode, categoryStr)}-${typeStr}-${contractStr}-${limit}`;
   const cacheRef = db.collection('adzuna_jobs_cache').doc(cacheKey);
 
   // Track existing DB state so we don't wipe it on cache refresh!
@@ -260,6 +268,10 @@ export default defineEventHandler(async (event) => {
     params.distance = 20;
   }
 
+  if (categoryStr) {
+    params.category = categoryStr;
+  }
+
   // 3. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
   try {
     const cleanData: JobSearchResponse = await fetchFromProviders(
@@ -271,11 +283,14 @@ export default defineEventHandler(async (event) => {
       contractStr,
       limit,
       isDevOrE2e,
-      devProviderOverride
+      devProviderOverride,
+      categoryStr
     );
 
     // --- CALCULATE EXPIRES AT ---
-    const categoryTag = cleanData.results?.[0]?.category?.tag || 'unknown';
+    // If the caller filtered by an explicit industry, that's the most accurate
+    // TTL lookup key. Otherwise fall back to the category of the top result.
+    const categoryTag = categoryStr || cleanData.results?.[0]?.category?.tag || 'unknown';
     const isFallbackProvider = !!cleanData.provider && cleanData.provider !== 'adzuna';
 
     let expiresAt: Date;
@@ -308,7 +323,12 @@ export default defineEventHandler(async (event) => {
         data: cleanData,
         timestamp: FieldValue.serverTimestamp(),
         expiresAt: expiresAt, // <-- Save the exact expiration date!
-        searchParams: { title: titleStr, location: locationStr, country: countryCode },
+        searchParams: {
+          title: titleStr,
+          location: locationStr,
+          country: countryCode,
+          category: categoryStr || null
+        },
         gov_id_code: existingGovIdCode || null, // Preserve admin match
         is_admin_verified: isAdminVerified, // Preserve admin status
         job_type: typeStr,

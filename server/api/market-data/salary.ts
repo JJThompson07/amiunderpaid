@@ -18,6 +18,7 @@ type AdzunaHistogramParams = {
   what: string;
   'content-type': string;
   where?: string;
+  category?: string;
 };
 
 // Loosely typed: sanitizeAdzunaData strips reserved keys from whatever the
@@ -38,7 +39,8 @@ const fetchFromProviders = defineCachedFunction(
     titleStr: string,
     locationStr: string,
     isDevOrE2e: boolean,
-    devProviderOverride?: string
+    devProviderOverride?: string,
+    categoryStr?: string
   ) => {
     try {
       // e2e runs never hit the real Reed/Jooble APIs — return a static fixture
@@ -77,7 +79,14 @@ const fetchFromProviders = defineCachedFunction(
         (e as { statusCode?: number })?.statusCode;
       if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
         const { executeMarketFallback } = await import('../../utils/fallback');
-        const fallbackRaw = await executeMarketFallback(titleStr, locationStr, countryCode, '', '');
+        const fallbackRaw = await executeMarketFallback(
+          titleStr,
+          locationStr,
+          countryCode,
+          '',
+          '',
+          categoryStr
+        );
 
         return {
           histogram: fallbackRaw.histogram,
@@ -90,21 +99,33 @@ const fetchFromProviders = defineCachedFunction(
   {
     maxAge: 60 * 60, // Keep in memory for 1 hour to prevent stampedes
     name: 'marketSalaryProviderFetch',
-    getKey: (params, countryCode, titleStr, locationStr, isDevOrE2e, devProviderOverride) =>
-      `${titleStr}-${locationStr}-${countryCode}-${devProviderOverride || 'none'}`
+    getKey: (
+      params,
+      countryCode,
+      titleStr,
+      locationStr,
+      isDevOrE2e,
+      devProviderOverride,
+      categoryStr
+    ) =>
+      `${titleStr}-${locationStr}-${countryCode}-${devProviderOverride || 'none'}-${categoryStr || 'none'}`
   }
 );
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const query = getQuery(event);
-  const { title, location, country } = query;
+  const { title, location, country, category } = query;
 
   if (!title) {
     throw createError({ statusCode: 400, statusMessage: 'Job title is required' });
   }
 
   const titleStr = String(title).toLowerCase().trim();
+  // The user-supplied industry filter -- kept distinct from the `categoryTag`
+  // below, which is derived data used only for cache-TTL lookups against the
+  // `adzuna_category` collection.
+  const categoryStr = category ? String(category).toLowerCase().trim() : '';
 
   const countryParam = String(country || 'gb').toLowerCase();
   const countryCode = countryParam === 'usa' || countryParam === 'us' ? 'us' : 'gb';
@@ -123,7 +144,7 @@ export default defineEventHandler(async (event) => {
 
   // 1. Check Cache (Server-Side)
   const db = useAdminFirestore();
-  const cacheKey = generateCacheKey(titleStr, locationStr, countryCode);
+  const cacheKey = generateCacheKey(titleStr, locationStr, countryCode, categoryStr);
   const cacheRef = db.collection('adzuna_distribution_cache').doc(cacheKey);
 
   const isDevOrE2e = import.meta.dev || process.env.E2E === 'true';
@@ -201,6 +222,10 @@ export default defineEventHandler(async (event) => {
     params.where = cleanLocation;
   }
 
+  if (categoryStr) {
+    params.category = categoryStr;
+  }
+
   // 3. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
   try {
     const cleanData: MarketSalaryResult = await fetchFromProviders(
@@ -209,17 +234,20 @@ export default defineEventHandler(async (event) => {
       titleStr,
       locationStr,
       isDevOrE2e,
-      devProviderOverride
+      devProviderOverride,
+      categoryStr
     );
 
     const isFallbackProvider = !!cleanData.provider && cleanData.provider !== 'adzuna';
 
     // FIX 2: Adzuna histogram data doesn't contain categories!
-    // Let's try to steal the category tag from the jobs cache for this exact search.
-    // Skip this for fallback-provider responses: a long per-category cacheDays
-    // read from the jobs cache must never leak onto short-lived fallback data.
-    let categoryTag = 'unknown';
-    if (!isFallbackProvider) {
+    // If the caller filtered by an explicit industry, that's the most accurate
+    // TTL lookup key. Otherwise try to steal the category tag from the jobs
+    // cache for this exact search. Skip the jobs-cache steal for
+    // fallback-provider responses: a long per-category cacheDays read must
+    // never leak onto short-lived fallback data.
+    let categoryTag = categoryStr || 'unknown';
+    if (categoryTag === 'unknown' && !isFallbackProvider) {
       try {
         const jobsCacheKey = `${cacheKey}-full-time-permanent-10`;
         const jobsDoc = await db.collection('adzuna_jobs_cache').doc(jobsCacheKey).get();
@@ -261,7 +289,12 @@ export default defineEventHandler(async (event) => {
       data: cleanData,
       timestamp: FieldValue.serverTimestamp(),
       expiresAt: expiresAt, // <-- Save the exact expiration date!
-      searchParams: { title: titleStr, location: locationStr, country: countryCode }
+      searchParams: {
+        title: titleStr,
+        location: locationStr,
+        country: countryCode,
+        category: categoryStr || null
+      }
     });
 
     return cleanData;
