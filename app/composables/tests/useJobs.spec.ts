@@ -240,6 +240,16 @@ describe('useJobs', () => {
     expect(composable.categories.value).toEqual([{ label: 'IT', tag: 'it-jobs' }]);
   });
 
+  it('fetchCategories error clears categories instead of throwing', async () => {
+    mock$fetch.mockRejectedValueOnce(new Error('Failed'));
+
+    const composable = useJobs();
+    composable.categories.value = [{ label: 'Stale', tag: 'stale-jobs' }];
+
+    await expect(composable.fetchCategories('gb')).resolves.toBeUndefined();
+    expect(composable.categories.value).toEqual([]);
+  });
+
   it('fetchCategories success applies sanitizeAdzunaData correctly', async () => {
     mock$fetch.mockResolvedValueOnce({
       results: [

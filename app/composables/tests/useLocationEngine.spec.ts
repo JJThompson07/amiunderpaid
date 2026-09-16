@@ -63,7 +63,9 @@ vi.stubGlobal('useMicroData', () => mockMicroData);
 
 vi.stubGlobal('useDevProviderOverride', () => ({ value: 'auto' }));
 
+let lastAsyncDataKey = '';
 vi.stubGlobal('useAsyncData', async (key: string, fetcher: () => Promise<unknown>) => {
+  lastAsyncDataKey = key;
   const data = await fetcher();
   return {
     data: { value: data },
@@ -198,6 +200,18 @@ describe('useLocationEngine', () => {
       'auto',
       'it-jobs'
     );
+  });
+
+  it('includes category in the useAsyncData key so a category change produces a distinct key', async () => {
+    mockRoute.query = { category: 'it-jobs' };
+    await useLocationEngine('salary');
+    const keyWithCategory = lastAsyncDataKey;
+
+    mockRoute.query = {};
+    await useLocationEngine('salary');
+    const keyWithoutCategory = lastAsyncDataKey;
+
+    expect(keyWithCategory).not.toBe(keyWithoutCategory);
   });
 
   it('forwards undefined for category when no filter is present in the route query', async () => {

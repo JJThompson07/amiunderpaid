@@ -107,7 +107,7 @@ export const useLocationEngine = async (
   // 4. The Orchestrator
   const asyncDataKey = computed<string>(
     () =>
-      `${mode}-${country.value}-${location.value}-${searchTitle.value}-${devProviderOverride.value}`
+      `${mode}-${country.value}-${location.value}-${searchTitle.value}-${devProviderOverride.value}-${category.value || 'none'}`
   );
 
   const {
