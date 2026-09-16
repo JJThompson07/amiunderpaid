@@ -28,11 +28,28 @@ type ReedSearchParams = {
   temp?: boolean;
 };
 
+// Reed's search API has no sector/category/industry parameter (confirmed against
+// reed.co.uk/developers/jobseeker — only keywords, locationName, distance, salary
+// bounds, and contract/time flags exist), so an Adzuna category tag (e.g.
+// "it-jobs") is turned into a plain-language keyword and folded into the search
+// term instead.
+const buildKeywordsWithCategory = (title: string, category?: string): string => {
+  if (!category) {
+    return title;
+  }
+  const categoryKeyword = category
+    .replace(/-/g, ' ')
+    .replace(/\bjobs\b/gi, '')
+    .trim();
+  return categoryKeyword ? `${title} ${categoryKeyword}` : title;
+};
+
 export const fetchReedData = async (
   title: string,
   location: string,
   jobType: string,
-  contractType: string
+  contractType: string,
+  category?: string
 ): Promise<JobSearchResponse> => {
   const config = useRuntimeConfig();
   // Credentials are always read from private runtimeConfig (server-only).
@@ -70,7 +87,7 @@ export const fetchReedData = async (
   }
 
   const params: ReedSearchParams = {
-    keywords: title,
+    keywords: buildKeywordsWithCategory(title, category),
     resultsToTake: 100 // Fetch a good sample size to calculate statistics
   };
 
