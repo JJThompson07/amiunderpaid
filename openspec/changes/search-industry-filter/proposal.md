@@ -47,9 +47,11 @@ Users searching for salary benchmarks and job market rates currently query solel
 ## Capabilities
 
 ### New Capabilities
+
 - `search-industry-filter`: Defines the UI dropdown component, client-side state handling via `useJobs().fetchCategories`, route query passing, and composable integration for optional industry filtering in search.
 
 ### Modified Capabilities
+
 - `adzuna-adapter`: Adds category query support to outbound Adzuna search and histogram requests, and updates cache key generation and cache document schemas to be category-aware.
 - `reed-api-fallback`: Adds category handling (via keyword enhancement) to Reed fallback data fetching.
 - `jooble-api-fallback`: Adds category handling (via keyword enhancement) to Jooble fallback data fetching.
