@@ -209,7 +209,17 @@ const industryOptions = computed(() =>
   industryCategories.value.map((c) => ({ value: c.tag, label: c.label }))
 );
 
-watch(activeCountry, (country) => fetchCategories(country), { immediate: true });
+watch(
+  activeCountry,
+  (country) => {
+    // A previously selected industry tag belongs to the old country's
+    // taxonomy and may not exist in the new one -- clear it rather than
+    // let the select render a raw, unmatched slug and submit it as a filter.
+    industry.value = [];
+    fetchCategories(country);
+  },
+  { immediate: true }
+);
 
 const contractOptions = computed(() => {
   if (props.mode === 'benchmark') {

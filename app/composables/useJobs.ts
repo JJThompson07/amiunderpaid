@@ -206,12 +206,17 @@ export const useJobs = (): UseJobsReturn => {
   const fetchCategories = async (country: string): Promise<void> => {
     const countryCode = country.toLowerCase() === 'usa' ? 'us' : 'gb';
 
-    const response = await $fetch<{ results?: JobCategoryEntry[] }>('/api/market-data/categories', {
-      params: { country: countryCode }
-    });
+    try {
+      const response = await $fetch<{ results?: JobCategoryEntry[] }>(
+        '/api/market-data/categories',
+        { params: { country: countryCode } }
+      );
 
-    const sanitized = sanitizeAdzunaData(response);
-    categories.value = sanitized.results || [];
+      const sanitized = sanitizeAdzunaData(response);
+      categories.value = sanitized.results || [];
+    } catch {
+      categories.value = [];
+    }
   };
 
   const isUnderpaid = (salary: number): boolean => {
