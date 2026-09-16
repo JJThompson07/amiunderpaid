@@ -17,7 +17,7 @@
       {{ helper }}
     </span>
 
-    <div ref="triggerRef" class="relative flex mt-1">
+    <div ref="triggerRef" class="relative flex">
       <div v-if="icon" class="absolute left-3 top-3 z-10 pointer-events-none">
         <component
           :is="icon"
