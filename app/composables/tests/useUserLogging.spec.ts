@@ -58,6 +58,38 @@ describe('useUserLogging', () => {
       }
     });
 
+    it('includes the category when an industry filter was provided', async () => {
+      const { logSearch } = useUserLogging();
+
+      await logSearch(
+        'Software Engineer',
+        'US',
+        'New York',
+        '100000',
+        'part-time',
+        'contract',
+        'it-jobs'
+      );
+
+      if (mockFetch.mock.calls.length > 0) {
+        const [, options] = mockFetch.mock.calls[0]!;
+        const body = JSON.parse(options.body);
+        expect(body.category).toBe('it-jobs');
+      }
+    });
+
+    it('omits category entirely from the request body when no industry filter was provided', async () => {
+      const { logSearch } = useUserLogging();
+
+      await logSearch('Title', 'Country', 'Location', 'Salary');
+
+      if (mockFetch.mock.calls.length > 0) {
+        const [, options] = mockFetch.mock.calls[0]!;
+        const body = JSON.parse(options.body);
+        expect(body).not.toHaveProperty('category');
+      }
+    });
+
     it('uses default schedule and contract if not provided', async () => {
       const { logSearch } = useUserLogging();
 

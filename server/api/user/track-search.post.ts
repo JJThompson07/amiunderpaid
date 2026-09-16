@@ -6,6 +6,7 @@ type TrackSearchBody = {
   salary?: string | number | null;
   schedule?: string | null;
   contract?: string | null;
+  category?: string | null;
   brand?: string | null;
   id?: string;
 };
@@ -35,6 +36,7 @@ export default defineEventHandler(async (event) => {
       salary: body.salary ? Number(body.salary) : null,
       schedule: body.schedule ? body.schedule.toLowerCase().trim() : null,
       contract: body.contract ? body.contract.toLowerCase().trim() : null,
+      category: body.category ? body.category.toLowerCase().trim() : null,
       brand: body.brand ? String(body.brand) : null,
       timestamp: FieldValue.serverTimestamp()
     };
