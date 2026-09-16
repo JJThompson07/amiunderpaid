@@ -26,8 +26,7 @@
   },
   "industry": {
     "label": "Industry",
-    "placeholder": "All Industries",
-    "helper": "Optional — narrow results to a specific sector"
+    "placeholder": "All Industries"
   },
   "benchmark": {
     "salary": {

@@ -65,29 +65,28 @@
           </div>
 
           <div class="flex-1">
-            <AmIInputGeneric
-              v-model="salary"
-              v-model:param-value="period"
-              type="number"
-              :step="10"
-              :label="salaryLabel"
-              :placeholder="currencySymbol + '55,000'"
-              :prefix="currencySymbol"
-              :icon="Wallet"
+            <AmIInputSelect
+              v-model="industry"
+              single
               optional
-              :params="periodOptions" />
+              :label="$t('search.industry.label')"
+              :placeholder="$t('search.industry.placeholder')"
+              :options="industryOptions" />
           </div>
         </div>
 
         <div>
-          <AmIInputSelect
-            v-model="industry"
-            single
+          <AmIInputGeneric
+            v-model="salary"
+            v-model:param-value="period"
+            type="number"
+            :step="10"
+            :label="salaryLabel"
+            :placeholder="currencySymbol + '55,000'"
+            :prefix="currencySymbol"
+            :icon="Wallet"
             optional
-            :label="$t('search.industry.label')"
-            :placeholder="$t('search.industry.placeholder')"
-            :helper="$t('search.industry.helper')"
-            :options="industryOptions" />
+            :params="periodOptions" />
         </div>
 
         <div class="mt-4">
