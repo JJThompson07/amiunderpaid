@@ -13,10 +13,8 @@ vi.stubGlobal('useRuntimeConfig', () => mockConfig);
 vi.stubGlobal('defineEventHandler', <T>(fn: T): T => fn);
 const useAdminFirestoreMock = vi.fn();
 vi.stubGlobal('useAdminFirestore', useAdminFirestoreMock);
-vi.stubGlobal(
-  'generateCacheKey',
-  vi.fn(() => 'cache-key')
-);
+const generateCacheKeyMock = vi.fn(() => 'cache-key');
+vi.stubGlobal('generateCacheKey', generateCacheKeyMock);
 vi.stubGlobal('createError', (err: Partial<H3Error>) => {
   const e = new Error(err.statusMessage) as Error & { statusCode?: number };
   e.statusCode = err.statusCode;
@@ -403,6 +401,54 @@ describe('market-data salary endpoint', () => {
 
     expect(expiresAtMs).toBeGreaterThanOrEqual(expectedMin);
     expect(expiresAtMs).toBeLessThanOrEqual(expectedMax);
+  });
+
+  it('forwards a category filter to Adzuna and to generateCacheKey', async () => {
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', category: 'IT-Jobs' });
+
+    await salaryHandler({} as unknown as H3Event);
+
+    expect($fetchMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ params: expect.objectContaining({ category: 'it-jobs' }) })
+    );
+    expect(generateCacheKeyMock).toHaveBeenCalledWith('developer', '', 'gb', 'it-jobs');
+  });
+
+  it('omits the category param entirely when none is provided', async () => {
+    await salaryHandler({} as unknown as H3Event);
+
+    const params = $fetchMock.mock.calls[0]![1].params;
+    expect(params).not.toHaveProperty('category');
+    expect(generateCacheKeyMock).toHaveBeenCalledWith('developer', '', 'gb', '');
+  });
+
+  it('uses the explicit category filter as categoryTag without reading the jobs cache', async () => {
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', category: 'sales-jobs' });
+
+    await salaryHandler({} as unknown as H3Event);
+
+    expect(jobsCacheDocRef.get).not.toHaveBeenCalled();
+    const setCall = distributionCacheDocRef.set.mock.calls[0]![0];
+    expect(setCall.categoryTag).toBe('sales-jobs');
+    expect(setCall.searchParams.category).toBe('sales-jobs');
+  });
+
+  it('stores a null category in searchParams when no filter is provided', async () => {
+    await salaryHandler({} as unknown as H3Event);
+
+    const setCall = distributionCacheDocRef.set.mock.calls[0]![0];
+    expect(setCall.searchParams.category).toBe(null);
+  });
+
+  it('forwards the category filter to the fallback provider when Adzuna fails', async () => {
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', category: 'it-jobs' });
+    $fetchMock.mockRejectedValueOnce({ statusCode: 429, response: { status: 429 } });
+
+    const { fetchReedData } = await import('../../../utils/reed');
+    await salaryHandler({} as unknown as H3Event);
+
+    expect(fetchReedData).toHaveBeenCalledWith('developer', '', '', '', 'it-jobs');
   });
 
   it('caches a fallback-sourced response for 24 hours and does not inherit categoryTag from the jobs cache', async () => {

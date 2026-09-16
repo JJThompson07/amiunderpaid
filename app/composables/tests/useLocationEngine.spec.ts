@@ -63,7 +63,9 @@ vi.stubGlobal('useMicroData', () => mockMicroData);
 
 vi.stubGlobal('useDevProviderOverride', () => ({ value: 'auto' }));
 
+let lastAsyncDataKey = '';
 vi.stubGlobal('useAsyncData', async (key: string, fetcher: () => Promise<unknown>) => {
+  lastAsyncDataKey = key;
   const data = await fetcher();
   return {
     data: { value: data },
@@ -173,6 +175,57 @@ describe('useLocationEngine', () => {
 
     const engine = await useLocationEngine('salary');
     expect(engine.isUnderpaid.value).toBe(false);
+  });
+
+  it('extracts the category query param and forwards it to fetchJobs and fetchHistogram', async () => {
+    mockRoute.query = { category: 'it-jobs' };
+
+    await useLocationEngine('salary');
+
+    expect(mockAdzuna.fetchJobs).toHaveBeenCalledWith(
+      'Software Engineer',
+      '',
+      'UK',
+      'full-time',
+      'permanent',
+      'auto',
+      'it-jobs'
+    );
+    expect(mockAdzuna.fetchHistogram).toHaveBeenCalledWith(
+      'Software Engineer',
+      '',
+      'UK',
+      'full-time',
+      'permanent',
+      'auto',
+      'it-jobs'
+    );
+  });
+
+  it('includes category in the useAsyncData key so a category change produces a distinct key', async () => {
+    mockRoute.query = { category: 'it-jobs' };
+    await useLocationEngine('salary');
+    const keyWithCategory = lastAsyncDataKey;
+
+    mockRoute.query = {};
+    await useLocationEngine('salary');
+    const keyWithoutCategory = lastAsyncDataKey;
+
+    expect(keyWithCategory).not.toBe(keyWithoutCategory);
+  });
+
+  it('forwards undefined for category when no filter is present in the route query', async () => {
+    await useLocationEngine('salary');
+
+    expect(mockAdzuna.fetchJobs).toHaveBeenCalledWith(
+      'Software Engineer',
+      '',
+      'UK',
+      'full-time',
+      'permanent',
+      'auto',
+      undefined
+    );
   });
 
   it('handles unslugify empty strings and locations correctly', async () => {

@@ -109,6 +109,32 @@ describe('useJobs', () => {
     });
   });
 
+  it('fetchJobs passes an explicit category when provided', async () => {
+    mock$fetch.mockResolvedValueOnce({ mean: 10, count: 1, results: [] });
+    const composable = useJobs();
+    await composable.fetchJobs(
+      'Developer',
+      'London',
+      'gb',
+      'full-time',
+      'permanent',
+      undefined,
+      'it-jobs'
+    );
+
+    expect(mock$fetch).toHaveBeenCalledWith('/api/market-data/jobs', {
+      params: {
+        title: 'Developer',
+        location: 'London',
+        country: 'gb',
+        jobType: 'full-time',
+        contractType: 'permanent',
+        devProvider: undefined,
+        category: 'it-jobs'
+      }
+    });
+  });
+
   it('fetchJobs handles gov_id_code correctly when admin verified', async () => {
     mock$fetch.mockResolvedValueOnce({
       mean: 50000,
@@ -161,6 +187,32 @@ describe('useJobs', () => {
     expect(composable.histogramTotalCount.value).toBe(15);
   });
 
+  it('fetchHistogram passes an explicit category when provided', async () => {
+    mock$fetch.mockResolvedValueOnce({ histogram: {} });
+    const composable = useJobs();
+    await composable.fetchHistogram(
+      'Developer',
+      'London',
+      'gb',
+      'full-time',
+      'permanent',
+      undefined,
+      'it-jobs'
+    );
+
+    expect(mock$fetch).toHaveBeenCalledWith('/api/market-data/salary', {
+      params: {
+        title: 'Developer',
+        location: 'London',
+        country: 'gb',
+        jobType: 'full-time',
+        contractType: 'permanent',
+        devProvider: undefined,
+        category: 'it-jobs'
+      }
+    });
+  });
+
   it('fetchHistogram error clears distributionData and returns early for range', async () => {
     mock$fetch.mockRejectedValueOnce(new Error('Failed'));
 
@@ -186,6 +238,16 @@ describe('useJobs', () => {
       params: { country: 'us' }
     });
     expect(composable.categories.value).toEqual([{ label: 'IT', tag: 'it-jobs' }]);
+  });
+
+  it('fetchCategories error clears categories instead of throwing', async () => {
+    mock$fetch.mockRejectedValueOnce(new Error('Failed'));
+
+    const composable = useJobs();
+    composable.categories.value = [{ label: 'Stale', tag: 'stale-jobs' }];
+
+    await expect(composable.fetchCategories('gb')).resolves.toBeUndefined();
+    expect(composable.categories.value).toEqual([]);
   });
 
   it('fetchCategories success applies sanitizeAdzunaData correctly', async () => {

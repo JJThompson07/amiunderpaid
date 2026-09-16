@@ -88,11 +88,27 @@ type JoobleSearchParams = {
   page: number;
 };
 
+// Jooble's REST API body has no category/industry/sector field (confirmed against
+// help.jooble.org's REST API docs — only keywords, location, radius, salary, and
+// pagination exist), so an Adzuna category tag (e.g. "it-jobs") is turned into a
+// plain-language keyword and folded into the search term instead.
+const buildKeywordsWithCategory = (title: string, category?: string): string => {
+  if (!category) {
+    return title;
+  }
+  const categoryKeyword = category
+    .replace(/-/g, ' ')
+    .replace(/\bjobs\b/gi, '')
+    .trim();
+  return categoryKeyword ? `${title} ${categoryKeyword}` : title;
+};
+
 export const fetchJoobleData = async (
   title: string,
   location: string,
   jobType: string,
-  contractType: string
+  contractType: string,
+  category?: string
 ): Promise<JobSearchResponse> => {
   const config = useRuntimeConfig();
   // Credentials are read from private runtimeConfig (server-only).
@@ -131,7 +147,7 @@ export const fetchJoobleData = async (
   const url = `https://jooble.org/api/${apiKey}`;
 
   const params: JoobleSearchParams = {
-    keywords: title,
+    keywords: buildKeywordsWithCategory(title, category),
     location: location,
     page: 1
   };

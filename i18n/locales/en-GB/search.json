@@ -25,6 +25,10 @@
     "permanent": "Permanent",
     "label": "Contract Type"
   },
+  "industry": {
+    "label": "Industry",
+    "placeholder": "All Industries"
+  },
   "benchmark": {
     "salary": {
       "label": "Target Salary"

@@ -36,7 +36,8 @@ describe('server/utils/fallback', () => {
         'engineer',
         'new york',
         'full-time',
-        'permanent'
+        'permanent',
+        undefined
       );
       expect(result.provider).toBe('jooble');
     });
@@ -47,8 +48,39 @@ describe('server/utils/fallback', () => {
 
       const result = await executeMarketFallback('engineer', 'london', 'gb');
 
-      expect(fetchReedData).toHaveBeenCalledWith('engineer', 'london', '', '');
+      expect(fetchReedData).toHaveBeenCalledWith('engineer', 'london', '', '', undefined);
       expect(result.provider).toBe('reed');
+    });
+
+    it('forwards an explicit category to Jooble', async () => {
+      const { executeMarketFallback } = await import('../fallback');
+      const { fetchJoobleData } = await import('../jooble');
+
+      await executeMarketFallback(
+        'engineer',
+        'new york',
+        'us',
+        'full-time',
+        'permanent',
+        'it-jobs'
+      );
+
+      expect(fetchJoobleData).toHaveBeenCalledWith(
+        'engineer',
+        'new york',
+        'full-time',
+        'permanent',
+        'it-jobs'
+      );
+    });
+
+    it('forwards an explicit category to Reed', async () => {
+      const { executeMarketFallback } = await import('../fallback');
+      const { fetchReedData } = await import('../reed');
+
+      await executeMarketFallback('engineer', 'london', 'gb', '', '', 'it-jobs');
+
+      expect(fetchReedData).toHaveBeenCalledWith('engineer', 'london', '', '', 'it-jobs');
     });
   });
 

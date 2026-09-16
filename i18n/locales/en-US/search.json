@@ -24,6 +24,10 @@
     "permanent": "Full Employee",
     "label": "Employment Type"
   },
+  "industry": {
+    "label": "Industry",
+    "placeholder": "All Industries"
+  },
   "benchmark": {
     "salary": {
       "label": "Target Salary"

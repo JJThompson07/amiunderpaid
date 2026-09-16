@@ -174,6 +174,42 @@ describe('Jooble Provider', () => {
       );
     });
 
+    it('should enhance keywords with a plain-language category when provided', async () => {
+      fetchMock.mockResolvedValue({ totalCount: 0, jobs: [] });
+
+      await fetchJoobleData(
+        'Developer',
+        'Chicago',
+        'full-time',
+        'permanent',
+        'accounting-finance-jobs'
+      );
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://jooble.org/api/test-key',
+        expect.objectContaining({
+          body: expect.objectContaining({
+            keywords: 'Developer accounting finance'
+          })
+        })
+      );
+    });
+
+    it('should leave keywords unchanged when no category is provided', async () => {
+      fetchMock.mockResolvedValue({ totalCount: 0, jobs: [] });
+
+      await fetchJoobleData('Developer', 'Chicago', 'full-time', 'permanent');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://jooble.org/api/test-key',
+        expect.objectContaining({
+          body: expect.objectContaining({
+            keywords: 'Developer'
+          })
+        })
+      );
+    });
+
     it('should throw 500 error if fetch fails', async () => {
       fetchMock.mockRejectedValue(new Error('Network error'));
 

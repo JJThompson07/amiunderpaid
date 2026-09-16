@@ -5,7 +5,7 @@
       class="ml-1 font-bold uppercase tracking-wider"
       :class="[labelSize, labelColour]">
       {{ label }}
-      <span v-if="optional" class="text-slate-400 text-2xs uppercase">
+      <span v-if="optional" class="text-slate-400 text-3xs uppercase">
         ({{ $t('common.optional') }})
       </span>
       <span v-else class="text-secondary-600">*</span>
@@ -17,7 +17,7 @@
       {{ helper }}
     </span>
 
-    <div ref="triggerRef" class="relative flex mt-1">
+    <div ref="triggerRef" class="relative flex">
       <div v-if="icon" class="absolute left-3 top-3 z-10 pointer-events-none">
         <component
           :is="icon"
@@ -25,7 +25,7 @@
       </div>
 
       <div
-        class="w-full min-h-13 p-2 flex flex-wrap items-center transition-all border bg-slate-50 rounded-xl cursor-text relative pr-10"
+        class="w-full min-h-[50px] p-2 flex flex-wrap items-center transition-all border bg-slate-50 rounded-xl cursor-text relative pr-10"
         :class="[
           icon ? 'pl-10' : 'pl-3',
           isOpen

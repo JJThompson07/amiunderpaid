@@ -89,6 +89,28 @@ describe('track-search endpoint', () => {
     );
   });
 
+  it('normalizes an explicit category when provided', async () => {
+    mockReadBody.mockResolvedValue({
+      title: 'Software Engineer',
+      country: 'gb',
+      category: 'IT-Jobs'
+    });
+    const event = {} as unknown as H3Event;
+
+    await handler(event);
+
+    expect(mockAdd).toHaveBeenCalledWith(expect.objectContaining({ category: 'it-jobs' }));
+  });
+
+  it('stores a null category when none is provided', async () => {
+    mockReadBody.mockResolvedValue({ title: 'Software Engineer', country: 'gb' });
+    const event = {} as unknown as H3Event;
+
+    await handler(event);
+
+    expect(mockAdd).toHaveBeenCalledWith(expect.objectContaining({ category: null }));
+  });
+
   it('returns success: false when required fields are missing', async () => {
     mockReadBody.mockResolvedValue({ title: '', country: '' });
     const event = {} as unknown as H3Event;

@@ -166,6 +166,46 @@ describe('Reed Utility', () => {
       );
     });
 
+    it('should enhance keywords with a plain-language category when provided', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ reedApiKey: 'test-key' }))
+      );
+      const fetchMock = vi.fn().mockResolvedValue({ totalResults: 0, results: [] });
+      vi.stubGlobal('$fetch', fetchMock);
+
+      await fetchReedData('Dev', 'London', 'full-time', 'permanent', 'it-jobs');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://www.reed.co.uk/api/1.0/search',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            keywords: 'Dev it'
+          })
+        })
+      );
+    });
+
+    it('should leave keywords unchanged when no category is provided', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ reedApiKey: 'test-key' }))
+      );
+      const fetchMock = vi.fn().mockResolvedValue({ totalResults: 0, results: [] });
+      vi.stubGlobal('$fetch', fetchMock);
+
+      await fetchReedData('Dev', 'London', 'full-time', 'permanent');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://www.reed.co.uk/api/1.0/search',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            keywords: 'Dev'
+          })
+        })
+      );
+    });
+
     it('should throw error on fetch failure', async () => {
       vi.stubGlobal(
         'useRuntimeConfig',

@@ -95,5 +95,27 @@ describe('adzuna utils', () => {
       expect(key.startsWith(`gb-${'b'.repeat(100)}-${'a'.repeat(76)}`)).toBe(true);
       expect(key).toMatch(/-[a-f0-9]{16}$/); // ends with dash and 16 char hex hash
     });
+
+    it('generates a distinct key when a category is provided', () => {
+      const withCategory = generateCacheKey('Software Developer', 'London', 'gb', 'it-jobs');
+      const withoutCategory = generateCacheKey('Software Developer', 'London', 'gb');
+
+      expect(withCategory).toBe('gb-london-software-developer-cat-it-jobs');
+      expect(withCategory).not.toBe(withoutCategory);
+    });
+
+    it('treats an empty or undefined category the same as omitting it', () => {
+      const undefinedCategory = generateCacheKey('Software Developer', 'London', 'gb', undefined);
+      const emptyCategory = generateCacheKey('Software Developer', 'London', 'gb', '');
+      const omitted = generateCacheKey('Software Developer', 'London', 'gb');
+
+      expect(undefinedCategory).toBe(omitted);
+      expect(emptyCategory).toBe(omitted);
+    });
+
+    it('lowercases and sanitizes the category the same way as title/location', () => {
+      const key = generateCacheKey('Developer', 'London', 'gb', 'IT & Software Jobs');
+      expect(key).toBe('gb-london-developer-cat-it-software-jobs');
+    });
   });
 });

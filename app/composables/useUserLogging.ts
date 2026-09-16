@@ -16,7 +16,8 @@ type UseUserLoggingReturn = {
     location: string,
     salary: string,
     schedule?: string,
-    contract?: string
+    contract?: string,
+    category?: string
   ) => Promise<string>;
   updateSearchLog: (searchId: string, data: SearchLogUpdate) => void;
 };
@@ -31,7 +32,8 @@ export const useUserLogging = (): UseUserLoggingReturn => {
     location: string,
     salary: string,
     schedule: string = 'full-time',
-    contract: string = 'permanent'
+    contract: string = 'permanent',
+    category?: string
   ): Promise<string> => {
     /* v8 ignore start */
     if (import.meta.dev) {
@@ -53,6 +55,7 @@ export const useUserLogging = (): UseUserLoggingReturn => {
             salary,
             schedule,
             contract,
+            category,
             brand: $siteBrand
           }),
           keepalive: true

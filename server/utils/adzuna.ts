@@ -1,6 +1,11 @@
 import crypto from 'node:crypto';
 
-export const generateCacheKey = (title: string, location: string, country: string): string => {
+export const generateCacheKey = (
+  title: string,
+  location: string,
+  country: string,
+  category?: string
+): string => {
   // Allow alphanumeric, plus +, #, . (for C++, C#, .NET)
   // Replace other characters with -
   const t = title
@@ -13,8 +18,14 @@ export const generateCacheKey = (title: string, location: string, country: strin
         .trim()
         .replace(/[^a-z0-9+#.]+/g, '-')
     : '';
+  const c = category
+    ? category
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9+#.]+/g, '-')
+    : '';
 
-  const rawKey = `${country}-${l}-${t}`;
+  const rawKey = c ? `${country}-${l}-${t}-cat-${c}` : `${country}-${l}-${t}`;
 
   if (rawKey.length > 200) {
     const hash = crypto.createHash('sha256').update(rawKey).digest('hex').substring(0, 16);

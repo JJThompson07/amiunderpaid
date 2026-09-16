@@ -65,18 +65,28 @@
           </div>
 
           <div class="flex-1">
-            <AmIInputGeneric
-              v-model="salary"
-              v-model:param-value="period"
-              type="number"
-              :step="10"
-              :label="salaryLabel"
-              :placeholder="currencySymbol + '55,000'"
-              :prefix="currencySymbol"
-              :icon="Wallet"
+            <AmIInputSelect
+              v-model="industry"
+              single
               optional
-              :params="periodOptions" />
+              :label="$t('search.industry.label')"
+              :placeholder="$t('search.industry.placeholder')"
+              :options="industryOptions" />
           </div>
+        </div>
+
+        <div>
+          <AmIInputGeneric
+            v-model="salary"
+            v-model:param-value="period"
+            type="number"
+            :step="10"
+            :label="salaryLabel"
+            :placeholder="currencySymbol + '55,000'"
+            :prefix="currencySymbol"
+            :icon="Wallet"
+            optional
+            :params="periodOptions" />
         </div>
 
         <div class="mt-4">
@@ -175,6 +185,7 @@ const salary = ref<number>(0);
 const period = ref<string>('year');
 const loading = ref<boolean>(false);
 const showCalc = ref<boolean>(false);
+const industry = ref<string[]>([]);
 
 // --- NEW DICTIONARY & MODAL STATE ---
 const { resolveJobId } = useJobDictionary();
@@ -188,6 +199,27 @@ const activeCountry = computed(() =>
 
 const { fetching, titleOptions, locationOptions, labelToIdMap, fetchTitles, fetchLocations } =
   useJobAutocomplete(activeCountry, location, title);
+
+// Sourced from useJobs().fetchCategories -- a live pass-through of Adzuna's
+// full country-scoped category taxonomy. Not useIndustryTrends: that reads a
+// popularity-gated subset built for trend charts, which would silently hide
+// valid niche industries from this filter.
+const { categories: industryCategories, fetchCategories } = useJobs();
+const industryOptions = computed(() =>
+  industryCategories.value.map((c) => ({ value: c.tag, label: c.label }))
+);
+
+watch(
+  activeCountry,
+  (country) => {
+    // A previously selected industry tag belongs to the old country's
+    // taxonomy and may not exist in the new one -- clear it rather than
+    // let the select render a raw, unmatched slug and submit it as a filter.
+    industry.value = [];
+    fetchCategories(country);
+  },
+  { immediate: true }
+);
 
 const contractOptions = computed(() => {
   if (props.mode === 'benchmark') {
@@ -369,7 +401,8 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string): Promi
     location.value,
     String(salary.value),
     schedule.value,
-    contract.value
+    contract.value,
+    industry.value[0]
   );
   useState('currentSearchId').value = searchId;
 
@@ -383,7 +416,8 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string): Promi
       schedule: schedule.value,
       contract: contract.value,
       compare: salary.value || undefined,
-      period: period.value !== 'year' ? period.value : undefined
+      period: period.value !== 'year' ? period.value : undefined,
+      category: industry.value[0] || undefined
     },
     state: {
       confirmed: !!finalGovId
