@@ -47,7 +47,8 @@ export type UseJobsReturn = {
     country: string,
     jobType?: string,
     contractType?: string,
-    devProviderOverride?: string
+    devProviderOverride?: string,
+    category?: string
   ) => Promise<void>;
   fetchHistogram: (
     title: string,
@@ -55,7 +56,8 @@ export type UseJobsReturn = {
     country: string,
     jobType?: string,
     contractType?: string,
-    devProviderOverride?: string
+    devProviderOverride?: string,
+    category?: string
   ) => Promise<void>;
   fetchCategories: (country: string) => Promise<void>;
   isUnderpaid: (salary: number) => boolean;
@@ -119,7 +121,8 @@ export const useJobs = (): UseJobsReturn => {
     country: string,
     jobType: string = 'full-time',
     contractType: string = 'permanent',
-    devProviderOverride?: string
+    devProviderOverride?: string,
+    category?: string
   ): Promise<void> => {
     activeRequests.value++;
     cachedGovIdCode.value = undefined;
@@ -142,7 +145,8 @@ export const useJobs = (): UseJobsReturn => {
           country,
           jobType,
           contractType,
-          devProvider: devProviderOverride === 'auto' ? undefined : devProviderOverride
+          devProvider: devProviderOverride === 'auto' ? undefined : devProviderOverride,
+          category
         }
       });
 
@@ -170,7 +174,8 @@ export const useJobs = (): UseJobsReturn => {
     country: string,
     jobType: string = 'full-time',
     contractType: string = 'permanent',
-    devProviderOverride?: string
+    devProviderOverride?: string,
+    category?: string
   ): Promise<void> => {
     activeRequests.value++;
 
@@ -182,7 +187,8 @@ export const useJobs = (): UseJobsReturn => {
           country,
           jobType,
           contractType,
-          devProvider: devProviderOverride === 'auto' ? undefined : devProviderOverride
+          devProvider: devProviderOverride === 'auto' ? undefined : devProviderOverride,
+          category
         }
       });
 

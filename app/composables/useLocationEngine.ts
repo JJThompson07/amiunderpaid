@@ -67,6 +67,7 @@ export const useLocationEngine = async (
   const govId = ref<string | undefined>(route.query.gov_id as string | undefined);
   const jobType = ref<string>((route.query.schedule as string) || 'full-time');
   const contractType = ref<string>((route.query.contract as string) || 'permanent');
+  const category = ref<string | undefined>((route.query.category as string) || undefined);
   const searchConfirmed = ref<boolean>(
     (import.meta.client ? history.state?.confirmed : false) || !!govId.value
   );
@@ -123,7 +124,8 @@ export const useLocationEngine = async (
           country.value,
           jobType.value,
           contractType.value,
-          devProviderOverride.value
+          devProviderOverride.value,
+          category.value
         ),
         adzuna.fetchHistogram(
           searchTitle.value,
@@ -131,7 +133,8 @@ export const useLocationEngine = async (
           country.value,
           jobType.value,
           contractType.value,
-          devProviderOverride.value
+          devProviderOverride.value,
+          category.value
         )
       ]);
 

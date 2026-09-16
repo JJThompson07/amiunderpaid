@@ -175,6 +175,45 @@ describe('useLocationEngine', () => {
     expect(engine.isUnderpaid.value).toBe(false);
   });
 
+  it('extracts the category query param and forwards it to fetchJobs and fetchHistogram', async () => {
+    mockRoute.query = { category: 'it-jobs' };
+
+    await useLocationEngine('salary');
+
+    expect(mockAdzuna.fetchJobs).toHaveBeenCalledWith(
+      'Software Engineer',
+      '',
+      'UK',
+      'full-time',
+      'permanent',
+      'auto',
+      'it-jobs'
+    );
+    expect(mockAdzuna.fetchHistogram).toHaveBeenCalledWith(
+      'Software Engineer',
+      '',
+      'UK',
+      'full-time',
+      'permanent',
+      'auto',
+      'it-jobs'
+    );
+  });
+
+  it('forwards undefined for category when no filter is present in the route query', async () => {
+    await useLocationEngine('salary');
+
+    expect(mockAdzuna.fetchJobs).toHaveBeenCalledWith(
+      'Software Engineer',
+      '',
+      'UK',
+      'full-time',
+      'permanent',
+      'auto',
+      undefined
+    );
+  });
+
   it('handles unslugify empty strings and locations correctly', async () => {
     mockRoute.params = { title: '', country: 'uk', location: 'london-city' };
     const engine = await useLocationEngine('salary');
