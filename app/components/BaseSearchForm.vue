@@ -79,6 +79,17 @@
           </div>
         </div>
 
+        <div>
+          <AmIInputSelect
+            v-model="industry"
+            single
+            optional
+            :label="$t('search.industry.label')"
+            :placeholder="$t('search.industry.placeholder')"
+            :helper="$t('search.industry.helper')"
+            :options="industryOptions" />
+        </div>
+
         <div class="mt-4">
           <AmIAnimatedBorder class="rounded-xl" :loading="loading">
             <AmIButton
@@ -175,6 +186,7 @@ const salary = ref<number>(0);
 const period = ref<string>('year');
 const loading = ref<boolean>(false);
 const showCalc = ref<boolean>(false);
+const industry = ref<string[]>([]);
 
 // --- NEW DICTIONARY & MODAL STATE ---
 const { resolveJobId } = useJobDictionary();
@@ -188,6 +200,17 @@ const activeCountry = computed(() =>
 
 const { fetching, titleOptions, locationOptions, labelToIdMap, fetchTitles, fetchLocations } =
   useJobAutocomplete(activeCountry, location, title);
+
+// Sourced from useJobs().fetchCategories -- a live pass-through of Adzuna's
+// full country-scoped category taxonomy. Not useIndustryTrends: that reads a
+// popularity-gated subset built for trend charts, which would silently hide
+// valid niche industries from this filter.
+const { categories: industryCategories, fetchCategories } = useJobs();
+const industryOptions = computed(() =>
+  industryCategories.value.map((c) => ({ value: c.tag, label: c.label }))
+);
+
+watch(activeCountry, (country) => fetchCategories(country), { immediate: true });
 
 const contractOptions = computed(() => {
   if (props.mode === 'benchmark') {
@@ -369,7 +392,8 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string): Promi
     location.value,
     String(salary.value),
     schedule.value,
-    contract.value
+    contract.value,
+    industry.value[0]
   );
   useState('currentSearchId').value = searchId;
 
@@ -383,7 +407,8 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string): Promi
       schedule: schedule.value,
       contract: contract.value,
       compare: salary.value || undefined,
-      period: period.value !== 'year' ? period.value : undefined
+      period: period.value !== 'year' ? period.value : undefined,
+      category: industry.value[0] || undefined
     },
     state: {
       confirmed: !!finalGovId
