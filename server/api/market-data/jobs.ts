@@ -1,45 +1,87 @@
 /**
  * Market Data Endpoint (Jobs)
  *
- * This endpoint acts as an API gateway. It attempts to fetch data from the
- * primary provider (Adzuna). If the primary provider returns a 429 Rate Limit error,
- * this endpoint catches the error and seamlessly falls back to a secondary provider (Reed),
- * mapping the response to a unified schema.
- * The client does not need to know which provider was ultimately used.
+ * This endpoint acts as an API gateway with region-aware primary/fallback
+ * routing:
+ *   - UK (gb): Reed is primary, Adzuna is the fallback.
+ *   - USA (us): Adzuna is primary, Jooble is the fallback.
+ * If the regional primary provider fails or returns zero results, this
+ * endpoint seamlessly falls back to the regional secondary provider, mapping
+ * the response to a unified schema. The client does not need to know which
+ * provider was ultimately used.
  */
 import { FieldValue } from 'firebase-admin/firestore';
-import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
-import { ADZUNA_LOCATION_MAP } from '../../constants/locations';
-import type { JobSearchResponse } from '~~/shared/utils/market-data';
-
-// Query params sent to the Adzuna search API.
-type AdzunaSearchParams = {
-  app_id: string;
-  app_key: string;
-  results_per_page: number;
-  what: string;
-  'content-type': string;
-  part_time?: number;
-  full_time?: number;
-  contract?: number;
-  permanent?: number;
-  where?: string;
-  distance?: number;
-  category?: string;
-};
+import { fetchAdzunaJobs } from '../../utils/adzuna';
+import { fetchReedData } from '../../utils/reed';
+import type { JobSearchResponse, MarketDataProvider } from '~~/shared/utils/market-data';
 
 // Duck-typed shape covering both an ofetch `FetchError` (`.response.status`)
 // and an h3 error thrown via `createError` (`.statusCode`), without requiring
-// the caught value to actually be an instance of either class.
+// the caught value to actually be an instance of either class. Every error a
+// provider utility (reed.ts/adzuna.ts/jooble.ts) throws -- whether a genuine
+// HTTP failure or our own "zero results" signal -- carries one of these, so
+// checking for it distinguishes a provider-layer failure (fallback-worthy)
+// from an unrelated bug (which should still surface as a real error).
 type FetchLikeError = {
   response?: { status?: number };
   statusCode?: number;
 };
 
+const isProviderFailure = (e: unknown): boolean => {
+  const err = e as FetchLikeError;
+  return typeof (err.response?.status ?? err.statusCode) === 'number';
+};
+
+type ProviderFetchArgs = {
+  countryCode: string;
+  titleStr: string;
+  locationStr: string;
+  typeStr: string;
+  contractStr: string;
+  categoryStr?: string;
+};
+
+const fetchByProviderName = async (
+  provider: string,
+  args: ProviderFetchArgs
+): Promise<JobSearchResponse> => {
+  const { countryCode, titleStr, locationStr, typeStr, contractStr, categoryStr } = args;
+  if (provider === 'reed') {
+    return fetchReedData(titleStr, locationStr, typeStr, contractStr, categoryStr);
+  }
+  if (provider === 'jooble') {
+    const { fetchJoobleData } = await import('../../utils/jooble');
+    return fetchJoobleData(titleStr, locationStr, typeStr, contractStr, categoryStr);
+  }
+  return fetchAdzunaJobs(titleStr, locationStr, countryCode, typeStr, contractStr, categoryStr);
+};
+
+const fetchRegionalPrimary = async (args: ProviderFetchArgs): Promise<JobSearchResponse> => {
+  const { countryCode, titleStr, locationStr, typeStr, contractStr, categoryStr } = args;
+  const result =
+    countryCode === 'gb'
+      ? await fetchReedData(titleStr, locationStr, typeStr, contractStr, categoryStr)
+      : await fetchAdzunaJobs(
+          titleStr,
+          locationStr,
+          countryCode,
+          typeStr,
+          contractStr,
+          categoryStr
+        );
+
+  if (!result.count || result.count <= 0) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Zero results from primary market data provider'
+    });
+  }
+  return result;
+};
+
 // Define the cached fetcher outside the event handler
 const fetchFromProviders = defineCachedFunction(
   async (
-    params: AdzunaSearchParams,
     countryCode: string,
     titleStr: string,
     locationStr: string,
@@ -49,67 +91,66 @@ const fetchFromProviders = defineCachedFunction(
     isDevOrE2e: boolean,
     devProviderOverride?: string,
     categoryStr?: string
-  ) => {
-    try {
-      // e2e runs never hit the real Reed/Jooble APIs — return a static fixture
-      // directly. The manual local-dev provider toggle (import.meta.dev, not
-      // process.env.E2E) still falls through to the real fake-429 path below
-      // so a developer can verify real fallback-provider integration.
+  ): Promise<JobSearchResponse> => {
+    const args: ProviderFetchArgs = {
+      countryCode,
+      titleStr,
+      locationStr,
+      typeStr,
+      contractStr,
+      categoryStr
+    };
+
+    // Dev/local-toggle provider pin: bypass normal primary/fallback
+    // resolution and go straight to the requested provider.
+    if (isDevOrE2e && devProviderOverride && devProviderOverride !== 'auto') {
+      // e2e runs never hit the real Reed/Jooble/Adzuna APIs for a pinned
+      // provider -- return a static fixture directly, so e2e assertions
+      // never depend on a live third-party call succeeding. The manual
+      // local-dev provider toggle (import.meta.dev, not process.env.E2E)
+      // still calls the real provider below so a developer can verify real
+      // integration behavior.
       const isE2E = process.env.E2E === 'true';
-      if (isE2E && (devProviderOverride === 'reed' || devProviderOverride === 'jooble')) {
+      if (isE2E) {
         const { getMockFallbackJobs } = await import('../../utils/fallback');
-        const mockJobs = getMockFallbackJobs(devProviderOverride);
+        const mockJobs = getMockFallbackJobs(devProviderOverride as MarketDataProvider);
         return { ...mockJobs, results: mockJobs.results.slice(0, limit) };
       }
 
-      if (isDevOrE2e && devProviderOverride === 'reed') {
-        throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
-      }
-      if (isDevOrE2e && devProviderOverride === 'jooble') {
-        throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
-      }
+      const pinned = await fetchByProviderName(devProviderOverride, args);
+      return { ...pinned, results: pinned.results.slice(0, limit) };
+    }
 
-      const rawData = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1`, {
-        params
-      });
-
-      const cleanData = sanitizeAdzunaData(rawData) as JobSearchResponse;
-
-      if (cleanData.count && cleanData.count > 0) {
-        cleanData.provider = 'adzuna';
-        return cleanData;
-      } else {
-        throw createError({ statusCode: 404, statusMessage: 'Zero results from Adzuna' });
-      }
+    try {
+      const primary = await fetchRegionalPrimary(args);
+      return { ...primary, results: primary.results.slice(0, limit) };
     } catch (e) {
-      const err = e as FetchLikeError;
-      const statusCode = err?.response?.status || err?.statusCode;
-      if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
-        const { executeMarketFallback } = await import('../../utils/fallback');
-        const fallbackRaw = await executeMarketFallback(
-          titleStr,
-          locationStr,
-          countryCode,
-          typeStr,
-          contractStr,
-          categoryStr
-        );
-
-        return {
-          mean: fallbackRaw.mean,
-          count: fallbackRaw.count,
-          results: fallbackRaw.results.slice(0, limit),
-          provider: fallbackRaw.provider
-        };
+      if (!isProviderFailure(e)) {
+        throw e;
       }
-      throw e;
+      const { executeMarketFallback } = await import('../../utils/fallback');
+      const fallbackRaw = await executeMarketFallback(
+        titleStr,
+        locationStr,
+        countryCode,
+        typeStr,
+        contractStr,
+        categoryStr
+      );
+
+      return {
+        mean: fallbackRaw.mean,
+        count: fallbackRaw.count,
+        histogram: fallbackRaw.histogram,
+        results: fallbackRaw.results.slice(0, limit),
+        provider: fallbackRaw.provider
+      };
     }
   },
   {
     maxAge: 60 * 60, // Keep in memory for 1 hour to prevent stampedes
     name: 'marketJobsProviderFetch',
     getKey: (
-      params,
       countryCode,
       titleStr,
       locationStr,
@@ -125,7 +166,6 @@ const fetchFromProviders = defineCachedFunction(
 );
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig();
   const query = getQuery(event);
   const { title, location, country, resultsPerPage, jobType, contractType, category } = query;
 
@@ -157,6 +197,15 @@ export default defineEventHandler(async (event) => {
     locationStr = '';
   }
 
+  // Credentials are validated by whichever provider utility is actually
+  // invoked (reed.ts / adzuna.ts / jooble.ts) — each reads its own secret
+  // exclusively via private runtimeConfig and throws a 500 if misconfigured.
+  // A misconfigured *primary* provider is treated the same as any other
+  // primary failure below: it gracefully falls back to the regional
+  // secondary provider rather than hard-failing the request. Only a
+  // misconfiguration of BOTH the primary and the fallback provider surfaces
+  // as an error, via the outer try/catch's generic 503.
+
   // 1. Check Cache
   const db = useAdminFirestore();
   const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode, categoryStr)}-${typeStr}-${contractStr}-${limit}`;
@@ -179,103 +228,59 @@ export default defineEventHandler(async (event) => {
         isAdminVerified = data?.is_admin_verified || false;
         const now = new Date().getTime();
 
-        // --- OPTIMIZED CACHE CHECK ---
-        if (data?.expiresAt) {
-          // If the document has our new expiresAt field, the check is instant!
-          if (now < data.expiresAt.toMillis()) {
-            return {
-              ...data?.data,
-              gov_id_code: existingGovIdCode,
-              is_admin_verified: isAdminVerified
-            };
-          }
-        } else {
-          // --- LEGACY CACHE CHECK (Backwards compatibility for old cache) ---
-          const cachedTime = data?.timestamp?.toMillis() || 0;
-          const categoryTag = data?.categoryTag || data?.data?.categoryTag || '';
-          let categoryCacheMilli = 120 * 24 * 60 * 60 * 1000;
+        // --- STALE PROVIDER INVALIDATION ---
+        // A UK request whose cached document was written by anything other
+        // than Reed (i.e. before Reed became the UK primary provider, or a
+        // fallback-sourced record) is treated as a cache miss so it's
+        // immediately refreshed with real Reed data instead of silently
+        // serving pre-migration Adzuna-primary data forever.
+        const isStaleUkProvider = countryCode === 'gb' && data?.data?.provider !== 'reed';
 
-          if (categoryTag) {
-            const categoryCacheRef = db.collection('adzuna_category').doc(categoryTag);
-            const categorySnap = await categoryCacheRef.get();
-            if (categorySnap.exists) {
-              const categoryData = categorySnap.data();
-              const categoryCacheDays = Number(categoryData?.cache || 120);
-              categoryCacheMilli = categoryCacheDays * 24 * 60 * 60 * 1000;
+        if (!isStaleUkProvider) {
+          // --- OPTIMIZED CACHE CHECK ---
+          if (data?.expiresAt) {
+            // If the document has our new expiresAt field, the check is instant!
+            if (now < data.expiresAt.toMillis()) {
+              return {
+                ...data?.data,
+                gov_id_code: existingGovIdCode,
+                is_admin_verified: isAdminVerified
+              };
             }
-          }
+          } else {
+            // --- LEGACY CACHE CHECK (Backwards compatibility for old cache) ---
+            const cachedTime = data?.timestamp?.toMillis() || 0;
+            const categoryTag = data?.categoryTag || data?.data?.categoryTag || '';
+            let categoryCacheMilli = 120 * 24 * 60 * 60 * 1000;
 
-          if (now - cachedTime < categoryCacheMilli) {
-            return {
-              ...data?.data,
-              gov_id_code: existingGovIdCode,
-              is_admin_verified: isAdminVerified
-            };
+            if (categoryTag) {
+              const categoryCacheRef = db.collection('adzuna_category').doc(categoryTag);
+              const categorySnap = await categoryCacheRef.get();
+              if (categorySnap.exists) {
+                const categoryData = categorySnap.data();
+                const categoryCacheDays = Number(categoryData?.cache || 120);
+                categoryCacheMilli = categoryCacheDays * 24 * 60 * 60 * 1000;
+              }
+            }
+
+            if (now - cachedTime < categoryCacheMilli) {
+              return {
+                ...data?.data,
+                gov_id_code: existingGovIdCode,
+                is_admin_verified: isAdminVerified
+              };
+            }
           }
         }
       }
     } catch {
-      // Silently ignore cache read errors and fall back to fetching from the Adzuna API
+      // Silently ignore cache read errors and fall back to fetching live data
     }
   }
 
-  // 2. Prepare API Credentials
-  // Credentials are always read from private runtimeConfig (server-only).
-  // Never access via config.public or process.env — this bypasses Nuxt's validation layer
-  // and risks exposing secrets to the client bundle.
-  const appId = config.adzunaAppId;
-  const appKey = config.adzunaAppKey;
-
-  if (!appId || !appKey) {
-    throw createError({ statusCode: 500, statusMessage: 'Market data service is misconfigured.' });
-  }
-
-  const params: AdzunaSearchParams = {
-    app_id: appId,
-    app_key: appKey,
-    results_per_page: limit,
-    what: titleStr,
-    'content-type': 'application/json'
-  };
-
-  // Dynamically set full_time or part_time
-  if (typeStr === 'part-time') {
-    params.part_time = 1;
-  } else if (typeStr === 'full-time') {
-    params.full_time = 1;
-  }
-
-  // Dynamically set contract or permanent
-  if (contractStr === 'contract') {
-    params.contract = 1;
-  } else if (contractStr === 'permanent') {
-    params.permanent = 1;
-  }
-
-  if (locationStr.trim() !== '') {
-    // 1. Strip out anything after a comma (e.g., "Manchester, Greater Manchester" -> "Manchester")
-    let cleanLocation = locationStr.split(',')[0]!.trim();
-
-    // Adapter Pattern: Map our internal UI slugs to Adzuna's expected strings
-    const slug = cleanLocation.toLowerCase().replace(/\s+/g, '-');
-    if (ADZUNA_LOCATION_MAP[slug]) {
-      cleanLocation = ADZUNA_LOCATION_MAP[slug];
-    }
-
-    params.where = cleanLocation;
-
-    // 2. Add a default search radius (e.g., 20 miles) to prevent Adzuna from returning 0 jobs
-    params.distance = 20;
-  }
-
-  if (categoryStr) {
-    params.category = categoryStr;
-  }
-
-  // 3. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
+  // 2. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
   try {
     const cleanData: JobSearchResponse = await fetchFromProviders(
-      params,
       countryCode,
       titleStr,
       locationStr,
@@ -291,13 +296,17 @@ export default defineEventHandler(async (event) => {
     // If the caller filtered by an explicit industry, that's the most accurate
     // TTL lookup key. Otherwise fall back to the category of the top result.
     const categoryTag = categoryStr || cleanData.results?.[0]?.category?.tag || 'unknown';
-    const isFallbackProvider = !!cleanData.provider && cleanData.provider !== 'adzuna';
+    // Region-aware: the UK primary is Reed, the USA primary is Adzuna. Any
+    // other provider on the response means the regional fallback fired.
+    const isFallbackProvider =
+      !!cleanData.provider &&
+      (countryCode === 'gb' ? cleanData.provider !== 'reed' : cleanData.provider !== 'adzuna');
 
     let expiresAt: Date;
     if (isFallbackProvider) {
-      // Fallback-provider (Reed/Jooble) data is a smaller, lower-confidence
-      // sample and should expire quickly so it doesn't outlive the transient
-      // Adzuna failure that produced it, regardless of the configured cacheDays.
+      // Fallback-provider data is a smaller, lower-confidence sample and
+      // should expire quickly so it doesn't outlive the transient primary
+      // failure that produced it, regardless of the configured cacheDays.
       expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     } else {
       let cacheDays = 30; // Reduced from 120
