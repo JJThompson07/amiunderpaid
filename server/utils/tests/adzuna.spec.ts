@@ -1,6 +1,27 @@
-import { describe, expect, it } from 'vitest';
-import { generateCacheKey } from '../adzuna';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  fetchAdzunaHistogram,
+  fetchAdzunaJobs,
+  generateCacheKey,
+  processAdzunaJobs
+} from '../adzuna';
 import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
+import type { JobListing } from '~~/shared/utils/market-data';
+
+const buildAdzunaJob = (overrides: Partial<JobListing> = {}): JobListing => ({
+  id: 1,
+  title: 'Developer',
+  description: 'A great job',
+  location: { display_name: 'London', area: ['London'] },
+  salary_min: 40000,
+  salary_max: 60000,
+  category: { label: 'IT', tag: 'it-jobs' },
+  company: { display_name: 'Company A' },
+  contract_type: 'permanent',
+  contract_time: 'full_time',
+  redirect_url: 'http://adzuna.co.uk/1',
+  ...overrides
+});
 
 describe('adzuna utils', () => {
   describe('sanitizeAdzunaData', () => {
@@ -60,14 +81,14 @@ describe('adzuna utils', () => {
   });
 
   describe('generateCacheKey', () => {
-    it('generates a lowercase dash-separated key', () => {
+    it('generates a v2-prefixed lowercase dash-separated key', () => {
       const key = generateCacheKey('Software Developer', 'London', 'gb');
-      expect(key).toBe('gb-london-software-developer');
+      expect(key).toBe('v2-gb-london-software-developer');
     });
 
     it('handles empty or missing location', () => {
       const key = generateCacheKey('Software Developer', '', 'gb');
-      expect(key).toBe('gb--software-developer');
+      expect(key).toBe('v2-gb--software-developer');
     });
 
     it('preserves +, #, and . for specific programming languages', () => {
@@ -75,14 +96,14 @@ describe('adzuna utils', () => {
       const key2 = generateCacheKey('C# Engineer', 'Remote', 'gb');
       const key3 = generateCacheKey('.NET Developer', 'UK', 'gb');
 
-      expect(key1).toBe('us-london-c++-developer');
-      expect(key2).toBe('gb-remote-c#-engineer');
-      expect(key3).toBe('gb-uk-.net-developer');
+      expect(key1).toBe('v2-us-london-c++-developer');
+      expect(key2).toBe('v2-gb-remote-c#-engineer');
+      expect(key3).toBe('v2-gb-uk-.net-developer');
     });
 
     it('replaces all other special characters with dashes and trims them', () => {
       const key = generateCacheKey('Developer (Backend) & DevOps!', 'New York, NY', 'us');
-      expect(key).toBe('us-new-york-ny-developer-backend-devops-');
+      expect(key).toBe('v2-us-new-york-ny-developer-backend-devops-');
     });
 
     it('truncates and hashes keys longer than 200 characters to prevent Firestore overflow', () => {
@@ -92,7 +113,7 @@ describe('adzuna utils', () => {
 
       expect(key.length).toBeLessThanOrEqual(200);
       expect(key.length).toBe(197); // 180 chars + '-' + 16 char hash
-      expect(key.startsWith(`gb-${'b'.repeat(100)}-${'a'.repeat(76)}`)).toBe(true);
+      expect(key.startsWith(`v2-gb-${'b'.repeat(100)}-${'a'.repeat(73)}`)).toBe(true);
       expect(key).toMatch(/-[a-f0-9]{16}$/); // ends with dash and 16 char hex hash
     });
 
@@ -100,7 +121,7 @@ describe('adzuna utils', () => {
       const withCategory = generateCacheKey('Software Developer', 'London', 'gb', 'it-jobs');
       const withoutCategory = generateCacheKey('Software Developer', 'London', 'gb');
 
-      expect(withCategory).toBe('gb-london-software-developer-cat-it-jobs');
+      expect(withCategory).toBe('v2-gb-london-software-developer-cat-it-jobs');
       expect(withCategory).not.toBe(withoutCategory);
     });
 
@@ -115,7 +136,254 @@ describe('adzuna utils', () => {
 
     it('lowercases and sanitizes the category the same way as title/location', () => {
       const key = generateCacheKey('Developer', 'London', 'gb', 'IT & Software Jobs');
-      expect(key).toBe('gb-london-developer-cat-it-software-jobs');
+      expect(key).toBe('v2-gb-london-developer-cat-it-software-jobs');
+    });
+  });
+
+  describe('processAdzunaJobs', () => {
+    it('relevance-filters, sorts, and computes mean/histogram from valid salaries', () => {
+      const jobs = [
+        buildAdzunaJob({ id: 1, title: 'Developer', salary_min: 40000, salary_max: 60000 }),
+        buildAdzunaJob({ id: 2, title: 'Senior Developer', salary_min: 55000, salary_max: 65000 }),
+        buildAdzunaJob({ id: 3, title: 'Unrelated Role', salary_min: 0, salary_max: 0 })
+      ];
+
+      const result = processAdzunaJobs(jobs, 'Developer');
+
+      expect(result.provider).toBe('adzuna');
+      expect(result.count).toBe(2);
+      expect(result.mean).toBe(55000);
+      expect(result.results[0]).toMatchObject({ id: 2, title: 'Senior Developer' });
+    });
+
+    it('handles an empty jobs array safely', () => {
+      const result = processAdzunaJobs([], 'Developer');
+      expect(result.count).toBe(0);
+      expect(result.mean).toBe(0);
+      expect(result.histogram).toEqual({});
+    });
+  });
+
+  describe('fetchAdzunaJobs', () => {
+    it('should throw error if credentials are missing', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ adzunaAppId: null, adzunaAppKey: null }))
+      );
+      vi.stubGlobal(
+        'createError',
+        (err: { statusMessage?: string }) => new Error(err.statusMessage)
+      );
+
+      await expect(fetchAdzunaJobs('Dev', '', 'gb', 'full-time', 'permanent')).rejects.toThrow(
+        'Market data service is misconfigured.'
+      );
+    });
+
+    it('should use title_only (not what) and stop after one call when Tier 1 is sufficiently salaried', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ adzunaAppId: 'id', adzunaAppKey: 'key' }))
+      );
+      const richResponse = {
+        count: 3,
+        results: [buildAdzunaJob({ id: 1 }), buildAdzunaJob({ id: 2 }), buildAdzunaJob({ id: 3 })]
+      };
+      const fetchMock = vi.fn().mockResolvedValue(richResponse);
+      vi.stubGlobal('$fetch', fetchMock);
+
+      const result = await fetchAdzunaJobs(
+        'Developer',
+        'London',
+        'gb',
+        'full-time',
+        'permanent',
+        'it-jobs'
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.adzuna.com/v1/api/jobs/gb/search/1',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            title_only: 'Developer',
+            results_per_page: 100,
+            full_time: 1,
+            permanent: 1,
+            where: 'London',
+            distance: 20,
+            category: 'it-jobs'
+          })
+        })
+      );
+      expect(result.count).toBe(3);
+    });
+
+    it('should map internal location slugs the same way as the old gateway code', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ adzunaAppId: 'id', adzunaAppKey: 'key' }))
+      );
+      const fetchMock = vi.fn().mockResolvedValue({ count: 0, results: [] });
+      vi.stubGlobal('$fetch', fetchMock);
+
+      await fetchAdzunaJobs('Developer', 'east, England', 'gb', '', '');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.adzuna.com/v1/api/jobs/gb/search/1',
+        expect.objectContaining({
+          params: expect.objectContaining({ where: 'Eastern England' })
+        })
+      );
+    });
+
+    it('should fall back to Tier 2 (anchor phrase title_only) when Tier 1 is sparse', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ adzunaAppId: 'id', adzunaAppKey: 'key' }))
+      );
+      const sparseResponse = {
+        count: 1,
+        results: [buildAdzunaJob({ id: 1, title: 'Head of Finance' })]
+      };
+      const richResponse = {
+        count: 5,
+        results: [
+          buildAdzunaJob({ id: 1, title: 'Head of Finance' }),
+          buildAdzunaJob({ id: 2, title: 'Head of Finance' }),
+          buildAdzunaJob({ id: 3, title: 'Head of Finance' })
+        ]
+      };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(sparseResponse)
+        .mockResolvedValueOnce(richResponse);
+      vi.stubGlobal('$fetch', fetchMock);
+
+      const result = await fetchAdzunaJobs(
+        'Group Head of Finance',
+        '',
+        'gb',
+        'full-time',
+        'permanent'
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        1,
+        'https://api.adzuna.com/v1/api/jobs/gb/search/1',
+        expect.objectContaining({
+          params: expect.objectContaining({ title_only: 'Group Head of Finance' })
+        })
+      );
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        2,
+        'https://api.adzuna.com/v1/api/jobs/gb/search/1',
+        expect.objectContaining({
+          params: expect.objectContaining({ title_only: 'Head of Finance' })
+        })
+      );
+      expect(result.count).toBe(3);
+    });
+
+    it('should return a valid zero-count response instead of throwing on zero results', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ adzunaAppId: 'id', adzunaAppKey: 'key' }))
+      );
+      const fetchMock = vi.fn().mockResolvedValue({ count: 0, results: [] });
+      vi.stubGlobal('$fetch', fetchMock);
+
+      const result = await fetchAdzunaJobs('Developer', '', 'gb', 'full-time', 'permanent');
+
+      expect(result.count).toBe(0);
+      expect(result.provider).toBe('adzuna');
+    });
+
+    it('should let the raw HTTP error propagate so the gateway can inspect its status code', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ adzunaAppId: 'id', adzunaAppKey: 'key' }))
+      );
+      const httpError = Object.assign(new Error('Too Many Requests'), {
+        response: { status: 429 }
+      });
+      vi.stubGlobal('$fetch', vi.fn().mockRejectedValue(httpError));
+
+      await expect(
+        fetchAdzunaJobs('Developer', '', 'gb', 'full-time', 'permanent')
+      ).rejects.toMatchObject({
+        response: { status: 429 }
+      });
+    });
+  });
+
+  describe('fetchAdzunaHistogram', () => {
+    it('should throw error if credentials are missing', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ adzunaAppId: null, adzunaAppKey: null }))
+      );
+      vi.stubGlobal(
+        'createError',
+        (err: { statusMessage?: string }) => new Error(err.statusMessage)
+      );
+
+      await expect(fetchAdzunaHistogram('Dev', '', 'gb')).rejects.toThrow(
+        'Market data service is misconfigured.'
+      );
+    });
+
+    it('should use title_only and stop after one call when Tier 1 has enough buckets', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ adzunaAppId: 'id', adzunaAppKey: 'key' }))
+      );
+      const richHistogram = { histogram: { '40000': 3, '50000': 5, '60000': 2 } };
+      const fetchMock = vi.fn().mockResolvedValue(richHistogram);
+      vi.stubGlobal('$fetch', fetchMock);
+
+      const result = await fetchAdzunaHistogram('Developer', 'London', 'gb', 'it-jobs');
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.adzuna.com/v1/api/jobs/gb/histogram',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            title_only: 'Developer',
+            where: 'London',
+            category: 'it-jobs'
+          })
+        })
+      );
+      expect(result.histogram).toEqual(richHistogram.histogram);
+      expect(result.provider).toBe('adzuna');
+    });
+
+    it('should fall back to Tier 2 (anchor phrase title_only) when Tier 1 has too few buckets', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ adzunaAppId: 'id', adzunaAppKey: 'key' }))
+      );
+      const sparseHistogram = { histogram: { '90000': 1 } };
+      const richHistogram = { histogram: { '80000': 2, '90000': 4, '100000': 3 } };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(sparseHistogram)
+        .mockResolvedValueOnce(richHistogram);
+      vi.stubGlobal('$fetch', fetchMock);
+
+      const result = await fetchAdzunaHistogram('Group Head of Finance', '', 'gb');
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        2,
+        'https://api.adzuna.com/v1/api/jobs/gb/histogram',
+        expect.objectContaining({
+          params: expect.objectContaining({ title_only: 'Head of Finance' })
+        })
+      );
+      expect(result.histogram).toEqual(richHistogram.histogram);
     });
   });
 });
