@@ -32,6 +32,12 @@ describe('searchRelevance', () => {
       expect(calculateTitleRelevanceScore('Financial Director', 'Finance Director')).toBe(1);
       expect(calculateTitleRelevanceScore('Accountant', 'Accounting')).toBe(1);
     });
+
+    it('does not score a plain "C" listing as a full match for a "C#" search', () => {
+      // Regression guard: before tokenize retained # as a token character, "c#"
+      // and "c" both collapsed to the same token and this scored 1.0.
+      expect(calculateTitleRelevanceScore('C Developer', 'C# Developer')).toBeLessThan(1);
+    });
   });
 
   describe('tokenize', () => {
@@ -42,6 +48,11 @@ describe('searchRelevance', () => {
         'corporate',
         'accountant'
       ]);
+    });
+
+    it('retains # and + as token characters so C# and C++ do not collapse to C', () => {
+      expect(tokenize('C# Developer')).toEqual(['c#', 'developer']);
+      expect(tokenize('C++ Developer')).toEqual(['c++', 'developer']);
     });
   });
 

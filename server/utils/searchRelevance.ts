@@ -93,11 +93,17 @@ const normalizeWord = (word: string): string => word.toLowerCase().replace(/[^a-
 
 const stemToken = (token: string): string => DOMAIN_STEMS[token] ?? token;
 
-/** Lowercases, strips punctuation/stop-words, and applies domain stemming. */
+/**
+ * Lowercases, strips punctuation/stop-words, and applies domain stemming.
+ * Retains `#`/`+` as token characters (not just separators) so technical
+ * tokens like "c#" and "c++" survive intact instead of collapsing to "c" --
+ * without this, a "C# Developer" search would score a plain "C Developer"
+ * listing as a 100% title match.
+ */
 export const tokenize = (title: string): string[] =>
   title
     .toLowerCase()
-    .split(/[^a-z0-9&]+/i)
+    .split(/[^a-z0-9&+#]+/i)
     .map((t) => t.trim())
     .filter((t) => t.length > 0 && !STOP_WORDS.has(t))
     .map(stemToken);
