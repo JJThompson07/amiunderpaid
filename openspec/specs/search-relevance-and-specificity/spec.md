@@ -1,6 +1,7 @@
 # search-relevance-and-specificity Specification
 
 ## Purpose
+
 Defines server-side search specificity, role title relevance scoring, seniority hierarchy consistency filtering, and statistical outlier salary trimming to ensure market benchmark data accurately reflects the searched job title.
 
 ## Requirements
