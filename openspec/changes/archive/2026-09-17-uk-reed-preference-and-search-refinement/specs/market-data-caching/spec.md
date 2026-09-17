@@ -1,10 +1,6 @@
-# market-data-caching Specification
+# Spec Delta: market-data-caching
 
-## Purpose
-
-Defines cache-expiry behavior for the market-data endpoints (`server/api/market-data/jobs.ts`, `server/api/market-data/salary.ts`) as a function of which provider actually served the response.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Fallback-provider results expire independently of the primary provider
 
@@ -24,6 +20,8 @@ The market-data endpoints (`server/api/market-data/jobs.ts`, `server/api/market-
 
 - **WHEN** `salary.ts` serves a fallback-provider response and would otherwise read a per-category `cacheDays` override via the jobs cache's `categoryTag`
 - **THEN** the category lookup is skipped (or `categoryTag` is forced to `'unknown'`) so the 24-hour fallback expiry is not overridden by a longer configured value.
+
+## ADDED Requirements
 
 ### Requirement: Cache Key Versioning & Stale Provider Invalidation
 

@@ -1,119 +1,148 @@
 /**
  * Market Data Endpoint (Salary)
  *
- * This endpoint acts as an API gateway. It attempts to fetch data from the
- * primary provider (Adzuna). If the primary provider returns a 429 Rate Limit error,
- * this endpoint catches the error and seamlessly falls back to a secondary provider (Reed),
- * mapping the response to a unified schema.
- * The client does not need to know which provider was ultimately used.
+ * This endpoint acts as an API gateway with region-aware primary/fallback
+ * routing:
+ *   - UK (gb): Reed is primary, Adzuna is the fallback.
+ *   - USA (us): Adzuna is primary, Jooble is the fallback.
+ * If the regional primary provider fails or returns an empty histogram, this
+ * endpoint seamlessly falls back to the regional secondary provider, mapping
+ * the response to a unified schema. The client does not need to know which
+ * provider was ultimately used.
  */
 import { FieldValue } from 'firebase-admin/firestore';
+import { fetchAdzunaHistogram } from '../../utils/adzuna';
+import { fetchReedData } from '../../utils/reed';
 import type { MarketDataProvider } from '~~/shared/utils/market-data';
-import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
-import { ADZUNA_LOCATION_MAP } from '../../constants/locations';
 
-type AdzunaHistogramParams = {
-  app_id: string;
-  app_key: string;
-  what: string;
-  'content-type': string;
-  where?: string;
-  category?: string;
+// Duck-typed shape covering both an ofetch `FetchError` (`.response.status`)
+// and an h3 error thrown via `createError` (`.statusCode`), without requiring
+// the caught value to actually be an instance of either class. See jobs.ts
+// for the full rationale -- this distinguishes a provider-layer failure
+// (fallback-worthy) from an unrelated bug (which should still surface).
+type FetchLikeError = {
+  response?: { status?: number };
+  statusCode?: number;
 };
 
-// Loosely typed: sanitizeAdzunaData strips reserved keys from whatever the
-// upstream provider (Adzuna or the Reed/Jooble fallback) returned, so the
-// exact shape varies beyond the fields this endpoint relies on.
+const isProviderFailure = (e: unknown): boolean => {
+  const err = e as FetchLikeError;
+  return typeof (err.response?.status ?? err.statusCode) === 'number';
+};
+
 type MarketSalaryResult = {
-  histogram?: Record<string, number>;
+  histogram: Record<string, number>;
   provider: MarketDataProvider;
-  categoryTag?: string;
-  [key: string]: unknown;
+};
+
+type ProviderFetchArgs = {
+  countryCode: string;
+  titleStr: string;
+  locationStr: string;
+  categoryStr?: string;
+};
+
+const isEmptyHistogram = (histogram?: Record<string, number>): boolean =>
+  !histogram || Object.keys(histogram).length === 0;
+
+const fetchByProviderName = async (
+  provider: string,
+  args: ProviderFetchArgs
+): Promise<MarketSalaryResult> => {
+  const { countryCode, titleStr, locationStr, categoryStr } = args;
+  if (provider === 'reed') {
+    const result = await fetchReedData(titleStr, locationStr, '', '', categoryStr);
+    return { histogram: result.histogram ?? {}, provider: result.provider };
+  }
+  if (provider === 'jooble') {
+    const { fetchJoobleData } = await import('../../utils/jooble');
+    const result = await fetchJoobleData(titleStr, locationStr, '', '', categoryStr);
+    return { histogram: result.histogram ?? {}, provider: result.provider };
+  }
+  return fetchAdzunaHistogram(titleStr, locationStr, countryCode, categoryStr);
+};
+
+const fetchRegionalPrimary = async (args: ProviderFetchArgs): Promise<MarketSalaryResult> => {
+  const { countryCode, titleStr, locationStr, categoryStr } = args;
+
+  let result: MarketSalaryResult;
+  if (countryCode === 'gb') {
+    const reedResult = await fetchReedData(titleStr, locationStr, '', '', categoryStr);
+    result = { histogram: reedResult.histogram ?? {}, provider: reedResult.provider };
+  } else {
+    result = await fetchAdzunaHistogram(titleStr, locationStr, countryCode, categoryStr);
+  }
+
+  if (isEmptyHistogram(result.histogram)) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Zero results from primary market data provider'
+    });
+  }
+  return result;
 };
 
 // Define the cached fetcher outside the event handler
 const fetchFromProviders = defineCachedFunction(
   async (
-    params: AdzunaHistogramParams,
     countryCode: string,
     titleStr: string,
     locationStr: string,
     isDevOrE2e: boolean,
     devProviderOverride?: string,
     categoryStr?: string
-  ) => {
-    try {
-      // e2e runs never hit the real Reed/Jooble APIs — return a static fixture
-      // directly. The manual local-dev provider toggle (import.meta.dev, not
-      // process.env.E2E) still falls through to the real fake-429 path below
-      // so a developer can verify real fallback-provider integration.
+  ): Promise<MarketSalaryResult> => {
+    const args: ProviderFetchArgs = { countryCode, titleStr, locationStr, categoryStr };
+
+    // Dev/local-toggle provider pin: bypass normal primary/fallback
+    // resolution and go straight to the requested provider.
+    if (isDevOrE2e && devProviderOverride && devProviderOverride !== 'auto') {
+      // e2e runs never hit the real Reed/Jooble/Adzuna APIs for a pinned
+      // provider -- return a static fixture directly, so e2e assertions
+      // never depend on a live third-party call succeeding. The manual
+      // local-dev provider toggle (import.meta.dev, not process.env.E2E)
+      // still calls the real provider below so a developer can verify real
+      // integration behavior.
       const isE2E = process.env.E2E === 'true';
-      if (isE2E && (devProviderOverride === 'reed' || devProviderOverride === 'jooble')) {
+      if (isE2E) {
         const { getMockFallbackHistogram } = await import('../../utils/fallback');
-        return getMockFallbackHistogram(devProviderOverride);
+        return getMockFallbackHistogram(devProviderOverride as MarketDataProvider);
       }
 
-      if (isDevOrE2e && devProviderOverride === 'reed') {
-        throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
-      }
-      if (isDevOrE2e && devProviderOverride === 'jooble') {
-        throw createError({ statusCode: 429, statusMessage: 'Dev Override' });
-      }
+      return fetchByProviderName(devProviderOverride, args);
+    }
 
-      const rawData = await $fetch(`https://api.adzuna.com/v1/api/jobs/${countryCode}/histogram`, {
-        params
-      });
-
-      const cleanData = sanitizeAdzunaData(rawData) as MarketSalaryResult;
-      const hasData = cleanData?.histogram && Object.keys(cleanData.histogram).length > 0;
-
-      if (hasData) {
-        cleanData.provider = 'adzuna';
-        return cleanData;
-      } else {
-        throw createError({ statusCode: 404, statusMessage: 'Zero results from Adzuna' });
-      }
+    try {
+      return await fetchRegionalPrimary(args);
     } catch (e) {
-      const statusCode =
-        (e as { response?: { status?: number }; statusCode?: number })?.response?.status ||
-        (e as { statusCode?: number })?.statusCode;
-      if (statusCode === 429 || statusCode === 403 || statusCode === 404) {
-        const { executeMarketFallback } = await import('../../utils/fallback');
-        const fallbackRaw = await executeMarketFallback(
-          titleStr,
-          locationStr,
-          countryCode,
-          '',
-          '',
-          categoryStr
-        );
-
-        return {
-          histogram: fallbackRaw.histogram,
-          provider: fallbackRaw.provider
-        };
+      if (!isProviderFailure(e)) {
+        throw e;
       }
-      throw e;
+      const { executeMarketFallback } = await import('../../utils/fallback');
+      const fallbackRaw = await executeMarketFallback(
+        titleStr,
+        locationStr,
+        countryCode,
+        '',
+        '',
+        categoryStr
+      );
+
+      return {
+        histogram: fallbackRaw.histogram ?? {},
+        provider: fallbackRaw.provider
+      };
     }
   },
   {
     maxAge: 60 * 60, // Keep in memory for 1 hour to prevent stampedes
     name: 'marketSalaryProviderFetch',
-    getKey: (
-      params,
-      countryCode,
-      titleStr,
-      locationStr,
-      isDevOrE2e,
-      devProviderOverride,
-      categoryStr
-    ) =>
+    getKey: (countryCode, titleStr, locationStr, isDevOrE2e, devProviderOverride, categoryStr) =>
       `${titleStr}-${locationStr}-${countryCode}-${devProviderOverride || 'none'}-${categoryStr || 'none'}`
   }
 );
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig();
   const query = getQuery(event);
   const { title, location, country, category } = query;
 
@@ -158,78 +187,55 @@ export default defineEventHandler(async (event) => {
         const data = docSnap.data();
         const now = new Date().getTime();
 
-        // --- OPTIMIZED CACHE CHECK ---
-        if (data?.expiresAt) {
-          if (now < data.expiresAt.toMillis()) {
-            return {
-              ...data?.data,
-              gov_id_code: data?.gov_id_code || null
-            };
-          }
-        } else {
-          // --- LEGACY CACHE CHECK (Backwards compatibility for old cache) ---
-          const cachedTime = data?.timestamp?.toMillis() || 0;
-          const categoryTag = data?.categoryTag || data?.data?.categoryTag || '';
-          let categoryCacheMilli = 120 * 24 * 60 * 60 * 1000;
+        // --- STALE PROVIDER INVALIDATION ---
+        // A UK request whose cached document was written by anything other
+        // than Reed is treated as a cache miss so it's immediately refreshed
+        // with real Reed data instead of silently serving pre-migration
+        // Adzuna-primary data forever.
+        const isStaleUkProvider = countryCode === 'gb' && data?.data?.provider !== 'reed';
 
-          if (categoryTag) {
-            const categoryCacheRef = db.collection('adzuna_category').doc(categoryTag);
-            const categorySnap = await categoryCacheRef.get();
-            if (categorySnap.exists) {
-              const categoryData = categorySnap.data();
-              const categoryCacheDays = Number(categoryData?.cache || 120);
-              categoryCacheMilli = categoryCacheDays * 24 * 60 * 60 * 1000;
+        if (!isStaleUkProvider) {
+          // --- OPTIMIZED CACHE CHECK ---
+          if (data?.expiresAt) {
+            if (now < data.expiresAt.toMillis()) {
+              return {
+                ...data?.data,
+                gov_id_code: data?.gov_id_code || null
+              };
             }
-          }
+          } else {
+            // --- LEGACY CACHE CHECK (Backwards compatibility for old cache) ---
+            const cachedTime = data?.timestamp?.toMillis() || 0;
+            const categoryTag = data?.categoryTag || data?.data?.categoryTag || '';
+            let categoryCacheMilli = 120 * 24 * 60 * 60 * 1000;
 
-          if (now - cachedTime < categoryCacheMilli) {
-            return {
-              ...data?.data,
-              gov_id_code: data?.gov_id_code || null
-            };
+            if (categoryTag) {
+              const categoryCacheRef = db.collection('adzuna_category').doc(categoryTag);
+              const categorySnap = await categoryCacheRef.get();
+              if (categorySnap.exists) {
+                const categoryData = categorySnap.data();
+                const categoryCacheDays = Number(categoryData?.cache || 120);
+                categoryCacheMilli = categoryCacheDays * 24 * 60 * 60 * 1000;
+              }
+            }
+
+            if (now - cachedTime < categoryCacheMilli) {
+              return {
+                ...data?.data,
+                gov_id_code: data?.gov_id_code || null
+              };
+            }
           }
         }
       }
     } catch {
-      // Silently ignore cache read errors and fall back to fetching from the Adzuna API
+      // Silently ignore cache read errors and fall back to fetching live data
     }
   }
 
-  // 2. Prepare API Credentials
-  const appId = config.adzunaAppId;
-  const appKey = config.adzunaAppKey;
-
-  if (!appId || !appKey) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Market data service is misconfigured.'
-    });
-  }
-
-  const params: AdzunaHistogramParams = {
-    app_id: appId,
-    app_key: appKey,
-    what: titleStr,
-    'content-type': 'application/json'
-  };
-
-  if (locationStr.trim() !== '') {
-    let cleanLocation = locationStr.split(',')[0]!.trim();
-    const slug = cleanLocation.toLowerCase().replace(/\s+/g, '-');
-    if (ADZUNA_LOCATION_MAP[slug]) {
-      cleanLocation = ADZUNA_LOCATION_MAP[slug];
-    }
-    params.where = cleanLocation;
-  }
-
-  if (categoryStr) {
-    params.category = categoryStr;
-  }
-
-  // 3. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
+  // 2. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
   try {
     const cleanData: MarketSalaryResult = await fetchFromProviders(
-      params,
       countryCode,
       titleStr,
       locationStr,
@@ -238,7 +244,11 @@ export default defineEventHandler(async (event) => {
       categoryStr
     );
 
-    const isFallbackProvider = !!cleanData.provider && cleanData.provider !== 'adzuna';
+    // Region-aware: the UK primary is Reed, the USA primary is Adzuna. Any
+    // other provider on the response means the regional fallback fired.
+    const isFallbackProvider =
+      !!cleanData.provider &&
+      (countryCode === 'gb' ? cleanData.provider !== 'reed' : cleanData.provider !== 'adzuna');
 
     // FIX 2: Adzuna histogram data doesn't contain categories!
     // If the caller filtered by an explicit industry, that's the most accurate
@@ -262,9 +272,9 @@ export default defineEventHandler(async (event) => {
     // --- CALCULATE EXPIRES AT ---
     let expiresAt: Date;
     if (isFallbackProvider) {
-      // Fallback-provider (Reed/Jooble) data is a smaller, lower-confidence
-      // sample and should expire quickly so it doesn't outlive the transient
-      // Adzuna failure that produced it, regardless of the configured cacheDays.
+      // Fallback-provider data is a smaller, lower-confidence sample and
+      // should expire quickly so it doesn't outlive the transient primary
+      // failure that produced it, regardless of the configured cacheDays.
       expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     } else {
       let cacheDays = 30; // Reduced from 120

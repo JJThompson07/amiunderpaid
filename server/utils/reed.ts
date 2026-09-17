@@ -1,6 +1,17 @@
 import { REED_LOCATION_MAP } from '../constants/locations';
+import { extractSearchAnchorPhrase, filterAndRankJobsByRelevance } from './searchRelevance';
 import type { JobSearchResponse } from '~~/shared/utils/market-data';
-import { buildHistogramBuckets } from '~~/shared/utils/math';
+import {
+  buildHistogramBuckets,
+  filterSanitySalaries,
+  trimSalaryOutliersIqr
+} from '~~/shared/utils/math';
+
+// Below this many relevance-filtered results with valid salaries, Tier 1's
+// exact-phrase precision is judged too sparse and Tier 2 (unquoted full-title
+// search, still relevance-filtered post-fetch) is executed instead. See
+// design.md sec 3 for the live-verified Reed query counts behind this design.
+const MIN_TIER1_SALARIED_RESULTS = 3;
 
 export type ReedJobResponse = {
   results: {
@@ -33,16 +44,34 @@ type ReedSearchParams = {
 // bounds, and contract/time flags exist), so an Adzuna category tag (e.g.
 // "it-jobs") is turned into a plain-language keyword and folded into the search
 // term instead.
-const buildKeywordsWithCategory = (title: string, category?: string): string => {
+const buildCategoryKeyword = (category?: string): string => {
   if (!category) {
-    return title;
+    return '';
   }
-  const categoryKeyword = category
+  return category
     .replace(/-/g, ' ')
     .replace(/\bjobs\b/gi, '')
     .trim();
-  return categoryKeyword ? `${title} ${categoryKeyword}` : title;
 };
+
+// Tier 1: exact-phrase precision. Quoting both the full title and (when
+// extraction changes it) the anchor phrase, OR'd together, was live-verified
+// against the Reed API to genuinely union two exact-phrase result sets (see
+// design.md sec 3) rather than silently falling back to loose keyword search.
+const buildTier1Keywords = (
+  title: string,
+  anchorPhrase: string,
+  categoryKeyword: string
+): string => {
+  const phraseQuery = anchorPhrase !== title ? `"${title}" OR "${anchorPhrase}"` : `"${title}"`;
+  return categoryKeyword ? `${phraseQuery} ${categoryKeyword}` : phraseQuery;
+};
+
+// Tier 2: unquoted fallback for when Tier 1's exact-phrase search is too sparse.
+// Relies on filterAndRankJobsByRelevance post-fetch to strip the loose matches
+// Reed's unquoted keyword search otherwise lets through.
+const buildTier2Keywords = (title: string, categoryKeyword: string): string =>
+  categoryKeyword ? `${title} ${categoryKeyword}` : title;
 
 export const fetchReedData = async (
   title: string,
@@ -86,8 +115,10 @@ export const fetchReedData = async (
     throw createError({ statusCode: 500, statusMessage: 'Market data service is misconfigured.' });
   }
 
-  const params: ReedSearchParams = {
-    keywords: buildKeywordsWithCategory(title, category),
+  const categoryKeyword = buildCategoryKeyword(category);
+  const anchorPhrase = extractSearchAnchorPhrase(title);
+
+  const baseParams: Omit<ReedSearchParams, 'keywords'> = {
     resultsToTake: 100 // Fetch a good sample size to calculate statistics
   };
 
@@ -97,98 +128,110 @@ export const fetchReedData = async (
     if (REED_LOCATION_MAP[slug]) {
       cleanLocation = REED_LOCATION_MAP[slug];
     }
-    params.locationName = cleanLocation;
+    baseParams.locationName = cleanLocation;
   }
 
   if (jobType === 'full-time') {
-    params.fullTime = true;
+    baseParams.fullTime = true;
   }
   if (jobType === 'part-time') {
-    params.partTime = true;
+    baseParams.partTime = true;
   }
 
   if (contractType === 'permanent') {
-    params.permanent = true;
+    baseParams.permanent = true;
   }
   if (contractType === 'contract') {
-    params.contract = true;
+    baseParams.contract = true;
   }
   if (contractType === 'temp') {
-    params.temp = true;
+    baseParams.temp = true;
   }
 
   // Basic Auth: key as username, empty password
   const authHeader = 'Basic ' + btoa(`${apiKey}:`);
 
-  try {
-    const response = await $fetch<ReedJobResponse>('https://www.reed.co.uk/api/1.0/search', {
-      params,
-      headers: {
-        Authorization: authHeader
-      }
-    });
+  const search = async (keywords: string): Promise<ReedJobResponse> => {
+    const params: ReedSearchParams = { ...baseParams, keywords };
+    try {
+      return await $fetch<ReedJobResponse>('https://www.reed.co.uk/api/1.0/search', {
+        params,
+        headers: {
+          Authorization: authHeader
+        }
+      });
+    } catch (e) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Failed to fetch from Reed API',
+        data: e
+      });
+    }
+  };
 
-    return processReedData(response, jobType, contractType);
-  } catch (e) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Failed to fetch from Reed API',
-      data: e
-    });
+  const tier1Response = await search(buildTier1Keywords(title, anchorPhrase, categoryKeyword));
+  const tier1Result = processReedData(tier1Response, jobType, contractType, title);
+  const tier1SalariedCount = tier1Result.results.filter((r) => r.salary_min && r.salary_max).length;
+
+  if (tier1SalariedCount >= MIN_TIER1_SALARIED_RESULTS) {
+    return tier1Result;
   }
+
+  const tier2Response = await search(buildTier2Keywords(title, categoryKeyword));
+  return processReedData(tier2Response, jobType, contractType, title);
 };
 
 export const processReedData = (
   response: ReedJobResponse,
   jobType: string,
-  contractType: string
+  contractType: string,
+  searchTitle: string
 ): JobSearchResponse => {
   const jobs = response.results || [];
 
-  let totalSalary = 0;
-  let validSalaryCount = 0;
-  const rawSalaries: number[] = [];
-
-  const mappedJobs = jobs.map((job) => {
+  const mappedJobs = jobs.map((job) => ({
     // Map to Adzuna structure so frontend doesn't break
-    const mapped = {
-      id: job.jobId,
-      title: job.jobTitle,
-      description: job.jobDescription,
-      location: {
-        display_name: job.locationName,
-        area: [job.locationName]
-      },
-      salary_min: job.minimumSalary || 0,
-      salary_max: job.maximumSalary || 0,
-      category: { label: 'Unknown', tag: 'unknown' },
-      company: { display_name: job.employerName },
-      contract_time: jobType,
-      contract_type: contractType,
-      redirect_url: job.jobUrl,
-      provider: 'reed' as const
-    };
+    id: job.jobId,
+    title: job.jobTitle,
+    description: job.jobDescription,
+    location: {
+      display_name: job.locationName,
+      area: [job.locationName]
+    },
+    salary_min: job.minimumSalary || 0,
+    salary_max: job.maximumSalary || 0,
+    category: { label: 'Unknown', tag: 'unknown' },
+    company: { display_name: job.employerName },
+    contract_time: jobType,
+    contract_type: contractType,
+    redirect_url: job.jobUrl,
+    provider: 'reed' as const
+  }));
 
-    // Calculate stats
-    if (job.minimumSalary && job.maximumSalary) {
-      const avg = (job.minimumSalary + job.maximumSalary) / 2;
-      totalSalary += avg;
-      validSalaryCount++;
-      rawSalaries.push(avg);
-    }
+  // Relevance-filter and rank before computing any statistics, so an
+  // exact-phrase OR-widened (or Tier 2 unquoted) search never lets an
+  // off-tier or off-topic match skew the mean/histogram.
+  const relevantJobs = filterAndRankJobsByRelevance(mappedJobs, searchTitle);
 
-    return mapped;
-  });
+  const rawSalaries = relevantJobs
+    .filter((job) => job.salary_min && job.salary_max)
+    .map((job) => (job.salary_min + job.salary_max) / 2);
+  // Reed only ever serves UK (gb) listings.
+  const sanitizedSalaries = filterSanitySalaries(rawSalaries, jobType, 'gb');
+  const trimmedSalaries = trimSalaryOutliersIqr(sanitizedSalaries);
 
-  const mean = validSalaryCount > 0 ? Math.round(totalSalary / validSalaryCount) : 0;
-  const histogram = buildHistogramBuckets(rawSalaries, 7);
+  const mean =
+    trimmedSalaries.length > 0
+      ? Math.round(trimmedSalaries.reduce((sum, s) => sum + s, 0) / trimmedSalaries.length)
+      : 0;
+  const histogram = buildHistogramBuckets(trimmedSalaries, 7);
 
   // Sort jobs by highest maximum salary descending
-  const sortedJobs = mappedJobs.sort((a, b) => (b.salary_max || 0) - (a.salary_max || 0));
+  const sortedJobs = [...relevantJobs].sort((a, b) => (b.salary_max || 0) - (a.salary_max || 0));
 
   return {
     mean,
-    count: response.totalResults,
+    count: sortedJobs.length,
     histogram,
     results: sortedJobs,
     provider: 'reed' as const

@@ -210,6 +210,25 @@ describe('Jooble Provider', () => {
       );
     });
 
+    it('should send the extracted anchor phrase, not the full raw title, as keywords', async () => {
+      fetchMock.mockResolvedValue({ totalCount: 0, jobs: [] });
+
+      // Jooble's matching direction is reversed from Reed/Adzuna: the shorter
+      // anchor phrase produces cleaner results, so "Group Head of Finance"
+      // (with the recognized "group" modifier stripped) is sent, not the
+      // full raw title. See design.md sec 3c.
+      await fetchJoobleData('Group Head of Finance', 'Chicago', 'full-time', 'permanent');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://jooble.org/api/test-key',
+        expect.objectContaining({
+          body: expect.objectContaining({
+            keywords: 'Head of Finance'
+          })
+        })
+      );
+    });
+
     it('should throw 500 error if fetch fails', async () => {
       fetchMock.mockRejectedValue(new Error('Network error'));
 

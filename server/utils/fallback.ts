@@ -5,8 +5,10 @@ import type {
 } from '~~/shared/utils/market-data';
 
 /**
- * Orchestrates geographic fallback routing when the primary market data provider fails.
- * UK -> Reed
+ * Orchestrates geographic fallback routing when the regional primary market
+ * data provider fails. Reed is now the UK primary (see jobs.ts/salary.ts), so
+ * this fallback path is:
+ * UK -> Adzuna
  * US -> Jooble
  */
 export const executeMarketFallback = async (
@@ -21,8 +23,8 @@ export const executeMarketFallback = async (
     const { fetchJoobleData } = await import('./jooble');
     return await fetchJoobleData(title, location, type, contract, category);
   } else {
-    const { fetchReedData } = await import('./reed');
-    return await fetchReedData(title, location, type, contract, category);
+    const { fetchAdzunaJobs } = await import('./adzuna');
+    return await fetchAdzunaJobs(title, location, countryCode, type, contract, category);
   }
 };
 

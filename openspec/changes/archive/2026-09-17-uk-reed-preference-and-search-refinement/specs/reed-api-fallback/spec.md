@@ -1,10 +1,6 @@
-# reed-api-fallback Specification
+# Spec Delta: reed-api-fallback
 
-## Purpose
-
-Provides a fallback mechanism using the Reed.co.uk Jobseeker API to serve job data and calculate salary statistics when primary providers fail.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Reed API Job Data Fetching
 
@@ -24,15 +20,6 @@ The system SHALL fetch active job vacancies from the Reed.co.uk API using the pr
 
 - **WHEN** the Tier 1 quoted search (full title, optionally OR'd with the anchor phrase) returns fewer than 3 relevant results with salaries
 - **THEN** the system SHALL fall back to an unquoted search using the full original search title, applying the same relevance filter.
-
-### Requirement: Server-Side Statistical Calculation
-
-Since the Reed API does not provide pre-calculated histograms, the system SHALL calculate the necessary statistics (mean, average, percentiles) and generate a histogram structure from the aggregated minimum and maximum salaries of the fetched jobs.
-
-#### Scenario: Calculating histogram and mean
-
-- **WHEN** job data is successfully fetched from Reed
-- **THEN** the system SHALL calculate the mean salary and generate histogram buckets to match the application's required `HistogramData` format.
 
 ### Requirement: Geographic API Routing
 

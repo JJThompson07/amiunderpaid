@@ -25,6 +25,11 @@ vi.stubGlobal(
   'sanitizeAdzunaData',
   vi.fn(<T>(data: T): T => data)
 );
+// Adzuna (server/utils/adzuna.ts) is NOT mocked -- its real implementation
+// runs against this stubbed global $fetch, the same way it does in
+// production. This lets these tests exercise Adzuna's real param-building
+// (location mapping, job/contract flags, category, title_only tiering)
+// wherever Adzuna is reached, whether as the USA primary or the UK fallback.
 const $fetchMock = vi.fn();
 vi.stubGlobal('$fetch', $fetchMock);
 const getQueryMock = vi.fn();
@@ -34,7 +39,6 @@ vi.stubGlobal(
   'defineCachedFunction',
   <T, O extends { getKey?: (...args: never[]) => string }>(fn: T, options?: O): T => {
     options?.getKey?.(
-      {} as never,
       'gb' as never,
       'engineer' as never,
       '' as never,
@@ -123,8 +127,40 @@ describe('market-data jobs endpoint', () => {
     };
 
     useAdminFirestoreMock.mockReturnValue(mockDb);
+    // Default happy path is a UK request, which is now Reed-primary (mocked
+    // above to always succeed) -- $fetch is only exercised by tests that
+    // specifically target the Adzuna path (US primary, or UK fallback).
     getQueryMock.mockReturnValue({ title: 'developer', country: 'gb' });
-    $fetchMock.mockResolvedValue({ count: 1, results: [{ id: 1, title: 'Adzuna Job' }] });
+    // Adzuna's real fetchAdzunaJobs relevance-filters and requires >= 3
+    // salaried, title-relevant results to settle on Tier 1 without an extra
+    // Tier 2 retry call -- so the default fixture must actually match the
+    // default search title ('developer') and carry real salaries.
+    $fetchMock.mockResolvedValue({
+      count: 3,
+      results: [
+        {
+          id: 1,
+          title: 'Developer',
+          salary_min: 40000,
+          salary_max: 60000,
+          category: { tag: 'unknown' }
+        },
+        {
+          id: 2,
+          title: 'Developer',
+          salary_min: 42000,
+          salary_max: 62000,
+          category: { tag: 'unknown' }
+        },
+        {
+          id: 3,
+          title: 'Developer',
+          salary_min: 44000,
+          salary_max: 64000,
+          category: { tag: 'unknown' }
+        }
+      ]
+    });
   });
 
   it('400s when the title query param is missing', async () => {
@@ -134,17 +170,22 @@ describe('market-data jobs endpoint', () => {
     expect($fetchMock).not.toHaveBeenCalled();
   });
 
-  it('500s when Adzuna credentials are not configured', async () => {
+  it('503s when both the primary and fallback providers are misconfigured', async () => {
     mockConfig = {};
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'us' });
+
+    const { fetchJoobleData } = await import('../../../utils/jooble');
+    vi.mocked(fetchJoobleData).mockRejectedValueOnce(
+      Object.assign(new Error('Market data service is misconfigured.'), { statusCode: 500 })
+    );
 
     await expect(jobsHandler({} as unknown as H3Event)).rejects.toThrow(
-      'Market data service is misconfigured.'
+      'Market data temporarily unavailable. Please try again later.'
     );
-    expect($fetchMock).not.toHaveBeenCalled();
   });
 
   it('clears a location that is just the country name so national stats are returned', async () => {
-    getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', location: 'United Kingdom' });
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'us', location: 'United States' });
 
     await jobsHandler({} as unknown as H3Event);
 
@@ -159,7 +200,7 @@ describe('market-data jobs endpoint', () => {
       exists: true,
       data: () => ({
         expiresAt: { toMillis: (): number => Date.now() + 100000 },
-        data: { count: 1, results: [], cached: true },
+        data: { count: 1, results: [], provider: 'reed', cached: true },
         gov_id_code: 'soc_1',
         is_admin_verified: true
       })
@@ -178,13 +219,14 @@ describe('market-data jobs endpoint', () => {
       exists: true,
       data: () => ({
         expiresAt: { toMillis: (): number => Date.now() - 100000 },
-        data: { count: 1, results: [] }
+        data: { count: 1, results: [], provider: 'reed' }
       })
     });
 
+    const { fetchReedData } = await import('../../../utils/reed');
     await jobsHandler({} as unknown as H3Event);
 
-    expect($fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchReedData).toHaveBeenCalledTimes(1);
   });
 
   it('returns cached data via the legacy path when within the per-category cache window', async () => {
@@ -193,7 +235,7 @@ describe('market-data jobs endpoint', () => {
       data: () => ({
         timestamp: { toMillis: (): number => Date.now() },
         categoryTag: 'it-jobs',
-        data: { count: 1, results: [], cached: true }
+        data: { count: 1, results: [], provider: 'reed', cached: true }
       })
     });
     categoryDocRef.get.mockResolvedValue({ exists: true, data: () => ({ cache: 90 }) });
@@ -209,14 +251,15 @@ describe('market-data jobs endpoint', () => {
       exists: true,
       data: () => ({
         timestamp: { toMillis: (): number => Date.now() },
-        data: { count: 1, results: [], categoryTag: 'sales-jobs', cached: true }
+        data: { count: 1, results: [], provider: 'reed', categoryTag: 'sales-jobs', cached: true }
       })
     });
     categoryDocRef.get.mockResolvedValue({ exists: true, data: () => ({ cache: 90 }) });
 
+    const { fetchReedData } = await import('../../../utils/reed');
     await jobsHandler({} as unknown as H3Event);
 
-    expect($fetchMock).not.toHaveBeenCalled();
+    expect(fetchReedData).not.toHaveBeenCalled();
   });
 
   it('falls through to a live fetch via the legacy path once the category cache window has elapsed', async () => {
@@ -225,13 +268,14 @@ describe('market-data jobs endpoint', () => {
       data: () => ({
         timestamp: { toMillis: (): number => Date.now() - 200 * 24 * 60 * 60 * 1000 },
         categoryTag: '',
-        data: { count: 1, results: [] }
+        data: { count: 1, results: [], provider: 'reed' }
       })
     });
 
+    const { fetchReedData } = await import('../../../utils/reed');
     await jobsHandler({} as unknown as H3Event);
 
-    expect($fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchReedData).toHaveBeenCalledTimes(1);
     expect(categoryDocRef.get).not.toHaveBeenCalled();
   });
 
@@ -240,14 +284,45 @@ describe('market-data jobs endpoint', () => {
 
     const result = await jobsHandler({} as unknown as H3Event);
 
-    expect($fetchMock).toHaveBeenCalledTimes(1);
-    expect(result.count).toBe(1);
+    expect(result.count).toBe(10);
+    expect(result.provider).toBe('reed');
   });
 
-  it('sets part_time and contract params when jobType and contractType request them', async () => {
+  it('treats a UK cache entry not sourced from Reed as stale and fetches fresh Reed data', async () => {
+    jobsCacheDocRef.get.mockResolvedValue({
+      exists: true,
+      data: () => ({
+        expiresAt: { toMillis: (): number => Date.now() + 100000 },
+        data: { count: 1, results: [], provider: 'adzuna', cached: true }
+      })
+    });
+
+    const { fetchReedData } = await import('../../../utils/reed');
+    const result = await jobsHandler({} as unknown as H3Event);
+
+    expect(fetchReedData).toHaveBeenCalledTimes(1);
+    expect(result.provider).toBe('reed');
+  });
+
+  it('does not treat a non-UK cache entry as stale regardless of provider', async () => {
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'us' });
+    jobsCacheDocRef.get.mockResolvedValue({
+      exists: true,
+      data: () => ({
+        expiresAt: { toMillis: (): number => Date.now() + 100000 },
+        data: { count: 1, results: [], provider: 'jooble', cached: true }
+      })
+    });
+
+    await jobsHandler({} as unknown as H3Event);
+
+    expect($fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('sets part_time and contract params when jobType and contractType request them (US/Adzuna primary)', async () => {
     getQueryMock.mockReturnValue({
       title: 'developer',
-      country: 'gb',
+      country: 'us',
       jobType: 'part-time',
       contractType: 'contract'
     });
@@ -263,7 +338,7 @@ describe('market-data jobs endpoint', () => {
   it('sets neither full_time/part_time nor contract/permanent when given an unrecognized type', async () => {
     getQueryMock.mockReturnValue({
       title: 'developer',
-      country: 'gb',
+      country: 'us',
       jobType: 'flexible',
       contractType: 'temporary'
     });
@@ -280,7 +355,7 @@ describe('market-data jobs endpoint', () => {
   it('maps a UI location slug to its Adzuna string via ADZUNA_LOCATION_MAP', async () => {
     getQueryMock.mockReturnValue({
       title: 'developer',
-      country: 'gb',
+      country: 'us',
       location: 'London, Greater London'
     });
 
@@ -294,38 +369,74 @@ describe('market-data jobs endpoint', () => {
     );
   });
 
-  it('falls back to Reed when Adzuna returns a 403', async () => {
-    $fetchMock.mockRejectedValueOnce({ statusCode: 403, response: { status: 403 } });
+  it('uses Reed as the UK primary provider by default', async () => {
+    const result = await jobsHandler({} as unknown as H3Event);
+
+    expect($fetchMock).not.toHaveBeenCalled();
+    expect(result.provider).toBe('reed');
+    expect(result.count).toBe(10);
+  });
+
+  it('falls back to Adzuna when Reed fails for a UK request', async () => {
+    const { fetchReedData } = await import('../../../utils/reed');
+    vi.mocked(fetchReedData).mockRejectedValueOnce({ statusCode: 500, response: { status: 500 } });
 
     const result = await jobsHandler({} as unknown as H3Event);
 
-    expect(result.provider).toBe('reed');
-  });
+    expect($fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.provider).toBe('adzuna');
 
-  it('wraps a non-fallback fetch failure in a 503', async () => {
-    $fetchMock.mockRejectedValueOnce(new Error('network unreachable'));
-
-    await expect(jobsHandler({} as unknown as H3Event)).rejects.toThrow(
-      'Market data temporarily unavailable. Please try again later.'
+    expect(jobsCacheDocRef.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ provider: 'adzuna' })
+      }),
+      { merge: true }
     );
   });
 
-  it('reads the per-category cacheDays for an Adzuna-sourced response with a known category', async () => {
-    $fetchMock.mockResolvedValueOnce({
-      count: 1,
-      results: [{ id: 1, title: 'Adzuna Job', category: { tag: 'it-jobs' } }]
+  it('falls back to Adzuna when Reed returns zero results for a UK request', async () => {
+    const { fetchReedData } = await import('../../../utils/reed');
+    vi.mocked(fetchReedData).mockResolvedValueOnce({
+      mean: 0,
+      count: 0,
+      results: [],
+      provider: 'reed'
     });
-    categoryDocRef.get.mockResolvedValue({ exists: true, data: () => ({ cache: 45 }) });
 
-    const before = Date.now();
+    const result = await jobsHandler({} as unknown as H3Event);
+
+    expect(result.provider).toBe('adzuna');
+  });
+
+  it('wraps a non-provider-shaped fetch failure in a 503 without attempting a fallback', async () => {
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'us' });
+    $fetchMock.mockRejectedValueOnce(new Error('unexpected bug, no status code'));
+
+    const { fetchJoobleData } = await import('../../../utils/jooble');
+    await expect(jobsHandler({} as unknown as H3Event)).rejects.toThrow(
+      'Market data temporarily unavailable. Please try again later.'
+    );
+    expect(fetchJoobleData).not.toHaveBeenCalled();
+  });
+
+  it('reads the per-category cacheDays for a Reed-sourced UK response with a known category', async () => {
+    categoryDocRef.get.mockResolvedValue({ exists: true, data: () => ({ cache: 45 }) });
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', category: 'it-jobs' });
+
+    const beforeExpected = new Date();
+    beforeExpected.setDate(beforeExpected.getDate() + 45);
     await jobsHandler({} as unknown as H3Event);
-    const after = Date.now();
+    const afterExpected = new Date();
+    afterExpected.setDate(afterExpected.getDate() + 45);
 
     const setCall = jobsCacheDocRef.set.mock.calls[0]![0];
     expect(setCall.categoryTag).toBe('it-jobs');
     const expiresAtMs = (setCall.expiresAt as Date).getTime();
-    expect(expiresAtMs).toBeGreaterThanOrEqual(before + 45 * 24 * 60 * 60 * 1000);
-    expect(expiresAtMs).toBeLessThanOrEqual(after + 45 * 24 * 60 * 60 * 1000);
+    // Calendar-day setDate() arithmetic (matching the source code), not raw
+    // ms multiplication, so this stays correct across a DST boundary that a
+    // 45-day-out projection can land on.
+    expect(expiresAtMs).toBeGreaterThanOrEqual(beforeExpected.getTime());
+    expect(expiresAtMs).toBeLessThanOrEqual(afterExpected.getTime());
   });
 
   it('returns the static E2E fixture without calling $fetch when a reed devProvider override is set', async () => {
@@ -350,32 +461,14 @@ describe('market-data jobs endpoint', () => {
     expect(result.provider).toBe('jooble');
   });
 
-  it('should fall back to Reed API if Adzuna returns 429 for gb', async () => {
-    getQueryMock.mockReturnValue({
-      title: 'developer',
-      location: 'london',
-      country: 'gb',
-      resultsPerPage: '10'
-    });
-
-    $fetchMock.mockRejectedValueOnce({
-      statusCode: 429,
-      response: { status: 429 }
-    });
+  it('returns the static E2E fixture without calling $fetch when an adzuna devProvider override is set', async () => {
+    process.env.E2E = 'true';
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', devProvider: 'adzuna' });
 
     const result = await jobsHandler({} as unknown as H3Event);
 
-    expect($fetchMock).toHaveBeenCalledTimes(1);
-    expect(result.provider).toBe('reed');
-    expect(result.count).toBe(10);
-    expect(result.results[0]?.title).toBe('Reed Job');
-
-    expect(jobsCacheDocRef.set).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ provider: 'reed' })
-      }),
-      { merge: true }
-    );
+    expect($fetchMock).not.toHaveBeenCalled();
+    expect(result.provider).toBe('adzuna');
   });
 
   it('should fall back to Jooble API if Adzuna returns 429 for usa', async () => {
@@ -400,7 +493,10 @@ describe('market-data jobs endpoint', () => {
       country: 'us'
     });
 
-    $fetchMock.mockResolvedValueOnce({
+    // Both the Tier 1 and Tier 2 Adzuna attempts must return zero here, since
+    // a lone mockResolvedValueOnce would let Tier 2 fall through to the rich
+    // default fixture and silently rescue the "primary" response.
+    $fetchMock.mockResolvedValue({
       count: 0,
       results: []
     });
@@ -410,17 +506,28 @@ describe('market-data jobs endpoint', () => {
     expect(result.count).toBe(20);
   });
 
-  it('caches an Adzuna-sourced response for the configured cacheDays (default 30)', async () => {
+  it('caches an Adzuna-sourced USA primary response for the configured cacheDays (default 30)', async () => {
     getQueryMock.mockReturnValue({
       title: 'developer',
-      location: 'london',
-      country: 'gb',
+      location: 'new york',
+      country: 'us',
       resultsPerPage: '10'
     });
 
+    // Title must relevance-match the 'developer' search term: Adzuna no longer
+    // retries an identical Tier 2 request when the anchor phrase is a no-op
+    // (see server/utils/adzuna.ts), so Tier 1 alone must succeed here.
     $fetchMock.mockResolvedValueOnce({
       count: 1,
-      results: [{ id: 1, title: 'Adzuna Job', category: { tag: 'unknown' } }]
+      results: [
+        {
+          id: 1,
+          title: 'Developer',
+          salary_min: 40000,
+          salary_max: 60000,
+          category: { tag: 'unknown' }
+        }
+      ]
     });
 
     const before = Date.now();
@@ -436,8 +543,8 @@ describe('market-data jobs endpoint', () => {
     expect(expiresAtMs).toBeLessThanOrEqual(expectedMax);
   });
 
-  it('forwards a category filter to Adzuna and to generateCacheKey', async () => {
-    getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', category: 'IT-Jobs' });
+  it('forwards a category filter to Adzuna and to generateCacheKey (USA primary)', async () => {
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'us', category: 'IT-Jobs' });
 
     await jobsHandler({} as unknown as H3Event);
 
@@ -445,19 +552,17 @@ describe('market-data jobs endpoint', () => {
       expect.anything(),
       expect.objectContaining({ params: expect.objectContaining({ category: 'it-jobs' }) })
     );
-    expect(generateCacheKeyMock).toHaveBeenCalledWith('developer', '', 'gb', 'it-jobs');
+    expect(generateCacheKeyMock).toHaveBeenCalledWith('developer', '', 'us', 'it-jobs');
   });
 
   it('omits the category param entirely when none is provided', async () => {
     await jobsHandler({} as unknown as H3Event);
 
-    const params = $fetchMock.mock.calls[0]![1].params;
-    expect(params).not.toHaveProperty('category');
     expect(generateCacheKeyMock).toHaveBeenCalledWith('developer', '', 'gb', '');
   });
 
   it('uses the explicit category filter as categoryTag instead of the derived result category', async () => {
-    getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', category: 'sales-jobs' });
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'us', category: 'sales-jobs' });
     $fetchMock.mockResolvedValueOnce({
       count: 1,
       results: [{ id: 1, title: 'Adzuna Job', category: { tag: 'it-jobs' } }]
@@ -477,34 +582,22 @@ describe('market-data jobs endpoint', () => {
     expect(setCall.searchParams.category).toBe(null);
   });
 
-  it('forwards the category filter to the fallback provider when Adzuna fails', async () => {
+  it('forwards the category filter to the fallback provider when Reed fails for gb', async () => {
     getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', category: 'it-jobs' });
-    $fetchMock.mockRejectedValueOnce({ statusCode: 429, response: { status: 429 } });
-
     const { fetchReedData } = await import('../../../utils/reed');
+    vi.mocked(fetchReedData).mockRejectedValueOnce({ statusCode: 500, response: { status: 500 } });
+
     await jobsHandler({} as unknown as H3Event);
 
-    expect(fetchReedData).toHaveBeenCalledWith(
-      'developer',
-      '',
-      'full-time',
-      'permanent',
-      'it-jobs'
+    expect($fetchMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ params: expect.objectContaining({ category: 'it-jobs' }) })
     );
   });
 
   it('caches a fallback-sourced response for 24 hours regardless of cacheDays', async () => {
-    getQueryMock.mockReturnValue({
-      title: 'developer',
-      location: 'london',
-      country: 'gb',
-      resultsPerPage: '10'
-    });
-
-    $fetchMock.mockRejectedValueOnce({
-      statusCode: 429,
-      response: { status: 429 }
-    });
+    const { fetchReedData } = await import('../../../utils/reed');
+    vi.mocked(fetchReedData).mockRejectedValueOnce({ statusCode: 500, response: { status: 500 } });
 
     const before = Date.now();
     await jobsHandler({} as unknown as H3Event);

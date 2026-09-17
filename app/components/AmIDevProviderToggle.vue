@@ -43,18 +43,21 @@ const isOpen = ref(false);
 const override = useDevProviderOverride();
 const { currentCountry } = useRegion();
 
+// Ordered primary-first per region: Reed is UK's primary provider (Adzuna
+// the fallback), Adzuna is USA's primary provider (Jooble the fallback).
 const options = computed(() => {
-  const baseOptions = [
-    { label: 'Auto', value: 'auto' },
-    { label: 'Adzuna', value: 'adzuna' }
-  ];
-
   if (currentCountry.value === 'USA') {
-    baseOptions.push({ label: 'Jooble', value: 'jooble' });
-  } else {
-    baseOptions.push({ label: 'Reed', value: 'reed' });
+    return [
+      { label: 'Auto', value: 'auto' },
+      { label: 'Adzuna', value: 'adzuna' },
+      { label: 'Jooble', value: 'jooble' }
+    ];
   }
 
-  return baseOptions;
+  return [
+    { label: 'Auto', value: 'auto' },
+    { label: 'Reed', value: 'reed' },
+    { label: 'Adzuna', value: 'adzuna' }
+  ];
 });
 </script>
