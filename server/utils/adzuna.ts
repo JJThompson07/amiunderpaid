@@ -6,7 +6,11 @@ import type {
   JobSearchResponse,
   SalaryDistributionResponse
 } from '~~/shared/utils/market-data';
-import { buildHistogramBuckets, trimSalaryOutliersIqr } from '~~/shared/utils/math';
+import {
+  buildHistogramBuckets,
+  filterSanitySalaries,
+  trimSalaryOutliersIqr
+} from '~~/shared/utils/math';
 import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 
 // Below this many relevance-filtered results with valid salaries (or, for the
@@ -84,13 +88,23 @@ const resolveAdzunaLocation = (location: string): string | undefined => {
  * neither provider lets an off-tier or off-topic phrase/word match skew
  * statistics regardless of which query tier produced it.
  */
-export const processAdzunaJobs = (jobs: JobListing[], searchTitle: string): JobSearchResponse => {
+export const processAdzunaJobs = (
+  jobs: JobListing[],
+  searchTitle: string,
+  jobType: string = 'full-time',
+  countryCode: string = 'gb'
+): JobSearchResponse => {
   const relevantJobs = filterAndRankJobsByRelevance(jobs, searchTitle);
 
-  const salariedJobAverages = relevantJobs
+  const rawSalaries = relevantJobs
     .filter((job) => job.salary_min && job.salary_max)
     .map((job) => (job.salary_min + job.salary_max) / 2);
-  const trimmedSalaries = trimSalaryOutliersIqr(salariedJobAverages);
+  const sanitizedSalaries = filterSanitySalaries(
+    rawSalaries,
+    jobType,
+    countryCode === 'us' ? 'us' : 'gb'
+  );
+  const trimmedSalaries = trimSalaryOutliersIqr(sanitizedSalaries);
 
   const mean =
     trimmedSalaries.length > 0
@@ -171,17 +185,21 @@ export const fetchAdzunaJobs = async (
       )
     );
 
+  const anchorPhrase = extractSearchAnchorPhrase(title);
+
   const tier1Raw = await search(title);
-  const tier1Result = processAdzunaJobs(tier1Raw.results || [], title);
+  const tier1Result = processAdzunaJobs(tier1Raw.results || [], title, jobType, countryCode);
   const tier1SalariedCount = tier1Result.results.filter((r) => r.salary_min && r.salary_max).length;
 
-  if (tier1SalariedCount >= MIN_TIER1_SALARIED_RESULTS) {
+  // Skip Tier 2 entirely when the anchor phrase is a no-op (no scope modifier
+  // was stripped from the title) -- it would send Adzuna an identical
+  // title_only request for no benefit.
+  if (tier1SalariedCount >= MIN_TIER1_SALARIED_RESULTS || anchorPhrase === title) {
     return tier1Result;
   }
 
-  const anchorPhrase = extractSearchAnchorPhrase(title);
   const tier2Raw = await search(anchorPhrase);
-  return processAdzunaJobs(tier2Raw.results || [], title);
+  return processAdzunaJobs(tier2Raw.results || [], title, jobType, countryCode);
 };
 
 export const fetchAdzunaHistogram = async (
@@ -224,14 +242,17 @@ export const fetchAdzunaHistogram = async (
       )
     );
 
+  const anchorPhrase = extractSearchAnchorPhrase(title);
+
   const tier1Raw = await search(title);
   const tier1Histogram = tier1Raw.histogram || {};
 
-  if (Object.keys(tier1Histogram).length >= MIN_TIER1_HISTOGRAM_BUCKETS) {
+  // Skip Tier 2 entirely when the anchor phrase is a no-op -- see
+  // fetchAdzunaJobs for the same short-circuit and its rationale.
+  if (Object.keys(tier1Histogram).length >= MIN_TIER1_HISTOGRAM_BUCKETS || anchorPhrase === title) {
     return { histogram: tier1Histogram, provider: 'adzuna' as const };
   }
 
-  const anchorPhrase = extractSearchAnchorPhrase(title);
   const tier2Raw = await search(anchorPhrase);
   return { histogram: tier2Raw.histogram || {}, provider: 'adzuna' as const };
 };

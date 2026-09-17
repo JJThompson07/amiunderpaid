@@ -162,6 +162,33 @@ describe('adzuna utils', () => {
       expect(result.mean).toBe(0);
       expect(result.histogram).toEqual({});
     });
+
+    it('drops an unparsed day-rate salary via filterSanitySalaries before computing the mean', () => {
+      const jobs = [
+        buildAdzunaJob({ id: 1, title: 'Developer', salary_min: 200, salary_max: 250 }), // day rate
+        buildAdzunaJob({ id: 2, title: 'Developer', salary_min: 40000, salary_max: 60000 })
+      ];
+
+      const result = processAdzunaJobs(jobs, 'Developer');
+
+      // The day-rate listing is still returned (sanity filtering only affects
+      // statistics, mirroring IQR trimming's behavior), but excluded from mean.
+      expect(result.count).toBe(2);
+      expect(result.mean).toBe(50000);
+    });
+
+    it('uses the $25,000 USD floor for us, vs. the £15,000 floor for gb', () => {
+      const jobs = [
+        buildAdzunaJob({ id: 1, title: 'Developer', salary_min: 20000, salary_max: 22000 }), // avg 21000
+        buildAdzunaJob({ id: 2, title: 'Developer', salary_min: 40000, salary_max: 60000 }) // avg 50000
+      ];
+
+      const resultUs = processAdzunaJobs(jobs, 'Developer', 'full-time', 'us');
+      expect(resultUs.mean).toBe(50000); // 21000 dropped under the $25k US floor
+
+      const resultGb = processAdzunaJobs(jobs, 'Developer', 'full-time', 'gb');
+      expect(resultGb.mean).toBe(35500); // both retained under the £15k GB floor
+    });
   });
 
   describe('fetchAdzunaJobs', () => {
@@ -286,6 +313,24 @@ describe('adzuna utils', () => {
       expect(result.count).toBe(3);
     });
 
+    it('should not retry Tier 2 when the anchor phrase is a no-op (title has no scope modifier)', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ adzunaAppId: 'id', adzunaAppKey: 'key' }))
+      );
+      const sparseResponse = { count: 1, results: [buildAdzunaJob({ id: 1 })] };
+      const fetchMock = vi.fn().mockResolvedValue(sparseResponse);
+      vi.stubGlobal('$fetch', fetchMock);
+
+      const result = await fetchAdzunaJobs('Developer', '', 'gb', 'full-time', 'permanent');
+
+      // 'Developer' has no scope modifier to strip, so extractSearchAnchorPhrase
+      // is a no-op and a Tier 2 retry would send Adzuna an identical
+      // title_only request for no benefit -- it must be skipped.
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result.count).toBe(1);
+    });
+
     it('should return a valid zero-count response instead of throwing on zero results', async () => {
       vi.stubGlobal(
         'useRuntimeConfig',
@@ -358,6 +403,21 @@ describe('adzuna utils', () => {
       );
       expect(result.histogram).toEqual(richHistogram.histogram);
       expect(result.provider).toBe('adzuna');
+    });
+
+    it('should not retry Tier 2 when the anchor phrase is a no-op', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ adzunaAppId: 'id', adzunaAppKey: 'key' }))
+      );
+      const sparseHistogram = { histogram: { '50000': 1 } };
+      const fetchMock = vi.fn().mockResolvedValue(sparseHistogram);
+      vi.stubGlobal('$fetch', fetchMock);
+
+      const result = await fetchAdzunaHistogram('Developer', '', 'gb');
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result.histogram).toEqual(sparseHistogram.histogram);
     });
 
     it('should fall back to Tier 2 (anchor phrase title_only) when Tier 1 has too few buckets', async () => {

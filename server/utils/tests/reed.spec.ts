@@ -124,6 +124,28 @@ describe('Reed Utility', () => {
       expect(processed.results.some((r) => r.salary_max === 500000)).toBe(true);
     });
 
+    it('drops an unparsed day-rate salary via filterSanitySalaries before computing the mean', () => {
+      const mockResponse: ReedJobResponse = {
+        totalResults: 2,
+        results: [
+          buildReedJob({ jobId: 1, jobTitle: 'Developer', minimumSalary: 200, maximumSalary: 250 }), // day rate
+          buildReedJob({
+            jobId: 2,
+            jobTitle: 'Developer',
+            minimumSalary: 40000,
+            maximumSalary: 60000
+          })
+        ]
+      };
+
+      const processed = processReedData(mockResponse, 'full-time', 'permanent', 'Developer');
+
+      // The day-rate listing is still returned (sanity filtering only affects
+      // statistics, mirroring IQR trimming's behavior), but excluded from mean.
+      expect(processed.count).toBe(2);
+      expect(processed.mean).toBe(50000);
+    });
+
     it('should handle empty results safely', () => {
       const mockResponse: ReedJobResponse = {
         totalResults: 0,

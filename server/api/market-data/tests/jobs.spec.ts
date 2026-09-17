@@ -514,9 +514,20 @@ describe('market-data jobs endpoint', () => {
       resultsPerPage: '10'
     });
 
+    // Title must relevance-match the 'developer' search term: Adzuna no longer
+    // retries an identical Tier 2 request when the anchor phrase is a no-op
+    // (see server/utils/adzuna.ts), so Tier 1 alone must succeed here.
     $fetchMock.mockResolvedValueOnce({
       count: 1,
-      results: [{ id: 1, title: 'Adzuna Job', category: { tag: 'unknown' } }]
+      results: [
+        {
+          id: 1,
+          title: 'Developer',
+          salary_min: 40000,
+          salary_max: 60000,
+          category: { tag: 'unknown' }
+        }
+      ]
     });
 
     const before = Date.now();

@@ -1,7 +1,11 @@
 import { REED_LOCATION_MAP } from '../constants/locations';
 import { extractSearchAnchorPhrase, filterAndRankJobsByRelevance } from './searchRelevance';
 import type { JobSearchResponse } from '~~/shared/utils/market-data';
-import { buildHistogramBuckets, trimSalaryOutliersIqr } from '~~/shared/utils/math';
+import {
+  buildHistogramBuckets,
+  filterSanitySalaries,
+  trimSalaryOutliersIqr
+} from '~~/shared/utils/math';
 
 // Below this many relevance-filtered results with valid salaries, Tier 1's
 // exact-phrase precision is judged too sparse and Tier 2 (unquoted full-title
@@ -209,10 +213,12 @@ export const processReedData = (
   // off-tier or off-topic match skew the mean/histogram.
   const relevantJobs = filterAndRankJobsByRelevance(mappedJobs, searchTitle);
 
-  const salariedJobAverages = relevantJobs
+  const rawSalaries = relevantJobs
     .filter((job) => job.salary_min && job.salary_max)
     .map((job) => (job.salary_min + job.salary_max) / 2);
-  const trimmedSalaries = trimSalaryOutliersIqr(salariedJobAverages);
+  // Reed only ever serves UK (gb) listings.
+  const sanitizedSalaries = filterSanitySalaries(rawSalaries, jobType, 'gb');
+  const trimmedSalaries = trimSalaryOutliersIqr(sanitizedSalaries);
 
   const mean =
     trimmedSalaries.length > 0
