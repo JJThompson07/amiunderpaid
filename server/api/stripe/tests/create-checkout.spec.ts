@@ -36,6 +36,7 @@ const {
   mockVerifyIdToken,
   mockPricingGet,
   mockUserGet,
+  mockUserDocUpdate,
   mockClaimGet,
   mockGetFirestore,
   mockSessionsCreate,
@@ -53,6 +54,7 @@ const {
 } = vi.hoisted(() => {
   const mockPricingGet = vi.fn();
   const mockUserGet = vi.fn();
+  const mockUserDocUpdate = vi.fn();
   // Keyed by claim doc id (e.g. "10_IT") so tests can configure per-territory
   // conflict state; defaults to "no doc" for any id a test doesn't touch.
   const mockClaimGet = new Map<string, ReturnType<typeof vi.fn>>();
@@ -69,7 +71,12 @@ const {
       return { doc: (): { get: typeof mockPricingGet } => ({ get: mockPricingGet }) };
     }
     if (path === 'users') {
-      return { doc: (): { get: typeof mockUserGet } => ({ get: mockUserGet }) };
+      return {
+        doc: (): { get: typeof mockUserGet; update: typeof mockUserDocUpdate } => ({
+          get: mockUserGet,
+          update: mockUserDocUpdate
+        })
+      };
     }
     if (path === 'territory_category_owners') {
       return {
@@ -88,6 +95,7 @@ const {
     mockVerifyIdToken: vi.fn(),
     mockPricingGet,
     mockUserGet,
+    mockUserDocUpdate,
     mockClaimGet,
     mockGetFirestore: vi.fn(() => ({
       collection: mockCollection,
@@ -162,6 +170,7 @@ describe('create-checkout', () => {
     mockPricingGet.mockResolvedValue({ exists: false });
     mockUserGet.mockResolvedValue({ data: () => ({}) });
     mockSessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/test' });
+    mockUserDocUpdate.mockResolvedValue(undefined);
 
     // Existing-subscription branch defaults; only exercised when a test sets
     // `stripeSubscriptionId` on the user doc.
@@ -695,6 +704,75 @@ describe('create-checkout', () => {
         'Exclusive month pricing resolved to zero and cannot be processed as-is.'
       );
       expect(mockSubRetrieve).not.toHaveBeenCalled();
+    });
+
+    it('falls back to a new Checkout Session and clears stripeSubscriptionId when the subscription is missing in Stripe', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockSubRetrieve.mockRejectedValueOnce({ statusCode: 404, code: 'resource_missing' });
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ url: 'https://checkout.stripe.com/test' });
+      expect(mockUserDocUpdate).toHaveBeenCalledWith({ stripeSubscriptionId: null });
+      expect(mockSubUpdate).not.toHaveBeenCalled();
+      expect(mockSessionsCreate).toHaveBeenCalled();
+    });
+
+    it('falls back to a new Checkout Session and clears stripeSubscriptionId when the subscription retrieves successfully but is already canceled', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockSubRetrieve.mockResolvedValueOnce({
+        status: 'canceled',
+        customer: 'cus_123',
+        items: { data: [{ id: 'si_123', price: { product: 'prod_123' } }] }
+      });
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ url: 'https://checkout.stripe.com/test' });
+      expect(mockUserDocUpdate).toHaveBeenCalledWith({ stripeSubscriptionId: null });
+      expect(mockSubUpdate).not.toHaveBeenCalled();
+      expect(mockSessionsCreate).toHaveBeenCalled();
+    });
+
+    it('does NOT clear stripeSubscriptionId or create a new session for a still-live past_due subscription', async () => {
+      // past_due is still a real, recoverable Stripe subscription (mid-dunning) --
+      // it must keep going through the existing-subscription update path, never
+      // be treated as "gone" the way `canceled` is. See design.md Decision 1.5.
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockSubRetrieve.mockResolvedValueOnce({
+        status: 'past_due',
+        customer: 'cus_123',
+        items: { data: [{ id: 'si_123', price: { product: 'prod_123' } }] }
+      });
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ url: null });
+      expect(mockUserDocUpdate).not.toHaveBeenCalled();
+      expect(mockSessionsCreate).not.toHaveBeenCalled();
+      expect(mockSubUpdate).toHaveBeenCalledWith('sub_123', expect.anything());
+    });
+
+    it('still throws a 500 and does not touch Firestore when subscription retrieval fails for an unrelated reason', async () => {
+      mockUserGet.mockResolvedValue({
+        data: () => ({ stripeSubscriptionId: 'sub_123', activeTerritories: [] })
+      });
+      mockSubRetrieve.mockRejectedValueOnce({ statusCode: 429, code: 'rate_limit' });
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow('Failed to load existing billing subscription.');
+      expect(mockUserDocUpdate).not.toHaveBeenCalled();
+      expect(mockSessionsCreate).not.toHaveBeenCalled();
     });
 
     it('folds a flat national charge into the recurring total when the recruiter holds an active national status', async () => {

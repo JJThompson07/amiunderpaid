@@ -2,6 +2,7 @@
 import Stripe from 'stripe';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { isStripeSubscriptionMissingOrCanceled } from '~~/server/utils/stripe';
 import type { TerritoryClaim } from '~~/shared/utils/types';
 
 type PricingBand = { basic: number; exclusive: number };
@@ -131,7 +132,12 @@ export default defineEventHandler(async (event) => {
     newMonthlyTotal += Math.max(0, nationalBasicPrice) * activeNationalFlags;
   }
 
-  // 4. UPDATE STRIPE
+  // 4. UPDATE STRIPE. If the recruiter's Stripe subscription has already been
+  // removed or cancelled out-of-band, treat billing as already reconciled
+  // instead of blocking cancellation -- see design.md Decision 2 (shared
+  // pattern with set-national.post.ts).
+  let shouldClearStripeSub = false;
+
   if (stripeSubId) {
     try {
       // A nationally-flagged recruiter with a 100% basicDiscount can legitimately
@@ -142,8 +148,7 @@ export default defineEventHandler(async (event) => {
       if (newMonthlyTotal === 0 && activeNationalFlags === 0) {
         // If they canceled their last basic plan, kill the subscription entirely!
         await stripe.subscriptions.cancel(stripeSubId);
-        // Remove the sub ID from the database
-        await userRef.update({ stripeSubscriptionId: null });
+        shouldClearStripeSub = true;
       } else {
         // They still have other territories, so we just downgrade the price
         const subscription = await stripe.subscriptions.retrieve(stripeSubId);
@@ -164,8 +169,11 @@ export default defineEventHandler(async (event) => {
           proration_behavior: 'none' // Don't refund them for the middle of this month
         });
       }
-    } catch {
-      throw createError({ statusCode: 500, message: 'Failed to update billing with Stripe.' });
+    } catch (error) {
+      if (!isStripeSubscriptionMissingOrCanceled(error)) {
+        throw createError({ statusCode: 500, message: 'Failed to update billing with Stripe.' });
+      }
+      shouldClearStripeSub = true;
     }
   }
 
@@ -181,6 +189,7 @@ export default defineEventHandler(async (event) => {
   // 6a. Write the updated territories to the user doc
   batch.update(userRef, {
     activeTerritories: updatedTerritories,
+    ...(shouldClearStripeSub ? { stripeSubscriptionId: null } : {}),
     updatedAt: new Date().toISOString()
   });
 

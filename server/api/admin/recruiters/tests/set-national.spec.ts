@@ -385,4 +385,83 @@ describe('set-national', () => {
     await expect(handler(event)).rejects.toThrow('Failed to process pricing.');
     expect(mockSubUpdate).not.toHaveBeenCalled();
   });
+
+  it('revokes national access and clears stripeSubscriptionId when cancel() finds the subscription already gone in Stripe', async () => {
+    requestBody = { uid: 'recruiter_1', country: 'UK', active: false };
+    mockUserGet.mockResolvedValue({
+      data: () => ({
+        billingCountry: 'UK',
+        stripeSubscriptionId: 'sub_123',
+        ukNationalStatus: 'active',
+        activeTerritories: []
+      })
+    });
+    mockSubCancel.mockRejectedValueOnce({ statusCode: 404, code: 'resource_missing' });
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ success: true, newTotal: 0, status: null });
+    expect(mockBatchUpdate).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ ukNationalStatus: 'FIELD_DELETE', stripeSubscriptionId: null })
+    );
+    expect(mockBatchCommit).toHaveBeenCalled();
+  });
+
+  it('revokes national access and clears stripeSubscriptionId when update() reports the subscription already canceled', async () => {
+    requestBody = { uid: 'recruiter_1', country: 'UK', active: false };
+    mockUserGet.mockResolvedValue({
+      data: () => ({
+        billingCountry: 'UK',
+        stripeSubscriptionId: 'sub_123',
+        ukNationalStatus: 'active',
+        usaNationalStatus: 'active', // keeps newMonthlyTotal > 0 so the update() branch runs
+        activeTerritories: []
+      })
+    });
+    mockSubUpdate.mockRejectedValueOnce({
+      statusCode: 400,
+      code: 'invalid_canceled_subscription_fields'
+    });
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res.status).toBe(null);
+    expect(mockBatchUpdate).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ ukNationalStatus: 'FIELD_DELETE', stripeSubscriptionId: null })
+    );
+    expect(mockBatchCommit).toHaveBeenCalled();
+  });
+
+  it('grants national access as pending and clears stripeSubscriptionId when the Stripe subscription is missing', async () => {
+    mockUserGet.mockResolvedValue({
+      data: () => ({
+        billingCountry: 'UK',
+        stripeSubscriptionId: 'sub_123',
+        activeTerritories: []
+      })
+    });
+    mockSubUpdate.mockRejectedValueOnce({ statusCode: 404, code: 'resource_missing' });
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res.status).toBe('pending');
+    expect(mockBatchUpdate).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ ukNationalStatus: 'pending', stripeSubscriptionId: null })
+    );
+    expect(mockBatchCommit).toHaveBeenCalled();
+  });
+
+  it('still throws a 500 and does not commit Firestore for an unrelated Stripe error (e.g. rate limit)', async () => {
+    mockSubUpdate.mockRejectedValueOnce({ statusCode: 429, code: 'rate_limit' });
+    const event = {} as unknown as H3Event;
+
+    await expect(handler(event)).rejects.toThrow('Failed to update billing with Stripe.');
+    expect(mockBatchCommit).not.toHaveBeenCalled();
+  });
 });
