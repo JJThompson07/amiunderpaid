@@ -42,3 +42,14 @@ The email template generator SHALL sanitize all dynamic text values (including n
 #### Scenario: Dynamic text contains HTML special characters
 - **WHEN** input strings containing characters like `<`, `>`, `&`, `"`, or `'` are passed to the email generator
 - **THEN** the rendered HTML escapes all special characters into safe HTML entity equivalents.
+
+### Requirement: Server-Side Brand and Site-URL Resolution
+The system SHALL provide a `resolveBrandFromHost(event)` helper that classifies the current Nitro request's brand (`'amiunderpaid' | 'benchmarkmyrole'`) and origin (`siteUrl`) from the request's host and protocol, for use by API routes that cannot reach the client-side `$siteBrand` plugin. Callers MUST NOT read brand or site URL from `useRuntimeConfig().public.siteUrl` for the purpose of choosing template branding or building logo/CTA links, since a single Vercel project serves all brand domains from one deployment and that value cannot represent "the current domain."
+
+#### Scenario: Request arrives on a BenchmarkMyRole domain
+- **WHEN** `resolveBrandFromHost(event)` is called during a request whose host contains `benchmarkmyrole`
+- **THEN** it SHALL return `brand: 'benchmarkmyrole'` and `siteUrl` set to that request's own protocol and host
+
+#### Scenario: Request arrives on an AmIUnderpaid domain
+- **WHEN** `resolveBrandFromHost(event)` is called during a request whose host does not contain `benchmarkmyrole`
+- **THEN** it SHALL return `brand: 'amiunderpaid'` and `siteUrl` set to that request's own protocol and host
