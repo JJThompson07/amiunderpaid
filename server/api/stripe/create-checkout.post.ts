@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { sendBillingFailureAlert } from '~~/server/utils/billingAlerts';
+import { isStripeSubscriptionMissingOrCanceled } from '~~/server/utils/stripe';
 import { computeTerritoryFulfillment } from '~~/server/utils/territoryFulfillment';
 import { RECRUITER_TERRITORIES_UK } from '~~/utils/locations/uk';
 import { RECRUITER_TERRITORIES_USA } from '~~/utils/locations/usa';
@@ -202,26 +203,51 @@ export default defineEventHandler(async (event) => {
   // no longer referenced anywhere) while a second one is created alongside it.
   const existingSubscriptionId: string | undefined = userData.stripeSubscriptionId;
 
-  if (existingSubscriptionId) {
-    if (basicCount === 0 && upfrontTotal === 0) {
-      if (exclusiveMonthsTotal > 0) {
-        throw createError({
-          statusCode: 400,
-          message: 'Exclusive month pricing resolved to zero and cannot be processed as-is.'
-        });
-      }
-      throw createError({ statusCode: 400, message: 'No items selected in cart.' });
-    }
-
-    let subscription: Stripe.Subscription;
-    try {
-      subscription = await stripe.subscriptions.retrieve(existingSubscriptionId);
-    } catch {
+  if (existingSubscriptionId && basicCount === 0 && upfrontTotal === 0) {
+    if (exclusiveMonthsTotal > 0) {
       throw createError({
-        statusCode: 500,
-        message: 'Failed to load existing billing subscription.'
+        statusCode: 400,
+        message: 'Exclusive month pricing resolved to zero and cannot be processed as-is.'
       });
     }
+    throw createError({ statusCode: 400, message: 'No items selected in cart.' });
+  }
+
+  // Retrieve the existing subscription up front, outside the big
+  // existing-subscription block below: if Stripe reports it's missing or
+  // already cancelled (out-of-band deletion), clear the stale ID on the user
+  // doc and fall through to building a brand new Checkout Session further
+  // down instead of blocking checkout entirely -- see design.md Decision 2's
+  // shared recovery pattern (also used by set-national.post.ts and
+  // cancel-territory.post.ts).
+  let existingSubscription: Stripe.Subscription | undefined;
+  if (existingSubscriptionId) {
+    try {
+      const retrieved = await stripe.subscriptions.retrieve(existingSubscriptionId);
+      // Only `status === 'canceled'` is treated as "gone" here -- NOT every
+      // non-active status via isSubscriptionActive(). `past_due` / `unpaid` /
+      // `incomplete` / `paused` are still-live Stripe objects (mid-dunning or
+      // mid-setup); clearing and replacing those would silently orphan a
+      // recoverable subscription, exactly what the comment above this block
+      // warns about. See design.md Decision 1.5.
+      if (retrieved.status === 'canceled') {
+        await db.collection('users').doc(userId).update({ stripeSubscriptionId: null });
+      } else {
+        existingSubscription = retrieved;
+      }
+    } catch (error) {
+      if (!isStripeSubscriptionMissingOrCanceled(error)) {
+        throw createError({
+          statusCode: 500,
+          message: 'Failed to load existing billing subscription.'
+        });
+      }
+      await db.collection('users').doc(userId).update({ stripeSubscriptionId: null });
+    }
+  }
+
+  if (existingSubscriptionId && existingSubscription) {
+    const subscription = existingSubscription;
     const customerId = subscription.customer as string;
 
     // Pre-check for exclusive-month conflicts before charging anything.

@@ -1,6 +1,7 @@
 // server/api/admin/recruiters/set-national.post.ts
 import Stripe from 'stripe';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { isStripeSubscriptionMissingOrCanceled } from '~~/server/utils/stripe';
 import type { TerritoryClaim } from '~~/shared/utils/types';
 
 type PricingBand = { basic: number; exclusive: number };
@@ -180,12 +181,18 @@ export default defineEventHandler(async (event) => {
   }
 
   // 3. UPDATE STRIPE FIRST -- only commit Firestore once billing is confirmed,
-  // mirroring cancel-territory.post.ts's existing safety ordering.
+  // mirroring cancel-territory.post.ts's existing safety ordering. If the
+  // recruiter's Stripe subscription has already been removed or cancelled
+  // out-of-band, treat billing as already reconciled (nothing left to
+  // cancel/update) instead of blocking the admin action -- see design.md
+  // Decision 2.
+  let shouldClearStripeSub = false;
+
   if (stripeSubId) {
     try {
       if (newMonthlyTotal === 0 && activeNationalFlagsAfter === 0) {
         await stripe.subscriptions.cancel(stripeSubId);
-        await userRef.update({ stripeSubscriptionId: null });
+        shouldClearStripeSub = true;
       } else {
         const subscription = await stripe.subscriptions.retrieve(stripeSubId);
         const itemId = subscription.items.data[0]?.id;
@@ -206,14 +213,18 @@ export default defineEventHandler(async (event) => {
           proration_behavior: 'none'
         });
       }
-    } catch {
-      throw createError({ statusCode: 500, message: 'Failed to update billing with Stripe.' });
+    } catch (error) {
+      if (!isStripeSubscriptionMissingOrCanceled(error)) {
+        throw createError({ statusCode: 500, message: 'Failed to update billing with Stripe.' });
+      }
+      shouldClearStripeSub = true;
     }
   }
 
   // 4. COMMIT FIRESTORE (user doc + claim doc cleanups) atomically
+  const hasLiveStripeSub = Boolean(stripeSubId) && !shouldClearStripeSub;
   const newStatus: 'pending' | 'active' | null = active
-    ? stripeSubId
+    ? hasLiveStripeSub
       ? 'active'
       : 'pending'
     : null;
@@ -223,6 +234,7 @@ export default defineEventHandler(async (event) => {
   batch.update(userRef, {
     activeTerritories: updatedTerritories,
     [nationalStatusKey]: newStatus ?? FieldValue.delete(),
+    ...(shouldClearStripeSub ? { stripeSubscriptionId: null } : {}),
     updatedAt: new Date().toISOString()
   });
 

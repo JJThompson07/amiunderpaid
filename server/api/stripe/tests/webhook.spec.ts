@@ -29,6 +29,7 @@ const {
   mockSeenGet,
   mockCollection,
   mockDoc,
+  mockUsersWhere,
   mockGetFirestore,
   mockRefundsCreate,
   mockSubscriptionsCancel,
@@ -41,7 +42,9 @@ const {
     get: vi.fn(),
     getAll: vi.fn(),
     set: vi.fn(),
-    create: vi.fn()
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn()
   };
 
   // Mirrors the real @google-cloud/firestore Transaction: get/getAll throw
@@ -82,6 +85,18 @@ const {
       ): ReturnType<typeof mockTransaction.create> => {
         hasStagedWrite = true;
         return mockTransaction.create(...args);
+      },
+      update: (
+        ...args: Parameters<typeof mockTransaction.update>
+      ): ReturnType<typeof mockTransaction.update> => {
+        hasStagedWrite = true;
+        return mockTransaction.update(...args);
+      },
+      delete: (
+        ...args: Parameters<typeof mockTransaction.delete>
+      ): ReturnType<typeof mockTransaction.delete> => {
+        hasStagedWrite = true;
+        return mockTransaction.delete(...args);
       }
     };
     return callback(t);
@@ -93,6 +108,7 @@ const {
     mockSeenGet: vi.fn(),
     mockCollection,
     mockDoc: vi.fn(),
+    mockUsersWhere: vi.fn(() => 'USERS_QUERY'),
     mockGetFirestore: vi.fn(() => ({
       collection: mockCollection,
       runTransaction: mockRunTransaction
@@ -128,7 +144,8 @@ vi.mock('firebase-admin/firestore', () => ({
   getFirestore: mockGetFirestore,
   FieldValue: {
     serverTimestamp: vi.fn(() => 'TIMESTAMP'),
-    arrayUnion: vi.fn((val) => `ARRAY_UNION(${val})`)
+    arrayUnion: vi.fn((val) => `ARRAY_UNION(${val})`),
+    arrayRemove: vi.fn((val) => `ARRAY_REMOVE(${val})`)
   }
 }));
 
@@ -176,6 +193,9 @@ describe('Stripe Webhook', () => {
         return {
           doc: (): { get: typeof mockSeenGet } => ({ get: mockSeenGet })
         };
+      }
+      if (path === 'users') {
+        return { doc: mockDoc, where: mockUsersWhere };
       }
       return { doc: mockDoc };
     });
@@ -831,5 +851,168 @@ describe('Stripe Webhook', () => {
       expect.objectContaining({ stripeSubscriptionId: 'sub_clean_123' }),
       { merge: true }
     );
+  });
+
+  describe('customer.subscription.deleted', () => {
+    const deletedSubEvent = {
+      id: 'evt_sub_deleted',
+      type: 'customer.subscription.deleted',
+      data: { object: { id: 'sub_dead_123' } }
+    };
+
+    it('clears stripeSubscriptionId, national flags, and activeTerritories for the matching user', async () => {
+      mockConstructEvent.mockReturnValueOnce(deletedSubEvent);
+      const userRef = { id: 'user_123' };
+      mockTransaction.get.mockResolvedValueOnce({
+        empty: false,
+        docs: [
+          {
+            id: 'user_123',
+            ref: userRef,
+            data: (): { activeTerritories: unknown[] } => ({ activeTerritories: [] })
+          }
+        ]
+      });
+      // No basic territories, so basicClaimRefs is empty and getAll() is
+      // never called -- deliberately not stubbed here.
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ received: true });
+      expect(mockTransaction.getAll).not.toHaveBeenCalled();
+      expect(mockUsersWhere).toHaveBeenCalledWith('stripeSubscriptionId', '==', 'sub_dead_123');
+      expect(mockTransaction.set).toHaveBeenCalledWith(
+        userRef,
+        expect.objectContaining({
+          stripeSubscriptionId: null,
+          ukNationalStatus: null,
+          usaNationalStatus: null,
+          activeTerritories: []
+        }),
+        { merge: true }
+      );
+    });
+
+    it('is a no-op that still records the dedup marker when no user matches the subscription id', async () => {
+      mockConstructEvent.mockReturnValueOnce(deletedSubEvent);
+      mockTransaction.get.mockResolvedValueOnce({ empty: true, docs: [] });
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ received: true });
+      expect(mockTransaction.getAll).not.toHaveBeenCalled();
+      expect(mockTransaction.create).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ outcome: 'no-matching-user' })
+      );
+      expect(mockTransaction.set).not.toHaveBeenCalled();
+    });
+
+    it("surgically removes only this user's basic ownership when other owners remain on the claim doc", async () => {
+      mockConstructEvent.mockReturnValueOnce(deletedSubEvent);
+      const userRef = { id: 'user_123' };
+      mockTransaction.get.mockResolvedValueOnce({
+        empty: false,
+        docs: [
+          {
+            id: 'user_123',
+            ref: userRef,
+            data: (): {
+              activeTerritories: {
+                territoryId: number;
+                categoryValue: string;
+                isBasic: boolean;
+                exclusiveMonths: string[];
+              }[];
+            } => ({
+              activeTerritories: [
+                { territoryId: 5, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }
+              ]
+            })
+          }
+        ]
+      });
+      mockTransaction.getAll.mockResolvedValueOnce([
+        {
+          exists: true,
+          data: (): { basicOwners: string[] } => ({ basicOwners: ['user_123', 'other_user'] })
+        }
+      ]);
+
+      const event = {} as unknown as H3Event;
+      await handler(event);
+
+      expect(mockTransaction.update).toHaveBeenCalledWith(undefined, {
+        basicOwners: 'ARRAY_REMOVE(user_123)'
+      });
+      expect(mockTransaction.delete).not.toHaveBeenCalled();
+    });
+
+    it('deletes the claim doc when this user was its only basic owner and no exclusive months remain', async () => {
+      mockConstructEvent.mockReturnValueOnce(deletedSubEvent);
+      const userRef = { id: 'user_123' };
+      mockTransaction.get.mockResolvedValueOnce({
+        empty: false,
+        docs: [
+          {
+            id: 'user_123',
+            ref: userRef,
+            data: (): {
+              activeTerritories: {
+                territoryId: number;
+                categoryValue: string;
+                isBasic: boolean;
+                exclusiveMonths: string[];
+              }[];
+            } => ({
+              activeTerritories: [
+                { territoryId: 5, categoryValue: 'IT', isBasic: true, exclusiveMonths: [] }
+              ]
+            })
+          }
+        ]
+      });
+      mockTransaction.getAll.mockResolvedValueOnce([
+        { exists: true, data: (): { basicOwners: string[] } => ({ basicOwners: ['user_123'] }) }
+      ]);
+
+      const event = {} as unknown as H3Event;
+      await handler(event);
+
+      expect(mockTransaction.delete).toHaveBeenCalled();
+      expect(mockTransaction.update).not.toHaveBeenCalled();
+    });
+
+    it('returns 200 without erroring when a concurrent delivery wins the dedup race', async () => {
+      mockConstructEvent.mockReturnValueOnce(deletedSubEvent);
+      mockRunTransaction.mockRejectedValueOnce(alreadyExistsError());
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ received: true });
+    });
+
+    it('throws a 500 on a generic transaction failure', async () => {
+      mockConstructEvent.mockReturnValueOnce(deletedSubEvent);
+      mockRunTransaction.mockRejectedValueOnce(new Error('Firebase is down'));
+
+      const event = {} as unknown as H3Event;
+
+      await expect(handler(event)).rejects.toThrow('Database fulfillment failed');
+    });
+
+    it('skips processing if the event was already fully processed', async () => {
+      mockConstructEvent.mockReturnValueOnce(deletedSubEvent);
+      mockSeenGet.mockResolvedValueOnce({ exists: true });
+
+      const event = {} as unknown as H3Event;
+      const res = await handler(event);
+
+      expect(res).toEqual({ received: true });
+      expect(mockRunTransaction).not.toHaveBeenCalled();
+    });
   });
 });

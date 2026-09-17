@@ -23,7 +23,6 @@ const {
   mockVerifyIdToken,
   mockPricingGet,
   mockUserGet,
-  mockUserRefUpdate,
   mockClaimGet,
   mockGetFirestore,
   mockSubRetrieve,
@@ -63,7 +62,6 @@ const {
     mockVerifyIdToken: vi.fn(),
     mockPricingGet,
     mockUserGet,
-    mockUserRefUpdate,
     mockClaimGet,
     mockGetFirestore: vi.fn(() => ({
       collection: mockCollection,
@@ -347,7 +345,10 @@ describe('cancel-territory', () => {
 
     expect(res.newTotal).toBe(0);
     expect(mockSubCancel).toHaveBeenCalledWith('sub_123');
-    expect(mockUserRefUpdate).toHaveBeenCalledWith({ stripeSubscriptionId: null });
+    expect(mockBatchUpdate).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ stripeSubscriptionId: null })
+    );
     expect(mockSubUpdate).not.toHaveBeenCalled();
   });
 
@@ -504,7 +505,10 @@ describe('cancel-territory', () => {
 
     expect(res).toEqual({ success: true, newTotal: 0 });
     expect(mockSubCancel).not.toHaveBeenCalled();
-    expect(mockUserRefUpdate).not.toHaveBeenCalledWith({ stripeSubscriptionId: null });
+    expect(mockBatchUpdate).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ stripeSubscriptionId: null })
+    );
     expect(mockSubUpdate).toHaveBeenCalledWith(
       'sub_123',
       expect.objectContaining({
@@ -513,6 +517,63 @@ describe('cancel-territory', () => {
         ]
       })
     );
+  });
+
+  it('clears stripeSubscriptionId and proceeds locally when cancel() finds the subscription already gone in Stripe', async () => {
+    // Cancelling the only basic territory drives newMonthlyTotal to 0, so the
+    // handler calls cancel() -- Stripe reports it's already gone.
+    requestBody = { territoryId: 999 };
+    mockSubCancel.mockRejectedValueOnce({ statusCode: 404, code: 'resource_missing' });
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res).toEqual({ success: true, newTotal: 0 });
+    expect(mockBatchUpdate).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ stripeSubscriptionId: null })
+    );
+    expect(mockBatchCommit).toHaveBeenCalled();
+  });
+
+  it('clears stripeSubscriptionId and proceeds locally when update() reports the subscription already canceled', async () => {
+    // Two basic territories remain after cancelling one, so newMonthlyTotal > 0
+    // and the handler calls update() instead of cancel().
+    mockUserGet.mockResolvedValue({
+      data: () => ({
+        billingCountry: 'UK',
+        stripeSubscriptionId: 'sub_123',
+        activeTerritories: [
+          makeTerritory({ territoryId: 999, isBasic: true, band: 1 }),
+          makeTerritory({ territoryId: 1000, isBasic: true, band: 1 })
+        ]
+      })
+    });
+    requestBody = { territoryId: 999 };
+    mockSubUpdate.mockRejectedValueOnce({
+      statusCode: 400,
+      code: 'invalid_canceled_subscription_fields'
+    });
+
+    const event = {} as unknown as H3Event;
+    const res = await handler(event);
+
+    expect(res.newTotal).toBe(50);
+    expect(mockBatchUpdate).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ stripeSubscriptionId: null })
+    );
+    expect(mockBatchCommit).toHaveBeenCalled();
+  });
+
+  it('still throws a 500 and does not commit Firestore for an unrelated Stripe error (e.g. rate limit)', async () => {
+    requestBody = { territoryId: 999 };
+    mockSubCancel.mockRejectedValueOnce({ statusCode: 429, code: 'rate_limit' });
+
+    const event = {} as unknown as H3Event;
+
+    await expect(handler(event)).rejects.toThrow('Failed to update billing with Stripe.');
+    expect(mockBatchCommit).not.toHaveBeenCalled();
   });
 
   it('skips the territory_category_owners claim doc lookup entirely when it does not exist', async () => {

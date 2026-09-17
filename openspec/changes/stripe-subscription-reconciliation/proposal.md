@@ -38,6 +38,7 @@ When a recruiter's Stripe subscription is cancelled or deleted out-of-band (e.g.
 ### New Capabilities
 
 ### Modified Capabilities
+
 - `national-recruiter-tier`: Adds resilient error recovery and stale subscription cleanup when toggling or revoking national status for recruiters with missing or canceled Stripe subscriptions.
 - `territory-cancellation-integrity`: Adds graceful recovery and stale subscription cleanup during territory cancellation when a Stripe subscription is missing or canceled.
 - `stripe-checkout-security`: Adds automatic recovery for stale subscription IDs during checkout creation and synchronizes subscription deletion via the `customer.subscription.deleted` webhook.

@@ -271,5 +271,112 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // 5. Synchronize an out-of-band Stripe subscription deletion (Dashboard
+  // deletion, repeated payment failure, etc.) back into Firestore -- see
+  // design.md Decision 3. A dead subscription funds both national flags and
+  // every basic territory the recruiter holds (single stripeSubscriptionId
+  // per user, same reasoning as set-national.post.ts and
+  // cancel-territory.post.ts), so all of it is cleared together, not just
+  // stripeSubscriptionId.
+  if (stripeEvent.type === 'customer.subscription.deleted') {
+    const subscription = stripeEvent.data.object as Stripe.Subscription;
+    const db = getFirestore();
+
+    const seen = db.collection('stripe_events').doc(stripeEvent.id);
+    if ((await seen.get()).exists) {
+      return { received: true };
+    }
+
+    try {
+      await db.runTransaction(async (t) => {
+        // All reads before any writes -- Firestore transaction requirement.
+        const usersSnap = await t.get(
+          db.collection('users').where('stripeSubscriptionId', '==', subscription.id)
+        );
+
+        if (usersSnap.empty) {
+          t.create(seen, {
+            type: stripeEvent.type,
+            outcome: 'no-matching-user',
+            processedAt: FieldValue.serverTimestamp()
+          });
+          return;
+        }
+
+        const userDoc = usersSnap.docs[0]!;
+        const userData = userDoc.data();
+        const activeTerritories: TerritoryClaim[] = userData.activeTerritories || [];
+
+        // Only basic ownership is cleaned up here -- exclusive months were
+        // paid upfront and are unaffected by the recurring subscription's
+        // fate, mirroring the proposal's own scope (see proposal.md item 4).
+        const basicClaimRefs = activeTerritories
+          .filter((claim) => claim.isBasic)
+          .map((claim) =>
+            db
+              .collection('territory_category_owners')
+              .doc(`${claim.territoryId}_${claim.categoryValue}`)
+          );
+        const basicClaimSnaps = basicClaimRefs.length > 0 ? await t.getAll(...basicClaimRefs) : [];
+
+        // All reads complete -- safe to stage writes.
+        t.create(seen, {
+          type: stripeEvent.type,
+          status: 'processing',
+          processedAt: FieldValue.serverTimestamp()
+        });
+
+        // Indexed lookup into basicClaimRefs, mirroring set-national.post.ts /
+        // cancel-territory.post.ts -- the mock/real snapshot's own `.ref` isn't
+        // relied on, matching this file's existing claimRefs[claimDocId] pattern.
+        basicClaimSnaps.forEach((snap, index) => {
+          if (!snap.exists) {
+            return;
+          }
+          const claimData = snap.data() || {};
+          const basicOwners: string[] = claimData.basicOwners || [];
+          if (!basicOwners.includes(userDoc.id)) {
+            return;
+          }
+          const takenMonths: Record<string, string> = claimData.takenExclusiveMonths || {};
+          const remainingBasic = basicOwners.filter((id) => id !== userDoc.id);
+          const claimRef = basicClaimRefs[index]!;
+
+          if (remainingBasic.length === 0 && Object.keys(takenMonths).length === 0) {
+            t.delete(claimRef);
+          } else {
+            t.update(claimRef, { basicOwners: FieldValue.arrayRemove(userDoc.id) });
+          }
+        });
+
+        t.set(
+          userDoc.ref,
+          {
+            stripeSubscriptionId: null,
+            ukNationalStatus: null,
+            usaNationalStatus: null,
+            activeTerritories: [],
+            updatedAt: new Date().toISOString()
+          },
+          { merge: true }
+        );
+
+        t.set(
+          seen,
+          { type: stripeEvent.type, processedAt: FieldValue.serverTimestamp() },
+          { merge: true }
+        );
+      });
+    } catch (error) {
+      if (isAlreadyExistsError(error)) {
+        // Lost the race to a concurrent delivery of the same event.
+        return { received: true };
+      }
+      throw createError({ statusCode: 500, message: 'Database fulfillment failed' }); // transient: let Stripe retry
+    }
+
+    return { received: true };
+  }
+
   return { received: true };
 });
