@@ -15,6 +15,10 @@
 - [ ] 3.2 Update `server/api/admin/recruiters/reject.post.ts` to format the application rejection email using `renderBrandedEmail()` with a polite notification body and team sign-off.
 - [ ] 3.3 Update unit tests in `server/api/admin/recruiters/tests/accept.spec.ts` and `server/api/admin/recruiters/tests/reject.spec.ts` to assert that the queued mail documents contain the branded HTML structure and matching plaintext summaries. Verify with `pnpm vitest run server/api/admin/recruiters/tests/`.
 
-## 4. Verification & Gate Checks
+## 4. Visual Verification via Example Email Dispatch
 
-- [ ] 4.1 Run full test and lint verification suite using `pnpm test:verify` (typecheck, lint, coverage 80%+ per-file gate, e2e tests, firestore rules) and ensure 100% pass rate.
+- [ ] 4.1 Prompt the user to provide their email address, then execute a test dispatch (e.g. via a one-off script or Firestore `mail` trigger / emulator / test send) sending one sample email of each of the 4 branded types (Recruiter Lead Notification, Candidate Confirmation Receipt, Recruiter Welcome / Approval with temporary password, and Recruiter Rejection) to that address for live inbox visual verification. Confirm with the user that the emails render properly.
+
+## 5. Verification & Gate Checks
+
+- [ ] 5.1 Run full test and lint verification suite using `pnpm test:verify` (typecheck, lint, coverage 80%+ per-file gate, e2e tests, firestore rules) and ensure 100% pass rate.
