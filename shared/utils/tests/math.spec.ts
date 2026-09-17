@@ -5,7 +5,9 @@ import {
   calculateConfidenceScore,
   calculateLivePercentile,
   calculatePercentile,
-  calculateRegionalModifier
+  calculateRegionalModifier,
+  filterSanitySalaries,
+  trimSalaryOutliersIqr
 } from '../math';
 import type { PercentileData } from '../types';
 
@@ -155,5 +157,43 @@ describe('Math Engine: buildHistogramBuckets', () => {
     expect(buckets[40000]).toBe(2);
     expect(buckets[-10000]).toBeUndefined();
     expect(buckets[0]).toBeUndefined();
+  });
+});
+
+describe('Math Engine: filterSanitySalaries', () => {
+  it('Scenario 1: Drops UK full-time salaries below £15,000 and above £1,000,000', () => {
+    const salaries = [500, 15000, 50000, 1000001];
+    expect(filterSanitySalaries(salaries)).toEqual([15000, 50000]);
+  });
+
+  it('Scenario 2: Halves the floor for part-time roles', () => {
+    const salaries = [5000, 7500, 20000];
+    expect(filterSanitySalaries(salaries, 'part-time')).toEqual([7500, 20000]);
+  });
+
+  it('Scenario 3: Uses the $25,000 USD floor for US country context', () => {
+    const salaries = [20000, 25000, 60000];
+    expect(filterSanitySalaries(salaries, 'full-time', 'us')).toEqual([25000, 60000]);
+  });
+
+  it('Scenario 4: Defaults to full-time/GB when called with only a salaries array', () => {
+    expect(filterSanitySalaries([10000, 20000])).toEqual([20000]);
+  });
+});
+
+describe('Math Engine: trimSalaryOutliersIqr', () => {
+  it('Scenario 1: Removes an extreme outlier from a skewed sample', () => {
+    const salaries = [50000, 55000, 60000, 62000, 65000, 500000];
+    expect(trimSalaryOutliersIqr(salaries)).toEqual([50000, 55000, 60000, 62000, 65000]);
+  });
+
+  it('Scenario 2: Returns the sample unchanged when smaller than 5 values', () => {
+    const salaries = [10000, 20000, 5000000];
+    expect(trimSalaryOutliersIqr(salaries)).toEqual(salaries);
+  });
+
+  it('Scenario 3: Keeps a tight, non-skewed sample fully intact', () => {
+    const salaries = [70000, 72000, 75000, 78000, 80000];
+    expect(trimSalaryOutliersIqr(salaries)).toEqual(salaries);
   });
 });

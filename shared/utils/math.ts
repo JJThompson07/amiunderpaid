@@ -296,6 +296,61 @@ export const calculateBenchmarkScore = (
  * Takes an array of raw salary numbers and returns a balanced, max-7-bucket histogram
  * with clean, human-readable bucket boundaries.
  */
+// Full-time annual sanity floors. Values below these are typically an
+// unconverted daily/hourly rate that slipped through provider salary parsing,
+// not a genuine annual salary.
+const SANITY_FLOOR_FULL_TIME_GBP = 15000;
+const SANITY_FLOOR_FULL_TIME_USD = 25000;
+const SANITY_CEILING = 1000000;
+const PART_TIME_FLOOR_DIVISOR = 2;
+
+/**
+ * CORE ENGINE 6: Sanity Salary Bounds
+ * Drops salaries outside a plausible full-time annual range for the given
+ * country, catching unconverted day/hourly rates and placeholder extremes
+ * before they reach mean/histogram calculations. The floor halves for
+ * part-time roles.
+ */
+export const filterSanitySalaries = (
+  salaries: number[],
+  jobType: string = 'full-time',
+  country: 'gb' | 'us' = 'gb'
+): number[] => {
+  const baseFloor = country === 'us' ? SANITY_FLOOR_FULL_TIME_USD : SANITY_FLOOR_FULL_TIME_GBP;
+  const floor = jobType === 'part-time' ? baseFloor / PART_TIME_FLOOR_DIVISOR : baseFloor;
+  return salaries.filter((s) => s >= floor && s <= SANITY_CEILING);
+};
+
+/**
+ * CORE ENGINE 7: IQR Outlier Trimming
+ * Excludes salaries outside [Q1 - 1.5*IQR, Q3 + 1.5*IQR] to remove extreme
+ * skew before computing mean/histogram. Samples smaller than 5 are returned
+ * unchanged -- too small a sample for quartiles to be meaningful.
+ */
+export const trimSalaryOutliersIqr = (salaries: number[]): number[] => {
+  if (salaries.length < 5) {
+    return salaries;
+  }
+
+  const sorted = [...salaries].sort((a, b) => a - b);
+  const quantile = (q: number): number => {
+    const pos = (sorted.length - 1) * q;
+    const base = Math.floor(pos);
+    const rest = pos - base;
+    const lower = sorted[base]!;
+    const upper = sorted[base + 1];
+    return upper === undefined ? lower : lower + rest * (upper - lower);
+  };
+
+  const q1 = quantile(0.25);
+  const q3 = quantile(0.75);
+  const iqr = q3 - q1;
+  const lowerBound = q1 - 1.5 * iqr;
+  const upperBound = q3 + 1.5 * iqr;
+
+  return salaries.filter((s) => s >= lowerBound && s <= upperBound);
+};
+
 export const buildHistogramBuckets = (
   salaries: number[],
   maxBuckets: number = 7
