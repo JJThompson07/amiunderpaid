@@ -45,9 +45,11 @@ Outbound customer- and recruiter-facing emails (such as candidate lead notificat
 ## Capabilities
 
 ### New Capabilities
+
 - `branded-email-templates`: Defines the responsive HTML email template generator, brand logo embedding, AmI primary color styling, CTA buttons, structured data blocks, and server-side brand/site-URL resolution for transactional emails.
 
 ### Modified Capabilities
+
 - `firestore-emails-setup`: Updates the requirement that all transactional emails written to the `mail` collection MUST use the standardized branded HTML template format alongside plaintext fallback.
 - `recruiter-access-request`: Replaces the existing "correct login link per deployment via `NUXT_PUBLIC_SITE_URL`" requirement (which assumed a per-brand deployment that does not exist — this is one Vercel project serving all three domains) with brand/site-URL persisted on the `users` document at request time and read back at approval/rejection time.
 

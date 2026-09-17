@@ -14,6 +14,9 @@ vi.stubGlobal('isError', (e: unknown) => e instanceof Error && 'statusCode' in e
 const mockReadBody = vi.fn();
 vi.stubGlobal('readBody', mockReadBody);
 
+vi.stubGlobal('getRequestHost', () => 'www.amiunderpaid.co.uk');
+vi.stubGlobal('getRequestProtocol', () => 'https');
+
 const mockExistingGet = vi.fn();
 const mockUsersAdd = vi.fn();
 const mockCollection = vi.fn(() => ({
@@ -74,6 +77,32 @@ describe('user recruiter/request-access endpoint', () => {
         status: 'requested'
       })
     );
+  });
+
+  it('persists the resolved brand and site URL for an amiunderpaid request', async () => {
+    const event = {} as unknown as H3Event;
+
+    await handler(event);
+
+    expect(mockUsersAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ site: 'amiunderpaid', siteUrl: 'https://www.amiunderpaid.co.uk' })
+    );
+  });
+
+  it('persists the resolved brand and site URL for a benchmarkmyrole request', async () => {
+    vi.stubGlobal('getRequestHost', () => 'www.benchmarkmyrole.com');
+    const event = {} as unknown as H3Event;
+
+    await handler(event);
+
+    expect(mockUsersAdd).toHaveBeenCalledWith(
+      expect.objectContaining({
+        site: 'benchmarkmyrole',
+        siteUrl: 'https://www.benchmarkmyrole.com'
+      })
+    );
+
+    vi.stubGlobal('getRequestHost', () => 'www.amiunderpaid.co.uk');
   });
 
   it('rethrows an H3 error unmodified', async () => {
