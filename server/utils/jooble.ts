@@ -1,3 +1,4 @@
+import { extractSearchAnchorPhrase } from './searchRelevance';
 import type { JobSearchResponse } from '~~/shared/utils/market-data';
 import { buildHistogramBuckets } from '~~/shared/utils/math';
 
@@ -146,8 +147,13 @@ export const fetchJoobleData = async (
 
   const url = `https://jooble.org/api/${apiKey}`;
 
+  // Jooble's matching behavior runs the opposite direction from Reed/Adzuna:
+  // shorter queries are cleaner, longer ones are noisier (live-verified
+  // 2026-09-17: anchor phrase 3044 clean results vs 11,169 noisy results for
+  // the full raw title -- see design.md sec 3c). So Jooble is queried with
+  // the extracted anchor phrase, not the full title.
   const params: JoobleSearchParams = {
-    keywords: buildKeywordsWithCategory(title, category),
+    keywords: buildKeywordsWithCategory(extractSearchAnchorPhrase(title), category),
     location: location,
     page: 1
   };

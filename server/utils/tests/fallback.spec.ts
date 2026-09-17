@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('../reed', () => ({
-  fetchReedData: vi.fn().mockResolvedValue({
-    mean: 40000,
-    count: 5,
-    results: [{ id: 1, title: 'Reed Job', provider: 'reed' }],
-    provider: 'reed'
+vi.mock('../adzuna', () => ({
+  fetchAdzunaJobs: vi.fn().mockResolvedValue({
+    mean: 55000,
+    count: 6,
+    results: [{ id: 1, title: 'Adzuna Job', provider: 'adzuna' }],
+    provider: 'adzuna'
   })
 }));
 
@@ -42,14 +42,14 @@ describe('server/utils/fallback', () => {
       expect(result.provider).toBe('jooble');
     });
 
-    it('routes to Reed for any non-us countryCode', async () => {
+    it('routes to Adzuna for any non-us countryCode', async () => {
       const { executeMarketFallback } = await import('../fallback');
-      const { fetchReedData } = await import('../reed');
+      const { fetchAdzunaJobs } = await import('../adzuna');
 
       const result = await executeMarketFallback('engineer', 'london', 'gb');
 
-      expect(fetchReedData).toHaveBeenCalledWith('engineer', 'london', '', '', undefined);
-      expect(result.provider).toBe('reed');
+      expect(fetchAdzunaJobs).toHaveBeenCalledWith('engineer', 'london', 'gb', '', '', undefined);
+      expect(result.provider).toBe('adzuna');
     });
 
     it('forwards an explicit category to Jooble', async () => {
@@ -74,13 +74,24 @@ describe('server/utils/fallback', () => {
       );
     });
 
-    it('forwards an explicit category to Reed', async () => {
+    it('forwards an explicit category to Adzuna', async () => {
       const { executeMarketFallback } = await import('../fallback');
-      const { fetchReedData } = await import('../reed');
+      const { fetchAdzunaJobs } = await import('../adzuna');
 
       await executeMarketFallback('engineer', 'london', 'gb', '', '', 'it-jobs');
 
-      expect(fetchReedData).toHaveBeenCalledWith('engineer', 'london', '', '', 'it-jobs');
+      expect(fetchAdzunaJobs).toHaveBeenCalledWith('engineer', 'london', 'gb', '', '', 'it-jobs');
+    });
+
+    it('regression guard: never invokes fetchJoobleData for a gb countryCode', async () => {
+      const { executeMarketFallback } = await import('../fallback');
+      const { fetchJoobleData } = await import('../jooble');
+
+      vi.mocked(fetchJoobleData).mockClear();
+
+      await executeMarketFallback('engineer', 'london', 'gb');
+
+      expect(fetchJoobleData).not.toHaveBeenCalled();
     });
   });
 
@@ -103,6 +114,15 @@ describe('server/utils/fallback', () => {
 
       expect(result.provider).toBe('jooble');
       expect(result.results[0]?.provider).toBe('jooble');
+    });
+
+    it('tags the fixture with adzuna when requested', async () => {
+      const { getMockFallbackJobs } = await import('../fallback');
+
+      const result = getMockFallbackJobs('adzuna');
+
+      expect(result.provider).toBe('adzuna');
+      expect(result.results[0]?.provider).toBe('adzuna');
     });
   });
 
