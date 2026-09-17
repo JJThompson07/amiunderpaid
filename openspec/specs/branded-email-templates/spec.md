@@ -1,6 +1,7 @@
 # branded-email-templates Specification
 
 ## Purpose
+
 Provides standardized, responsive, and cross-client-compatible branded HTML email templates with logo branding, primary color accents, structured data blocks, and team sign-offs for all platform transactional emails.
 
 ## Requirements
