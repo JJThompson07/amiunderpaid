@@ -17,6 +17,9 @@ vi.stubGlobal('verifyAdmin', mockVerifyAdmin);
 const mockReadBody = vi.fn();
 vi.stubGlobal('readBody', mockReadBody);
 
+let mockConfig: { public: { siteUrl?: string } };
+vi.stubGlobal('useRuntimeConfig', () => mockConfig);
+
 const mockDocGet = vi.fn();
 const mockDocUpdate = vi.fn();
 const mockMailAdd = vi.fn();
@@ -39,6 +42,7 @@ describe('admin recruiters/reject endpoint', () => {
 
     mockVerifyAdmin.mockResolvedValue(undefined);
     mockReadBody.mockResolvedValue({ uid: 'rec_1' });
+    mockConfig = { public: { siteUrl: 'https://amiunderpaid.co.uk' } };
     mockDocGet.mockResolvedValue({
       exists: true,
       data: () => ({ status: 'requested', email: 'rec@example.com', agency_name: 'Acme' })
@@ -92,7 +96,7 @@ describe('admin recruiters/reject endpoint', () => {
     await expect(handler(event)).rejects.toThrow('Cannot reject request in status: unknown');
   });
 
-  it('defaults to a generic greeting when agency_name is missing', async () => {
+  it('defaults to a generic greeting and the amiunderpaid brand for a legacy document with no site/agency_name', async () => {
     mockDocGet.mockResolvedValue({
       exists: true,
       data: () => ({ status: 'requested', email: 'rec@example.com' })
@@ -101,11 +105,30 @@ describe('admin recruiters/reject endpoint', () => {
 
     await handler(event);
 
-    expect(mockMailAdd).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: expect.objectContaining({ text: expect.stringContaining('Hi there,') })
+    const call = mockMailAdd.mock.calls[0]![0];
+    expect(call.message.text).toContain('Hi there,');
+    expect(call.message.html).toContain('amiunderpaid-logo.png');
+    expect(call.message.text).toContain('The AmIUnderpaid Team');
+  });
+
+  it('brands the rejection email for benchmarkmyrole using the persisted site', async () => {
+    mockDocGet.mockResolvedValue({
+      exists: true,
+      data: () => ({
+        status: 'requested',
+        email: 'rec@example.com',
+        agency_name: 'Acme',
+        site: 'benchmarkmyrole',
+        siteUrl: 'https://www.benchmarkmyrole.com'
       })
-    );
+    });
+    const event = {} as unknown as H3Event;
+
+    await handler(event);
+
+    const call = mockMailAdd.mock.calls[0]![0];
+    expect(call.message.html).toContain('benchmarkmyrole-logo.png');
+    expect(call.message.text).toContain('The BenchmarkMyRole Team');
   });
 
   it('rethrows an H3 error unmodified', async () => {

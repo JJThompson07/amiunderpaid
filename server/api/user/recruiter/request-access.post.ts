@@ -1,4 +1,5 @@
 import { getFirestore } from 'firebase-admin/firestore';
+import { resolveBrandFromHost } from '~~/server/utils/emailTemplate';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -29,12 +30,15 @@ export default defineEventHandler(async (event) => {
     }
 
     // Save the request to the users collection with role: 'recruiter' and status: 'requested'
+    const { brand, siteUrl } = resolveBrandFromHost(event);
     await db.collection('users').add({
       agency_name: agencyName.trim(),
       email: sanitizedEmail,
       role: 'recruiter',
       status: 'requested',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      site: brand,
+      siteUrl
     });
 
     return { success: true };

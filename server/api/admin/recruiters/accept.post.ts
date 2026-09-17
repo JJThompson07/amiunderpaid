@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import { getAuth } from 'firebase-admin/auth';
+import type { EmailBrand } from '~~/server/utils/emailTemplate';
+import { getBrandName, renderBrandedEmail } from '~~/server/utils/emailTemplate';
 
 export default defineEventHandler(async (event) => {
   await verifyAdmin(event);
@@ -49,27 +51,33 @@ export default defineEventHandler(async (event) => {
     });
 
     // 4. Queue the confirmation email to the recruiter
+    // The brand/siteUrl the recruiter applied under were persisted at request-access
+    // time (see request-access.post.ts); the admin's own request host cannot tell us
+    // which brand this recruiter belongs to, and a single global runtimeConfig siteUrl
+    // cannot represent all three brand domains this app serves off one deployment.
     const config = useRuntimeConfig();
-    const siteUrl = config.public.siteUrl || 'https://amiunderpaid.co.uk';
+    const brand: EmailBrand = data.site === 'benchmarkmyrole' ? 'benchmarkmyrole' : 'amiunderpaid';
+    const siteUrl = data.siteUrl || config.public.siteUrl || 'https://amiunderpaid.co.uk';
     const loginUrl = `${siteUrl}/recruiter/login`;
 
     await db.collection('mail').add({
       to: data.email,
       message: {
         subject: 'Welcome to the platform - Your partner account is approved',
-        html: `
-          <h2>Your request for partner access has been approved!</h2>
-          <p>Hi ${data.agency_name || 'there'},</p>
-          <p>An account has been created for you. You can log in using your email address and the temporary one-time password below:</p>
-          <p><strong>Login Email:</strong> ${data.email}</p>
-          <p><strong>Temporary Password:</strong> <code>${tempPassword}</code></p>
-          <br/>
-          <p>Please note that you will be required to change your password immediately upon your first login.</p>
-          <p><a href="${loginUrl}">Click here to log in</a></p>
-          <br/>
-          <p>Best regards,<br/>The Platform Team</p>
-        `,
-        text: `Your request for partner access has been approved!\n\nHi ${data.agency_name || 'there'},\n\nAn account has been created for you. You can log in using your email address and the temporary one-time password below:\n\nLogin Email: ${data.email}\nTemporary Password: ${tempPassword}\n\nPlease note that you will be required to change your password immediately upon your first login.\n\nLog in here: ${loginUrl}\n\nBest regards,\nThe Platform Team`
+        html: renderBrandedEmail({
+          brand,
+          siteUrl,
+          heading: 'Your request for partner access has been approved!',
+          paragraphs: [
+            `Hi ${data.agency_name || 'there'},`,
+            'An account has been created for you. You can log in using your email address and the temporary one-time password below:',
+            'Please note that you will be required to change your password immediately upon your first login.'
+          ],
+          dataBox: [{ label: 'Login Email', value: data.email }],
+          credentialBox: { label: 'Temporary Password', code: tempPassword },
+          cta: { label: 'Log In to Your Dashboard', url: loginUrl }
+        }),
+        text: `Your request for partner access has been approved!\n\nHi ${data.agency_name || 'there'},\n\nAn account has been created for you. You can log in using your email address and the temporary one-time password below:\n\nLogin Email: ${data.email}\nTemporary Password: ${tempPassword}\n\nPlease note that you will be required to change your password immediately upon your first login.\n\nLog in here: ${loginUrl}\n\nBest regards,\nThe ${getBrandName(brand)} Team`
       }
     });
 

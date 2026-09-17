@@ -1,5 +1,10 @@
 // server/api/user/leads/submit.post.ts
 import { getFirestore } from 'firebase-admin/firestore';
+import {
+  getBrandName,
+  renderBrandedEmail,
+  resolveBrandFromHost
+} from '~~/server/utils/emailTemplate';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -30,6 +35,7 @@ export default defineEventHandler(async (event) => {
   const safeSearchedRole = sanitizeHTML(searchedRole);
   const safeLocation = sanitizeHTML(location);
 
+  const { brand, siteUrl } = resolveBrandFromHost(event);
   const db = getFirestore();
 
   try {
@@ -64,35 +70,40 @@ export default defineEventHandler(async (event) => {
         to: targetRecruiterEmail,
         message: {
           subject: `New Lead: ${safeName} is looking for ${safeSearchedRole || 'opportunities'}`,
-          html: `
-            <h2>You have a new lead from AmIUnderpaid!</h2>
-            <p><strong>Name:</strong> ${safeName}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Searched Role:</strong> ${safeSearchedRole || 'N/A'}</p>
-            <p><strong>Location:</strong> ${safeLocation || 'N/A'}</p>
-            <br/>
-            <p>Log in to your dashboard to manage this lead.</p>
-          `,
-          text: `You have a new lead from AmIUnderpaid!\n\nName: ${safeName}\nEmail: ${email}\nSearched Role: ${safeSearchedRole || 'N/A'}\nLocation: ${safeLocation || 'N/A'}\n\nLog in to your dashboard to manage this lead.`
+          html: renderBrandedEmail({
+            brand,
+            siteUrl,
+            heading: 'You have a new lead!',
+            paragraphs: ['Log in to your dashboard to manage this lead.'],
+            dataBox: [
+              { label: 'Name', value: name },
+              { label: 'Email', value: email },
+              { label: 'Searched Role', value: searchedRole || 'N/A' },
+              { label: 'Location', value: location || 'N/A' }
+            ],
+            cta: { label: 'View Lead in Dashboard', url: `${siteUrl}/recruiter/leads` }
+          }),
+          text: `You have a new lead!\n\nName: ${safeName}\nEmail: ${email}\nSearched Role: ${safeSearchedRole || 'N/A'}\nLocation: ${safeLocation || 'N/A'}\n\nLog in to your dashboard to manage this lead: ${siteUrl}/recruiter/leads`
         }
       });
     }
 
     // 4. Queue Confirmation Email to the Candidate
-    // Security Remediation: XSS prevention by ensuring agencyName is sanitized before HTML injection
     await db.collection('mail').add({
       to: email,
       message: {
         subject: `Your details have been sent to ${safeAgencyName}`,
-        html: `
-          <h2>Thanks for reaching out!</h2>
-          <p>Hi ${safeName},</p>
-          <p>We have successfully passed your contact details over to the team at <strong>${safeAgencyName}</strong>.</p>
-          <p>One of their hiring experts will be in touch with you shortly at this email address to discuss opportunities regarding your search for <strong>${safeSearchedRole || 'roles'}</strong> in <strong>${safeLocation || 'your area'}</strong>.</p>
-          <br/>
-          <p>Best regards,<br/>The AmIUnderpaid Team</p>
-        `,
-        text: `Thanks for reaching out!\n\nHi ${safeName},\n\nWe have successfully passed your contact details over to the team at ${safeAgencyName}.\n\nOne of their hiring experts will be in touch with you shortly at this email address to discuss opportunities regarding your search for ${safeSearchedRole || 'roles'} in ${safeLocation || 'your area'}.\n\nBest regards,\nThe AmIUnderpaid Team`
+        html: renderBrandedEmail({
+          brand,
+          siteUrl,
+          heading: 'Thanks for reaching out!',
+          paragraphs: [
+            `Hi ${name},`,
+            `We have successfully passed your contact details over to the team at ${rawAgencyName}.`,
+            `One of their hiring experts will be in touch with you shortly at this email address to discuss opportunities regarding your search for ${searchedRole || 'roles'} in ${location || 'your area'}.`
+          ]
+        }),
+        text: `Thanks for reaching out!\n\nHi ${safeName},\n\nWe have successfully passed your contact details over to the team at ${safeAgencyName}.\n\nOne of their hiring experts will be in touch with you shortly at this email address to discuss opportunities regarding your search for ${safeSearchedRole || 'roles'} in ${safeLocation || 'your area'}.\n\nBest regards,\nThe ${getBrandName(brand)} Team`
       }
     });
 

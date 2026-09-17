@@ -103,7 +103,7 @@ describe('admin recruiters/accept endpoint', () => {
     await expect(handler(event)).rejects.toThrow('Cannot approve request in status: unknown');
   });
 
-  it('falls back to the default site URL and a generic greeting when agency_name/siteUrl are missing', async () => {
+  it('falls back to the default site URL, amiunderpaid brand, and a generic greeting for a legacy document with no site/siteUrl/agency_name', async () => {
     mockConfig = { public: {} };
     mockDocGet.mockResolvedValue({
       exists: true,
@@ -121,6 +121,53 @@ describe('admin recruiters/accept endpoint', () => {
         })
       })
     );
+    const call = mockMailAdd.mock.calls[0]![0];
+    expect(call.message.html).toContain('amiunderpaid-logo.png');
+    expect(call.message.text).toContain('The AmIUnderpaid Team');
+  });
+
+  it('brands the welcome email for benchmarkmyrole using the persisted site/siteUrl', async () => {
+    mockDocGet.mockResolvedValue({
+      exists: true,
+      data: () => ({
+        status: 'requested',
+        email: 'rec@example.com',
+        agency_name: 'Acme',
+        site: 'benchmarkmyrole',
+        siteUrl: 'https://www.benchmarkmyrole.com'
+      })
+    });
+    const event = {} as unknown as H3Event;
+
+    await handler(event);
+
+    const call = mockMailAdd.mock.calls[0]![0];
+    expect(call.message.html).toContain('benchmarkmyrole-logo.png');
+    expect(call.message.html).toContain('https://www.benchmarkmyrole.com/recruiter/login');
+    expect(call.message.text).toContain(
+      'Log in here: https://www.benchmarkmyrole.com/recruiter/login'
+    );
+    expect(call.message.text).toContain('The BenchmarkMyRole Team');
+  });
+
+  it('brands the welcome email for amiunderpaid using the persisted site/siteUrl', async () => {
+    mockDocGet.mockResolvedValue({
+      exists: true,
+      data: () => ({
+        status: 'requested',
+        email: 'rec@example.com',
+        agency_name: 'Acme',
+        site: 'amiunderpaid',
+        siteUrl: 'https://www.amiunderpaid.com'
+      })
+    });
+    const event = {} as unknown as H3Event;
+
+    await handler(event);
+
+    const call = mockMailAdd.mock.calls[0]![0];
+    expect(call.message.html).toContain('amiunderpaid-logo.png');
+    expect(call.message.html).toContain('https://www.amiunderpaid.com/recruiter/login');
   });
 
   it('wraps a non-Error, non-H3 failure in an opaque 500', async () => {

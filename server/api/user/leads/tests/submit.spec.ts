@@ -14,6 +14,9 @@ vi.stubGlobal('isError', (e: unknown) => e instanceof Error && 'statusCode' in e
 const mockReadBody = vi.fn();
 vi.stubGlobal('readBody', mockReadBody);
 
+vi.stubGlobal('getRequestHost', () => 'www.amiunderpaid.co.uk');
+vi.stubGlobal('getRequestProtocol', () => 'https');
+
 const mockRecruiterGet = vi.fn();
 const mockLeadsAdd = vi.fn();
 const mockMailAdd = vi.fn();
@@ -91,6 +94,45 @@ describe('user leads/submit endpoint', () => {
     expect(mockMailAdd).toHaveBeenCalledTimes(2);
     expect(mockMailAdd).toHaveBeenCalledWith(expect.objectContaining({ to: 'inbox@agency.com' }));
     expect(mockMailAdd).toHaveBeenCalledWith(expect.objectContaining({ to: 'jane@example.com' }));
+  });
+
+  it('renders branded HTML for both queued emails, escaping dynamic values exactly once', async () => {
+    const event = {} as unknown as H3Event;
+
+    await handler(event);
+
+    const recruiterCall = mockMailAdd.mock.calls.find((call) => call[0].to === 'inbox@agency.com');
+    const candidateCall = mockMailAdd.mock.calls.find((call) => call[0].to === 'jane@example.com');
+
+    expect(recruiterCall![0].message.html).toContain('Jane &lt;Doe&gt;');
+    expect(recruiterCall![0].message.html).not.toContain('&amp;lt;');
+    expect(recruiterCall![0].message.html).toContain('amiunderpaid-logo.png');
+    expect(recruiterCall![0].message.html).toContain('View Lead in Dashboard');
+    expect(recruiterCall![0].message.html).toContain(
+      'https://www.amiunderpaid.co.uk/recruiter/leads'
+    );
+
+    expect(candidateCall![0].message.html).toContain('Jane &lt;Doe&gt;');
+    expect(candidateCall![0].message.html).not.toContain('&amp;lt;');
+    expect(candidateCall![0].message.html).toContain('The Team at AmIUnderpaid');
+  });
+
+  it('brands both queued emails for BenchmarkMyRole when the request host is benchmarkmyrole', async () => {
+    vi.stubGlobal('getRequestHost', () => 'www.benchmarkmyrole.com');
+    const event = {} as unknown as H3Event;
+
+    await handler(event);
+
+    const recruiterCall = mockMailAdd.mock.calls.find((call) => call[0].to === 'inbox@agency.com');
+    const candidateCall = mockMailAdd.mock.calls.find((call) => call[0].to === 'jane@example.com');
+
+    expect(recruiterCall![0].message.html).toContain('benchmarkmyrole-logo.png');
+    expect(recruiterCall![0].message.html).toContain(
+      'https://www.benchmarkmyrole.com/recruiter/leads'
+    );
+    expect(candidateCall![0].message.html).toContain('The Team at BenchmarkMyRole');
+
+    vi.stubGlobal('getRequestHost', () => 'www.amiunderpaid.co.uk');
   });
 
   it('falls back to the account email and default agency name when recruiter fields are sparse', async () => {

@@ -1,19 +1,4 @@
-# firestore-emails-setup Specification
-
-## Purpose
-
-Defines the configuration and collections for triggering outbound emails via Firestore.
-
-## Requirements
-
-### Requirement: Plaintext fallback for lead emails
-
-The Nitro lead submission endpoint SHALL include a plaintext `text` representation inside the `message` object when writing to the `mail` collection.
-
-#### Scenario: Submitting a lead successfully queues plaintext email
-
-- **WHEN** a lead is submitted to the API at `server/api/user/leads/submit.post.ts`
-- **THEN** the system SHALL write a document to the `mail` collection with a `message.text` field containing a readable plaintext summary of the email content in addition to the HTML content.
+## MODIFIED Requirements
 
 ### Requirement: Email Triggering on Mail Collection
 
