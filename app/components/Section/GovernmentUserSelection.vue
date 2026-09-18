@@ -1,11 +1,20 @@
 <template>
   <div
     class="government-section p-4 bg-white border shadow-xl rounded-2xl border-slate-200 relative flex-1 flex flex-col gap-4">
-    <div class="flex items-center gap-2">
-      <div class="p-1.5 bg-amber-100 rounded-lg text-amber-600">
-        <AlertCircle class="w-4 h-4" aria-hidden="true" />
+    <div class="flex items-center gap-2 justify-between">
+      <div class="flex items-center gap-2">
+        <div class="p-1.5 bg-amber-100 rounded-lg text-amber-600">
+          <AlertCircle class="w-4 h-4" aria-hidden="true" />
+        </div>
+        <h3 class="font-bold text-slate-900">{{ $t('sections.gov-user-selection.title') }}</h3>
       </div>
-      <h3 class="font-bold text-slate-900">{{ $t('sections.gov-user-selection.title') }}</h3>
+      <button
+        v-if="canCancel"
+        type="button"
+        class="text-xs font-bold text-slate-500 hover:text-slate-700 px-2 py-1 cursor-pointer transition-colors"
+        @click="$emit('cancel')">
+        {{ $t('common.cancel') }}
+      </button>
     </div>
     <div class="flex-1 flex flex-col gap-4 justify-between">
       <p class="text-xs text-slate-600">
@@ -47,10 +56,12 @@ type GovBenchmarkHit = {
 const props = defineProps<{
   adzunaCategory?: string;
   country: string;
+  canCancel?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'select', match: GovBenchmarkHit): void;
+  (e: 'cancel'): void;
 }>();
 
 const searchQuery = ref('');

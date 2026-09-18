@@ -247,6 +247,76 @@ describe('useLocationEngine', () => {
     expect(engine.showUserSelection.value).toBe(false);
   });
 
+  it('supports a subsequent UK re-selection, updating govId again and keeping the correction button available', async () => {
+    const engine = await useLocationEngine('salary');
+
+    await engine.handleAmbiguitySelect({ id_code: '111', title: 'First Match' });
+    expect(engine.showUserSelection.value).toBe(false);
+    expect(engine.isAdminVerified.value).toBe(true);
+    expect($fetch).toHaveBeenLastCalledWith(
+      '/api/market-data/update-match',
+      expect.objectContaining({
+        body: expect.objectContaining({
+          gov_id_code: '111',
+          gov_title: 'First Match',
+          country: 'UK'
+        })
+      })
+    );
+
+    // User re-opens the search via the always-visible "Not the best match?" button
+    engine.showUserSelection.value = true;
+    await engine.handleAmbiguitySelect({ id_code: '222', title: 'Second Match' });
+
+    expect(engine.showUserSelection.value).toBe(false);
+    expect(engine.isAdminVerified.value).toBe(true);
+    expect($fetch).toHaveBeenLastCalledWith(
+      '/api/market-data/update-match',
+      expect.objectContaining({
+        body: expect.objectContaining({
+          gov_id_code: '222',
+          gov_title: 'Second Match',
+          country: 'UK'
+        })
+      })
+    );
+  });
+
+  it('supports a subsequent USA re-selection, updating govId again and keeping the correction button available', async () => {
+    mockRoute.params = { title: 'teacher', country: 'usa' };
+    const engine = await useLocationEngine('salary');
+
+    await engine.handleAmbiguitySelect({ id_code: '333', title: 'First USA Match' });
+    expect(engine.showUserSelection.value).toBe(false);
+    expect(engine.isAdminVerified.value).toBe(true);
+    expect($fetch).toHaveBeenLastCalledWith(
+      '/api/market-data/update-match',
+      expect.objectContaining({
+        body: expect.objectContaining({
+          gov_id_code: '333',
+          gov_title: 'First USA Match',
+          country: 'USA'
+        })
+      })
+    );
+
+    engine.showUserSelection.value = true;
+    await engine.handleAmbiguitySelect({ id_code: '444', title: 'Second USA Match' });
+
+    expect(engine.showUserSelection.value).toBe(false);
+    expect(engine.isAdminVerified.value).toBe(true);
+    expect($fetch).toHaveBeenLastCalledWith(
+      '/api/market-data/update-match',
+      expect.objectContaining({
+        body: expect.objectContaining({
+          gov_id_code: '444',
+          gov_title: 'Second USA Match',
+          country: 'USA'
+        })
+      })
+    );
+  });
+
   it('computes market average fallbacks correctly', async () => {
     // mean fallback
     mockMicroData.fetchMicroBaselines.mockResolvedValueOnce({ microNationalData: { mean: 60000 } });
