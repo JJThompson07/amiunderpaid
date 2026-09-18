@@ -109,6 +109,7 @@
     "noreferrer",
     "cellspacing",
     "tiering",
-    "emea"
+    "emea",
+    "strippable"
   ]
 }

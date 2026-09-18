@@ -1,10 +1,6 @@
-# reed-api-fallback Specification
+# Spec Delta: reed-api-fallback
 
-## Purpose
-
-Provides a fallback mechanism using the Reed.co.uk Jobseeker API to serve job data and calculate salary statistics when primary providers fail.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Reed API Job Data Fetching
 
@@ -48,29 +44,3 @@ Since the Reed API does not provide pre-calculated histograms, the system SHALL 
 
 - **WHEN** a histogram is requested and no fresh cached job-search response exists for the equivalent request
 - **THEN** the system SHALL fetch fresh data from Reed using the same job/contract type filters the equivalent job-listing request would use, not empty or default filters.
-
-### Requirement: Reed API Category Filtering via Keyword Enhancement
-
-The Reed fallback utility (`server/utils/reed.ts` and `server/utils/fallback.ts`) SHALL accept an optional category parameter and incorporate the category context into the `keywords` query sent to the Reed.co.uk API when Adzuna fallback is triggered.
-
-#### Scenario: Executing Reed fallback with category
-
-- **WHEN** Adzuna fails for a UK request that specified an industry category
-- **THEN** the system SHALL forward the category to `fetchReedData` and append the category term to `keywords` to refine results within that industry.
-
-### Requirement: Geographic API Routing
-
-The `market-data` API Gateway SHALL route job and salary requests dynamically based on the target region:
-
-- UK Traffic: Routes primarily to Reed API, falling back to Adzuna on zero results or API failure.
-- USA Traffic: Routes primarily to Adzuna API, falling back to Jooble on zero results or API failure.
-
-#### Scenario: UK Geographic Routing
-
-- **WHEN** a user requests market data for the UK (`country: gb`)
-- **THEN** the system SHALL attempt to fetch from Reed first, and if 0 relevant results are returned or the API fails, fall back to the Adzuna API.
-
-#### Scenario: USA Geographic Routing
-
-- **WHEN** a user requests market data for the USA (`country: us`)
-- **THEN** the system SHALL attempt to fetch from Adzuna first, and if 0 results are returned or the API fails, fall back to the Jooble API.

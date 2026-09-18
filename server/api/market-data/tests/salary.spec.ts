@@ -535,12 +535,16 @@ describe('market-data salary endpoint', () => {
     expect(generateCacheKeyMock).toHaveBeenCalledWith('developer', '', 'gb', '');
   });
 
-  it('uses the explicit category filter as categoryTag without reading the jobs cache', async () => {
+  it('uses the explicit category filter as categoryTag even though the jobs cache is still read for histogram reuse', async () => {
     getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', category: 'sales-jobs' });
 
     await salaryHandler({} as unknown as H3Event);
 
-    expect(jobsCacheDocRef.get).not.toHaveBeenCalled();
+    // The jobs cache is read once now regardless of whether categoryTag is
+    // already known -- that read is for histogram reuse (see design.md
+    // Decision 5), a separate purpose from the categoryTag-steal logic below,
+    // which correctly never overrides an explicit category filter.
+    expect(jobsCacheDocRef.get).toHaveBeenCalledTimes(1);
     const setCall = distributionCacheDocRef.set.mock.calls[0]![0];
     expect(setCall.categoryTag).toBe('sales-jobs');
     expect(setCall.searchParams.category).toBe('sales-jobs');
@@ -566,6 +570,112 @@ describe('market-data salary endpoint', () => {
     );
   });
 
+  it('reuses a fresh Reed-sourced jobs cache entry instead of calling fetchReedData a second time', async () => {
+    jobsCacheDocRef.get.mockResolvedValue({
+      exists: true,
+      data: () => ({
+        categoryTag: 'it-jobs',
+        expiresAt: { toMillis: (): number => Date.now() + 100000 },
+        data: { histogram: { '65000': 4 }, provider: 'reed' }
+      })
+    });
+
+    const { fetchReedData } = await import('../../../utils/reed');
+    const result = await salaryHandler({} as unknown as H3Event);
+
+    expect(fetchReedData).not.toHaveBeenCalled();
+    expect(result.provider).toBe('reed');
+    expect(result.histogram).toEqual({ '65000': 4 });
+    const setCall = distributionCacheDocRef.set.mock.calls[0]![0];
+    expect(setCall.categoryTag).toBe('it-jobs');
+  });
+
+  it('reuses a fresh Jooble-sourced jobs cache entry instead of calling fetchJoobleData a second time', async () => {
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'us' });
+    jobsCacheDocRef.get.mockResolvedValue({
+      exists: true,
+      data: () => ({
+        expiresAt: { toMillis: (): number => Date.now() + 100000 },
+        data: { histogram: { '95000': 2 }, provider: 'jooble' }
+      })
+    });
+
+    const { fetchJoobleData } = await import('../../../utils/jooble');
+    const result = await salaryHandler({} as unknown as H3Event);
+
+    expect(fetchJoobleData).not.toHaveBeenCalled();
+    expect($fetchMock).not.toHaveBeenCalled();
+    expect(result.provider).toBe('jooble');
+    expect(result.histogram).toEqual({ '95000': 2 });
+  });
+
+  it('falls through to a live fetch with real jobType/contractType filters on a jobs-cache miss', async () => {
+    getQueryMock.mockReturnValue({
+      title: 'developer',
+      country: 'gb',
+      jobType: 'part-time',
+      contractType: 'contract'
+    });
+    jobsCacheDocRef.get.mockResolvedValue({ exists: false });
+
+    const { fetchReedData } = await import('../../../utils/reed');
+    await salaryHandler({} as unknown as H3Event);
+
+    expect(fetchReedData).toHaveBeenCalledWith('developer', '', 'part-time', 'contract', '');
+  });
+
+  it('does not reuse a jobs cache entry sourced from Adzuna, leaving Adzuna path unchanged', async () => {
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'us' });
+    jobsCacheDocRef.get.mockResolvedValue({
+      exists: true,
+      data: () => ({
+        expiresAt: { toMillis: (): number => Date.now() + 100000 },
+        data: { histogram: { '80000': 6 }, provider: 'adzuna' }
+      })
+    });
+
+    const result = await salaryHandler({} as unknown as H3Event);
+
+    expect($fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.provider).toBe('adzuna');
+  });
+
+  it('does not reuse an expired jobs cache entry, falling through to a live fetch', async () => {
+    jobsCacheDocRef.get.mockResolvedValue({
+      exists: true,
+      data: () => ({
+        expiresAt: { toMillis: (): number => Date.now() - 100000 },
+        data: { histogram: { '65000': 4 }, provider: 'reed' }
+      })
+    });
+
+    const { fetchReedData } = await import('../../../utils/reed');
+    const result = await salaryHandler({} as unknown as H3Event);
+
+    expect(fetchReedData).toHaveBeenCalledTimes(1);
+    expect(result.histogram).toEqual({ '50000': 1 });
+  });
+
+  it('does not let jobs-cache histogram reuse override a devProvider-pinned E2E fixture', async () => {
+    process.env.E2E = 'true';
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', devProvider: 'reed' });
+    // Even if a fresh, reusable Reed jobs-cache entry exists, the pinned E2E
+    // fixture path (skipCache) must take priority and never be overridden by
+    // the jobs-cache reuse mechanism.
+    jobsCacheDocRef.get.mockResolvedValue({
+      exists: true,
+      data: () => ({
+        expiresAt: { toMillis: (): number => Date.now() + 100000 },
+        data: { histogram: { '99999': 1 }, provider: 'reed' }
+      })
+    });
+
+    const result = await salaryHandler({} as unknown as H3Event);
+
+    expect($fetchMock).not.toHaveBeenCalled();
+    expect(result.histogram).toEqual({ '55000': 4 });
+  });
+
   it('caches a fallback-sourced response for 24 hours and does not inherit categoryTag from the jobs cache', async () => {
     const { fetchReedData } = await import('../../../utils/reed');
     vi.mocked(fetchReedData).mockRejectedValueOnce({ statusCode: 500, response: { status: 500 } });
@@ -574,7 +684,9 @@ describe('market-data salary endpoint', () => {
     await salaryHandler({} as unknown as H3Event);
     const after = Date.now();
 
-    expect(jobsCacheDocRef.get).not.toHaveBeenCalled();
+    // Read once for the (missed) histogram-reuse attempt; the categoryTag-steal
+    // block correctly still skips a second read because isFallbackProvider is true.
+    expect(jobsCacheDocRef.get).toHaveBeenCalledTimes(1);
 
     const setCall = distributionCacheDocRef.set.mock.calls[0]![0];
     expect(setCall.categoryTag).toBe('unknown');

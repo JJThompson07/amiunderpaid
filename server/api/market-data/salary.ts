@@ -39,6 +39,8 @@ type ProviderFetchArgs = {
   countryCode: string;
   titleStr: string;
   locationStr: string;
+  typeStr: string;
+  contractStr: string;
   categoryStr?: string;
 };
 
@@ -49,25 +51,31 @@ const fetchByProviderName = async (
   provider: string,
   args: ProviderFetchArgs
 ): Promise<MarketSalaryResult> => {
-  const { countryCode, titleStr, locationStr, categoryStr } = args;
+  const { countryCode, titleStr, locationStr, typeStr, contractStr, categoryStr } = args;
   if (provider === 'reed') {
-    const result = await fetchReedData(titleStr, locationStr, '', '', categoryStr);
+    const result = await fetchReedData(titleStr, locationStr, typeStr, contractStr, categoryStr);
     return { histogram: result.histogram ?? {}, provider: result.provider };
   }
   if (provider === 'jooble') {
     const { fetchJoobleData } = await import('../../utils/jooble');
-    const result = await fetchJoobleData(titleStr, locationStr, '', '', categoryStr);
+    const result = await fetchJoobleData(titleStr, locationStr, typeStr, contractStr, categoryStr);
     return { histogram: result.histogram ?? {}, provider: result.provider };
   }
   return fetchAdzunaHistogram(titleStr, locationStr, countryCode, categoryStr);
 };
 
 const fetchRegionalPrimary = async (args: ProviderFetchArgs): Promise<MarketSalaryResult> => {
-  const { countryCode, titleStr, locationStr, categoryStr } = args;
+  const { countryCode, titleStr, locationStr, typeStr, contractStr, categoryStr } = args;
 
   let result: MarketSalaryResult;
   if (countryCode === 'gb') {
-    const reedResult = await fetchReedData(titleStr, locationStr, '', '', categoryStr);
+    const reedResult = await fetchReedData(
+      titleStr,
+      locationStr,
+      typeStr,
+      contractStr,
+      categoryStr
+    );
     result = { histogram: reedResult.histogram ?? {}, provider: reedResult.provider };
   } else {
     result = await fetchAdzunaHistogram(titleStr, locationStr, countryCode, categoryStr);
@@ -88,11 +96,20 @@ const fetchFromProviders = defineCachedFunction(
     countryCode: string,
     titleStr: string,
     locationStr: string,
+    typeStr: string,
+    contractStr: string,
     isDevOrE2e: boolean,
     devProviderOverride?: string,
     categoryStr?: string
   ): Promise<MarketSalaryResult> => {
-    const args: ProviderFetchArgs = { countryCode, titleStr, locationStr, categoryStr };
+    const args: ProviderFetchArgs = {
+      countryCode,
+      titleStr,
+      locationStr,
+      typeStr,
+      contractStr,
+      categoryStr
+    };
 
     // Dev/local-toggle provider pin: bypass normal primary/fallback
     // resolution and go straight to the requested provider.
@@ -123,8 +140,8 @@ const fetchFromProviders = defineCachedFunction(
         titleStr,
         locationStr,
         countryCode,
-        '',
-        '',
+        typeStr,
+        contractStr,
         categoryStr
       );
 
@@ -137,20 +154,73 @@ const fetchFromProviders = defineCachedFunction(
   {
     maxAge: 60 * 60, // Keep in memory for 1 hour to prevent stampedes
     name: 'marketSalaryProviderFetch',
-    getKey: (countryCode, titleStr, locationStr, isDevOrE2e, devProviderOverride, categoryStr) =>
-      `${titleStr}-${locationStr}-${countryCode}-${devProviderOverride || 'none'}-${categoryStr || 'none'}`
+    getKey: (
+      countryCode,
+      titleStr,
+      locationStr,
+      typeStr,
+      contractStr,
+      isDevOrE2e,
+      devProviderOverride,
+      categoryStr
+    ) =>
+      `${titleStr}-${locationStr}-${countryCode}-${typeStr}-${contractStr}-${devProviderOverride || 'none'}-${categoryStr || 'none'}`
   }
 );
 
+type ReusedJobsCacheEntry = MarketSalaryResult & { categoryTag?: string };
+
+// The Reed (UK primary) and Jooble (USA fallback) processing steps both
+// already derive a histogram from the same job-search results jobs.ts
+// fetches one request earlier -- re-calling them here just to recompute an
+// equivalent histogram wastes a live provider call. This reads that
+// already-cached, already-filtered response directly instead. Adzuna is
+// deliberately excluded: its dedicated /histogram endpoint aggregates a
+// broader pool than the capped job-listing endpoint, so its second call is
+// additive, not redundant (see design.md Decision 5).
+const tryReuseJobsCacheHistogram = async (
+  db: FirebaseFirestore.Firestore,
+  jobsCacheKey: string
+): Promise<ReusedJobsCacheEntry | null> => {
+  try {
+    const jobsDoc = await db.collection('adzuna_jobs_cache').doc(jobsCacheKey).get();
+    if (!jobsDoc.exists) {
+      return null;
+    }
+    const jobsData = jobsDoc.data();
+    const provider = jobsData?.data?.provider;
+    if (provider !== 'reed' && provider !== 'jooble') {
+      return null;
+    }
+    // Only "new-style" entries (which always set expiresAt) are reused here;
+    // legacy entries without it fall through to a live fetch below rather
+    // than re-implementing jobs.ts's separate per-category legacy TTL lookup.
+    if (!jobsData?.expiresAt || Date.now() >= jobsData.expiresAt.toMillis()) {
+      return null;
+    }
+    const histogram = jobsData.data?.histogram ?? {};
+    if (isEmptyHistogram(histogram)) {
+      return null;
+    }
+    return { histogram, provider, categoryTag: jobsData.categoryTag };
+  } catch {
+    return null;
+  }
+};
+
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
-  const { title, location, country, category } = query;
+  const { title, location, country, jobType, contractType, category } = query;
 
   if (!title) {
     throw createError({ statusCode: 400, statusMessage: 'Job title is required' });
   }
 
   const titleStr = String(title).toLowerCase().trim();
+  // Normalized the same way jobs.ts normalizes them, so the reused-cache key
+  // built below matches jobs.ts's actual cache key for the same request.
+  const typeStr = String(jobType || 'full-time').toLowerCase();
+  const contractStr = String(contractType || 'permanent').toLowerCase();
   // The user-supplied industry filter -- kept distinct from the `categoryTag`
   // below, which is derived data used only for cache-TTL lookups against the
   // `adzuna_category` collection.
@@ -173,7 +243,11 @@ export default defineEventHandler(async (event) => {
 
   // 1. Check Cache (Server-Side)
   const db = useAdminFirestore();
-  const cacheKey = generateCacheKey(titleStr, locationStr, countryCode, categoryStr);
+  // Includes typeStr/contractStr -- the histogram is now computed from a
+  // filter-specific sample (see the real jobType/contractType wiring below),
+  // so two different filter combinations for the same title/location must
+  // not collide on one cache entry.
+  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode, categoryStr)}-${typeStr}-${contractStr}`;
   const cacheRef = db.collection('adzuna_distribution_cache').doc(cacheKey);
 
   const isDevOrE2e = import.meta.dev || process.env.E2E === 'true';
@@ -235,14 +309,27 @@ export default defineEventHandler(async (event) => {
 
   // 2. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
   try {
-    const cleanData: MarketSalaryResult = await fetchFromProviders(
-      countryCode,
-      titleStr,
-      locationStr,
-      isDevOrE2e,
-      devProviderOverride,
-      categoryStr
-    );
+    // jobs.ts's client (useJobs.ts) never sends resultsPerPage, so its `limit`
+    // is always the 10 default in current usage -- this reconstructs jobs.ts's
+    // actual adzuna_jobs_cache key for this exact (title, location, country,
+    // category, jobType, contractType) request. See design.md Decision 5 /
+    // tasks.md 1.5 for the verification behind this.
+    const jobsCacheKey = `${cacheKey}-10`;
+
+    const reused = skipCache ? null : await tryReuseJobsCacheHistogram(db, jobsCacheKey);
+
+    const cleanData: MarketSalaryResult =
+      reused ??
+      (await fetchFromProviders(
+        countryCode,
+        titleStr,
+        locationStr,
+        typeStr,
+        contractStr,
+        isDevOrE2e,
+        devProviderOverride,
+        categoryStr
+      ));
 
     // Region-aware: the UK primary is Reed, the USA primary is Adzuna. Any
     // other provider on the response means the regional fallback fired.
@@ -253,13 +340,13 @@ export default defineEventHandler(async (event) => {
     // FIX 2: Adzuna histogram data doesn't contain categories!
     // If the caller filtered by an explicit industry, that's the most accurate
     // TTL lookup key. Otherwise try to steal the category tag from the jobs
-    // cache for this exact search. Skip the jobs-cache steal for
-    // fallback-provider responses: a long per-category cacheDays read must
-    // never leak onto short-lived fallback data.
-    let categoryTag = categoryStr || 'unknown';
+    // cache for this exact search (reusing the reused-histogram read when we
+    // already have one). Skip the jobs-cache steal for fallback-provider
+    // responses: a long per-category cacheDays read must never leak onto
+    // short-lived fallback data.
+    let categoryTag = categoryStr || reused?.categoryTag || 'unknown';
     if (categoryTag === 'unknown' && !isFallbackProvider) {
       try {
-        const jobsCacheKey = `${cacheKey}-full-time-permanent-10`;
         const jobsDoc = await db.collection('adzuna_jobs_cache').doc(jobsCacheKey).get();
         if (jobsDoc.exists) {
           categoryTag = jobsDoc.data()?.categoryTag || 'unknown';
