@@ -113,7 +113,6 @@
             :is-underpaid="isUnderpaid"
             :market-low="marketLow"
             :market-high="marketHigh"
-            :is-verified="isAdminVerified"
             @user-select="showUserSelection = true" />
         </div>
 
@@ -325,7 +324,6 @@ const {
   marketLow,
   marketHigh,
   jobListings,
-  isAdminVerified,
   histogramBuckets,
   histogramRange,
   histogramMaxCount,

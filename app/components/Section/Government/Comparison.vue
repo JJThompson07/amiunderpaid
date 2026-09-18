@@ -53,7 +53,6 @@
           :diff-percent="diffPercent"
           :is-underpaid="isUnderpaid" />
         <AmIButton
-          v-if="!isVerified"
           class="w-max text-2xs shadow-md ml-auto"
           :title="$t('buttons.not-best-match')"
           bg-colour="bg-amber-600"
@@ -84,7 +83,6 @@ const props = defineProps<{
   isUnderpaid: boolean;
   marketLow: number;
   marketHigh: number;
-  isVerified: boolean;
 }>();
 
 defineEmits<{
