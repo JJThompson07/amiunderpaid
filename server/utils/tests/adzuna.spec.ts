@@ -240,7 +240,8 @@ describe('adzuna utils', () => {
             where: 'London',
             distance: 20,
             category: 'it-jobs'
-          })
+          }),
+          timeout: 6000
         })
       );
       expect(result.count).toBe(3);
@@ -398,7 +399,8 @@ describe('adzuna utils', () => {
             title_only: 'Developer',
             where: 'London',
             category: 'it-jobs'
-          })
+          }),
+          timeout: 6000
         })
       );
       expect(result.histogram).toEqual(richHistogram.histogram);

@@ -15,8 +15,11 @@ vi.mock('firebase/auth', () => ({
   signOut: vi.fn()
 }));
 
-const mockAuth = { currentUser: { uid: '123' } };
-const mockUseFirebaseAuth = vi.fn((): { currentUser: { uid: string } | null } | null => mockAuth);
+const mockReload = vi.fn();
+const mockAuth = { currentUser: { uid: '123', reload: mockReload } };
+const mockUseFirebaseAuth = vi.fn(
+  (): { currentUser: { uid: string; reload: typeof mockReload } | null } | null => mockAuth
+);
 vi.stubGlobal('useFirebaseAuth', mockUseFirebaseAuth);
 vi.stubGlobal('useI18n', () => ({ t: (k: string): string => k }));
 
@@ -34,7 +37,7 @@ vi.stubGlobal('navigateTo', mockNavigateTo);
 // ambient global), so TypeScript has no declaration for it — this narrow cast reads back
 // whichever stub the current test installed, matching the runtime dynamic-global pattern.
 type RecruiterAuthGlobals = {
-  useFirebaseAuth: () => { currentUser: { uid: string } | null } | null;
+  useFirebaseAuth: () => { currentUser: { uid: string; reload: typeof mockReload } | null } | null;
 };
 const getGlobalUseFirebaseAuth = (): RecruiterAuthGlobals['useFirebaseAuth'] =>
   (globalThis as unknown as RecruiterAuthGlobals).useFirebaseAuth;
@@ -170,6 +173,39 @@ describe('useRecruiterAuth', () => {
       const { resendVerificationEmail: resend2 } = useRecruiterAuth();
       const result2 = await resend2();
       expect(result2).toBe(false);
+
+      vi.stubGlobal('useFirebaseAuth', () => oldAuth);
+    });
+  });
+
+  describe('reloadUser', () => {
+    it('reloads the current user', async () => {
+      mockReload.mockResolvedValue(undefined);
+      const { reloadUser } = useRecruiterAuth();
+
+      await reloadUser();
+
+      expect(mockReload).toHaveBeenCalledTimes(1);
+    });
+
+    it('does nothing if there is no current user', async () => {
+      const oldAuth = getGlobalUseFirebaseAuth()();
+      vi.stubGlobal('useFirebaseAuth', () => ({ currentUser: null }));
+
+      const { reloadUser } = useRecruiterAuth();
+      await expect(reloadUser()).resolves.toBeUndefined();
+      expect(mockReload).not.toHaveBeenCalled();
+
+      vi.stubGlobal('useFirebaseAuth', () => oldAuth);
+    });
+
+    it('does nothing if auth is unavailable', async () => {
+      const oldAuth = getGlobalUseFirebaseAuth()();
+      vi.stubGlobal('useFirebaseAuth', () => null);
+
+      const { reloadUser } = useRecruiterAuth();
+      await expect(reloadUser()).resolves.toBeUndefined();
+      expect(mockReload).not.toHaveBeenCalled();
 
       vi.stubGlobal('useFirebaseAuth', () => oldAuth);
     });

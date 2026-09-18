@@ -44,3 +44,20 @@ The system SHALL prevent users from creating or updating sensitive fields on the
 
 - **WHEN** an authenticated administrator updates a recruiter's `ukNationalStatus`, `usaNationalStatus`, `basicDiscount`, or `role`
 - **THEN** Firestore allows the write
+
+## ADDED Requirements
+
+### Requirement: Automated Firestore rules deployment
+
+The system SHALL automatically deploy `firestore.rules` to the live Firebase project when commits are pushed or merged to the `main` branch in CI/CD, after all linting, unit testing, and E2E verification suites have passed.
+
+#### Scenario: Commits merged to main branch
+
+- **WHEN** a pull request is merged or commits are pushed to `main`
+- **AND** lint, unit-tests, and e2e-tests jobs succeed
+- **THEN** the CI/CD pipeline deploys `firestore.rules` using the Firebase CLI and configured project credentials
+
+#### Scenario: Pull request or test failure
+
+- **WHEN** changes are opened in a non-main pull request, or any verification suite fails
+- **THEN** the CI/CD pipeline does not execute Firestore rules deployment

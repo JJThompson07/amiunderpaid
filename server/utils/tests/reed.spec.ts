@@ -209,7 +209,8 @@ describe('Reed Utility', () => {
             locationName: 'London',
             fullTime: true,
             permanent: true
-          })
+          }),
+          timeout: 6000
         })
       );
       expect(result.count).toBe(15);

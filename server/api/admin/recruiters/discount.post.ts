@@ -1,14 +1,6 @@
-import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
 export default defineEventHandler(async (event) => {
-  const authHeader = getRequestHeader(event, 'authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    throw createError({ statusCode: 401 });
-  }
-  const token = authHeader.split('Bearer ')[1]!;
-  await getAuth().verifyIdToken(token);
-
   const body = await readBody(event);
   const { uid, basicDiscount, exclusiveDiscount } = body;
 

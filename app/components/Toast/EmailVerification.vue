@@ -39,13 +39,11 @@
 </template>
 
 <script setup lang="ts">
-// components/Toast/EmailVerification.vue (around line 41)
 import { ref, watchEffect } from 'vue';
 import { Mail } from 'lucide-vue-next';
-import { useCurrentUser } from 'vuefire'; // <-- Add this
-import { getAuth } from 'firebase/auth'; // <-- Add this for the reload
+import { useCurrentUser } from 'vuefire';
 
-const { resendVerificationEmail } = useRecruiterAuth();
+const { resendVerificationEmail, reloadUser } = useRecruiterAuth();
 const user = useCurrentUser(); // <-- Reactive user
 const { showToast } = useSystemToast();
 const { t } = useI18n();
@@ -69,15 +67,11 @@ const handleResend = async (): Promise<void> => {
 
 const refreshVerificationStatus = async (): Promise<void> => {
   if (user.value) {
-    const auth = getAuth();
-    await auth.currentUser?.reload();
+    await reloadUser();
 
-    const isVerified = auth.currentUser?.emailVerified;
-
-    if (!isVerified) {
+    if (!user.value?.emailVerified) {
       showToast(t('toast.type.error'), t('toast.verify-email.action.error'), 'error');
     } else {
-      // Instantly hide the banner so they don't have to wait for Vuefire to sync
       showVerificationToast.value = false;
     }
   }

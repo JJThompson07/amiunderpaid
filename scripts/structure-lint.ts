@@ -30,7 +30,15 @@ const isPlay = (file: string): boolean => file.endsWith('.play.ts');
 const stem = (file: string): string => basename(file).replace(/\.(vue|ts)$/, '');
 
 const TEST_EXEMPT_DIRS = ['server', 'app/plugins', 'app/middleware'];
-const TEST_EXEMPT_FILES = ['app/app.vue', 'app/error.vue'];
+const TEST_EXEMPT_FILES = [
+  'app/app.vue',
+  'app/error.vue',
+  'utils/bands/uk.ts',
+  'utils/bands/usa.ts',
+  'utils/locations/uk.ts',
+  'utils/locations/usa.ts',
+  'utils/seedData.ts'
+];
 
 const newFiles = new Set<string>();
 try {

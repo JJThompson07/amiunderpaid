@@ -16,6 +16,7 @@ A recent codebase audit identified several targeted security and code quality fi
 
 - Eliminate the Firestore rules privilege escalation by blacklisting `ukNationalStatus`, `usaNationalStatus`, and `claims` from client writes in `firestore.rules`.
 - Back the rules fix with comprehensive security tests in `tests/firestore.spec.ts`.
+- Automate continuous deployment of `firestore.rules` on merge to `main` via GitHub Actions (`.github/workflows/ci.yml`).
 - Configure an explicit 6-second timeout (`timeout: 6000`) across all downstream market data API clients in `server/utils/adzuna.ts`, `server/utils/reed.ts`, and `server/utils/jooble.ts`.
 - Eliminate structure-lint legacy warnings by registering static data lookup files in `scripts/structure-lint.ts`.
 - Clean up redundant authorization code in `server/api/admin/recruiters/discount.post.ts`.
@@ -42,7 +43,21 @@ A recent codebase audit identified several targeted security and code quality fi
 - **Alternatives Considered**:
   - _Full client whitelist_: Define an allowed fields list (`['name', 'agency_name', 'agencyName', 'contactSettings', 'coveredCategories']`). Rejected to preserve rule structure and avoid breaking unexpected client fields, while blacklist strictly closes all attack surfaces.
 
-### 2. Downstream API Client HTTP Timeouts
+### 2. Automated CI/CD Deployment for Firestore Rules
+
+- **Choice**:
+  - Add a `"deploy:rules": "npx -y firebase-tools@latest deploy --only firestore:rules --project \"$FIREBASE_PROJECT_ID\" --token \"$FIREBASE_TOKEN\""` script in `package.json`.
+  - Add a `deploy-rules` job to `.github/workflows/ci.yml` that triggers only on `push` to `main` (`if: github.event_name == 'push' && github.ref == 'refs/heads/main'`) after `lint`, `unit-tests`, and `e2e-tests` pass.
+  - The job authenticates via two standalone repo secrets passed directly as env vars to `pnpm run deploy:rules`: `FIREBASE_TOKEN` (generated with `firebase login:ci`) and `FIREBASE_PROJECT_ID`. Kept independent of the `CI_ENV_FILE` secret the `unit-tests`/`e2e-tests` jobs use, so this job has no `.env`-sourcing step and no dependency on that blob's contents.
+- **Rationale**:
+  - Eliminates human error and deployment drift where code changes merge to production while Firestore security rules remain unapplied.
+  - Gate rules deployment behind all validation suites (`lint`, `unit-tests`, `e2e-tests`) to prevent deploying rules when the branch has breaking regressions.
+  - A `FIREBASE_TOKEN` CI token was chosen over a GCP service-account JSON secret for setup simplicity (single secret, no `GOOGLE_APPLICATION_CREDENTIALS` file plumbing) — confirmed `firebase-tools@15.30.2`'s `--token` flag is still functional, though the CLI marks it deprecated.
+- **Alternatives Considered**:
+  - _Manual deployment via Firebase CLI_: Rejected because manual steps are prone to omission and do not integrate with branch delivery.
+  - _GCP service-account JSON secret via `GOOGLE_APPLICATION_CREDENTIALS`_: More future-proof (not deprecated) but requires decoding a base64 secret to a temp credential file; rejected for now in favor of the simpler token flow, revisit if `--token` is removed in a future major `firebase-tools` version.
+
+### 3. Downstream API Client HTTP Timeouts
 
 - **Choice**: Add `timeout: 6000` (6,000 milliseconds / 6 seconds) to `$fetch` options in:
   - `server/utils/adzuna.ts`: `fetchAdzunaJobs` and `fetchAdzunaHistogram`
@@ -55,7 +70,7 @@ A recent codebase audit identified several targeted security and code quality fi
   - _3-second timeout_: Too aggressive; legitimate heavy queries on Adzuna/Reed can take 3–4 seconds.
   - _10-second timeout_: Too close to Vercel's function timeout, leaving no time for fallback execution.
 
-### 3. Structure Lint Exemption Configuration
+### 4. Structure Lint Exemption Configuration
 
 - **Choice**: In `scripts/structure-lint.ts`, add the following static lookup files to `TEST_EXEMPT_FILES`:
   - `'utils/bands/uk.ts'`
@@ -67,7 +82,7 @@ A recent codebase audit identified several targeted security and code quality fi
   - These files are static data tables whose unit tests reside in `utils/tests/` (e.g. `utils/tests/bands-uk.spec.ts`).
   - Structure-lint expects tests in adjacent `tests/` subdirectories (e.g. `utils/bands/tests/uk.spec.ts`), causing 5 legacy warnings on every `pnpm lint` run. Adding them to `TEST_EXEMPT_FILES` removes noise without sacrificing test coverage.
 
-### 4. Admin Guard Redundancy & Auth Encapsulation
+### 5. Admin Guard Redundancy & Auth Encapsulation
 
 - **Choice**:
   - In `server/api/admin/recruiters/discount.post.ts`: Remove manual `getRequestHeader(event, 'authorization')` and `getAuth().verifyIdToken(token)` lines. `server/middleware/admin-guard.ts` already intercepts all `/api/admin/**` routes and verifies admin identity.
@@ -81,3 +96,5 @@ A recent codebase audit identified several targeted security and code quality fi
   → _Mitigation_: Verified that client-side profile components (`app/pages/recruiter/profile.vue`, `app/components/Territory/List.vue`) only modify `agency_name`, `agencyName`, and `contactSettings`. National status and discounts are exclusively edited through `/api/admin/` endpoints.
 - **[Risk: 6-second timeout aborts slow but successful upstream searches]**  
   → _Mitigation_: 6 seconds is twice the 99th percentile response time for Reed/Adzuna API endpoints under normal conditions. On timeout, the regional fallback provider immediately takes over to serve user queries.
+- **[Risk: CI deployment fails if the `FIREBASE_TOKEN` secret is missing or invalid]**  
+  → _Mitigation_: `firebase-tools deploy` fails loudly (non-zero exit) if authentication fails, so the `deploy-rules` job surfaces as a failed CI run rather than silently skipping the deploy. The user must provision the `FIREBASE_TOKEN` repo secret (`firebase login:ci`) before this job can succeed.
