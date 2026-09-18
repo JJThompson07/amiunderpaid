@@ -9,9 +9,13 @@ import {
 
 // Below this many relevance-filtered results with valid salaries, Tier 1's
 // exact-phrase precision is judged too sparse and Tier 2 (unquoted full-title
-// search, still relevance-filtered post-fetch) is executed instead. See
-// design.md sec 3 for the live-verified Reed query counts behind this design.
-const MIN_TIER1_SALARIED_RESULTS = 3;
+// search, still relevance-filtered post-fetch) is executed instead. 15 is a
+// statistically robust floor for IQR quartile estimation and 7-bucket
+// histogram generation -- a floor of 3 (the prior value) let sparse Tier 1
+// samples of ~4% of the available market (e.g. 18/548 for "lead software
+// engineer") satisfy the gate and permanently starve Tier 2. See design.md
+// sec 3 for the live-verified Reed query counts behind this design.
+const MIN_TIER1_SALARIED_RESULTS = 15;
 
 export type ReedJobResponse = {
   results: {

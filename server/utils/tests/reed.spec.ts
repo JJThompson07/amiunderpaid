@@ -183,13 +183,17 @@ describe('Reed Utility', () => {
         'useRuntimeConfig',
         vi.fn(() => ({ reedApiKey: 'test-key' }))
       );
+      // 15 salaried results -- exactly the MIN_TIER1_SALARIED_RESULTS floor.
       const richResponse: ReedJobResponse = {
-        totalResults: 3,
-        results: [
-          buildReedJob({ jobId: 1, jobTitle: 'Dev', minimumSalary: 40000, maximumSalary: 50000 }),
-          buildReedJob({ jobId: 2, jobTitle: 'Dev', minimumSalary: 45000, maximumSalary: 55000 }),
-          buildReedJob({ jobId: 3, jobTitle: 'Dev', minimumSalary: 50000, maximumSalary: 60000 })
-        ]
+        totalResults: 15,
+        results: Array.from({ length: 15 }, (_, i) =>
+          buildReedJob({
+            jobId: i + 1,
+            jobTitle: 'Dev',
+            minimumSalary: 40000 + i * 1000,
+            maximumSalary: 50000 + i * 1000
+          })
+        )
       };
       const fetchMock = vi.fn().mockResolvedValue(richResponse);
       vi.stubGlobal('$fetch', fetchMock);
@@ -208,7 +212,47 @@ describe('Reed Utility', () => {
           })
         })
       );
-      expect(result.count).toBe(3);
+      expect(result.count).toBe(15);
+    });
+
+    it('should fall back to Tier 2 when Tier 1 has one fewer salaried result than the sufficiency floor', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ reedApiKey: 'test-key' }))
+      );
+      // 14 salaried results -- one below the MIN_TIER1_SALARIED_RESULTS floor.
+      const borderlineSparseResponse: ReedJobResponse = {
+        totalResults: 14,
+        results: Array.from({ length: 14 }, (_, i) =>
+          buildReedJob({
+            jobId: i + 1,
+            jobTitle: 'Dev',
+            minimumSalary: 40000 + i * 1000,
+            maximumSalary: 50000 + i * 1000
+          })
+        )
+      };
+      const richResponse: ReedJobResponse = {
+        totalResults: 20,
+        results: Array.from({ length: 20 }, (_, i) =>
+          buildReedJob({
+            jobId: i + 1,
+            jobTitle: 'Dev',
+            minimumSalary: 40000 + i * 1000,
+            maximumSalary: 50000 + i * 1000
+          })
+        )
+      };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(borderlineSparseResponse)
+        .mockResolvedValueOnce(richResponse);
+      vi.stubGlobal('$fetch', fetchMock);
+
+      const result = await fetchReedData('Dev', '', 'full-time', 'permanent');
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(result.count).toBe(20);
     });
 
     it('should OR the anchor phrase into Tier 1 keywords when extraction shortens the title', async () => {
@@ -294,6 +338,61 @@ describe('Reed Utility', () => {
         expect.objectContaining({ params: expect.objectContaining({ keywords: 'Dev' }) })
       );
       expect(result.count).toBe(4);
+    });
+
+    it('should strictly relevance-filter Tier 2 unquoted results, stripping off-domain listings', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ reedApiKey: 'test-key' }))
+      );
+      const sparseResponse: ReedJobResponse = {
+        totalResults: 1,
+        results: [
+          buildReedJob({
+            jobId: 1,
+            jobTitle: 'Lead Software Engineer',
+            minimumSalary: 80000,
+            maximumSalary: 90000
+          })
+        ]
+      };
+      // Tier 2's unquoted search returns a mix of on-domain and off-domain
+      // "lead ... engineer" listings -- only the software one should survive
+      // the post-fetch domain-token filter.
+      const looseResponse: ReedJobResponse = {
+        totalResults: 3,
+        results: [
+          buildReedJob({
+            jobId: 1,
+            jobTitle: 'Lead Software Engineer',
+            minimumSalary: 80000,
+            maximumSalary: 90000
+          }),
+          buildReedJob({
+            jobId: 2,
+            jobTitle: 'Lead Mechanical Engineer',
+            minimumSalary: 70000,
+            maximumSalary: 85000
+          }),
+          buildReedJob({
+            jobId: 3,
+            jobTitle: 'Lead Electrical Engineer',
+            minimumSalary: 72000,
+            maximumSalary: 86000
+          })
+        ]
+      };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(sparseResponse)
+        .mockResolvedValueOnce(looseResponse);
+      vi.stubGlobal('$fetch', fetchMock);
+
+      const result = await fetchReedData('Lead Software Engineer', '', 'full-time', 'permanent');
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(result.results.map((r) => r.title)).toEqual(['Lead Software Engineer']);
+      expect(result.count).toBe(1);
     });
 
     it('should handle mapped locations and part-time/contract params', async () => {
