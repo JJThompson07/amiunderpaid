@@ -36,7 +36,62 @@ const SENIORITY_TIERS: Record<SeniorityTier, string[]> = {
     'designer',
     'officer',
     'auditor',
-    'executive'
+    'executive',
+    // Healthcare / Medical
+    'nurse',
+    'doctor',
+    'physician',
+    'therapist',
+    'clinician',
+    'practitioner',
+    'pharmacist',
+    'paramedic',
+    'optometrist',
+    // Education / Academia
+    'teacher',
+    'lecturer',
+    'tutor',
+    'instructor',
+    'educator',
+    'professor',
+    'academic',
+    // Legal / Compliance
+    'lawyer',
+    'solicitor',
+    'barrister',
+    'paralegal',
+    'counsel',
+    'attorney',
+    // Operations / Business / Admin
+    'recruiter',
+    'coordinator',
+    'administrator',
+    'advisor',
+    'representative',
+    'agent',
+    'buyer',
+    'planner',
+    'estimator',
+    'underwriter',
+    'clerk',
+    'scientist',
+    'researcher',
+    'technician',
+    'mechanic',
+    'architect',
+    'surveyor',
+    'economist',
+    'statistician',
+    // Construction / Trades / Industry
+    'electrician',
+    'plumber',
+    'carpenter',
+    'builder',
+    'machinist',
+    'fitter',
+    'welder',
+    'operator',
+    'operative'
   ],
   junior_entry: ['assistant', 'junior', 'trainee', 'intern', 'graduate', 'apprentice', 'associate']
 };
@@ -141,7 +196,37 @@ const isSeniorityCompatible = (searchTokens: string[], candidateTokens: string[]
   return TIER_RANK[candidateTier] >= TIER_RANK[searchTier];
 };
 
-/** Fraction (0-1) of search-title tokens present in the candidate title, after normalization. */
+/**
+ * True for a token whose literal (stemmed) presence in a candidate title is
+ * mandatory. Everything is required *except* SCOPE_MODIFIERS (optional --
+ * extractSearchAnchorPhrase already treats these as strippable) and the four
+ * hierarchy-LEVEL seniority tiers (executive/head_director/manager_lead/
+ * junior_entry, e.g. "head"/"director"/"lead"/"junior" -- near-synonyms
+ * *within* a tier, so isSeniorityCompatible's tier-rank comparison is the
+ * right test for them, not literal identity).
+ *
+ * `mid_core` is deliberately NOT exempted here even though it's part of
+ * SENIORITY_TIERS: it enumerates profession/role nouns (engineer, nurse,
+ * analyst, ...), and words within it are not interchangeable with each other
+ * just because they share a tier rank -- an "engineer" is not a "nurse". See
+ * design.md Decision 1's Reviewer Correction for the worked-example evidence
+ * behind this split.
+ */
+const isRequiredToken = (token: string): boolean => {
+  const tier = classifySeniorityTier(token);
+  if (tier !== null && tier !== 'mid_core') {
+    return false;
+  }
+  return !SCOPE_MODIFIERS.has(token);
+};
+
+/**
+ * Fraction (0-1) of search-title tokens present in the candidate title, after
+ * normalization. Returns 0 if any required token (see isRequiredToken) from
+ * the search title -- a domain-specific token, or a mid_core role-noun -- is
+ * absent from the candidate title, regardless of how many optional
+ * (scope-modifier / hierarchy-level) tokens otherwise overlap.
+ */
 export const calculateTitleRelevanceScore = (
   candidateTitle: string,
   searchTitle: string
@@ -151,14 +236,21 @@ export const calculateTitleRelevanceScore = (
     return 0;
   }
   const candidateTokens = new Set(tokenize(candidateTitle));
+  const requiredTokens = searchTokens.filter(isRequiredToken);
+  if (requiredTokens.some((t) => !candidateTokens.has(t))) {
+    return 0;
+  }
   const overlapCount = searchTokens.filter((t) => candidateTokens.has(t)).length;
   return overlapCount / searchTokens.length;
 };
 
 /**
- * Filters candidate jobs down to those that meet both the token-overlap
- * threshold (100% for 1-2 word queries, >= 66% for 3+ word queries) and the
- * seniority-hierarchy guardrail, then sorts most-relevant first.
+ * Filters candidate jobs down to those whose title contains every required
+ * search token (see isRequiredToken) and that satisfy the seniority-hierarchy
+ * guardrail, then sorts most-relevant first. There is no separate fractional
+ * overlap threshold for optional (scope-modifier / hierarchy-level) tokens --
+ * once all required tokens match and hierarchy compatibility holds, the
+ * candidate is accepted regardless of how many optional tokens differ.
  */
 export const filterAndRankJobsByRelevance = <T extends CandidateJob>(
   jobs: T[],
@@ -169,12 +261,10 @@ export const filterAndRankJobsByRelevance = <T extends CandidateJob>(
     return jobs;
   }
 
-  const requiredOverlap = searchTokens.length <= 2 ? 1 : 0.66;
-
   return jobs
     .map((job) => ({ job, score: calculateTitleRelevanceScore(job.title, searchTitle) }))
     .filter(({ job, score }) => {
-      if (score < requiredOverlap) {
+      if (score === 0) {
         return false;
       }
       return isSeniorityCompatible(searchTokens, tokenize(job.title));

@@ -120,6 +120,72 @@ describe('searchRelevance', () => {
 
       expect(filterAndRankJobsByRelevance(jobs, 'of the')).toEqual(jobs);
     });
+
+    it('rejects 3+-word listings missing a domain-specific token despite matching hierarchy-level and role-noun tokens', () => {
+      const jobs = [
+        { title: 'Lead Mechanical Engineer' },
+        { title: 'Lead Electrical Engineer' },
+        { title: 'RF Lead Engineer' }
+      ];
+
+      const result = filterAndRankJobsByRelevance(jobs, 'Lead Software Engineer');
+
+      expect(result).toEqual([]);
+    });
+
+    it('accepts a 3+-word listing that matches every domain token and satisfies hierarchy compatibility', () => {
+      const jobs = [{ title: 'Lead Software & Cloud Engineer' }];
+
+      const result = filterAndRankJobsByRelevance(jobs, 'Lead Software Engineer');
+
+      expect(result.map((j) => j.title)).toEqual(['Lead Software & Cloud Engineer']);
+    });
+
+    it('rejects a listing that substitutes one mid_core role-noun for another, even when other tokens match', () => {
+      // "developer" is a distinct mid_core profession token from "engineer" --
+      // not a literal or DOMAIN_STEMS match -- so it is not treated as
+      // interchangeable just because both are mid_core.
+      const jobs = [{ title: 'Lead Software Developer' }];
+
+      const result = filterAndRankJobsByRelevance(jobs, 'Lead Software Engineer');
+
+      expect(result).toEqual([]);
+    });
+
+    it('accepts a listing that omits an optional scope-modifier token', () => {
+      const jobs = [{ title: 'Financial Analyst' }];
+
+      const result = filterAndRankJobsByRelevance(jobs, 'Senior Financial Analyst');
+
+      expect(result.map((j) => j.title)).toEqual(['Financial Analyst']);
+    });
+
+    it('accepts a listing that substitutes a same-tier hierarchy-level word', () => {
+      const jobs = [{ title: 'Director of Operations' }];
+
+      const result = filterAndRankJobsByRelevance(jobs, 'Head of Operations');
+
+      expect(result.map((j) => j.title)).toEqual(['Director of Operations']);
+    });
+
+    it('rejects a listing whose only shared tokens are cross-profession mid_core role-nouns at the same rank', () => {
+      // "nurse" and "engineer" are both mid_core (same tier rank), but they
+      // are different professions -- tier-rank compatibility alone must not
+      // substitute for the domain-token match requirement.
+      const jobs = [{ title: 'Senior Nurse' }];
+
+      const result = filterAndRankJobsByRelevance(jobs, 'Senior Engineer');
+
+      expect(result).toEqual([]);
+    });
+
+    it('rejects non-IT multi-word roles missing the domain-specific token', () => {
+      const jobs = [{ title: 'Lead Dental Nurse' }];
+
+      const result = filterAndRankJobsByRelevance(jobs, 'Lead Veterinary Nurse');
+
+      expect(result).toEqual([]);
+    });
   });
 
   describe('extractSearchAnchorPhrase', () => {
