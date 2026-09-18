@@ -1,13 +1,13 @@
 <template>
   <div class="w-full relative p-4">
-    <div class="relative pt-8 pb-2">
+    <div class="relative pt-8 pb-8">
       <!-- Range Bar -->
       <div class="relative h-3 rounded-full bg-slate-300/50">
         <!-- High/Low Markers -->
-        <div class="absolute left-0 -top-6 text-2xs uppercase font-bold text-slate-500">
+        <div class="absolute left-0 -bottom-6 text-2xs uppercase font-bold text-slate-500">
           {{ $t('sections.visualiser.low') }} {{ currencySymbol }}{{ marketLow.toLocaleString() }}
         </div>
-        <div class="absolute right-0 -top-6 text-2xs uppercase font-bold text-slate-500">
+        <div class="absolute right-0 -bottom-6 text-2xs uppercase font-bold text-slate-500">
           {{ $t('sections.visualiser.high') }} {{ currencySymbol }}{{ marketHigh.toLocaleString() }}
         </div>
 
