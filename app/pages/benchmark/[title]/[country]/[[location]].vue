@@ -111,7 +111,6 @@
             :market-data-year="marketDataYear"
             :diff-percent="diffPercent"
             :is-underpaid="isUnderpaid"
-            :is-verified="isAdminVerified"
             @user-select="showUserSelection = true" />
         </div>
 
@@ -122,7 +121,9 @@
             class="flex-1 w-full"
             :adzuna-category="adzunaCategory"
             :country="country"
-            @select="handleAmbiguitySelect" />
+            :can-cancel="hasGovernmentData"
+            @select="handleAmbiguitySelect"
+            @cancel="showUserSelection = false" />
         </div>
       </div>
 
@@ -271,7 +272,6 @@ const {
   marketLow,
   marketHigh,
   jobListings,
-  isAdminVerified,
   histogramBuckets,
   histogramRange,
   histogramMaxCount,
