@@ -7,6 +7,7 @@
     :title="$t('sections.adzuna.title', { country })"
     :user-salary="currentSalary"
     :market-average="averageSalary"
+    :jobs-count="jobsCount"
     :currency-symbol="currencySymbol"
     :comparison="comparison"
     :show-user-salary="false">
@@ -14,11 +15,7 @@
       <h4 class="font-bold text-xl lg:text-2xl md:line-clamp-1" :title="displayTitle">
         {{ displayTitle }}
       </h4>
-      <i18n-t keypath="sections.adzuna.results" tag="span" class="leading-relaxed">
-        <template #jobsCount>
-          <span class="font-bold">{{ jobsCount }}</span>
-        </template>
-      </i18n-t>
+      <span class="leading-relaxed">{{ $t('sections.adzuna.results') }}</span>
     </template>
     <template #verdict>
       <SectionSalaryVerdict

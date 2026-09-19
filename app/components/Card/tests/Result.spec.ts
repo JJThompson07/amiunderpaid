@@ -36,6 +36,22 @@ describe('Card/Result', () => {
     expect(wrapper.find('.card-result--market-only').exists()).toBe(true);
     expect(wrapper.text()).not.toContain('65,000');
     expect(wrapper.text()).toContain('67,285');
+    expect(wrapper.text()).not.toContain('card.result.jobs');
+  });
+
+  it('adds a Jobs stat alongside the market average when jobsCount is provided', () => {
+    const wrapper = mountComponent({ showUserSalary: false, jobsCount: 1234 });
+
+    expect(wrapper.text()).toContain('card.result.jobs');
+    expect(wrapper.text()).toContain('1,234');
+    expect(wrapper.text()).toContain('67,285');
+  });
+
+  it('does not throw or render the Jobs stat when jobsCount is explicitly undefined', () => {
+    expect(() => mountComponent({ showUserSalary: false, jobsCount: undefined })).not.toThrow();
+
+    const wrapper = mountComponent({ showUserSalary: false, jobsCount: undefined });
+    expect(wrapper.text()).not.toContain('card.result.jobs');
   });
 
   it('renders the well-paid chip when comparison is 1', () => {
