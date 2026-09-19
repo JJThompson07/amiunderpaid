@@ -75,6 +75,19 @@ describe('Section/Government/SalaryVisualizer', () => {
     expect(wrapper.find('[role="tooltip"]').classes()).not.toContain('opacity-100');
   });
 
+  it('uses the primary brand colour for the tooltip background and raises it above the user marker while open', async () => {
+    const wrapper = mountComponent();
+    const marker = wrapper.find('.bg-primary-600');
+    const tooltip = wrapper.find('[role="tooltip"]');
+
+    expect(tooltip.classes()).toContain('bg-primary-700');
+    expect(marker.classes()).toContain('z-10');
+    expect(marker.classes()).not.toContain('z-30');
+
+    await marker.trigger('click');
+    expect(marker.classes()).toContain('z-30');
+  });
+
   it('places the Market Average marker at the midpoint of the low-high range', () => {
     const wrapper = mountComponent({ marketAverage: 55000, marketLow: 40000, marketHigh: 70000 });
     const marker = wrapper.find('.bg-primary-600');

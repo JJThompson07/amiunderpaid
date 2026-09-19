@@ -31,8 +31,8 @@ Moving the User Salary label above the track (`-top-6`) prevents it from overlap
 
 ### Decision 2: Tooltip Styling & Vertical Stacking
 
-- **Choice**: The tooltip is rendered above the market average marker (`absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2` or `-top-7.5`) with high contrast pill styling (`bg-slate-900 text-white font-bold text-2xs px-2 py-0.5 rounded shadow-lg z-30 whitespace-nowrap`).
-- **Rationale**: High contrast background (`bg-slate-900`) cleanly differentiates the transient tooltip from the user's persistent salary label (`text-positive-700` / `text-negative-700` / `text-slate-600`), even if both happen to be visible simultaneously while inspecting the average.
+- **Choice**: The tooltip is rendered above the market average marker (`-top-7.5`) with pill styling in the site's primary brand colour (`bg-primary-700 text-white font-black text-2xs px-2 py-0.5 rounded shadow-lg whitespace-nowrap`). The marker itself sits at `z-10` by default (below the User Salary marker's `z-20`), but rises to `z-30` on `hover:`, `focus:`, and while `showAvgTooltip` is true (tap), so the open tooltip always renders above the User Salary marker instead of being clipped behind it.
+- **Rationale**: `bg-primary-700` (not `primary-600`, the shade already used for the marker dot) keeps the tooltip on-brand while meeting WCAG AA contrast for white text on both site themes — `primary-600` computes to ~3.6:1 against white on the BenchmarkMyRole (orange) theme, below the 4.5:1 threshold, while `primary-700` computes to ~5.2:1 (BenchmarkMyRole) and ~6.2:1 (AmIUnderpaid). Conditionally elevating `z-index` only while the tooltip is open (rather than raising the marker's baseline `z-10` permanently) preserves the existing default stacking — the User Salary marker stays visually dominant when nothing is being inspected — while guaranteeing the tooltip itself is never hidden behind it when open.
 
 ### Decision 3: User Salary Label Positioning
 

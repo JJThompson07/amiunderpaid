@@ -13,7 +13,8 @@
 
         <!-- Market Average Marker -->
         <div
-          class="group absolute z-10 w-1 h-full -translate-x-1/2 -translate-y-1/2 bg-primary-600 shadow-md top-1/2 left-1/2 cursor-pointer"
+          class="group absolute z-10 hover:z-30 focus:z-30 w-1 h-full -translate-x-1/2 -translate-y-1/2 bg-primary-600 shadow-md top-1/2 left-1/2 cursor-pointer"
+          :class="{ 'z-30': showAvgTooltip }"
           :style="{ left: `${averagePosition}%` }"
           role="group"
           tabindex="0"
@@ -22,7 +23,7 @@
           @blur="hideAvgTooltip">
           <div
             role="tooltip"
-            class="absolute -translate-x-1/2 -top-7.5 left-1/2 text-2xs font-black text-white whitespace-nowrap bg-slate-900 px-2 py-0.5 rounded shadow-lg z-30 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+            class="absolute -translate-x-1/2 -top-7.5 left-1/2 text-2xs font-black text-white whitespace-nowrap bg-primary-700 px-2 py-0.5 rounded shadow-lg opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-focus:opacity-100"
             :class="{ 'opacity-100': showAvgTooltip }">
             {{ $t('sections.visualiser.average') }} {{ currencySymbol
             }}{{ marketAverage.toLocaleString() }}
