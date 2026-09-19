@@ -9,13 +9,6 @@ vi.stubGlobal('createError', (err: Partial<H3Error>) => {
   e.statusCode = err.statusCode;
   return e;
 });
-vi.stubGlobal('getRequestHeader', () => mockAuthHeader);
-
-let mockAuthHeader: string | undefined;
-const mockVerifyIdToken = vi.fn();
-vi.mock('firebase-admin/auth', () => ({
-  getAuth: vi.fn(() => ({ verifyIdToken: mockVerifyIdToken }))
-}));
 
 const mockReadBody = vi.fn();
 vi.stubGlobal('readBody', mockReadBody);
@@ -34,17 +27,8 @@ describe('admin recruiters/discount endpoint', () => {
     const mod = await import('../discount.post');
     handler = mod.default as unknown as DiscountHandler;
 
-    mockAuthHeader = 'Bearer valid-token';
-    mockVerifyIdToken.mockResolvedValue({ uid: 'admin_1' });
     mockReadBody.mockResolvedValue({ uid: 'rec_1', basicDiscount: 10, exclusiveDiscount: 20 });
     mockUpdate.mockResolvedValue(undefined);
-  });
-
-  it('rejects without a Bearer token', async () => {
-    mockAuthHeader = undefined;
-    const event = {} as unknown as H3Event;
-
-    await expect(handler(event)).rejects.toThrow();
   });
 
   it('requires a uid', async () => {

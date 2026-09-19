@@ -180,7 +180,8 @@ export const fetchAdzunaJobs = async (
       await $fetch<AdzunaRawSearchResponse>(
         `https://api.adzuna.com/v1/api/jobs/${countryCode}/search/1`,
         {
-          params: { ...baseParams, title_only: titleOnly }
+          params: { ...baseParams, title_only: titleOnly },
+          timeout: 6000
         }
       )
     );
@@ -237,7 +238,8 @@ export const fetchAdzunaHistogram = async (
       await $fetch<AdzunaRawHistogramResponse>(
         `https://api.adzuna.com/v1/api/jobs/${countryCode}/histogram`,
         {
-          params: { ...baseParams, title_only: titleOnly }
+          params: { ...baseParams, title_only: titleOnly },
+          timeout: 6000
         }
       )
     );

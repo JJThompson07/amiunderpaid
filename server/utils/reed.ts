@@ -162,7 +162,8 @@ export const fetchReedData = async (
         params,
         headers: {
           Authorization: authHeader
-        }
+        },
+        timeout: 6000
       });
     } catch (e) {
       throw createError({

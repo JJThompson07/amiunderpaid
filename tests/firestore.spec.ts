@@ -78,6 +78,95 @@ describe('Firestore Security Rules', () => {
         bob.firestore().collection('users').doc('bob').update({ status: 'banned' })
       );
     });
+
+    it('denies a user from self-granting UK national recruiter status', async () => {
+      const alice = testEnv.authenticatedContext('alice');
+      await assertFails(
+        alice
+          .firestore()
+          .collection('users')
+          .doc('alice')
+          .set({ name: 'Alice', ukNationalStatus: 'active' })
+      );
+
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context
+          .firestore()
+          .collection('users')
+          .doc('bob')
+          .set({ name: 'Bob', ukNationalStatus: 'inactive' });
+      });
+
+      const bob = testEnv.authenticatedContext('bob');
+      await assertFails(
+        bob.firestore().collection('users').doc('bob').update({ ukNationalStatus: 'active' })
+      );
+    });
+
+    it('denies a user from self-granting USA national recruiter status', async () => {
+      const alice = testEnv.authenticatedContext('alice');
+      await assertFails(
+        alice
+          .firestore()
+          .collection('users')
+          .doc('alice')
+          .set({ name: 'Alice', usaNationalStatus: 'active' })
+      );
+
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context
+          .firestore()
+          .collection('users')
+          .doc('bob')
+          .set({ name: 'Bob', usaNationalStatus: 'inactive' });
+      });
+
+      const bob = testEnv.authenticatedContext('bob');
+      await assertFails(
+        bob.firestore().collection('users').doc('bob').update({ usaNationalStatus: 'active' })
+      );
+    });
+
+    it('denies a user from self-granting territory claims', async () => {
+      const alice = testEnv.authenticatedContext('alice');
+      await assertFails(
+        alice
+          .firestore()
+          .collection('users')
+          .doc('alice')
+          .set({ name: 'Alice', claims: ['east'] })
+      );
+
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context.firestore().collection('users').doc('bob').set({ name: 'Bob' });
+      });
+
+      const bob = testEnv.authenticatedContext('bob');
+      await assertFails(
+        bob
+          .firestore()
+          .collection('users')
+          .doc('bob')
+          .update({ claims: ['east'] })
+      );
+    });
+
+    it('allows admins to modify protected recruiter fields', async () => {
+      const admin = testEnv.authenticatedContext('admin', { admin: true });
+
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await context.firestore().collection('users').doc('bob').set({ name: 'Bob' });
+      });
+
+      await assertSucceeds(
+        admin.firestore().collection('users').doc('bob').update({
+          ukNationalStatus: 'active',
+          usaNationalStatus: 'active',
+          basicDiscount: 10,
+          role: 'recruiter'
+        })
+      );
+    });
   });
 
   describe('Server-Only Collections', () => {

@@ -13,6 +13,7 @@ export const useRecruiterAuth = (): {
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<boolean>;
   resendVerificationEmail: () => Promise<boolean>;
+  reloadUser: () => Promise<void>;
   loading: Ref<boolean>;
   error: Ref<string>;
 } => {
@@ -126,11 +127,18 @@ export const useRecruiterAuth = (): {
     }
   };
 
+  const reloadUser = async (): Promise<void> => {
+    if (auth?.currentUser) {
+      await auth.currentUser.reload();
+    }
+  };
+
   return {
     login,
     logout,
     resetPassword,
     resendVerificationEmail,
+    reloadUser,
     loading,
     error
   };

@@ -84,6 +84,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { MenuIcon, XIcon } from 'lucide-vue-next';
+import type { Link, Meta } from '@unhead/vue';
 const { isAdmin } = useUserRole();
 const { locale } = useI18n();
 
@@ -117,10 +118,10 @@ useHead({
     lang: computed(() => locale.value || i18nHead.value.htmlAttrs?.lang),
     dir: computed(() => i18nHead.value.htmlAttrs?.dir as 'ltr' | 'rtl' | 'auto' | undefined)
   },
-  // @ts-expect-error -- @nuxtjs/i18n types `i18nHead.value.link` as the untyped `MetaAttrs`
-  // (Record<string, string>) shape, which cannot structurally satisfy unhead's strict
-  // per-`rel` discriminated `Link` union; the runtime shape is verified correct below.
-  link: computed(() => {
+  // @nuxtjs/i18n types `i18nHead.value.link` as the untyped `MetaAttrs` (Record<string, string>)
+  // shape, which cannot structurally satisfy unhead's strict per-`rel` discriminated `Link`
+  // union; the runtime shape is verified correct below, so the return is cast via `unknown`.
+  link: computed((): Link[] => {
     // 1. Extract the links Nuxt i18n generates, but filter out rogue canonicals
     let i18nLinks = (i18nHead.value.link || []).filter((l) => l.rel !== 'canonical');
 
@@ -168,11 +169,11 @@ useHead({
       // ✨ 4. Force the absolute, correct Canonical URL using our bulletproof baseUrl
       { rel: 'canonical', href: `${baseUrl}${cleanPath || '/'}` },
       { rel: 'icon', type: 'image/x-icon', href: `/${String($siteBrand)}-favicon.ico` }
-    ];
+    ] as unknown as Link[];
   }),
-  // @ts-expect-error -- same untyped `MetaAttrs` (Record<string, string>) shape from
-  // @nuxtjs/i18n cannot structurally satisfy unhead's strict per-`name`/`property` `Meta` union.
-  meta: computed(() => [...(i18nHead.value.meta || [])])
+  // Same untyped `MetaAttrs` (Record<string, string>) shape from @nuxtjs/i18n cannot
+  // structurally satisfy unhead's strict per-`name`/`property` `Meta` union.
+  meta: computed((): Meta[] => [...(i18nHead.value.meta || [])] as unknown as Meta[])
 });
 </script>
 

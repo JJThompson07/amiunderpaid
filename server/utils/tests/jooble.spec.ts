@@ -169,7 +169,8 @@ describe('Jooble Provider', () => {
             keywords: 'Developer',
             location: 'Chicago',
             page: 1
-          }
+          },
+          timeout: 6000
         })
       );
     });

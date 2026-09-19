@@ -164,7 +164,8 @@ export const fetchJoobleData = async (
       headers: {
         'Content-Type': 'application/json'
       },
-      body: params
+      body: params,
+      timeout: 6000
     });
 
     return processJoobleData(response, jobType, contractType);

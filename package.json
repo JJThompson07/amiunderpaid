@@ -26,6 +26,7 @@
     "test:coverage": "vitest run --coverage",
     "test:rules": "npx -y firebase-tools@latest emulators:exec \"vitest run tests/firestore.spec.ts -c vitest.rules.config.ts\"",
     "test:e2e": "playwright test",
+    "deploy:rules": "npx -y firebase-tools@latest deploy --only firestore:rules --project \"$FIREBASE_PROJECT_ID\" --token \"$FIREBASE_TOKEN\"",
     "test:verify": "pnpm lint && pnpm test:coverage && pnpm test:e2e && pnpm test:rules"
   },
   "dependencies": {
