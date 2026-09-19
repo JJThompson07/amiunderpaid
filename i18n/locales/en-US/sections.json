@@ -1,7 +1,7 @@
 {
   "adzuna": {
     "title": "Live {country} Market Comparison",
-    "results": "Showing matched data for {jobsCount} live jobs.",
+    "results": "Market benchmark based on current live vacancy postings.",
     "live-rate": "Live Market Rate: {currency}{rate}",
     "view-salary-distribution": "View Salary Distribution",
     "salary-distribution": "Salary Distribution",

@@ -1,9 +1,10 @@
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import SalaryVisualizer from '../SalaryVisualizer.vue';
 
 vi.stubGlobal('computed', computed);
+vi.stubGlobal('ref', ref);
 
 vi.mock('vue-i18n', () => ({
   useI18n: (): { t: (key: string) => string } => ({ t: (key: string): string => key })
@@ -30,7 +31,7 @@ const mountComponent = (props: Record<string, unknown> = {}): ReturnType<typeof 
   });
 
 describe('Section/Government/SalaryVisualizer', () => {
-  it('positions the Low and High labels below the range bar, and the Average label above it', () => {
+  it('positions the Low and High labels below the range bar, and the User Salary label above it', () => {
     const wrapper = mountComponent();
     const labels = wrapper.findAll('.text-2xs.uppercase.font-bold.text-slate-500');
 
@@ -40,8 +41,38 @@ describe('Section/Government/SalaryVisualizer', () => {
       expect(label.classes()).not.toContain('-top-6');
     });
 
-    const averageLabel = wrapper.find('.text-primary-600');
-    expect(averageLabel.classes()).toContain('-top-6');
+    const userSalaryLabel = wrapper.find('.border-2.border-white .absolute.-top-6');
+    expect(userSalaryLabel.exists()).toBe(true);
+  });
+
+  it('gives the Market Average marker an accessible group role, tabindex, and label', () => {
+    const wrapper = mountComponent();
+    const marker = wrapper.find('.bg-primary-600');
+
+    expect(marker.attributes('role')).toBe('group');
+    expect(marker.attributes('tabindex')).toBe('0');
+    expect(marker.attributes('aria-label')).toContain('sections.visualiser.average');
+  });
+
+  it('keeps the Market Average tooltip hidden until hovered, focused, or tapped', () => {
+    const wrapper = mountComponent();
+    const tooltip = wrapper.find('[role="tooltip"]');
+
+    expect(tooltip.exists()).toBe(true);
+    expect(tooltip.classes()).toContain('opacity-0');
+    expect(tooltip.classes()).not.toContain('opacity-100');
+    expect(tooltip.text()).toContain('55,000');
+  });
+
+  it('reveals the Market Average tooltip on tap and hides it again on blur', async () => {
+    const wrapper = mountComponent();
+    const marker = wrapper.find('.bg-primary-600');
+
+    await marker.trigger('click');
+    expect(wrapper.find('[role="tooltip"]').classes()).toContain('opacity-100');
+
+    await marker.trigger('blur');
+    expect(wrapper.find('[role="tooltip"]').classes()).not.toContain('opacity-100');
   });
 
   it('places the Market Average marker at the midpoint of the low-high range', () => {

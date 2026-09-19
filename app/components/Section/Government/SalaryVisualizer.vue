@@ -11,12 +11,19 @@
           {{ $t('sections.visualiser.high') }} {{ currencySymbol }}{{ marketHigh.toLocaleString() }}
         </div>
 
-        <!-- Market Average Dot -->
+        <!-- Market Average Marker -->
         <div
-          class="absolute z-10 w-1 h-full -translate-x-1/2 -translate-y-1/2 bg-primary-600 shadow-md top-1/2 left-1/2"
-          :style="{ left: `${averagePosition}%` }">
+          class="group absolute z-10 w-1 h-full -translate-x-1/2 -translate-y-1/2 bg-primary-600 shadow-md top-1/2 left-1/2 cursor-pointer"
+          :style="{ left: `${averagePosition}%` }"
+          role="group"
+          tabindex="0"
+          :aria-label="`${$t('sections.visualiser.average')} ${currencySymbol}${marketAverage.toLocaleString()}`"
+          @click.stop="toggleAvgTooltip"
+          @blur="hideAvgTooltip">
           <div
-            class="absolute -translate-x-1/2 -top-6 left-1/2 text-2xs font-black text-primary-600 whitespace-nowrap">
+            role="tooltip"
+            class="absolute -translate-x-1/2 -top-7.5 left-1/2 text-2xs font-black text-white whitespace-nowrap bg-slate-900 px-2 py-0.5 rounded shadow-lg z-30 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+            :class="{ 'opacity-100': showAvgTooltip }">
             {{ $t('sections.visualiser.average') }} {{ currencySymbol
             }}{{ marketAverage.toLocaleString() }}
           </div>
@@ -35,7 +42,7 @@
           "
           :style="{ left: `${salaryPosition}%` }">
           <div
-            class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-2xs font-black whitespace-nowrap"
+            class="absolute -top-6 left-1/2 -translate-x-1/2 text-2xs font-black whitespace-nowrap"
             :class="
               diffPercent === 0
                 ? 'text-slate-600'
@@ -85,6 +92,16 @@ const salaryPosition = computed<number>(() => {
 
   return Math.min(Math.max(pct, 0), 100);
 });
+
+const showAvgTooltip = ref(false);
+
+const toggleAvgTooltip = (): void => {
+  showAvgTooltip.value = !showAvgTooltip.value;
+};
+
+const hideAvgTooltip = (): void => {
+  showAvgTooltip.value = false;
+};
 </script>
 
 <style scoped>

@@ -43,11 +43,19 @@
         >
       </div>
     </section>
-    <section v-else class="card-result--market-only w-full flex flex-col items-center mb-2">
-      <span class="text-xs text-slate-500">{{ $t('card.result.market-average') }}</span>
-      <span class="font-black text-xl lg:text-3xl"
-        >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
-      >
+    <section
+      v-else
+      class="card-result--market-only w-full flex flex-row justify-center items-center gap-8 mb-2">
+      <div class="flex flex-col items-center">
+        <span class="text-xs text-slate-500">{{ $t('card.result.market-average') }}</span>
+        <span class="font-black text-xl lg:text-3xl"
+          >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
+        >
+      </div>
+      <div v-if="jobsCount !== null" class="flex flex-col items-center">
+        <span class="text-xs text-slate-500">{{ $t('card.result.jobs') }}</span>
+        <span class="font-black text-xl lg:text-3xl">{{ jobsCount.toLocaleString() }}</span>
+      </div>
     </section>
 
     <section class="card-result--verdict w-full flex-1">
@@ -86,6 +94,10 @@ const props = defineProps({
   marketAverage: {
     type: Number,
     default: 0
+  },
+  jobsCount: {
+    type: Number as PropType<number | null>,
+    default: null
   },
   currencySymbol: {
     type: String,

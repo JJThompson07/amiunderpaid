@@ -7,12 +7,14 @@
 ## What Changes
 
 ### Government Salary Visualizer (`Section/Government/SalaryVisualizer.vue`)
+
 - **User Salary Label Repositioning**: Move the user salary label above the range bar (e.g. `-top-6` above the user marker dot) instead of below it (`-bottom-6`), eliminating overlap with the Low and High boundary labels below the track.
 - **Market Average Tooltip**: Replace the permanently visible Market Average text label with an on-demand tooltip attached to the Market Average indicator, revealed on hover, keyboard focus, and mobile touch / longpress.
 - **Accessible Interaction**: Ensure the Market Average indicator (the trigger) has proper accessibility attributes (`role="group"`, accessible label/name, keyboard focusability via `tabindex="0"`, and touch event handling), with `role="tooltip"` applied to the tooltip content element itself (not the trigger), so screen reader and mobile touch users can inspect the average salary.
 - **Test Suite Updates**: Update unit tests in `app/components/Section/Government/tests/SalaryVisualizer.spec.ts` to assert that Low/High labels remain below the bar, User Salary label renders above the bar, and Market Average label is housed within the tooltip presentation.
 
 ### Live Market Comparison Card (`Section/Adzuna/Comparison.vue`, `Card/Result.vue`)
+
 - **Prominent Jobs Stat**: Add a new "Jobs" stat to `Card/Result.vue`'s market-only stat row (used when `showUserSalary` is false), rendered to the right of the existing "Market Average" stat, showing the live job count with the same visual weight as the average salary figure. The stat is opt-in via a new nullable `jobsCount` prop so the Government comparison card (which has no jobs concept and also uses the market-only row) is unaffected.
 - **Body Copy Simplification**: Replace the `sections.adzuna.results` i18n string (currently `"Showing matched data for {jobsCount} live jobs."`, interpolated) with a static string, `"Market benchmark based on current live vacancy postings."`, in both `en-GB` and `en-US` locales, removing the now-redundant job count from the body text since it is promoted to its own stat.
 - **Test Suite Updates**: Update unit tests in `app/components/Card/tests/Result.spec.ts` to cover the new Jobs stat (present when `jobsCount` is passed, absent — preserving current behavior — when it is not, as in the Government card).
@@ -20,9 +22,11 @@
 ## Capabilities
 
 ### New Capabilities
+
 <!-- None -->
 
 ### Modified Capabilities
+
 - `government-card-match-selection`: Update the visualizer label positioning requirement to mandate that the Market Average label is displayed inside a tooltip on hover/focus/longpress, while the User Salary label renders above the track and Low/High labels render below the track.
 - `ui-fixes`: Add a requirement that the live market comparison card surfaces the live jobs count as a distinct, prominent stat alongside the Market Average stat, rather than only within body text.
 
