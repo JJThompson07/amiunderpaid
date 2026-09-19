@@ -52,7 +52,7 @@
           >{{ currencySymbol }}{{ marketAverage.toLocaleString() }}</span
         >
       </div>
-      <div v-if="jobsCount !== null" class="flex flex-col items-center">
+      <div v-if="typeof jobsCount === 'number'" class="flex flex-col items-center">
         <span class="text-xs text-slate-500">{{ $t('card.result.jobs') }}</span>
         <span class="font-black text-xl lg:text-3xl">{{ jobsCount.toLocaleString() }}</span>
       </div>

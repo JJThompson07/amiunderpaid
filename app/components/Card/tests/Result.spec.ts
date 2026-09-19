@@ -47,6 +47,13 @@ describe('Card/Result', () => {
     expect(wrapper.text()).toContain('67,285');
   });
 
+  it('does not throw or render the Jobs stat when jobsCount is explicitly undefined', () => {
+    expect(() => mountComponent({ showUserSalary: false, jobsCount: undefined })).not.toThrow();
+
+    const wrapper = mountComponent({ showUserSalary: false, jobsCount: undefined });
+    expect(wrapper.text()).not.toContain('card.result.jobs');
+  });
+
   it('renders the well-paid chip when comparison is 1', () => {
     const wrapper = mountComponent({ comparison: 1 });
 

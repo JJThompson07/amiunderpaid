@@ -19,11 +19,14 @@
           role="group"
           tabindex="0"
           :aria-label="`${$t('sections.visualiser.average')} ${currencySymbol}${marketAverage.toLocaleString()}`"
-          @click.stop="toggleAvgTooltip"
-          @blur="hideAvgTooltip">
+          @click.stop="revealAvgTooltip"
+          @focus="revealAvgTooltip"
+          @blur="hideAvgTooltip"
+          @keydown.enter.space.prevent="revealAvgTooltip"
+          @keydown.esc.prevent="hideAvgTooltip">
           <div
             role="tooltip"
-            class="absolute -translate-x-1/2 -top-7.5 left-1/2 text-2xs font-black text-white whitespace-nowrap bg-primary-700 px-2 py-0.5 rounded shadow-lg opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+            class="absolute -translate-x-1/2 -top-7.5 left-1/2 text-2xs font-black text-white whitespace-nowrap bg-primary-700 px-2 py-0.5 rounded shadow-lg opacity-0 pointer-events-none transition-opacity group-hover:opacity-100"
             :class="{ 'opacity-100': showAvgTooltip }">
             {{ $t('sections.visualiser.average') }} {{ currencySymbol
             }}{{ marketAverage.toLocaleString() }}
@@ -96,8 +99,8 @@ const salaryPosition = computed<number>(() => {
 
 const showAvgTooltip = ref(false);
 
-const toggleAvgTooltip = (): void => {
-  showAvgTooltip.value = !showAvgTooltip.value;
+const revealAvgTooltip = (): void => {
+  showAvgTooltip.value = true;
 };
 
 const hideAvgTooltip = (): void => {

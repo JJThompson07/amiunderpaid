@@ -75,6 +75,31 @@ describe('Section/Government/SalaryVisualizer', () => {
     expect(wrapper.find('[role="tooltip"]').classes()).not.toContain('opacity-100');
   });
 
+  it('reveals the Market Average tooltip on keyboard focus and on Enter/Space', async () => {
+    const wrapper = mountComponent();
+    const marker = wrapper.find('.bg-primary-600');
+
+    await marker.trigger('focus');
+    expect(wrapper.find('[role="tooltip"]').classes()).toContain('opacity-100');
+
+    await marker.trigger('blur');
+    expect(wrapper.find('[role="tooltip"]').classes()).not.toContain('opacity-100');
+
+    await marker.trigger('keydown', { key: 'Enter' });
+    expect(wrapper.find('[role="tooltip"]').classes()).toContain('opacity-100');
+  });
+
+  it('dismisses the Market Average tooltip on Escape without requiring blur', async () => {
+    const wrapper = mountComponent();
+    const marker = wrapper.find('.bg-primary-600');
+
+    await marker.trigger('focus');
+    expect(wrapper.find('[role="tooltip"]').classes()).toContain('opacity-100');
+
+    await marker.trigger('keydown', { key: 'Escape' });
+    expect(wrapper.find('[role="tooltip"]').classes()).not.toContain('opacity-100');
+  });
+
   it('uses the primary brand colour for the tooltip background and raises it above the user marker while open', async () => {
     const wrapper = mountComponent();
     const marker = wrapper.find('.bg-primary-600');

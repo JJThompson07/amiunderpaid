@@ -21,12 +21,12 @@ Moving the User Salary label above the track (`-top-6`) prevents it from overlap
 
 ## Decisions
 
-### Decision 1: Hybrid CSS and Reactive Touch Tooltip on Market Average Marker
+### Decision 1: Hybrid CSS and Reactive Tooltip on Market Average Marker
 
-- **Choice**: Make the Market Average marker a focusable interactive element (`tabindex="0"`, `role="group"`, `aria-label`) that renders the tooltip via CSS classes (`group-hover:opacity-100 group-focus:opacity-100`) combined with a reactive boolean (`showAvgTooltip`) for touch / tap / longpress interactions.
-- **Rationale**: Provides instantaneous CSS transitions on desktop mouse hover and keyboard navigation while ensuring mobile touch users can toggle or tap to reveal the average salary tooltip without relying solely on fragile mobile hover emulation.
+- **Choice**: Make the Market Average marker a focusable interactive element (`tabindex="0"`, `role="group"`, `aria-label`). Mouse hover reveals the tooltip via pure CSS (`group-hover:opacity-100`, no state needed). Every other trigger — keyboard focus, click/tap, and explicit `Enter`/`Space` — sets a reactive `showAvgTooltip` boolean that the tooltip's `opacity-100` class is bound to, and `Escape` (or blur) clears it. Keyboard focus is deliberately **not** wired through a `group-focus:` CSS variant: that rule's selector specificity would beat the bound `opacity-100`/`opacity-0` classes and force the tooltip visible regardless of `showAvgTooltip`, which would make `Escape` unable to dismiss it without also moving focus away — a WCAG 2.1 SC 1.4.13 (Content on Hover or Focus) violation, since a hover/focus-triggered tooltip must be dismissible without moving focus.
+- **Rationale**: Hover needs no JS state and gets instant CSS transitions. Every other trigger funnels through one boolean so a single `Escape`/`hideAvgTooltip` call reliably wins over whatever revealed the tooltip, satisfying the WCAG dismissibility requirement while keeping keyboard, touch, and explicit-key activation all correctly supported.
 - **Alternatives Considered**:
-  - _Pure CSS (`:hover`, `:focus`)_: May not reliably toggle on certain mobile touch browsers or may get stuck in focused state.
+  - _Pure CSS (`:hover`, `:focus`)_: May not reliably toggle on certain mobile touch browsers, and `:focus`-driven visibility can't be overridden by a same-specificity-or-lower `Escape`-triggered class, breaking dismissibility.
   - _External Tooltip Library (e.g. Floating UI)_: Adds runtime bundle weight for a single static coordinate tooltip.
 
 ### Decision 2: Tooltip Styling & Vertical Stacking
