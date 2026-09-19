@@ -43,3 +43,39 @@ Moving the User Salary label above the track (`-top-6`) prevents it from overlap
   - **Mitigation**: Implement `@click.stop="toggleTooltip"` and `@blur="hideTooltip"`, along with standard `role="tooltip"` and accessible aria labelling.
 - **[Risk]** Tooltip or user salary label clipping at the edges (0% or 100%).
   - **Mitigation**: The visualizer container includes `p-4 pt-8 pb-8` spacing, providing ample headroom above and below the track for transformed labels.
+
+---
+
+## Live Market Comparison Card — Jobs Stat Prominence
+
+### Context
+
+`Card/Result.vue` is a shared component used by both `Section/Adzuna/Comparison.vue` and `Section/Government/Comparison.vue`. Both currently pass `show-user-salary="false"`, which renders the `card-result--market-only` block: a single centered column showing only the "Market Average" label and figure. The Adzuna card additionally passes a `jobsCount` prop that today is only used in a body sentence below the job title (`sections.adzuna.results`, interpolated as `"Showing matched data for {jobsCount} live jobs."`).
+
+### Goals / Non-Goals
+
+**Goals:**
+- Render the live jobs count as its own stat, visually matching the "Market Average" stat, to the right of it.
+- Keep the change scoped to the Adzuna comparison card — the Government comparison card also renders `card-result--market-only` and must render exactly as it does today (single centered Market Average stat, no Jobs stat).
+- Replace the job-count body sentence with a fixed string that no longer repeats the number.
+
+**Non-Goals:**
+- Changing `Section/Adzuna/Histogram.vue` itself (the expandable salary distribution chart) — out of scope, this only touches the collapsed comparison card.
+- Adding pluralization or zero-state copy for the Jobs stat — it renders the raw `jobsCount.toLocaleString()` value the same way the existing Market Average figure renders `marketAverage.toLocaleString()`, with no special-casing.
+
+### Decision: Nullable `jobsCount` prop gates the two-stat layout
+
+- **Choice**: Add `jobsCount: { type: Number, default: null }` to `Card/Result.vue`. Inside `card-result--market-only`, change the container from a single centered column to a `flex-row` of stat columns; always render the Market Average column, and additionally render a Jobs column (`$t('card.result.jobs')` + `jobsCount.toLocaleString()`) only when `jobsCount !== null`. `Section/Adzuna/Comparison.vue` passes `:jobs-count="jobsCount"` (a prop it already receives); `Section/Government/Comparison.vue` is left untouched and so never passes it, leaving that card's rendering unchanged.
+- **Rationale**: A nullable prop that defaults to "not applicable" cleanly distinguishes "this card has no jobs concept" (Government, prop omitted) from "this card has a jobs count, including zero" (Adzuna, prop always passed), without a second boolean prop or a new component variant.
+- **Alternatives Considered**:
+  - *New boolean `showJobsCount` prop*: Redundant with `jobsCount` already being nullable — two props tracking the same on/off state.
+  - *Separate `CardResultWithJobs` component*: Unnecessary duplication of the existing card chrome (header, chip, verdict, footer slots) for one extra stat.
+
+### Impact on `sections.adzuna.results`
+
+The i18n key `sections.adzuna.results` currently takes a `{jobsCount}` interpolation. Since the count moves to its own stat, the key becomes a plain, non-interpolated string in both `en-GB` and `en-US`: `"Market benchmark based on current live vacancy postings."`. The `<i18n-t keypath="sections.adzuna.results">` usage in `Section/Adzuna/Comparison.vue` (which currently supplies a `#jobsCount` template slot) is simplified to a plain `$t('sections.adzuna.results')` call since there is no longer an interpolation slot to fill.
+
+### Risks / Trade-offs
+
+- **[Risk]** Changing `card-result--market-only` from `flex-col` to a two-column `flex-row` layout could visually affect the Government comparison card too if the `v-if="jobsCount !== null"` condition is ever regressed to always show the Jobs column.
+  - **Mitigation**: `app/components/Card/tests/Result.spec.ts` asserts both states explicitly — Jobs column absent when `jobsCount` is not passed (covering the Government usage), present with the correct value when it is passed.
