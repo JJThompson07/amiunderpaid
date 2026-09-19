@@ -8,7 +8,7 @@ Provides a fallback mechanism using the Reed.co.uk Jobseeker API to serve job da
 
 ### Requirement: Reed API Job Data Fetching
 
-The system SHALL fetch active job vacancies from the Reed.co.uk API using the provided job title and location, primarily acting as the primary provider for UK traffic. The initial (Tier 1) query SHALL quote the full search title OR'd with the extracted anchor phrase (see `search-relevance-and-specificity`) — e.g. `"${title}" OR "${anchorPhrase}"` — for exact-phrase matching, or just the quoted full title alone when anchor extraction is a no-op, falling back to an unquoted full-title search when Tier 1 returns fewer than 15 relevant results with salaries.
+The system SHALL fetch active job vacancies from the Reed.co.uk API using the provided job title and location, primarily acting as the primary provider for UK traffic. Outbound HTTP requests to the Reed API SHALL enforce an explicit timeout of 6,000 milliseconds (6 seconds) to prevent serverless function hangs and ensure prompt failover to secondary providers on downstream degradation. The initial (Tier 1) query SHALL quote the full search title OR'd with the extracted anchor phrase (see `search-relevance-and-specificity`) — e.g. `"${title}" OR "${anchorPhrase}"` — for exact-phrase matching, or just the quoted full title alone when anchor extraction is a no-op, falling back to an unquoted full-title search when Tier 1 returns fewer than 15 relevant results with salaries.
 
 #### Scenario: Successful job data retrieval
 
@@ -29,6 +29,11 @@ The system SHALL fetch active job vacancies from the Reed.co.uk API using the pr
 
 - **WHEN** the Tier 1 quoted search returns 15 or more relevant results with salaries
 - **THEN** the system SHALL return the Tier 1 results directly without making a secondary unquoted API call, conserving upstream API quota.
+
+#### Scenario: Upstream request timeout triggers fallback
+
+- **WHEN** the Reed API does not respond within 6,000 milliseconds
+- **THEN** the request SHALL abort with a timeout error, enabling the market data gateway to fail over to the regional secondary provider.
 
 ### Requirement: Server-Side Statistical Calculation
 
