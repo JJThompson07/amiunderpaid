@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/sync-trends",
       "schedule": "0 3 1 * *"
+    },
+    {
+      "path": "/api/cron/clean-cache",
+      "schedule": "0 4 * * *"
     }
   ]
 }
