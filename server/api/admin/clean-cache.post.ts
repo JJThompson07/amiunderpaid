@@ -1,48 +1,10 @@
-import type { Query } from 'firebase-admin/firestore';
+import { purgeExpiredCache } from '../../utils/cachePurge';
 
 export default defineEventHandler(async (event) => {
   await verifyAdmin(event);
 
-  const db = useAdminFirestore();
-  const now = new Date();
-
-  let deletedJobs = 0;
-  let deletedDistributions = 0;
-
-  // Helper function to delete documents in batches to avoid Firestore limits
-  const deleteInBatches = async (query: Query): Promise<number> => {
-    let deletedCount = 0;
-
-    // Process in chunks of 500 (Firestore batch limit)
-    let snapshot = await query.limit(500).get();
-
-    while (!snapshot.empty) {
-      const batch = db.batch();
-      snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-
-      await batch.commit();
-      deletedCount += snapshot.size;
-
-      // Fetch the next batch
-      snapshot = await query.limit(500).get();
-    }
-
-    return deletedCount;
-  };
-
   try {
-    // --- 1. CLEAN JOBS CACHE ---
-    // Much more memory efficient! Let the database do the filtering.
-    const expiredJobsQuery = db.collection('adzuna_jobs_cache').where('expiresAt', '<', now);
-
-    deletedJobs = await deleteInBatches(expiredJobsQuery);
-
-    // --- 2. CLEAN DISTRIBUTION CACHE ---
-    const expiredDistQuery = db
-      .collection('adzuna_distribution_cache')
-      .where('expiresAt', '<', now);
-
-    deletedDistributions = await deleteInBatches(expiredDistQuery);
+    const { deletedJobs, deletedDistributions } = await purgeExpiredCache();
 
     return {
       success: true,

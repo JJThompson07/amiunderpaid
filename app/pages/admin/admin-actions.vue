@@ -14,8 +14,8 @@
           <h2 class="text-xl font-bold text-slate-900">Cache Cleanup</h2>
         </div>
         <p class="text-sm text-slate-600">
-          Instantly scrub expired Adzuna requests (Jobs older than 24h, Distribution older than 7
-          days) and remove any invalid entries missing a category tag.
+          Instantly purge expired market-data cache entries: job listing and salary distribution
+          responses past their TTL, plus legacy entries predating the expiry field.
         </p>
 
         <AmIButton
