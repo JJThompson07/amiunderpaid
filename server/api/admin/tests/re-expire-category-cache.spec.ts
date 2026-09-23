@@ -71,6 +71,21 @@ describe('admin re-expire-category-cache endpoint', () => {
     );
   });
 
+  it.each([
+    ['zero', 0],
+    ['negative', -1],
+    ['non-integer', 1.5]
+  ])('rejects a %s cacheDays value with a 400', async (_label, cacheDays) => {
+    mockReadBody.mockResolvedValue({
+      categories: [{ tag: 'it-jobs', country: 'UK', cacheDays }]
+    });
+
+    await expect(handler({} as unknown as H3Event)).rejects.toThrow(
+      'A non-empty list of { tag, country, cacheDays } categories is required.'
+    );
+    expect(mockReExpireCategoryCache).not.toHaveBeenCalled();
+  });
+
   it('maps UK/USA to gb/us and delegates to reExpireCategoryCache per category', async () => {
     mockReadBody.mockResolvedValue({
       categories: [

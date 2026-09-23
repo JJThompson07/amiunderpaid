@@ -73,20 +73,22 @@ export const reExpireCategoryCache = async (
 ): Promise<ReExpireCategoryCacheSummary> => {
   const expiresAt = computeExpiresAt(now, cacheDays);
 
-  const updatedJobs = await reExpireAllMatching(
-    db,
-    db.collection('adzuna_jobs_cache'),
-    categoryTag,
-    countryCode,
-    expiresAt
-  );
-  const updatedDistributions = await reExpireAllMatching(
-    db,
-    db.collection('adzuna_distribution_cache'),
-    categoryTag,
-    countryCode,
-    expiresAt
-  );
+  const [updatedJobs, updatedDistributions] = await Promise.all([
+    reExpireAllMatching(
+      db,
+      db.collection('adzuna_jobs_cache'),
+      categoryTag,
+      countryCode,
+      expiresAt
+    ),
+    reExpireAllMatching(
+      db,
+      db.collection('adzuna_distribution_cache'),
+      categoryTag,
+      countryCode,
+      expiresAt
+    )
+  ]);
 
   return { updatedJobs, updatedDistributions };
 };

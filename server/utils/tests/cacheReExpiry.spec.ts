@@ -102,13 +102,18 @@ describe('reExpireCategoryCache', () => {
   });
 
   it('only touches documents matching the given category AND country (UK/USA independence)', async () => {
-    // The mock query is keyed purely by collection here (where() is a no-op
-    // passthrough), so this test asserts the *query construction* -- that
-    // both categoryTag and country are passed as separate .where() calls --
-    // rather than relying on the mock to filter by value itself.
-    const whereSpy = vi.fn(() => makeQuery(queues.adzuna_jobs_cache!));
+    // Both filters must chain onto the SAME query object -- the country
+    // filter is a second .where() call off whatever the first .where()
+    // returns, not a separate collection-level call. Asserting only the
+    // collection-level call (the historical version of this test) would
+    // miss a regression that silently drops the country filter.
+    const query = makeQuery(queues.adzuna_jobs_cache!);
+    const collectionWhereSpy = vi.fn(() => query);
     mockCollection.mockImplementation((name: string) => ({
-      where: name === 'adzuna_jobs_cache' ? whereSpy : vi.fn(() => makeQuery(queues[name] ?? []))
+      where:
+        name === 'adzuna_jobs_cache'
+          ? collectionWhereSpy
+          : vi.fn(() => makeQuery(queues[name] ?? []))
     }));
     setQueue('adzuna_jobs_cache', [makeSnapshot([makeDoc('uk-job')])]);
 
@@ -118,7 +123,8 @@ describe('reExpireCategoryCache', () => {
       cacheDays: 1
     });
 
-    expect(whereSpy).toHaveBeenCalledWith('categoryTag', '==', 'it-jobs');
+    expect(collectionWhereSpy).toHaveBeenCalledWith('categoryTag', '==', 'it-jobs');
+    expect(query.where).toHaveBeenCalledWith('searchParams.country', '==', 'gb');
   });
 
   it('paginates across multiple batch commits when more than 500 documents match', async () => {

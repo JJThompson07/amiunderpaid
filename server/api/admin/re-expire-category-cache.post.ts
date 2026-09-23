@@ -19,7 +19,8 @@ const isValidCategoryInput = (value: unknown): value is CategoryReExpiryInput =>
     candidate.tag.length > 0 &&
     (candidate.country === 'UK' || candidate.country === 'USA') &&
     typeof candidate.cacheDays === 'number' &&
-    Number.isFinite(candidate.cacheDays)
+    Number.isInteger(candidate.cacheDays) &&
+    candidate.cacheDays > 0
   );
 };
 
@@ -41,18 +42,21 @@ export default defineEventHandler(async (event) => {
   try {
     const db = useAdminFirestore();
 
-    let updatedJobs = 0;
-    let updatedDistributions = 0;
+    const summaries = await Promise.all(
+      (categories as CategoryReExpiryInput[]).map((category) =>
+        reExpireCategoryCache(db, {
+          categoryTag: category.tag,
+          countryCode: category.country === 'USA' ? 'us' : 'gb',
+          cacheDays: category.cacheDays
+        })
+      )
+    );
 
-    for (const category of categories as CategoryReExpiryInput[]) {
-      const summary = await reExpireCategoryCache(db, {
-        categoryTag: category.tag,
-        countryCode: category.country === 'USA' ? 'us' : 'gb',
-        cacheDays: category.cacheDays
-      });
-      updatedJobs += summary.updatedJobs;
-      updatedDistributions += summary.updatedDistributions;
-    }
+    const updatedJobs = summaries.reduce((total, summary) => total + summary.updatedJobs, 0);
+    const updatedDistributions = summaries.reduce(
+      (total, summary) => total + summary.updatedDistributions,
+      0
+    );
 
     return { success: true, updatedJobs, updatedDistributions };
   } catch {
