@@ -98,6 +98,7 @@
               <input
                 v-model.number="cat.cache"
                 type="number"
+                min="1"
                 step="5"
                 class="w-16 px-2 py-1 text-xs font-bold text-center bg-white border border-slate-200 rounded-lg outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
             </div>
@@ -132,6 +133,7 @@ definePageMeta({
 
 const db = useFirestore();
 const { fetchCategories, categories } = useJobs();
+const adminFetch = useAdminFetch();
 
 const targetCountry = ref('UK');
 const syncingCategories = ref(false);
@@ -139,6 +141,13 @@ const categoryStatus = ref('');
 const storedCategories = ref<StoredAdzunaCategory[]>([]);
 const loadingStored = ref(false);
 const { showToast } = useSystemToast();
+
+// Last-known-saved `cache` value per category id, so saveStoredCategories can
+// tell which categories were actually edited. Without this, saving touches
+// every visible category's cached results (not just the edited one),
+// resetting -- not just shortening -- the expiry clock on every unrelated
+// cached document each time any single category is saved.
+const savedCacheById = ref<Record<string, number>>({});
 
 const handleSyncCategories = async (): Promise<void> => {
   if (!db) {
@@ -201,6 +210,9 @@ const fetchStoredCategories = async (): Promise<void> => {
           }) as StoredAdzunaCategory
       )
       .sort((a, b) => a.label.localeCompare(b.label));
+    savedCacheById.value = Object.fromEntries(
+      storedCategories.value.map((cat) => [cat.id, cat.cache])
+    );
   } catch {
     // Silent fail for fetching categories
   } finally {
@@ -214,13 +226,62 @@ const saveStoredCategories = async (): Promise<void> => {
   }
   loadingStored.value = true;
   try {
-    const batch = writeBatch(db);
+    // Normalize each category's cache value to a valid positive integer
+    // (clearing the number input leaves cat.cache as '' / NaN) before
+    // diffing or saving, so an invalid in-progress edit never reaches
+    // Firestore or the re-expiry API.
     storedCategories.value.forEach((cat) => {
+      cat.cache = Math.max(1, Math.round(Number(cat.cache) || 30));
+    });
+
+    // Only categories whose cache value actually changed since the last
+    // load/save -- saving the whole visible list unconditionally would
+    // reset the expiry clock on every unrelated category's already-cached
+    // results, not just the one the admin meant to edit.
+    const changedCategories = storedCategories.value.filter(
+      (cat) => savedCacheById.value[cat.id] !== cat.cache
+    );
+
+    if (changedCategories.length === 0) {
+      showToast('No Changes', 'No category cache values were changed.', 'info');
+      return;
+    }
+
+    const batch = writeBatch(db);
+    changedCategories.forEach((cat) => {
       const ref = doc(db, 'adzuna_categories', cat.id);
       batch.update(ref, { cache: cat.cache });
     });
     await batch.commit();
-    showToast('Success', 'Categories saved successfully', 'success');
+
+    try {
+      await adminFetch('/api/admin/re-expire-category-cache', {
+        method: 'POST',
+        body: {
+          categories: changedCategories.map((cat) => ({
+            tag: cat.tag,
+            country: (cat.country ?? targetCountry.value) as 'UK' | 'USA',
+            cacheDays: cat.cache
+          }))
+        }
+      });
+      showToast('Success', 'Categories saved successfully', 'success');
+    } catch {
+      // The category values themselves already saved above -- only the
+      // retroactive re-expiry of already-cached results failed, so previously
+      // cached results may keep serving under the old duration until this is
+      // retried or they expire naturally.
+      showToast(
+        'Partial Success',
+        'Categories saved, but refreshing already-cached results failed.',
+        'error'
+      );
+    }
+
+    savedCacheById.value = {
+      ...savedCacheById.value,
+      ...Object.fromEntries(changedCategories.map((cat) => [cat.id, cat.cache]))
+    };
   } catch {
     showToast('Error', 'Failed to save categories', 'error');
   } finally {

@@ -94,6 +94,7 @@ describe('market-data jobs endpoint', () => {
   let jobsCacheDocRef: MockDocRef;
   let categoryDocRef: MockDocRef;
   let jobsCategoryDocGet: ReturnType<typeof vi.fn>;
+  let categoryDocIdSpy: ReturnType<typeof vi.fn<(id: string) => void>>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -113,14 +114,20 @@ describe('market-data jobs endpoint', () => {
       set: vi.fn()
     };
     jobsCategoryDocGet = vi.fn().mockResolvedValue({ exists: false });
+    categoryDocIdSpy = vi.fn();
 
     const mockDb = {
       collection: vi.fn((name: string) => {
         if (name === 'adzuna_jobs_cache') {
           return { doc: vi.fn(() => jobsCacheDocRef) };
         }
-        if (name === 'adzuna_category') {
-          return { doc: vi.fn(() => categoryDocRef) };
+        if (name === 'adzuna_categories') {
+          return {
+            doc: vi.fn((id: string) => {
+              categoryDocIdSpy(id);
+              return categoryDocRef;
+            })
+          };
         }
         return { doc: vi.fn(() => ({ get: jobsCategoryDocGet })) };
       })
@@ -244,6 +251,7 @@ describe('market-data jobs endpoint', () => {
 
     expect($fetchMock).not.toHaveBeenCalled();
     expect(result).toEqual(expect.objectContaining({ cached: true }));
+    expect(categoryDocIdSpy).toHaveBeenCalledWith('uk-it-jobs');
   });
 
   it('falls back to the nested data.categoryTag when the top-level categoryTag is absent', async () => {
@@ -429,12 +437,35 @@ describe('market-data jobs endpoint', () => {
     const afterExpected = new Date();
     afterExpected.setDate(afterExpected.getDate() + 45);
 
+    // Looks up the same collection/doc-ID shape /admin/adzuna writes to
+    // (`adzuna_categories/uk-<tag>`), not the dead `adzuna_category` collection.
+    expect(categoryDocIdSpy).toHaveBeenCalledWith('uk-it-jobs');
     const setCall = jobsCacheDocRef.set.mock.calls[0]![0];
     expect(setCall.categoryTag).toBe('it-jobs');
     const expiresAtMs = (setCall.expiresAt as Date).getTime();
     // Calendar-day setDate() arithmetic (matching the source code), not raw
     // ms multiplication, so this stays correct across a DST boundary that a
     // 45-day-out projection can land on.
+    expect(expiresAtMs).toBeGreaterThanOrEqual(beforeExpected.getTime());
+    expect(expiresAtMs).toBeLessThanOrEqual(afterExpected.getTime());
+  });
+
+  it('resolves an independent cacheDays override for the same category tag in the USA (usa-<tag> doc)', async () => {
+    categoryDocRef.get.mockResolvedValue({ exists: true, data: () => ({ cache: 10 }) });
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'us', category: 'it-jobs' });
+
+    const beforeExpected = new Date();
+    beforeExpected.setDate(beforeExpected.getDate() + 10);
+    await jobsHandler({} as unknown as H3Event);
+    const afterExpected = new Date();
+    afterExpected.setDate(afterExpected.getDate() + 10);
+
+    // A USA request for the same bare tag ('it-jobs') must resolve the
+    // 'usa-it-jobs' document, never the UK ('uk-it-jobs') override.
+    expect(categoryDocIdSpy).toHaveBeenCalledWith('usa-it-jobs');
+    expect(categoryDocIdSpy).not.toHaveBeenCalledWith('uk-it-jobs');
+    const setCall = jobsCacheDocRef.set.mock.calls[0]![0];
+    const expiresAtMs = (setCall.expiresAt as Date).getTime();
     expect(expiresAtMs).toBeGreaterThanOrEqual(beforeExpected.getTime());
     expect(expiresAtMs).toBeLessThanOrEqual(afterExpected.getTime());
   });

@@ -94,6 +94,7 @@ describe('market-data salary endpoint', () => {
   let distributionCacheDocRef: MockDocRef;
   let categoryDocRef: MockDocRef;
   let jobsCacheDocRef: MockDocRef;
+  let categoryDocIdSpy: ReturnType<typeof vi.fn<(id: string) => void>>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -117,13 +118,20 @@ describe('market-data salary endpoint', () => {
       set: vi.fn()
     };
 
+    categoryDocIdSpy = vi.fn();
+
     const mockDb = {
       collection: vi.fn((name: string) => {
         if (name === 'adzuna_distribution_cache') {
           return { doc: vi.fn(() => distributionCacheDocRef) };
         }
-        if (name === 'adzuna_category') {
-          return { doc: vi.fn(() => categoryDocRef) };
+        if (name === 'adzuna_categories') {
+          return {
+            doc: vi.fn((id: string) => {
+              categoryDocIdSpy(id);
+              return categoryDocRef;
+            })
+          };
         }
         return { doc: vi.fn(() => jobsCacheDocRef) };
       })
@@ -266,6 +274,7 @@ describe('market-data salary endpoint', () => {
 
     expect($fetchMock).not.toHaveBeenCalled();
     expect(result).toEqual(expect.objectContaining({ cached: true }));
+    expect(categoryDocIdSpy).toHaveBeenCalledWith('uk-it-jobs');
   });
 
   it('falls back to the nested data.categoryTag when the top-level categoryTag is absent', async () => {
@@ -366,6 +375,29 @@ describe('market-data salary endpoint', () => {
     // Calendar-day setDate() arithmetic (matching the source code), not raw
     // ms multiplication, so this stays correct across a DST boundary that a
     // 45-day-out projection can land on.
+    expect(expiresAtMs).toBeGreaterThanOrEqual(beforeExpected.getTime());
+    expect(expiresAtMs).toBeLessThanOrEqual(afterExpected.getTime());
+    // Looks up the same collection/doc-ID shape /admin/adzuna writes to
+    // (`adzuna_categories/usa-<tag>`), not the dead `adzuna_category` collection.
+    expect(categoryDocIdSpy).toHaveBeenCalledWith('usa-it-jobs');
+  });
+
+  it('resolves an independent cacheDays override for the same category tag in the UK (uk-<tag> doc)', async () => {
+    getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', category: 'it-jobs' });
+    categoryDocRef.get.mockResolvedValue({ exists: true, data: () => ({ cache: 5 }) });
+
+    const beforeExpected = new Date();
+    beforeExpected.setDate(beforeExpected.getDate() + 5);
+    await salaryHandler({} as unknown as H3Event);
+    const afterExpected = new Date();
+    afterExpected.setDate(afterExpected.getDate() + 5);
+
+    // A UK request for the same bare tag ('it-jobs') must resolve the
+    // 'uk-it-jobs' document, never the USA ('usa-it-jobs') override.
+    expect(categoryDocIdSpy).toHaveBeenCalledWith('uk-it-jobs');
+    expect(categoryDocIdSpy).not.toHaveBeenCalledWith('usa-it-jobs');
+    const setCall = distributionCacheDocRef.set.mock.calls[0]![0];
+    const expiresAtMs = (setCall.expiresAt as Date).getTime();
     expect(expiresAtMs).toBeGreaterThanOrEqual(beforeExpected.getTime());
     expect(expiresAtMs).toBeLessThanOrEqual(afterExpected.getTime());
   });
