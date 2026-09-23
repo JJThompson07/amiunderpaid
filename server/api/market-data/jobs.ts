@@ -179,7 +179,8 @@ export default defineEventHandler(async (event) => {
   const contractStr = String(contractType || 'permanent').toLowerCase();
   // The user-supplied industry filter -- kept distinct from the `categoryTag`
   // below, which is derived from result data and only used for cache-TTL
-  // lookups against the `adzuna_category` collection.
+  // lookups against the `adzuna_categories` collection (doc ID
+  // `${uk|usa}-${categoryTag}`, matching how /admin/adzuna writes it).
   const categoryStr = category ? String(category).toLowerCase().trim() : '';
 
   const countryParam = String(country || 'gb').toLowerCase();
@@ -254,7 +255,8 @@ export default defineEventHandler(async (event) => {
             let categoryCacheMilli = 120 * 24 * 60 * 60 * 1000;
 
             if (categoryTag) {
-              const categoryCacheRef = db.collection('adzuna_category').doc(categoryTag);
+              const categoryDocId = `${countryCode === 'us' ? 'usa' : 'uk'}-${categoryTag}`;
+              const categoryCacheRef = db.collection('adzuna_categories').doc(categoryDocId);
               const categorySnap = await categoryCacheRef.get();
               if (categorySnap.exists) {
                 const categoryData = categorySnap.data();
@@ -312,7 +314,8 @@ export default defineEventHandler(async (event) => {
       let cacheDays = 30; // Reduced from 120
       if (categoryTag !== 'unknown') {
         try {
-          const catSnap = await db.collection('adzuna_category').doc(categoryTag).get();
+          const categoryDocId = `${countryCode === 'us' ? 'usa' : 'uk'}-${categoryTag}`;
+          const catSnap = await db.collection('adzuna_categories').doc(categoryDocId).get();
           if (catSnap.exists) {
             cacheDays = Number(catSnap.data()?.cache || 30);
           }

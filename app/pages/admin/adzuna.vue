@@ -132,6 +132,7 @@ definePageMeta({
 
 const db = useFirestore();
 const { fetchCategories, categories } = useJobs();
+const adminFetch = useAdminFetch();
 
 const targetCountry = ref('UK');
 const syncingCategories = ref(false);
@@ -220,7 +221,30 @@ const saveStoredCategories = async (): Promise<void> => {
       batch.update(ref, { cache: cat.cache });
     });
     await batch.commit();
-    showToast('Success', 'Categories saved successfully', 'success');
+
+    try {
+      await adminFetch('/api/admin/re-expire-category-cache', {
+        method: 'POST',
+        body: {
+          categories: storedCategories.value.map((cat) => ({
+            tag: cat.tag,
+            country: (cat.country ?? targetCountry.value) as 'UK' | 'USA',
+            cacheDays: cat.cache
+          }))
+        }
+      });
+      showToast('Success', 'Categories saved successfully', 'success');
+    } catch {
+      // The category values themselves already saved above -- only the
+      // retroactive re-expiry of already-cached results failed, so previously
+      // cached results may keep serving under the old duration until this is
+      // retried or they expire naturally.
+      showToast(
+        'Partial Success',
+        'Categories saved, but refreshing already-cached results failed.',
+        'error'
+      );
+    }
   } catch {
     showToast('Error', 'Failed to save categories', 'error');
   } finally {
