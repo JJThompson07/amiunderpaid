@@ -11,11 +11,11 @@
   "jobs_index": {
     "name": "Job Search — Am I Underpaid?",
     "title": "Search Live UK Job Listings | Am I Underpaid?",
-    "description": "Search live UK job vacancies from Reed, Adzuna, and Jooble in one place, with exact and similar role matches."
+    "description": "Search live UK job vacancies from Reed and Adzuna in one place, with exact and similar role matches."
   },
   "jobs": {
     "title": "{displayTitle} Jobs in {locStr}{country} | Am I Underpaid?",
-    "description": "Browse live {displayTitle} job listings in {locStr}. See exact matches and similar roles from Reed, Adzuna, and Jooble.",
+    "description": "Browse live {displayTitle} job listings in {locStr}. See exact matches and similar roles from Reed and Adzuna.",
     "ogTitle": "{displayTitle} Jobs in {locStr}",
     "ogDescription": "Browse live {displayTitle} vacancies in {locStr} now.",
     "header": {
