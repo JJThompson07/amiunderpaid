@@ -8,7 +8,7 @@ Defines server-side search specificity, role title relevance scoring, seniority 
 
 ### Requirement: Server-Side Job Title Relevance Scoring
 
-The server-side market data pipeline SHALL score each candidate job listing against the searched role title and reject listings that fail minimum relevance criteria before computing statistical aggregates or returning search results.
+The server-side market data pipeline SHALL score each candidate job listing against the searched role title and return both a Tier 1 (exact-match) result set and a Tier 2 (similar/anchor-match) result set simultaneously, up to 100 results per provider, deduplicated so that no job listing appears in both sets.
 
 Search tokens (following punctuation stripping, stop-word removal, and domain stemming) SHALL be partitioned into three disjoint categories:
 
@@ -16,9 +16,11 @@ Search tokens (following punctuation stripping, stop-word removal, and domain st
 2. **Hierarchy-level tokens**: Tokens present in the `executive`, `head_director`, `manager_lead`, or `junior_entry` tiers of `SENIORITY_TIERS` (excluding `mid_core`).
 3. **Domain-specific tokens**: All other tokens, including `mid_core` role-nouns (e.g. `engineer`, `nurse`, `analyst`) — these are professions, not synonyms of one another, and MUST NOT be treated as interchangeable merely because they share a tier rank.
 
-A candidate job listing MUST contain 100% of the domain-specific search tokens present in the search title (accounting for `DOMAIN_STEMS`). If any domain-specific token from the search title is absent in the candidate job title tokens, the system SHALL reject the listing immediately, regardless of total token count or fractional overlap score.
+A candidate job listing MUST contain 100% of the domain-specific search tokens present in the search title (accounting for `DOMAIN_STEMS`). If any domain-specific token from the search title is absent in the candidate job title tokens, the system SHALL NOT classify the listing as Tier 1.
 
-Scope-modifier tokens are optional and SHALL NOT be required for a candidate to be accepted. Hierarchy-level tokens SHALL be evaluated exclusively via `isSeniorityCompatible`'s tier-rank comparison (a candidate's highest hierarchy-level tier rank must be $\ge$ the search's), not via literal token identity — words within the same hierarchy-level tier (e.g. `head` and `director`, both `head_director`) are equivalent for this purpose. Once all domain-specific tokens match and hierarchy-level compatibility holds, the candidate SHALL be accepted; no separate fractional-overlap threshold applies to scope-modifier or hierarchy-level tokens.
+Scope-modifier tokens are optional and SHALL NOT be required for a candidate to be accepted into Tier 1. Hierarchy-level tokens SHALL be evaluated exclusively via `isSeniorityCompatible`'s tier-rank comparison (a candidate's highest hierarchy-level tier rank must be >= the search's), not via literal token identity — words within the same hierarchy-level tier (e.g. `head` and `director`, both `head_director`) are equivalent for this purpose. Once all domain-specific tokens match and hierarchy-level compatibility holds, the candidate SHALL be accepted into Tier 1.
+
+Tier 2 candidate job listings SHALL be fetched using relaxed keywords or extracted search anchor phrases and filtered for seniority compatibility. Any candidate that appears in Tier 1 SHALL be excluded from the Tier 2 results list to ensure strict deduplication.
 
 `SENIORITY_TIERS.mid_core` SHALL include cross-vertical role-nouns spanning Healthcare, Education, Legal, Science, Operations, and Trades (including `nurse`, `doctor`, `teacher`, `solicitor`, `coordinator`, `technician`, `electrician`, and related role-nouns) to ensure accurate classification between generic role nouns and domain-defining qualifiers.
 
@@ -73,6 +75,13 @@ Scope-modifier tokens are optional and SHALL NOT be required for a candidate to 
 - **WHEN** a user searches for `"Lead Veterinary Nurse"` (domain tokens: `"veterinary"`, `"nurse"`; hierarchy-level token: `"lead"`)
 - **AND** a candidate job listing has the title `"Lead Dental Nurse"`
 - **THEN** the system SHALL reject the listing due to the missing domain token `"veterinary"`.
+
+#### Scenario: Returning both Tier 1 exact matches and Tier 2 similar roles
+
+- **WHEN** a provider (Reed, Adzuna, Jooble) returns candidate jobs from both Tier 1 (exact phrase/title) and Tier 2 (anchor phrase/broader keywords) searches
+- **THEN** the system SHALL return `results` populated with Tier 1 exact matches
+- **AND** return `similarResults` populated with Tier 2 similar matches deduplicated against Tier 1
+- **AND** compute statistical aggregates (mean, histogram) prioritizing the combined relevant sample.
 
 ### Requirement: Seniority & Role-Hierarchy Guardrails
 
