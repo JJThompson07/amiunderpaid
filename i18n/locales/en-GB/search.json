@@ -20,6 +20,10 @@
   "ami": {
     "switch-site": "Switch to our US site"
   },
+  "filters": {
+    "show": "Show Filters",
+    "hide": "Hide Filters"
+  },
   "contract": {
     "contract": "Contract",
     "permanent": "Permanent",

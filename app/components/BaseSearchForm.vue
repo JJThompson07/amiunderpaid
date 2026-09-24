@@ -28,50 +28,68 @@
             @update:model-value="fetchTitles" />
         </div>
 
-        <div class="flex flex-col md:flex-row gap-3">
-          <AmITabs
-            v-model="schedule"
-            class="flex-1"
-            :label="$t('search.time.label')"
-            :options="scheduleOptions"
-            bg-colour="bg-slate-200"
-            text-colour="text-slate-500"
-            hover-colour="hover:text-primary-400"
-            button-colour="bg-primary-500"
-            button-text-colour="text-white" />
-          <AmITabs
-            v-model="contract"
-            class="flex-1"
-            :label="$t('search.contract.label')"
-            :options="contractOptions"
-            bg-colour="bg-slate-200"
-            text-colour="text-slate-500"
-            hover-colour="hover:text-primary-400"
-            button-colour="bg-primary-500"
-            button-text-colour="text-white" />
-        </div>
+        <button
+          v-if="mode === 'jobs'"
+          type="button"
+          class="flex items-center gap-1.5 self-end text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors -mt-1"
+          @click="isFiltersExpanded = !isFiltersExpanded">
+          {{ isFiltersExpanded ? $t('search.filters.hide') : $t('search.filters.show') }}
+          <ChevronDown
+            class="w-4 h-4 transition-transform duration-300"
+            :class="isFiltersExpanded ? 'rotate-180' : ''" />
+        </button>
 
-        <div class="flex flex-col md:flex-row gap-3">
-          <div class="flex-1">
-            <AmIInputAutocomplete
-              v-model="location"
-              :label="locationLabel"
-              :placeholder="locationPlaceholder"
-              :icon="MapPin"
-              :options="locationOptions"
-              optional
-              pre-filtered-options
-              @update:model-value="fetchLocations" />
-          </div>
+        <!-- CSS Grid 0fr -> 1fr technique: transitions to the exact content height, no jump. -->
+        <div
+          class="grid transition-all duration-300 ease-in-out"
+          :class="isFiltersExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'">
+          <div class="overflow-hidden flex flex-col gap-3">
+            <div class="flex flex-col md:flex-row gap-3">
+              <AmITabs
+                v-model="schedule"
+                class="flex-1"
+                :label="$t('search.time.label')"
+                :options="scheduleOptions"
+                bg-colour="bg-slate-200"
+                text-colour="text-slate-500"
+                hover-colour="hover:text-primary-400"
+                button-colour="bg-primary-500"
+                button-text-colour="text-white" />
+              <AmITabs
+                v-model="contract"
+                class="flex-1"
+                :label="$t('search.contract.label')"
+                :options="contractOptions"
+                bg-colour="bg-slate-200"
+                text-colour="text-slate-500"
+                hover-colour="hover:text-primary-400"
+                button-colour="bg-primary-500"
+                button-text-colour="text-white" />
+            </div>
 
-          <div class="flex-1">
-            <AmIInputSelect
-              v-model="industry"
-              single
-              optional
-              :label="$t('search.industry.label')"
-              :placeholder="$t('search.industry.placeholder')"
-              :options="industryOptions" />
+            <div class="flex flex-col md:flex-row gap-3">
+              <div class="flex-1">
+                <AmIInputAutocomplete
+                  v-model="location"
+                  :label="locationLabel"
+                  :placeholder="locationPlaceholder"
+                  :icon="MapPin"
+                  :options="locationOptions"
+                  optional
+                  pre-filtered-options
+                  @update:model-value="fetchLocations" />
+              </div>
+
+              <div class="flex-1">
+                <AmIInputSelect
+                  v-model="industry"
+                  single
+                  optional
+                  :label="$t('search.industry.label')"
+                  :placeholder="$t('search.industry.placeholder')"
+                  :options="industryOptions" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -89,8 +107,8 @@
             :params="periodOptions" />
         </div>
 
-        <div class="mt-4">
-          <AmIAnimatedBorder class="rounded-xl" :loading="loading">
+        <div>
+          <AmIAnimatedBorder class="rounded-xl" padding="p-0" :loading="loading">
             <AmIButton
               type="submit"
               text-colour="text-white"
@@ -145,7 +163,14 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { ArrowRightIcon, CalculatorIcon, MapPin, Search, Wallet } from 'lucide-vue-next';
+import {
+  ArrowRightIcon,
+  CalculatorIcon,
+  ChevronDown,
+  MapPin,
+  Search,
+  Wallet
+} from 'lucide-vue-next';
 import { slugify } from '~/helpers/utility';
 import type { JobMatchAmbiguous } from '~/composables/useJobDictionary';
 
@@ -167,6 +192,12 @@ const { hostCountry, alternateSiteBaseUrl } = useHostCountry();
 const internalCountry = ref(
   props.mode === 'benchmark' ? props.initialCountry || 'USA' : hostCountry.value
 );
+
+// Collapsed by default once a search has already landed the user on a jobs
+// results route (route.params.title present) -- maximizes result viewport,
+// especially on mobile. Salary/benchmark modes never collapse: no toggle is
+// rendered for them, and this stays true for the life of the component.
+const isFiltersExpanded = ref(props.mode !== 'jobs' || !route.params.title);
 
 const scheduleOptions = [
   { label: t('search.time.full-time'), value: 'full-time' },
