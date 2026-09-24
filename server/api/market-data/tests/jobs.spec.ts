@@ -44,7 +44,6 @@ vi.stubGlobal(
       '' as never,
       'full-time' as never,
       'permanent' as never,
-      10 as never,
       false as never,
       undefined as never
     );
@@ -219,6 +218,27 @@ describe('market-data jobs endpoint', () => {
     expect(result).toEqual(
       expect.objectContaining({ cached: true, gov_id_code: 'soc_1', is_admin_verified: true })
     );
+  });
+
+  it('slices a cache hit down to the default limit (10) even though the cached document holds the full dual-tier payload', async () => {
+    jobsCacheDocRef.get.mockResolvedValue({
+      exists: true,
+      data: () => ({
+        expiresAt: { toMillis: (): number => Date.now() + 100000 },
+        data: {
+          mean: 50000,
+          count: 30,
+          provider: 'reed',
+          results: Array.from({ length: 15 }, (_, i) => ({ id: i + 1, title: 'Developer' })),
+          similarResults: Array.from({ length: 15 }, (_, i) => ({ id: i + 101, title: 'Dev' }))
+        }
+      })
+    });
+
+    const result = await jobsHandler({} as unknown as H3Event);
+
+    expect(result.results).toHaveLength(10);
+    expect(result.similarResults).toHaveLength(10);
   });
 
   it('falls through to a live fetch when the expiresAt-based cache entry has expired', async () => {
@@ -572,6 +592,52 @@ describe('market-data jobs endpoint', () => {
 
     expect(expiresAtMs).toBeGreaterThanOrEqual(expectedMin);
     expect(expiresAtMs).toBeLessThanOrEqual(expectedMax);
+  });
+
+  it('persists the full dual-tier payload to Firestore but slices the response to the default limit (10) when resultsPerPage is omitted', async () => {
+    // No resultsPerPage -- the exact shape useLocationEngine.ts sends for
+    // /salary and /benchmark, which must keep seeing 10 results after this
+    // change, not the full up-to-100 payload now persisted to the cache.
+    getQueryMock.mockReturnValue({ title: 'senior developer', country: 'us' });
+
+    const buildJob = (
+      id: number,
+      title: string
+    ): {
+      id: number;
+      title: string;
+      salary_min: number;
+      salary_max: number;
+      category: { tag: string };
+    } => ({
+      id,
+      title,
+      salary_min: 40000 + id,
+      salary_max: 60000 + id,
+      category: { tag: 'unknown' }
+    });
+
+    // Tier 1 ("Senior Developer", full match) and Tier 2 ("Developer", partial
+    // match against the anchor-phrase retry) each return 15 distinct,
+    // non-overlapping ids so dedup doesn't collapse either tier below 10.
+    $fetchMock
+      .mockResolvedValueOnce({
+        count: 15,
+        results: Array.from({ length: 15 }, (_, i) => buildJob(i + 1, 'Senior Developer'))
+      })
+      .mockResolvedValueOnce({
+        count: 15,
+        results: Array.from({ length: 15 }, (_, i) => buildJob(i + 101, 'Developer'))
+      });
+
+    const response = await jobsHandler({} as unknown as H3Event);
+
+    expect(response.results).toHaveLength(10);
+    expect(response.similarResults).toHaveLength(10);
+
+    const setCall = jobsCacheDocRef.set.mock.calls[0]![0];
+    expect(setCall.data.results).toHaveLength(15);
+    expect(setCall.data.similarResults).toHaveLength(15);
   });
 
   it('forwards a category filter to Adzuna and to generateCacheKey (USA primary)', async () => {

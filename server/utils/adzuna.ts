@@ -1,25 +1,20 @@
 import crypto from 'node:crypto';
 import { ADZUNA_LOCATION_MAP } from '../constants/locations';
-import { extractSearchAnchorPhrase, filterAndRankJobsByRelevance } from './searchRelevance';
+import { buildTieredJobResponse } from './jobTiering';
+import { extractSearchAnchorPhrase } from './searchRelevance';
 import type {
   JobListing,
   JobSearchResponse,
   SalaryDistributionResponse
 } from '~~/shared/utils/market-data';
-import {
-  buildHistogramBuckets,
-  filterSanitySalaries,
-  trimSalaryOutliersIqr
-} from '~~/shared/utils/math';
 import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 
-// Below this many relevance-filtered results with valid salaries (or, for the
-// histogram endpoint, this many populated buckets), Tier 1's full-title
+// Below this many populated histogram buckets, Tier 1's full-title
 // `title_only` match is judged too sparse and Tier 2 (the shorter
 // extractSearchAnchorPhrase result, which relaxes the title_only AND-match)
-// is retried instead. See design.md sec 3b for the live-verified Adzuna
-// query counts behind this design.
-const MIN_TIER1_SALARIED_RESULTS = 3;
+// is retried instead. Only used by fetchAdzunaHistogram -- fetchAdzunaJobs
+// always runs both tiers concurrently and returns both (see design.md
+// Decision 2), so it has no analogous sufficiency threshold.
 const MIN_TIER1_HISTOGRAM_BUCKETS = 3;
 
 export const generateCacheKey = (
@@ -79,48 +74,6 @@ const resolveAdzunaLocation = (location: string): string | undefined => {
     cleanLocation = ADZUNA_LOCATION_MAP[slug];
   }
   return cleanLocation;
-};
-
-/**
- * Relevance-filters/ranks raw Adzuna job listings against the original search
- * title, then recomputes mean/histogram/count from the IQR-trimmed salary
- * sample -- the same post-processing pipeline as Reed's processReedData, so
- * neither provider lets an off-tier or off-topic phrase/word match skew
- * statistics regardless of which query tier produced it.
- */
-export const processAdzunaJobs = (
-  jobs: JobListing[],
-  searchTitle: string,
-  jobType: string = 'full-time',
-  countryCode: string = 'gb'
-): JobSearchResponse => {
-  const relevantJobs = filterAndRankJobsByRelevance(jobs, searchTitle);
-
-  const rawSalaries = relevantJobs
-    .filter((job) => job.salary_min && job.salary_max)
-    .map((job) => (job.salary_min + job.salary_max) / 2);
-  const sanitizedSalaries = filterSanitySalaries(
-    rawSalaries,
-    jobType,
-    countryCode === 'us' ? 'us' : 'gb'
-  );
-  const trimmedSalaries = trimSalaryOutliersIqr(sanitizedSalaries);
-
-  const mean =
-    trimmedSalaries.length > 0
-      ? Math.round(trimmedSalaries.reduce((sum, s) => sum + s, 0) / trimmedSalaries.length)
-      : 0;
-  const histogram = buildHistogramBuckets(trimmedSalaries, 7);
-
-  const sortedJobs = [...relevantJobs].sort((a, b) => (b.salary_max || 0) - (a.salary_max || 0));
-
-  return {
-    mean,
-    count: sortedJobs.length,
-    histogram,
-    results: sortedJobs,
-    provider: 'adzuna' as const
-  };
 };
 
 export const fetchAdzunaJobs = async (
@@ -187,20 +140,27 @@ export const fetchAdzunaJobs = async (
     );
 
   const anchorPhrase = extractSearchAnchorPhrase(title);
+  // Skip the Tier 2 request entirely when the anchor phrase is a no-op (no
+  // scope modifier was stripped from the title) -- it would send Adzuna an
+  // identical title_only request for no benefit. Tier 1 and Tier 2 (when run)
+  // are fetched concurrently and both returned -- see design.md Decision 2.
+  const runTier2 = anchorPhrase !== title;
 
-  const tier1Raw = await search(title);
-  const tier1Result = processAdzunaJobs(tier1Raw.results || [], title, jobType, countryCode);
-  const tier1SalariedCount = tier1Result.results.filter((r) => r.salary_min && r.salary_max).length;
+  const [tier1Raw, tier2Raw] = await Promise.all([
+    search(title),
+    runTier2 ? search(anchorPhrase) : Promise.resolve<AdzunaRawSearchResponse>({ results: [] })
+  ]);
 
-  // Skip Tier 2 entirely when the anchor phrase is a no-op (no scope modifier
-  // was stripped from the title) -- it would send Adzuna an identical
-  // title_only request for no benefit.
-  if (tier1SalariedCount >= MIN_TIER1_SALARIED_RESULTS || anchorPhrase === title) {
-    return tier1Result;
-  }
+  const normalizedCountry: 'gb' | 'us' = countryCode === 'us' ? 'us' : 'gb';
 
-  const tier2Raw = await search(anchorPhrase);
-  return processAdzunaJobs(tier2Raw.results || [], title, jobType, countryCode);
+  return buildTieredJobResponse(
+    tier1Raw.results || [],
+    tier2Raw.results || [],
+    title,
+    jobType,
+    normalizedCountry,
+    'adzuna'
+  );
 };
 
 export const fetchAdzunaHistogram = async (

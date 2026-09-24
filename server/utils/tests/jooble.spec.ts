@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { JoobleJobResponse } from '../jooble';
 import { fetchJoobleData, parseJoobleSalary, processJoobleData } from '../jooble';
 
 describe('Jooble Provider', () => {
@@ -12,6 +13,10 @@ describe('Jooble Provider', () => {
     );
     vi.stubGlobal('createError', (err: { statusMessage?: string }) => new Error(err.statusMessage));
     vi.stubGlobal('$fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    delete process.env.E2E;
   });
 
   describe('parseJoobleSalary', () => {
@@ -92,7 +97,7 @@ describe('Jooble Provider', () => {
   });
 
   describe('processJoobleData', () => {
-    it('should map jobs to the internal interface and calculate histograms', () => {
+    it('should map jobs to the internal interface, partition into results/similarResults, and calculate histograms', () => {
       const mockResponse = {
         totalCount: 15,
         jobs: [
@@ -123,13 +128,16 @@ describe('Jooble Provider', () => {
         ]
       };
 
-      const result = processJoobleData(mockResponse, 'full-time', 'permanent');
+      // 'Software Engineer' fully matches the search title (Tier 1). 'Frontend
+      // Developer' has no domain-token overlap with 'Software Engineer' and is
+      // dropped entirely (score 0), not classified as Tier 2.
+      const result = processJoobleData(mockResponse, 'full-time', 'permanent', 'Software Engineer');
 
-      expect(result.count).toBe(15);
       expect(result.provider).toBe('jooble');
-      expect(result.results).toHaveLength(2);
+      expect(result.results).toHaveLength(1);
+      expect(result.similarResults).toEqual([]);
+      expect(result.count).toBe(1);
 
-      // Verify the first mapped job (with salary)
       const job1 = result.results[0];
       expect(job1?.title).toBe('Software Engineer');
       expect(job1?.company.display_name).toBe('Tech Corp');
@@ -137,22 +145,139 @@ describe('Jooble Provider', () => {
       expect(job1?.salary_max).toBe(120000);
       expect(job1?.raw_salary).toBe('$100k - $120k');
 
-      // Verify the second mapped job (no salary)
-      const job2 = result.results[1];
-      expect(job2?.salary_min).toBe(0);
-      expect(job2?.salary_max).toBe(0);
-      expect(job2?.raw_salary).toBe('');
-
       // Verify mean calculation (only includes jobs with valid salaries)
-      expect(result.mean).toBe(110000); // Average of 100k and 120k
+      expect(result.mean).toBe(110000);
 
-      // Verify histogram buckets
-      // 110000 rounds down to nearest 5000 -> 110000
+      // Verify histogram buckets -- 110000 rounds down to nearest 5000 -> 110000
       expect(result.histogram![110000]).toBe(1);
+    });
+
+    it('drops a listing that scores 0 relevance (missing a required domain token) entirely', () => {
+      const mockResponse = {
+        totalCount: 1,
+        jobs: [
+          {
+            title: 'Unrelated Role',
+            location: 'Remote',
+            snippet: 'Not relevant',
+            salary: '$50k',
+            source: 'jooble',
+            type: 'full-time',
+            link: 'https://example.com/1',
+            company: 'Co',
+            updated: '2023-01-01',
+            id: '1'
+          }
+        ]
+      };
+
+      const result = processJoobleData(mockResponse, 'full-time', 'permanent', 'Software Engineer');
+
+      expect(result.results).toEqual([]);
+      expect(result.similarResults).toEqual([]);
+      expect(result.count).toBe(0);
+    });
+
+    it('sorts multiple listings within each tier by salary_max descending', () => {
+      const buildJob = (
+        id: string,
+        title: string,
+        salary: string
+      ): JoobleJobResponse['jobs'][number] => ({
+        title,
+        location: 'Remote',
+        snippet: 'Great job',
+        salary,
+        source: 'jooble',
+        type: 'full-time',
+        link: `https://example.com/${id}`,
+        company: 'Co',
+        updated: '2023-01-01',
+        id
+      });
+
+      const mockResponse = {
+        totalCount: 4,
+        jobs: [
+          buildJob('1', 'Senior Software Engineer', '$60k'), // Tier 1 (full match)
+          buildJob('2', 'Senior Software Engineer', '$90k'), // Tier 1, higher salary
+          buildJob('3', 'Software Engineer', '$50k'), // Tier 2 (missing optional "senior")
+          buildJob('4', 'Software Engineer', '$80k') // Tier 2, higher salary
+        ]
+      };
+
+      const result = processJoobleData(
+        mockResponse,
+        'full-time',
+        'permanent',
+        'Senior Software Engineer'
+      );
+
+      expect(result.results.map((r) => r.id)).toEqual([2, 1]);
+      expect(result.similarResults?.map((r) => r.id)).toEqual([4, 3]);
+    });
+
+    it('classifies a partial (compatible but not full-overlap) match as similarResults', () => {
+      const mockResponse = {
+        totalCount: 1,
+        jobs: [
+          {
+            title: 'Software Engineer', // scope-modifier-free candidate for a scoped search
+            location: 'Remote',
+            snippet: 'Great job',
+            salary: '$90k',
+            source: 'jooble',
+            type: 'full-time',
+            link: 'https://example.com/1',
+            company: 'Co',
+            updated: '2023-01-01',
+            id: '1'
+          }
+        ]
+      };
+
+      // Search includes an extra optional token ("Senior") that the candidate
+      // lacks -- score is < 1 (partial overlap) but still compatible/accepted.
+      const result = processJoobleData(
+        mockResponse,
+        'full-time',
+        'permanent',
+        'Senior Software Engineer'
+      );
+
+      expect(result.results).toEqual([]);
+      expect(result.similarResults).toHaveLength(1);
+      expect(result.similarResults?.[0]?.title).toBe('Software Engineer');
     });
   });
 
   describe('fetchJoobleData', () => {
+    it('should throw a misconfiguration error when the API key is missing outside dev/e2e', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ joobleApiKey: null }))
+      );
+
+      await expect(
+        fetchJoobleData('Developer', 'Chicago', 'full-time', 'permanent')
+      ).rejects.toThrow('Market data service is misconfigured.');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('should return a static mock listing when the API key is missing during e2e', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ joobleApiKey: null }))
+      );
+      process.env.E2E = 'true';
+
+      const result = await fetchJoobleData('Developer', 'Chicago', 'full-time', 'permanent');
+
+      expect(result.provider).toBe('jooble');
+      expect(result.results).toHaveLength(1);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it('should call $fetch with correct parameters', async () => {
       fetchMock.mockResolvedValue({
         totalCount: 0,

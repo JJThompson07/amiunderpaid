@@ -95,6 +95,7 @@ describe('market-data salary endpoint', () => {
   let categoryDocRef: MockDocRef;
   let jobsCacheDocRef: MockDocRef;
   let categoryDocIdSpy: ReturnType<typeof vi.fn<(id: string) => void>>;
+  let jobsCacheDocIdSpy: ReturnType<typeof vi.fn<(id: string) => void>>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -119,6 +120,7 @@ describe('market-data salary endpoint', () => {
     };
 
     categoryDocIdSpy = vi.fn();
+    jobsCacheDocIdSpy = vi.fn();
 
     const mockDb = {
       collection: vi.fn((name: string) => {
@@ -133,7 +135,12 @@ describe('market-data salary endpoint', () => {
             })
           };
         }
-        return { doc: vi.fn(() => jobsCacheDocRef) };
+        return {
+          doc: vi.fn((id: string) => {
+            jobsCacheDocIdSpy(id);
+            return jobsCacheDocRef;
+          })
+        };
       })
     };
 
@@ -600,6 +607,13 @@ describe('market-data salary endpoint', () => {
       expect.anything(),
       expect.objectContaining({ params: expect.objectContaining({ category: 'it-jobs' }) })
     );
+  });
+
+  it('looks up the adzuna_jobs_cache doc under the same harmonized key jobs.ts writes (no -10/-limit suffix)', async () => {
+    await salaryHandler({} as unknown as H3Event);
+
+    expect(jobsCacheDocIdSpy).toHaveBeenCalledWith('cache-key-full-time-permanent');
+    expect(jobsCacheDocIdSpy).not.toHaveBeenCalledWith('cache-key-full-time-permanent-10');
   });
 
   it('reuses a fresh Reed-sourced jobs cache entry instead of calling fetchReedData a second time', async () => {

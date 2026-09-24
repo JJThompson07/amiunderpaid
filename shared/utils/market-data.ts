@@ -44,6 +44,8 @@ export type JobSearchResponse = {
   mean: number;
   count: number;
   results: JobListing[];
+  /** Tier 2 (anchor phrase / broader keyword) matches, deduplicated against `results`. */
+  similarResults?: JobListing[];
   provider: MarketDataProvider;
   histogram?: Record<number, number>;
 };

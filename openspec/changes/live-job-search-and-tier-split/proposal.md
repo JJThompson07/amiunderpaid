@@ -17,7 +17,7 @@ Furthermore, our backend market data pipeline currently executes Tier 1 (exact-p
   - Highest Salary (Maximum potential salary `salary_max` descending).
   - Average Salary (Mean of `salary_min` and `salary_max` descending).
   - Most Relevant (Default relevance ranking).
-  Sorting controls update both Exact and Similar lists concurrently while keeping the two sections separate.
+    Sorting controls update both Exact and Similar lists concurrently while keeping the two sections separate.
 - **Shared Cache Warm-Up & Increased Result Limits**:
   - Increase fetch limits to 100 roles across Reed, Adzuna, and Jooble.
   - Return full result sets without slicing down to 10 in `server/api/market-data/jobs.ts`.
@@ -30,9 +30,11 @@ Furthermore, our backend market data pipeline currently executes Tier 1 (exact-p
 ## Capabilities
 
 ### New Capabilities
+
 - `live-job-search`: End-to-end user experience for searching and browsing live market job listings without entering a salary, including dual-tier display (Exact vs. Similar), multi-criteria salary/relevance sorting, responsive card presentation, and structured metadata for search engines.
 
 ### Modified Capabilities
+
 - `search-relevance-and-specificity`: The market data provider pipeline SHALL return both Tier 1 (exact title match) and Tier 2 (anchor phrase / similar roles) datasets simultaneously, deduplicated and capped up to 100 roles, rather than short-circuiting as an either-or fallback.
 - `market-data-caching`: The `adzuna_jobs_cache` cache keys and document payloads SHALL store full dual-tier job results up to 100 items and harmonize cache key naming between `/api/market-data/jobs` and `/api/market-data/salary` to maximize cross-feature cache hit rates.
 

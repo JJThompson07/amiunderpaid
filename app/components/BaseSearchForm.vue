@@ -75,7 +75,7 @@
           </div>
         </div>
 
-        <div>
+        <div v-if="mode !== 'jobs'">
           <AmIInputGeneric
             v-model="salary"
             v-model:param-value="period"
@@ -97,9 +97,9 @@
               class="w-full text-center"
               :loading="loading"
               :disabled="title === ''"
-              :title="$t('buttons.check-salary')"
+              :title="submitButtonText"
               @click.prevent="handleSearch">
-              {{ $t('buttons.check-salary') }}
+              {{ submitButtonText }}
             </AmIButton>
           </AmIAnimatedBorder>
         </div>
@@ -148,7 +148,7 @@ import { slugify } from '~/helpers/utility';
 import type { JobMatchAmbiguous } from '~/composables/useJobDictionary';
 
 const props = defineProps<{
-  mode: 'salary' | 'benchmark';
+  mode: 'salary' | 'benchmark' | 'jobs';
   initialCountry?: string; // Only used in benchmark mode
 }>();
 
@@ -282,6 +282,10 @@ const salaryLabel = computed(() =>
   props.mode === 'benchmark' ? t('search.benchmark.salary.label') : t('search.salary.label')
 );
 
+const submitButtonText = computed(() =>
+  props.mode === 'jobs' ? t('buttons.search-jobs') : t('buttons.check-salary')
+);
+
 if (props.mode === 'benchmark') {
   watch(internalCountry, (newVal) => {
     if (newVal === 'USA') {
@@ -381,7 +385,8 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string): Promi
   const countrySlug = activeCountry.value.toLowerCase();
   const locationSlug = location.value ? slugify(location.value) : '';
 
-  const basePath = props.mode === 'benchmark' ? '/benchmark' : '/salary';
+  const basePath =
+    props.mode === 'benchmark' ? '/benchmark' : props.mode === 'jobs' ? '/jobs' : '/salary';
   const path = locationSlug
     ? `${basePath}/${titleSlug}/${countrySlug}/${locationSlug}`
     : `${basePath}/${titleSlug}/${countrySlug}`;

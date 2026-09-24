@@ -100,6 +100,25 @@
       "uk": "https://www.adzuna.co.uk",
       "usa": "https://www.adzuna.com"
     },
-    "caption": "See how your role compares against similar roles"
+    "caption": "See how your role compares against similar roles",
+    "tier": {
+      "exact": "Exact Matches",
+      "similar": "Similar Roles"
+    },
+    "sort": {
+      "relevance": "Relevance",
+      "salary_max": "Highest Salary",
+      "salary_avg": "Average Salary",
+      "salary_min": "Lowest Salary"
+    },
+    "count": "{count} roles found",
+    "view-salary-benchmark": "See the {displayTitle} salary benchmark",
+    "landing": {
+      "heading": "Find Your Next Role",
+      "subheading": "Search live US job listings from Adzuna and Jooble in one place.",
+      "popular": {
+        "heading": "Popular Job Searches"
+      }
+    }
   }
 }

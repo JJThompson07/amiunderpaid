@@ -34,5 +34,19 @@
         "pay-rise": "Higher"
       }
     }
+  },
+  "value-prop": {
+    "live-listings": {
+      "title": "Live Listings",
+      "body": "Search real, current vacancies pulled directly from Adzuna and Jooble."
+    },
+    "dual-tier": {
+      "title": "Exact & Similar Roles",
+      "body": "See exact title matches alongside broader similar roles, so you never miss an opportunity."
+    },
+    "compare-pay": {
+      "title": "Know Your Worth",
+      "body": "Jump straight from any listing to a full salary benchmark for that role and location."
+    }
   }
 }

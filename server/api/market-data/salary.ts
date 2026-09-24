@@ -311,12 +311,12 @@ export default defineEventHandler(async (event) => {
 
   // 2. Fetch from Providers (Wrapped in cachedFunction to prevent stampedes)
   try {
-    // jobs.ts's client (useJobs.ts) never sends resultsPerPage, so its `limit`
-    // is always the 10 default in current usage -- this reconstructs jobs.ts's
-    // actual adzuna_jobs_cache key for this exact (title, location, country,
-    // category, jobType, contractType) request. See design.md Decision 5 /
-    // tasks.md 1.5 for the verification behind this.
-    const jobsCacheKey = `${cacheKey}-10`;
+    // jobs.ts's `adzuna_jobs_cache` key is harmonized to this exact same
+    // format (generateCacheKey + typeStr + contractStr, no result-limit
+    // suffix -- see design.md Decision 3), so this cache's own `cacheKey` IS
+    // jobs.ts's key for the same (title, location, country, category,
+    // jobType, contractType) request.
+    const jobsCacheKey = cacheKey;
 
     const reused = skipCache ? null : await tryReuseJobsCacheHistogram(db, jobsCacheKey);
 

@@ -1,5 +1,9 @@
-import { extractSearchAnchorPhrase } from './searchRelevance';
-import type { JobSearchResponse } from '~~/shared/utils/market-data';
+import {
+  calculateTitleRelevanceScore,
+  extractSearchAnchorPhrase,
+  filterAndRankJobsByRelevance
+} from './searchRelevance';
+import type { JobListing, JobSearchResponse } from '~~/shared/utils/market-data';
 import { buildHistogramBuckets } from '~~/shared/utils/math';
 
 export type JoobleJobResponse = {
@@ -168,7 +172,7 @@ export const fetchJoobleData = async (
       timeout: 6000
     });
 
-    return processJoobleData(response, jobType, contractType);
+    return processJoobleData(response, jobType, contractType, title);
   } catch (e) {
     throw createError({
       statusCode: 503,
@@ -181,19 +185,16 @@ export const fetchJoobleData = async (
 export const processJoobleData = (
   response: JoobleJobResponse,
   jobType: string,
-  contractType: string
+  contractType: string,
+  searchTitle: string
 ): JobSearchResponse => {
   const jobs = response.jobs || [];
 
-  let totalSalary = 0;
-  let validSalaryCount = 0;
-  const rawSalaries: number[] = [];
-
-  const mappedJobs = jobs.map((job) => {
+  const mappedJobs: JobListing[] = jobs.map((job) => {
     const parsedSalary = parseJoobleSalary(job.salary, jobType);
 
     // Map to Adzuna structure so frontend doesn't break
-    const mapped = {
+    return {
       id: Number(job.id) || Date.now() + Math.random(),
       title: job.title,
       description: job.snippet,
@@ -211,29 +212,42 @@ export const processJoobleData = (
       redirect_url: job.link,
       provider: 'jooble' as const
     };
-
-    // Calculate stats
-    if (parsedSalary.min && parsedSalary.max) {
-      const avg = (parsedSalary.min + parsedSalary.max) / 2;
-      totalSalary += avg;
-      validSalaryCount++;
-      rawSalaries.push(avg);
-    }
-
-    return mapped;
   });
 
-  const mean = validSalaryCount > 0 ? Math.round(totalSalary / validSalaryCount) : 0;
-  const histogram = buildHistogramBuckets(rawSalaries, 7);
+  // Partition into Tier 1 (results, full token-overlap with the search
+  // title) and Tier 2 (similarResults, partial but seniority-compatible)
+  // matches. Jooble previously applied no relevance filtering at all -- this
+  // also newly drops score-0 listings missing a required domain token. See
+  // design.md Decision 2.
+  const compatibleJobs = filterAndRankJobsByRelevance(mappedJobs, searchTitle);
+  const results = compatibleJobs.filter(
+    (job) => calculateTitleRelevanceScore(job.title, searchTitle) === 1
+  );
+  const similarResults = compatibleJobs.filter(
+    (job) => calculateTitleRelevanceScore(job.title, searchTitle) < 1
+  );
 
-  // Sort jobs by highest maximum salary descending
-  const sortedJobs = mappedJobs.sort((a, b) => (b.salary_max || 0) - (a.salary_max || 0));
+  const validSalaries = compatibleJobs
+    .filter((job) => job.salary_min && job.salary_max)
+    .map((job) => (job.salary_min + job.salary_max) / 2);
+  const mean =
+    validSalaries.length > 0
+      ? Math.round(validSalaries.reduce((sum, s) => sum + s, 0) / validSalaries.length)
+      : 0;
+  const histogram = buildHistogramBuckets(validSalaries, 7);
+
+  // Sort each tier independently by highest maximum salary descending
+  const sortedResults = [...results].sort((a, b) => (b.salary_max || 0) - (a.salary_max || 0));
+  const sortedSimilar = [...similarResults].sort(
+    (a, b) => (b.salary_max || 0) - (a.salary_max || 0)
+  );
 
   return {
     mean,
-    count: response.totalCount || 0,
+    count: sortedResults.length + sortedSimilar.length,
     histogram,
-    results: sortedJobs,
+    results: sortedResults,
+    similarResults: sortedSimilar,
     provider: 'jooble' as const
   };
 };
