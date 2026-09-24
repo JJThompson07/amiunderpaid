@@ -107,7 +107,7 @@
             :params="periodOptions" />
         </div>
 
-        <div>
+        <div class="mt-4">
           <AmIAnimatedBorder class="rounded-xl" padding="p-0" :loading="loading">
             <AmIButton
               type="submit"
