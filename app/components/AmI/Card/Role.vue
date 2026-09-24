@@ -24,6 +24,7 @@
         >{{ salaryMaxComparison }}%</AmIChip
       >
     </header>
+    <p v-if="description" class="text-xs text-slate-500 line-clamp-3 px-4">{{ description }}</p>
     <section class="ami-role-range flex flex-col gap-2 py-2 px-4">
       <div class="flex flex-col gap-1 bg-slate-50 rounded-xl p-3">
         <span class="uppercase text-2xs text-slate-400 font-bold tracking-wide">{{
@@ -114,6 +115,10 @@ const props = defineProps({
   schedule: {
     type: String,
     required: true
+  },
+  description: {
+    type: String,
+    default: ''
   },
   location: {
     type: String,
