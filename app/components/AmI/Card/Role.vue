@@ -30,14 +30,16 @@
         <span class="uppercase text-2xs text-slate-400 font-bold tracking-wide">{{
           $t('card.role.salary')
         }}</span>
-        <span
-          :class="
-            isSalaryProvided
-              ? 'text-2xl font-black text-slate-900'
-              : 'text-slate-400 text-xs italic'
-          "
-          >{{ salaryRange }}</span
-        >
+        <div class="min-h-8 flex items-center">
+          <span
+            :class="
+              isSalaryProvided
+                ? 'text-2xl font-black text-slate-900'
+                : 'text-slate-400 text-xs italic'
+            "
+            >{{ salaryRange }}</span
+          >
+        </div>
         <span
           v-if="userSalary && isSalaryProvided"
           class="text-2xs font-bold"
