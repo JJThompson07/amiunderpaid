@@ -35,6 +35,20 @@ The frontend SHALL render a specific component for Reed job listings that displa
 - **WHEN** the provider is Reed and job listings are available
 - **THEN** the system SHALL display up to 10 jobs with the highest salaries, formatted correctly and linking directly to the Reed job URL.
 
+### Requirement: View more roles link beneath the job listings carousel
+
+The job listings section on the salary and benchmark results pages SHALL display a "View more roles" link positioned beneath the job listings carousel, right-aligned, whenever the carousel has at least one listing. The link SHALL navigate to the `/jobs` search results route for the same title, country, and (when present) location as the results page currently being viewed.
+
+#### Scenario: Results page has job listings
+
+- **WHEN** a user views the salary or benchmark results page for a title/country (optionally with a location) and the job listings carousel renders at least one listing
+- **THEN** a "View more roles" link is shown beneath the carousel, right-aligned, that navigates to `/jobs/[title]/[country]` or `/jobs/[title]/[country]/[location]` for that same title, country, and location
+
+#### Scenario: Results page has no job listings
+
+- **WHEN** a user views the salary or benchmark results page and the job listings carousel has no listings to display
+- **THEN** the "View more roles" link is not rendered
+
 ### Requirement: Data Sources Page Update
 
 The "Data sources" page SHALL be updated to combine Adzuna and Reed into a single unified intelligence tile, while retaining existing tiles like "Crowdsourced".

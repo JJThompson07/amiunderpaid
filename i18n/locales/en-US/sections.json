@@ -112,6 +112,7 @@
     },
     "count": "{count} roles found",
     "view-salary-benchmark": "See the {displayTitle} salary benchmark",
+    "view-more-roles": "View more {displayTitle} roles",
     "no-results": {
       "heading": "No matching roles found",
       "body": "We couldn't find any role matches for your search criteria. Please try to broaden your search or try another role."
