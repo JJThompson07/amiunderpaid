@@ -57,7 +57,7 @@ import { slugify } from '~/helpers/utility';
 
 const { $siteBrand } = useNuxtApp();
 const { t, tm } = useI18n();
-const { currentCountry, isUSSite } = useRegion();
+const { currentCountry } = useRegion();
 const isDev = import.meta.dev;
 
 type TrendingRole = { title: string };
@@ -88,11 +88,7 @@ const valueProps = computed(() => [
 const getRoleUrl = (role: string): string =>
   `/jobs/${slugify(role)}/${currentCountry.value.toLowerCase()}`;
 
-const baseUrl = import.meta.dev
-  ? 'http://localhost:3000'
-  : isUSSite.value
-    ? 'https://www.amiunderpaid.com'
-    : 'https://www.amiunderpaid.co.uk';
+const baseUrl = useRequestURL().origin;
 
 useSeoMeta({
   title: () => t('meta.jobs_index.title'),

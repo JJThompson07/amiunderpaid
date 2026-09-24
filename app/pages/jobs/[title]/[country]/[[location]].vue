@@ -40,7 +40,7 @@
     <div v-show="!pending && hasJobsData" class="relative flex flex-col gap-6 px-4 xl:px-0 mt-2">
       <div v-if="hasJobsData" class="flex flex-wrap gap-3 justify-between items-center">
         <NuxtLink
-          :to="`/salary/${route.params.title}/${route.params.country}${location ? `/${route.params.location}` : ''}`"
+          :to="`/${$siteBrand === 'benchmarkmyrole' ? 'benchmark' : 'salary'}/${route.params.title}/${route.params.country}${location ? `/${route.params.location}` : ''}`"
           class="inline-flex items-center gap-2 w-fit px-4 py-2.5 text-sm font-medium text-primary-900 bg-primary-50 border border-primary-200 rounded-xl hover:bg-primary-100 hover:border-primary-300 transition-all duration-300">
           {{ $t('sections.jobs.view-salary-benchmark', { displayTitle }) }}
         </NuxtLink>

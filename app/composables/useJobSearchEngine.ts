@@ -137,7 +137,9 @@ export const useJobSearchEngine = async (): Promise<UseJobSearchEngineReturn> =>
   );
 
   const adzunaCategory = computed<string | undefined>(
-    () => jobs.jobsData.value?.results?.[0]?.category?.label
+    () =>
+      jobs.jobsData.value?.results?.[0]?.category?.label ||
+      jobs.similarJobsData.value?.[0]?.category?.label
   );
 
   watch(sortMode, (newMode) => {
