@@ -159,4 +159,62 @@ test.describe('Job Search', () => {
 
     await expect(page).toHaveURL(/\/salary\/software-engineer\/uk/i);
   });
+
+  test('UK landing page copy references Reed and Adzuna, not Jooble', async ({ page }) => {
+    await page.goto('/jobs');
+
+    await expect(page.locator('main')).toContainText('Reed and Adzuna');
+    await expect(page.locator('main')).not.toContainText('Jooble');
+  });
+
+  test('US landing page copy references Adzuna and Jooble, not Reed', async ({ page }) => {
+    // Use the ami-us.localhost domain to trigger the US tenant middleware
+    // (same technique as e2e/ssr.spec.ts).
+    await page.goto('http://ami-us.localhost:3000/jobs');
+
+    await expect(page.locator('main')).toContainText('Adzuna and Jooble');
+    await expect(page.locator('main')).not.toContainText('Reed');
+  });
+
+  test('UK landing page meta description tags reference Reed and Adzuna, not Jooble', async ({
+    page
+  }) => {
+    await page.goto('/jobs');
+
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      'content',
+      /Reed and Adzuna/
+    );
+    await expect(page.locator('meta[name="description"]')).not.toHaveAttribute('content', /Jooble/);
+    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute(
+      'content',
+      /Reed and Adzuna/
+    );
+    await expect(page.locator('meta[property="og:description"]')).not.toHaveAttribute(
+      'content',
+      /Jooble/
+    );
+  });
+
+  test('US landing page meta description tags reference Adzuna and Jooble, not Reed', async ({
+    page
+  }) => {
+    // Use the ami-us.localhost domain to trigger the US tenant middleware
+    // (same technique as e2e/ssr.spec.ts).
+    await page.goto('http://ami-us.localhost:3000/jobs');
+
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      'content',
+      /Adzuna and Jooble/
+    );
+    await expect(page.locator('meta[name="description"]')).not.toHaveAttribute('content', /Reed/);
+    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute(
+      'content',
+      /Adzuna and Jooble/
+    );
+    await expect(page.locator('meta[property="og:description"]')).not.toHaveAttribute(
+      'content',
+      /Reed/
+    );
+  });
 });
