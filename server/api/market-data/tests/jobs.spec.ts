@@ -522,6 +522,23 @@ describe('market-data jobs endpoint', () => {
     expect(result.provider).toBe('adzuna');
   });
 
+  it('never persists a dev/E2E provider-override response to the shared cache, even under a real-world title', async () => {
+    // A pinned/fixture response for a commonly-searched title (e.g.
+    // "software engineer") must never overwrite the real cache entry an
+    // organic, non-overridden search for the same title/location/country
+    // would read from.
+    process.env.E2E = 'true';
+    getQueryMock.mockReturnValue({
+      title: 'software engineer',
+      country: 'gb',
+      devProvider: 'reed'
+    });
+
+    await jobsHandler({} as unknown as H3Event);
+
+    expect(jobsCacheDocRef.set).not.toHaveBeenCalled();
+  });
+
   it('should fall back to Jooble API if Adzuna returns 429 for usa', async () => {
     getQueryMock.mockReturnValue({
       title: 'Software Engineer',

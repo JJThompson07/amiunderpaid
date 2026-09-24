@@ -384,18 +384,24 @@ export default defineEventHandler(async (event) => {
     }
 
     // 4. Save to Cache (Server-Side)
-    await cacheRef.set({
-      categoryTag,
-      data: cleanData,
-      timestamp: FieldValue.serverTimestamp(),
-      expiresAt: expiresAt, // <-- Save the exact expiration date!
-      searchParams: {
-        title: titleStr,
-        location: locationStr,
-        country: countryCode,
-        category: categoryStr || null
-      }
-    });
+    // A dev/E2E provider-override response is a pinned or static-fixture
+    // result, not a real regional-primary/fallback outcome -- persisting it
+    // would silently overwrite real cached data for any organic search that
+    // shares the same title/location/country cache key.
+    if (!skipCache) {
+      await cacheRef.set({
+        categoryTag,
+        data: cleanData,
+        timestamp: FieldValue.serverTimestamp(),
+        expiresAt: expiresAt, // <-- Save the exact expiration date!
+        searchParams: {
+          title: titleStr,
+          location: locationStr,
+          country: countryCode,
+          category: categoryStr || null
+        }
+      });
+    }
 
     return cleanData;
   } catch {
