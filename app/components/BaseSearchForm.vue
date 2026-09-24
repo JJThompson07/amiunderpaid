@@ -107,34 +107,36 @@
     </div>
 
     <div
-      v-if="mode === 'salary'"
+      v-if="mode === 'salary' || mode === 'jobs'"
       class="flex flex-wrap justify-between items-center px-4 py-3 mt-1 gap-y-3">
       <a
-        :href="alternateSiteUrl"
+        :href="switchSiteUrl"
         class="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors flex items-center gap-1 group">
         {{ $t('search.ami.switch-site') }}
         <ArrowRightIcon class="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
       </a>
 
-      <button
-        type="button"
-        class="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors flex items-center gap-1.5"
-        @click="showCalc = true">
-        <CalculatorIcon class="w-4 h-4" />
-        Salary Converter
-      </button>
+      <template v-if="mode === 'salary'">
+        <button
+          type="button"
+          class="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors flex items-center gap-1.5"
+          @click="showCalc = true">
+          <CalculatorIcon class="w-4 h-4" />
+          Salary Converter
+        </button>
 
-      <LazyModalSalaryConverter
-        v-if="showCalc"
-        :country="currentCountry"
-        :currency-symbol="currencySymbol"
-        @close="showCalc = false" />
+        <LazyModalSalaryConverter
+          v-if="showCalc"
+          :country="activeCountry"
+          :currency-symbol="currencySymbol"
+          @close="showCalc = false" />
+      </template>
     </div>
 
     <LazyModalAmbiguity
       v-if="showAmbiguityModal"
       :search-term="cleanSearchTitle"
-      :country="mode === 'benchmark' ? internalCountry : currentCountry"
+      :country="activeCountry"
       :options="ambiguityOptions"
       @close="showAmbiguityModal = false"
       @resolve="onAmbiguityResolved" />
@@ -159,11 +161,11 @@ const emit = defineEmits<{
 const { setLocale, locale, t } = useI18n();
 const { trackSearch, trackAmbiguousSearch } = useAnalytics();
 const { logSearch } = useUserLogging();
-const { currentCountry, alternateSiteUrl } = useRegion();
 const route = useRoute();
+const { hostCountry, alternateSiteBaseUrl } = useHostCountry();
 
 const internalCountry = ref(
-  props.mode === 'benchmark' ? props.initialCountry || 'USA' : currentCountry.value
+  props.mode === 'benchmark' ? props.initialCountry || 'USA' : hostCountry.value
 );
 
 const scheduleOptions = [
@@ -194,7 +196,7 @@ const ambiguityOptions = ref<JobMatchAmbiguous['options']>([]);
 const cleanSearchTitle = ref<string>('');
 
 const activeCountry = computed(() =>
-  props.mode === 'benchmark' ? internalCountry.value : currentCountry.value
+  props.mode === 'benchmark' ? internalCountry.value : hostCountry.value
 );
 
 const { fetching, titleOptions, locationOptions, labelToIdMap, fetchTitles, fetchLocations } =
@@ -284,6 +286,10 @@ const salaryLabel = computed(() =>
 
 const submitButtonText = computed(() =>
   props.mode === 'jobs' ? t('buttons.search-jobs') : t('buttons.check-salary')
+);
+
+const switchSiteUrl = computed(() =>
+  props.mode === 'jobs' ? `${alternateSiteBaseUrl.value}/jobs` : alternateSiteBaseUrl.value
 );
 
 if (props.mode === 'benchmark') {
