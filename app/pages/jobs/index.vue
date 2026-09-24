@@ -14,6 +14,9 @@
 
       <BaseSearchForm mode="jobs" />
 
+      <!-- Dev Tools (Floating) -->
+      <AmIDevProviderToggle v-if="isDev" />
+
       <section class="w-full max-w-5xl mx-auto mt-12 select-none">
         <h3 class="text-xs font-bold text-slate-400 mb-5 text-center uppercase tracking-widest">
           {{ $t('sections.jobs.landing.popular.heading') }}
@@ -55,6 +58,7 @@ import { slugify } from '~/helpers/utility';
 const { $siteBrand } = useNuxtApp();
 const { t, tm } = useI18n();
 const { currentCountry, isUSSite } = useRegion();
+const isDev = import.meta.dev;
 
 type TrendingRole = { title: string };
 
