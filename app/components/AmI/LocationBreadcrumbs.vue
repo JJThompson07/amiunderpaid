@@ -48,16 +48,21 @@ import type { RouteLocationNormalizedGeneric } from 'vue-router';
 
 const { $siteBrand } = useNuxtApp();
 
-const urlStart = computed<string>(() => {
-  return $siteBrand === 'benchmarkmyrole' ? '/benchmark' : '/salary';
-});
-
-defineProps<{
+const props = defineProps<{
   route: RouteLocationNormalizedGeneric;
   displayTitle: string;
   country: string;
   location?: string;
+  /** Overrides the default salary/benchmark base path, e.g. for the /jobs search experience. */
+  basePath?: string;
 }>();
+
+const urlStart = computed<string>(() => {
+  if (props.basePath) {
+    return props.basePath;
+  }
+  return $siteBrand === 'benchmarkmyrole' ? '/benchmark' : '/salary';
+});
 </script>
 
 <style scoped></style>

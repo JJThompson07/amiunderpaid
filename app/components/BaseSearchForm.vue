@@ -28,54 +28,72 @@
             @update:model-value="fetchTitles" />
         </div>
 
-        <div class="flex flex-col md:flex-row gap-3">
-          <AmITabs
-            v-model="schedule"
-            class="flex-1"
-            :label="$t('search.time.label')"
-            :options="scheduleOptions"
-            bg-colour="bg-slate-200"
-            text-colour="text-slate-500"
-            hover-colour="hover:text-primary-400"
-            button-colour="bg-primary-500"
-            button-text-colour="text-white" />
-          <AmITabs
-            v-model="contract"
-            class="flex-1"
-            :label="$t('search.contract.label')"
-            :options="contractOptions"
-            bg-colour="bg-slate-200"
-            text-colour="text-slate-500"
-            hover-colour="hover:text-primary-400"
-            button-colour="bg-primary-500"
-            button-text-colour="text-white" />
+        <button
+          v-if="mode === 'jobs'"
+          type="button"
+          class="flex items-center gap-1.5 self-end text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors -mt-1"
+          @click="isFiltersExpanded = !isFiltersExpanded">
+          {{ isFiltersExpanded ? $t('search.filters.hide') : $t('search.filters.show') }}
+          <ChevronDown
+            class="w-4 h-4 transition-transform duration-300"
+            :class="isFiltersExpanded ? 'rotate-180' : ''" />
+        </button>
+
+        <!-- CSS Grid 0fr -> 1fr technique: transitions to the exact content height, no jump. -->
+        <div
+          class="grid transition-all duration-300 ease-in-out"
+          :class="isFiltersExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'">
+          <div class="overflow-hidden flex flex-col gap-3">
+            <div class="flex flex-col md:flex-row gap-3">
+              <AmITabs
+                v-model="schedule"
+                class="flex-1"
+                :label="$t('search.time.label')"
+                :options="scheduleOptions"
+                bg-colour="bg-slate-200"
+                text-colour="text-slate-500"
+                hover-colour="hover:text-primary-400"
+                button-colour="bg-primary-500"
+                button-text-colour="text-white" />
+              <AmITabs
+                v-model="contract"
+                class="flex-1"
+                :label="$t('search.contract.label')"
+                :options="contractOptions"
+                bg-colour="bg-slate-200"
+                text-colour="text-slate-500"
+                hover-colour="hover:text-primary-400"
+                button-colour="bg-primary-500"
+                button-text-colour="text-white" />
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-3">
+              <div class="flex-1">
+                <AmIInputAutocomplete
+                  v-model="location"
+                  :label="locationLabel"
+                  :placeholder="locationPlaceholder"
+                  :icon="MapPin"
+                  :options="locationOptions"
+                  optional
+                  pre-filtered-options
+                  @update:model-value="fetchLocations" />
+              </div>
+
+              <div class="flex-1">
+                <AmIInputSelect
+                  v-model="industry"
+                  single
+                  optional
+                  :label="$t('search.industry.label')"
+                  :placeholder="$t('search.industry.placeholder')"
+                  :options="industryOptions" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="flex flex-col md:flex-row gap-3">
-          <div class="flex-1">
-            <AmIInputAutocomplete
-              v-model="location"
-              :label="locationLabel"
-              :placeholder="locationPlaceholder"
-              :icon="MapPin"
-              :options="locationOptions"
-              optional
-              pre-filtered-options
-              @update:model-value="fetchLocations" />
-          </div>
-
-          <div class="flex-1">
-            <AmIInputSelect
-              v-model="industry"
-              single
-              optional
-              :label="$t('search.industry.label')"
-              :placeholder="$t('search.industry.placeholder')"
-              :options="industryOptions" />
-          </div>
-        </div>
-
-        <div>
+        <div v-if="mode !== 'jobs'">
           <AmIInputGeneric
             v-model="salary"
             v-model:param-value="period"
@@ -90,16 +108,16 @@
         </div>
 
         <div class="mt-4">
-          <AmIAnimatedBorder class="rounded-xl" :loading="loading">
+          <AmIAnimatedBorder class="rounded-xl" padding="p-0" :loading="loading">
             <AmIButton
               type="submit"
               text-colour="text-white"
               class="w-full text-center"
               :loading="loading"
               :disabled="title === ''"
-              :title="$t('buttons.check-salary')"
+              :title="submitButtonText"
               @click.prevent="handleSearch">
-              {{ $t('buttons.check-salary') }}
+              {{ submitButtonText }}
             </AmIButton>
           </AmIAnimatedBorder>
         </div>
@@ -107,34 +125,36 @@
     </div>
 
     <div
-      v-if="mode === 'salary'"
+      v-if="mode === 'salary' || mode === 'jobs'"
       class="flex flex-wrap justify-between items-center px-4 py-3 mt-1 gap-y-3">
       <a
-        :href="alternateSiteUrl"
+        :href="switchSiteUrl"
         class="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors flex items-center gap-1 group">
         {{ $t('search.ami.switch-site') }}
         <ArrowRightIcon class="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
       </a>
 
-      <button
-        type="button"
-        class="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors flex items-center gap-1.5"
-        @click="showCalc = true">
-        <CalculatorIcon class="w-4 h-4" />
-        Salary Converter
-      </button>
+      <template v-if="mode === 'salary'">
+        <button
+          type="button"
+          class="text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors flex items-center gap-1.5"
+          @click="showCalc = true">
+          <CalculatorIcon class="w-4 h-4" />
+          Salary Converter
+        </button>
 
-      <LazyModalSalaryConverter
-        v-if="showCalc"
-        :country="currentCountry"
-        :currency-symbol="currencySymbol"
-        @close="showCalc = false" />
+        <LazyModalSalaryConverter
+          v-if="showCalc"
+          :country="activeCountry"
+          :currency-symbol="currencySymbol"
+          @close="showCalc = false" />
+      </template>
     </div>
 
     <LazyModalAmbiguity
       v-if="showAmbiguityModal"
       :search-term="cleanSearchTitle"
-      :country="mode === 'benchmark' ? internalCountry : currentCountry"
+      :country="activeCountry"
       :options="ambiguityOptions"
       @close="showAmbiguityModal = false"
       @resolve="onAmbiguityResolved" />
@@ -143,12 +163,19 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { ArrowRightIcon, CalculatorIcon, MapPin, Search, Wallet } from 'lucide-vue-next';
+import {
+  ArrowRightIcon,
+  CalculatorIcon,
+  ChevronDown,
+  MapPin,
+  Search,
+  Wallet
+} from 'lucide-vue-next';
 import { slugify } from '~/helpers/utility';
 import type { JobMatchAmbiguous } from '~/composables/useJobDictionary';
 
 const props = defineProps<{
-  mode: 'salary' | 'benchmark';
+  mode: 'salary' | 'benchmark' | 'jobs';
   initialCountry?: string; // Only used in benchmark mode
 }>();
 
@@ -159,12 +186,18 @@ const emit = defineEmits<{
 const { setLocale, locale, t } = useI18n();
 const { trackSearch, trackAmbiguousSearch } = useAnalytics();
 const { logSearch } = useUserLogging();
-const { currentCountry, alternateSiteUrl } = useRegion();
 const route = useRoute();
+const { hostCountry, alternateSiteBaseUrl } = useHostCountry();
 
 const internalCountry = ref(
-  props.mode === 'benchmark' ? props.initialCountry || 'USA' : currentCountry.value
+  props.mode === 'benchmark' ? props.initialCountry || 'USA' : hostCountry.value
 );
+
+// Collapsed by default once a search has already landed the user on a jobs
+// results route (route.params.title present) -- maximizes result viewport,
+// especially on mobile. Salary/benchmark modes never collapse: no toggle is
+// rendered for them, and this stays true for the life of the component.
+const isFiltersExpanded = ref(props.mode !== 'jobs' || !route.params.title);
 
 const scheduleOptions = [
   { label: t('search.time.full-time'), value: 'full-time' },
@@ -194,7 +227,7 @@ const ambiguityOptions = ref<JobMatchAmbiguous['options']>([]);
 const cleanSearchTitle = ref<string>('');
 
 const activeCountry = computed(() =>
-  props.mode === 'benchmark' ? internalCountry.value : currentCountry.value
+  props.mode === 'benchmark' ? internalCountry.value : hostCountry.value
 );
 
 const { fetching, titleOptions, locationOptions, labelToIdMap, fetchTitles, fetchLocations } =
@@ -280,6 +313,14 @@ const locationPlaceholder = computed(() => {
 
 const salaryLabel = computed(() =>
   props.mode === 'benchmark' ? t('search.benchmark.salary.label') : t('search.salary.label')
+);
+
+const submitButtonText = computed(() =>
+  props.mode === 'jobs' ? t('buttons.search-jobs') : t('buttons.check-salary')
+);
+
+const switchSiteUrl = computed(() =>
+  props.mode === 'jobs' ? `${alternateSiteBaseUrl.value}/jobs` : alternateSiteBaseUrl.value
 );
 
 if (props.mode === 'benchmark') {
@@ -381,7 +422,8 @@ const executeNavigation = async (finalTitle: string, finalGovId?: string): Promi
   const countrySlug = activeCountry.value.toLowerCase();
   const locationSlug = location.value ? slugify(location.value) : '';
 
-  const basePath = props.mode === 'benchmark' ? '/benchmark' : '/salary';
+  const basePath =
+    props.mode === 'benchmark' ? '/benchmark' : props.mode === 'jobs' ? '/jobs' : '/salary';
   const path = locationSlug
     ? `${basePath}/${titleSlug}/${countrySlug}/${locationSlug}`
     : `${basePath}/${titleSlug}/${countrySlug}`;

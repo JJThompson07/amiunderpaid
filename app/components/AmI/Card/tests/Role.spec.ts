@@ -81,4 +81,18 @@ describe('AmI/Card/Role', () => {
     expect(wrapper.text()).toContain('55,000');
     expect(wrapper.text()).toContain('65,000');
   });
+
+  it('renders a line-clamped description when provided', () => {
+    const wrapper = mountComponent({ description: 'A great role building great things.' });
+
+    const description = wrapper.find('p.line-clamp-3');
+    expect(description.exists()).toBe(true);
+    expect(description.text()).toBe('A great role building great things.');
+  });
+
+  it('omits the description paragraph when none is provided', () => {
+    const wrapper = mountComponent({});
+
+    expect(wrapper.find('p.line-clamp-3').exists()).toBe(false);
+  });
 });

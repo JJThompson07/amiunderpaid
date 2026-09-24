@@ -192,4 +192,59 @@ describe('sitemap.xml', () => {
 
     expect(xml).toContain('<loc>https://www.benchmarkmyrole.com/benchmark/nurse/UK</loc>');
   });
+
+  it('includes the /jobs landing page as a static route', async () => {
+    getRequestURLMock.mockReturnValue({ origin: 'https://www.amiunderpaid.co.uk' });
+    mockDb([], []);
+
+    const xml = await sitemapHandler({} as unknown as H3Event);
+
+    expect(xml).toContain('<loc>https://www.amiunderpaid.co.uk/jobs</loc>');
+  });
+
+  it('builds a dynamic /jobs/... route alongside the /salary route from the same job doc', async () => {
+    getRequestURLMock.mockReturnValue({ origin: 'https://www.amiunderpaid.co.uk' });
+    mockDb(
+      [
+        {
+          data: (): { title: string; country: string; location: string } => ({
+            title: 'Software Engineer',
+            country: 'UK',
+            location: 'Greater London'
+          })
+        }
+      ],
+      []
+    );
+
+    const xml = await sitemapHandler({} as unknown as H3Event);
+
+    expect(xml).toContain(
+      '<loc>https://www.amiunderpaid.co.uk/salary/software-engineer/UK/greater-london</loc>'
+    );
+    expect(xml).toContain(
+      '<loc>https://www.amiunderpaid.co.uk/jobs/software-engineer/UK/greater-london</loc>'
+    );
+  });
+
+  it('builds a /jobs/... route without a location segment when the job doc has none', async () => {
+    getRequestURLMock.mockReturnValue({ origin: 'https://www.amiunderpaid.co.uk' });
+    mockDb([{ data: (): { title: string } => ({ title: 'Nurse' }) }], []);
+
+    const xml = await sitemapHandler({} as unknown as H3Event);
+
+    expect(xml).toContain('<loc>https://www.amiunderpaid.co.uk/jobs/nurse/UK</loc>');
+  });
+
+  it('indexes /jobs/... routes on the benchmark domain, unlike the brand-exclusive /benchmark routes', async () => {
+    getRequestURLMock.mockReturnValue({ origin: 'https://www.benchmarkmyrole.com' });
+    mockDb(
+      [{ data: (): { title: string; country: string } => ({ title: 'Nurse', country: 'USA' }) }],
+      []
+    );
+
+    const xml = await sitemapHandler({} as unknown as H3Event);
+
+    expect(xml).toContain('<loc>https://www.benchmarkmyrole.com/jobs/nurse/USA</loc>');
+  });
 });

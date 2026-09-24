@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ReedJobResponse } from '../reed';
-import { fetchReedData, processReedData } from '../reed';
+import { fetchReedData, mapReedJobs } from '../reed';
 
 const buildReedJob = (
   overrides: Partial<ReedJobResponse['results'][number]> = {}
@@ -18,147 +18,41 @@ const buildReedJob = (
 });
 
 describe('Reed Utility', () => {
-  describe('processReedData', () => {
-    it('should process Reed job data, relevance-filter, and calculate mean/histogram correctly', () => {
-      const mockResponse: ReedJobResponse = {
-        totalResults: 5,
-        results: [
-          buildReedJob({
-            jobId: 1,
-            jobTitle: 'Developer',
-            minimumSalary: 40000,
-            maximumSalary: 60000 // avg 50000 -> bucket 50000
-          }),
-          buildReedJob({
-            jobId: 2,
-            employerName: 'Company B',
-            jobTitle: 'Senior Developer',
-            minimumSalary: 55000,
-            maximumSalary: 65000 // avg 60000 -> bucket 60000
-          }),
-          buildReedJob({
-            jobId: 3,
-            employerName: 'Company C',
-            jobTitle: 'Missing Salary',
-            minimumSalary: null,
-            maximumSalary: null
-          })
-        ]
+  describe('mapReedJobs', () => {
+    it('maps raw Reed results to the unified JobListing schema', () => {
+      const response: ReedJobResponse = {
+        totalResults: 1,
+        results: [buildReedJob({ jobId: 2, jobTitle: 'Senior Developer' })]
       };
 
-      const processed = processReedData(mockResponse, 'full-time', 'permanent', 'Developer');
+      const mapped = mapReedJobs(response, 'full-time', 'permanent');
 
-      expect(processed.provider).toBe('reed');
-
-      // "Missing Salary" is dropped by relevance filtering (0% token overlap
-      // with the "Developer" search), so count reflects the 2 relevant jobs.
-      expect(processed.count).toBe(2);
-
-      // Mean should be (50000 + 60000) / 2 = 55000
-      expect(processed.mean).toBe(55000);
-
-      // Histogram should have 1 count at 50000 and 1 at 60000
-      expect(processed.histogram).toEqual({
-        50000: 1,
-        60000: 1
-      });
-
-      // It should map to Adzuna format and be sorted by max salary descending
-      expect(processed.results[0]).toMatchObject({
-        id: 2,
-        title: 'Senior Developer',
-        location: { display_name: 'London', area: ['London'] },
-        salary_min: 55000,
-        salary_max: 65000,
-        contract_time: 'full-time',
-        contract_type: 'permanent',
-        provider: 'reed'
-      });
+      expect(mapped).toEqual([
+        expect.objectContaining({
+          id: 2,
+          title: 'Senior Developer',
+          location: { display_name: 'London', area: ['London'] },
+          salary_min: 40000,
+          salary_max: 60000,
+          contract_time: 'full-time',
+          contract_type: 'permanent',
+          provider: 'reed'
+        })
+      ]);
     });
 
-    it('should reject off-tier results on a leadership search', () => {
-      const mockResponse: ReedJobResponse = {
-        totalResults: 2,
-        results: [
-          buildReedJob({
-            jobId: 1,
-            jobTitle: 'Group Head of Finance',
-            minimumSalary: 90000,
-            maximumSalary: 110000
-          }),
-          buildReedJob({
-            jobId: 2,
-            jobTitle: 'Finance Assistant',
-            minimumSalary: 25000,
-            maximumSalary: 30000
-          })
-        ]
-      };
-
-      const processed = processReedData(
-        mockResponse,
-        'full-time',
-        'permanent',
-        'Group Head of Finance'
-      );
-
-      expect(processed.results.map((r) => r.title)).toEqual(['Group Head of Finance']);
+    it('handles an empty results array safely', () => {
+      expect(mapReedJobs({ totalResults: 0, results: [] }, 'full-time', 'permanent')).toEqual([]);
     });
 
-    it('should trim an extreme salary outlier from the mean while still listing it in results', () => {
-      const salaries = [50000, 55000, 60000, 62000, 65000, 500000];
-      const mockResponse: ReedJobResponse = {
-        totalResults: salaries.length,
-        results: salaries.map((s, i) =>
-          buildReedJob({ jobId: i + 1, jobTitle: 'Developer', minimumSalary: s, maximumSalary: s })
-        )
+    it('defaults null min/max salary to 0', () => {
+      const response: ReedJobResponse = {
+        totalResults: 1,
+        results: [buildReedJob({ minimumSalary: null, maximumSalary: null })]
       };
-
-      const processed = processReedData(mockResponse, 'full-time', 'permanent', 'Developer');
-
-      // The 500000 outlier is excluded from the mean (IQR-trimmed sample), but
-      // the listing itself is still returned -- trimming affects statistics,
-      // not which real job postings are shown.
-      expect(processed.mean).toBe(58400);
-      expect(processed.count).toBe(6);
-      expect(processed.results.some((r) => r.salary_max === 500000)).toBe(true);
-    });
-
-    it('drops an unparsed day-rate salary via filterSanitySalaries before computing the mean', () => {
-      const mockResponse: ReedJobResponse = {
-        totalResults: 2,
-        results: [
-          buildReedJob({ jobId: 1, jobTitle: 'Developer', minimumSalary: 200, maximumSalary: 250 }), // day rate
-          buildReedJob({
-            jobId: 2,
-            jobTitle: 'Developer',
-            minimumSalary: 40000,
-            maximumSalary: 60000
-          })
-        ]
-      };
-
-      const processed = processReedData(mockResponse, 'full-time', 'permanent', 'Developer');
-
-      // The day-rate listing is still returned (sanity filtering only affects
-      // statistics, mirroring IQR trimming's behavior), but excluded from mean.
-      expect(processed.count).toBe(2);
-      expect(processed.mean).toBe(50000);
-    });
-
-    it('should handle empty results safely', () => {
-      const mockResponse: ReedJobResponse = {
-        totalResults: 0,
-        results: []
-      };
-
-      const processed = processReedData(mockResponse, 'part-time', 'contract', 'Anything');
-
-      expect(processed.mean).toBe(0);
-      expect(processed.count).toBe(0);
-      expect(processed.histogram).toEqual({});
-      expect(processed.results.length).toBe(0);
-      expect(processed.provider).toBe('reed');
+      const [mapped] = mapReedJobs(response, 'full-time', 'permanent');
+      expect(mapped?.salary_min).toBe(0);
+      expect(mapped?.salary_max).toBe(0);
     });
   });
 
@@ -178,29 +72,34 @@ describe('Reed Utility', () => {
       );
     });
 
-    it('should quote Tier 1 keywords and stop after one call when results are sufficiently salaried', async () => {
+    it('should quote Tier 1 keywords and issue an unquoted Tier 2 query concurrently', async () => {
       vi.stubGlobal(
         'useRuntimeConfig',
         vi.fn(() => ({ reedApiKey: 'test-key' }))
       );
-      // 15 salaried results -- exactly the MIN_TIER1_SALARIED_RESULTS floor.
-      const richResponse: ReedJobResponse = {
-        totalResults: 15,
-        results: Array.from({ length: 15 }, (_, i) =>
-          buildReedJob({
-            jobId: i + 1,
-            jobTitle: 'Dev',
-            minimumSalary: 40000 + i * 1000,
-            maximumSalary: 50000 + i * 1000
-          })
-        )
+      const tier1Response: ReedJobResponse = {
+        totalResults: 1,
+        results: [
+          buildReedJob({ jobId: 1, jobTitle: 'Dev', minimumSalary: 40000, maximumSalary: 50000 })
+        ]
       };
-      const fetchMock = vi.fn().mockResolvedValue(richResponse);
+      const tier2Response: ReedJobResponse = {
+        totalResults: 2,
+        results: [
+          buildReedJob({ jobId: 1, jobTitle: 'Dev', minimumSalary: 40000, maximumSalary: 50000 }),
+          buildReedJob({ jobId: 2, jobTitle: 'Dev', minimumSalary: 45000, maximumSalary: 55000 })
+        ]
+      };
+      const fetchMock = vi.fn((_url: string, opts: { params: { keywords: string } }) =>
+        opts.params.keywords === '"Dev"'
+          ? Promise.resolve(tier1Response)
+          : Promise.resolve(tier2Response)
+      );
       vi.stubGlobal('$fetch', fetchMock);
 
       const result = await fetchReedData('Dev', 'London', 'full-time', 'permanent');
 
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(fetchMock).toHaveBeenCalledWith(
         'https://www.reed.co.uk/api/1.0/search',
         expect.objectContaining({
@@ -213,47 +112,14 @@ describe('Reed Utility', () => {
           timeout: 6000
         })
       );
-      expect(result.count).toBe(15);
-    });
-
-    it('should fall back to Tier 2 when Tier 1 has one fewer salaried result than the sufficiency floor', async () => {
-      vi.stubGlobal(
-        'useRuntimeConfig',
-        vi.fn(() => ({ reedApiKey: 'test-key' }))
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://www.reed.co.uk/api/1.0/search',
+        expect.objectContaining({ params: expect.objectContaining({ keywords: 'Dev' }) })
       );
-      // 14 salaried results -- one below the MIN_TIER1_SALARIED_RESULTS floor.
-      const borderlineSparseResponse: ReedJobResponse = {
-        totalResults: 14,
-        results: Array.from({ length: 14 }, (_, i) =>
-          buildReedJob({
-            jobId: i + 1,
-            jobTitle: 'Dev',
-            minimumSalary: 40000 + i * 1000,
-            maximumSalary: 50000 + i * 1000
-          })
-        )
-      };
-      const richResponse: ReedJobResponse = {
-        totalResults: 20,
-        results: Array.from({ length: 20 }, (_, i) =>
-          buildReedJob({
-            jobId: i + 1,
-            jobTitle: 'Dev',
-            minimumSalary: 40000 + i * 1000,
-            maximumSalary: 50000 + i * 1000
-          })
-        )
-      };
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(borderlineSparseResponse)
-        .mockResolvedValueOnce(richResponse);
-      vi.stubGlobal('$fetch', fetchMock);
-
-      const result = await fetchReedData('Dev', '', 'full-time', 'permanent');
-
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(result.count).toBe(20);
+      // Tier 1: job 1 only. Tier 2: job 2 (job 1 deduplicated against Tier 1).
+      expect(result.results.map((r) => r.id)).toEqual([1]);
+      expect(result.similarResults?.map((r) => r.id)).toEqual([2]);
+      expect(result.count).toBe(2);
     });
 
     it('should OR the anchor phrase into Tier 1 keywords when extraction shortens the title', async () => {
@@ -261,30 +127,7 @@ describe('Reed Utility', () => {
         'useRuntimeConfig',
         vi.fn(() => ({ reedApiKey: 'test-key' }))
       );
-      const richResponse: ReedJobResponse = {
-        totalResults: 3,
-        results: [
-          buildReedJob({
-            jobId: 1,
-            jobTitle: 'Head of Finance',
-            minimumSalary: 80000,
-            maximumSalary: 90000
-          }),
-          buildReedJob({
-            jobId: 2,
-            jobTitle: 'Head of Finance',
-            minimumSalary: 85000,
-            maximumSalary: 95000
-          }),
-          buildReedJob({
-            jobId: 3,
-            jobTitle: 'Head of Finance',
-            minimumSalary: 90000,
-            maximumSalary: 100000
-          })
-        ]
-      };
-      const fetchMock = vi.fn().mockResolvedValue(richResponse);
+      const fetchMock = vi.fn().mockResolvedValue({ totalResults: 0, results: [] });
       vi.stubGlobal('$fetch', fetchMock);
 
       await fetchReedData('Group Head of Finance', '', 'full-time', 'permanent');
@@ -299,54 +142,12 @@ describe('Reed Utility', () => {
       );
     });
 
-    it('should fall back to an unquoted Tier 2 search when Tier 1 is sparse', async () => {
-      vi.stubGlobal(
-        'useRuntimeConfig',
-        vi.fn(() => ({ reedApiKey: 'test-key' }))
-      );
-      const sparseResponse: ReedJobResponse = {
-        totalResults: 1,
-        results: [
-          buildReedJob({ jobId: 1, jobTitle: 'Dev', minimumSalary: 40000, maximumSalary: 50000 })
-        ]
-      };
-      const richResponse: ReedJobResponse = {
-        totalResults: 4,
-        results: [
-          buildReedJob({ jobId: 1, jobTitle: 'Dev', minimumSalary: 40000, maximumSalary: 50000 }),
-          buildReedJob({ jobId: 2, jobTitle: 'Dev', minimumSalary: 42000, maximumSalary: 52000 }),
-          buildReedJob({ jobId: 3, jobTitle: 'Dev', minimumSalary: 44000, maximumSalary: 54000 }),
-          buildReedJob({ jobId: 4, jobTitle: 'Dev', minimumSalary: 46000, maximumSalary: 56000 })
-        ]
-      };
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(sparseResponse)
-        .mockResolvedValueOnce(richResponse);
-      vi.stubGlobal('$fetch', fetchMock);
-
-      const result = await fetchReedData('Dev', '', 'full-time', 'permanent');
-
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(fetchMock).toHaveBeenNthCalledWith(
-        1,
-        'https://www.reed.co.uk/api/1.0/search',
-        expect.objectContaining({ params: expect.objectContaining({ keywords: '"Dev"' }) })
-      );
-      expect(fetchMock).toHaveBeenNthCalledWith(
-        2,
-        'https://www.reed.co.uk/api/1.0/search',
-        expect.objectContaining({ params: expect.objectContaining({ keywords: 'Dev' }) })
-      );
-      expect(result.count).toBe(4);
-    });
-
     it('should strictly relevance-filter Tier 2 unquoted results, stripping off-domain listings', async () => {
       vi.stubGlobal(
         'useRuntimeConfig',
         vi.fn(() => ({ reedApiKey: 'test-key' }))
       );
-      const sparseResponse: ReedJobResponse = {
+      const tier1Response: ReedJobResponse = {
         totalResults: 1,
         results: [
           buildReedJob({
@@ -359,8 +160,8 @@ describe('Reed Utility', () => {
       };
       // Tier 2's unquoted search returns a mix of on-domain and off-domain
       // "lead ... engineer" listings -- only the software one should survive
-      // the post-fetch domain-token filter.
-      const looseResponse: ReedJobResponse = {
+      // the post-fetch domain-token filter (and it's deduplicated against Tier 1).
+      const tier2Response: ReedJobResponse = {
         totalResults: 3,
         results: [
           buildReedJob({
@@ -383,16 +184,17 @@ describe('Reed Utility', () => {
           })
         ]
       };
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(sparseResponse)
-        .mockResolvedValueOnce(looseResponse);
+      const fetchMock = vi.fn((_url: string, opts: { params: { keywords: string } }) =>
+        opts.params.keywords.startsWith('"')
+          ? Promise.resolve(tier1Response)
+          : Promise.resolve(tier2Response)
+      );
       vi.stubGlobal('$fetch', fetchMock);
 
       const result = await fetchReedData('Lead Software Engineer', '', 'full-time', 'permanent');
 
-      expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(result.results.map((r) => r.title)).toEqual(['Lead Software Engineer']);
+      expect(result.similarResults).toEqual([]);
       expect(result.count).toBe(1);
     });
 

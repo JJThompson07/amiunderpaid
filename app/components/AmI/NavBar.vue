@@ -214,6 +214,7 @@ const recruiterLinks = computed<NavLink[]>(() => {
 // --- 3. ORDINARY USER GROUPS ---
 const navLinks = computed<NavLink[]>(() => [
   { to: '/', label: t('navbar.home'), mobileOnly: false },
+  { to: '/jobs', label: t('navbar.jobs'), mobileOnly: false },
   { to: '/about', label: t('navbar.about'), mobileOnly: false },
   {
     label: t('navbar.group.resources'),

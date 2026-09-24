@@ -1,8 +1,8 @@
 <template>
   <div
     ref="buttonAnimated"
-    class="relative overflow-hidden rounded-lg p-1 select-none"
-    :class="loading || hoveredElement ? activeBgColour : 'bg-transparent'">
+    class="relative overflow-hidden rounded-lg select-none"
+    :class="[padding, loading || hoveredElement ? activeBgColour : 'bg-transparent']">
     <section class="relative z-10 flex h-full flex-col rounded-md bg-inherit">
       <slot />
     </section>
@@ -41,6 +41,10 @@ const props = defineProps({
   hoverable: {
     type: Boolean,
     default: false
+  },
+  padding: {
+    type: String,
+    default: 'p-1'
   }
 });
 

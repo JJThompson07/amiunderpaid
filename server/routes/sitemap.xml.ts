@@ -45,6 +45,7 @@ export default defineEventHandler(async (event): Promise<string> => {
   // 1. Define Static Routes
   const staticRoutes = [
     '/',
+    '/jobs',
     '/privacy-policy',
     '/how-it-works',
     '/data-sources',
@@ -83,6 +84,21 @@ export default defineEventHandler(async (event): Promise<string> => {
     return `${routePrefix}/${titleSlug}/${country}`;
   });
 
+  // 2a. The dedicated job-search experience (/jobs/...) is shared across both
+  // brands and every domain -- unlike /salary vs /benchmark, it isn't a
+  // brand-exclusive alternative, so it's built unconditionally from the same
+  // (already domain/country-scoped) jobsSnapshot rather than gated on isBenchmark.
+  const jobsRoutes = jobsSnapshot.docs.map((doc: QueryDocumentSnapshot<SitemapJobFields>) => {
+    const data = doc.data();
+    const country = data.country || 'UK';
+    const titleSlug = slugify(data.title);
+
+    if (data.location) {
+      return `/jobs/${titleSlug}/${country}/${slugify(data.location)}`;
+    }
+    return `/jobs/${titleSlug}/${country}`;
+  });
+
   // 2b. Fetch Dynamic Industry Trend Categories (pSEO pages)
   // adzuna_industry_trends is the source of truth for "active" categories --
   // it's country-scoped ('gb'/'us') and written by the monthly sync job from
@@ -111,7 +127,7 @@ export default defineEventHandler(async (event): Promise<string> => {
     )
   ].map((tag) => `/insights/industry-trends/${tag}`);
 
-  const allRoutes = [...staticRoutes, ...dynamicRoutes, ...industryTrendRoutes];
+  const allRoutes = [...staticRoutes, ...dynamicRoutes, ...jobsRoutes, ...industryTrendRoutes];
 
   // 3. Generate XML with lastmod
   const today = new Date().toISOString().split('T')[0];

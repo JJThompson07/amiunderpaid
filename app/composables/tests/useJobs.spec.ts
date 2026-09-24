@@ -65,6 +65,34 @@ describe('useJobs', () => {
     expect(composable.meanSalary.value).toBe(50000);
   });
 
+  it('fetchJobs success populates similarJobsData from similarResults', async () => {
+    mock$fetch.mockResolvedValueOnce({
+      mean: 50000,
+      count: 15,
+      results: [{ title: 'Developer' }],
+      similarResults: [{ title: 'Junior Developer' }, { title: 'Software Engineer' }]
+    });
+
+    const composable = useJobs();
+    await composable.fetchJobs('Developer', 'London', 'gb');
+
+    expect(composable.similarJobsData.value).toEqual([
+      { title: 'Junior Developer' },
+      { title: 'Software Engineer' }
+    ]);
+    expect(composable.hasSimilarJobsData.value).toBe(true);
+  });
+
+  it('similarJobsData defaults to an empty array when the response has no similarResults', async () => {
+    mock$fetch.mockResolvedValueOnce({ mean: 50000, count: 10, results: [{ title: 'Developer' }] });
+
+    const composable = useJobs();
+    await composable.fetchJobs('Developer', 'London', 'gb');
+
+    expect(composable.similarJobsData.value).toEqual([]);
+    expect(composable.hasSimilarJobsData.value).toBe(false);
+  });
+
   it('fetchJobs error clears jobsData', async () => {
     mock$fetch.mockRejectedValueOnce(new Error('Failed'));
 

@@ -95,6 +95,7 @@ describe('market-data salary endpoint', () => {
   let categoryDocRef: MockDocRef;
   let jobsCacheDocRef: MockDocRef;
   let categoryDocIdSpy: ReturnType<typeof vi.fn<(id: string) => void>>;
+  let jobsCacheDocIdSpy: ReturnType<typeof vi.fn<(id: string) => void>>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -119,6 +120,7 @@ describe('market-data salary endpoint', () => {
     };
 
     categoryDocIdSpy = vi.fn();
+    jobsCacheDocIdSpy = vi.fn();
 
     const mockDb = {
       collection: vi.fn((name: string) => {
@@ -133,7 +135,12 @@ describe('market-data salary endpoint', () => {
             })
           };
         }
-        return { doc: vi.fn(() => jobsCacheDocRef) };
+        return {
+          doc: vi.fn((id: string) => {
+            jobsCacheDocIdSpy(id);
+            return jobsCacheDocRef;
+          })
+        };
       })
     };
 
@@ -435,6 +442,23 @@ describe('market-data salary endpoint', () => {
     expect(result.provider).toBe('jooble');
   });
 
+  it('never persists a dev/E2E provider-override response to the shared cache, even under a real-world title', async () => {
+    // A pinned/fixture response for a commonly-searched title (e.g.
+    // "software engineer") must never overwrite the real cache entry an
+    // organic, non-overridden search for the same title/location/country
+    // would read from.
+    process.env.E2E = 'true';
+    getQueryMock.mockReturnValue({
+      title: 'software engineer',
+      country: 'gb',
+      devProvider: 'reed'
+    });
+
+    await salaryHandler({} as unknown as H3Event);
+
+    expect(distributionCacheDocRef.set).not.toHaveBeenCalled();
+  });
+
   it('returns the static E2E fixture without calling $fetch when an adzuna devProvider override is set', async () => {
     process.env.E2E = 'true';
     getQueryMock.mockReturnValue({ title: 'developer', country: 'gb', devProvider: 'adzuna' });
@@ -600,6 +624,13 @@ describe('market-data salary endpoint', () => {
       expect.anything(),
       expect.objectContaining({ params: expect.objectContaining({ category: 'it-jobs' }) })
     );
+  });
+
+  it('looks up the adzuna_jobs_cache doc under the same harmonized key jobs.ts writes (no -10/-limit suffix)', async () => {
+    await salaryHandler({} as unknown as H3Event);
+
+    expect(jobsCacheDocIdSpy).toHaveBeenCalledWith('cache-key-full-time-permanent');
+    expect(jobsCacheDocIdSpy).not.toHaveBeenCalledWith('cache-key-full-time-permanent-10');
   });
 
   it('reuses a fresh Reed-sourced jobs cache entry instead of calling fetchReedData a second time', async () => {

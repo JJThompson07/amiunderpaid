@@ -188,6 +188,14 @@
               :url="listing.redirect_url" />
           </div>
         </AmICarousel>
+
+        <div class="flex justify-end">
+          <NuxtLink
+            :to="`/jobs/${route.params.title}/${route.params.country}${route.params.location ? `/${route.params.location}` : ''}`"
+            class="text-sm font-medium text-primary-500 hover:text-primary-700 hover:underline transition-colors duration-300">
+            {{ $t('sections.jobs.view-more-roles', { displayTitle }) }}
+          </NuxtLink>
+        </div>
       </div>
 
       <!-- 6. Action / Negotiation (Hidden if recruiter exists) -->

@@ -32,6 +32,17 @@ const isProviderFailure = (e: unknown): boolean => {
   return typeof (err.response?.status ?? err.statusCode) === 'number';
 };
 
+// `adzuna_jobs_cache` always persists the full (up to ~100-listing) dual-tier
+// payload so /jobs and /salary/-benchmark share one warmed document, but a
+// caller that never passed a higher `resultsPerPage` (e.g. useLocationEngine.ts,
+// which powers /salary and /benchmark) must keep receiving exactly `limit`
+// results/similarResults in the response -- see design.md Decision 3.
+const sliceJobsForResponse = (data: JobSearchResponse, limit: number): JobSearchResponse => ({
+  ...data,
+  results: data.results.slice(0, limit),
+  similarResults: data.similarResults ? data.similarResults.slice(0, limit) : undefined
+});
+
 type ProviderFetchArgs = {
   countryCode: string;
   titleStr: string;
@@ -79,7 +90,9 @@ const fetchRegionalPrimary = async (args: ProviderFetchArgs): Promise<JobSearchR
   return result;
 };
 
-// Define the cached fetcher outside the event handler
+// Define the cached fetcher outside the event handler. Always returns the
+// FULL (unsliced) dual-tier result -- response-size capping for the caller
+// happens once, separately, via sliceJobsForResponse (see design.md Decision 3).
 const fetchFromProviders = defineCachedFunction(
   async (
     countryCode: string,
@@ -87,7 +100,6 @@ const fetchFromProviders = defineCachedFunction(
     locationStr: string,
     typeStr: string,
     contractStr: string,
-    limit: number,
     isDevOrE2e: boolean,
     devProviderOverride?: string,
     categoryStr?: string
@@ -113,23 +125,20 @@ const fetchFromProviders = defineCachedFunction(
       const isE2E = process.env.E2E === 'true';
       if (isE2E) {
         const { getMockFallbackJobs } = await import('../../utils/fallback');
-        const mockJobs = getMockFallbackJobs(devProviderOverride as MarketDataProvider);
-        return { ...mockJobs, results: mockJobs.results.slice(0, limit) };
+        return getMockFallbackJobs(devProviderOverride as MarketDataProvider);
       }
 
-      const pinned = await fetchByProviderName(devProviderOverride, args);
-      return { ...pinned, results: pinned.results.slice(0, limit) };
+      return fetchByProviderName(devProviderOverride, args);
     }
 
     try {
-      const primary = await fetchRegionalPrimary(args);
-      return { ...primary, results: primary.results.slice(0, limit) };
+      return await fetchRegionalPrimary(args);
     } catch (e) {
       if (!isProviderFailure(e)) {
         throw e;
       }
       const { executeMarketFallback } = await import('../../utils/fallback');
-      const fallbackRaw = await executeMarketFallback(
+      return executeMarketFallback(
         titleStr,
         locationStr,
         countryCode,
@@ -137,14 +146,6 @@ const fetchFromProviders = defineCachedFunction(
         contractStr,
         categoryStr
       );
-
-      return {
-        mean: fallbackRaw.mean,
-        count: fallbackRaw.count,
-        histogram: fallbackRaw.histogram,
-        results: fallbackRaw.results.slice(0, limit),
-        provider: fallbackRaw.provider
-      };
     }
   },
   {
@@ -156,12 +157,11 @@ const fetchFromProviders = defineCachedFunction(
       locationStr,
       typeStr,
       contractStr,
-      limit,
       isDevOrE2e,
       devProviderOverride,
       categoryStr
     ) =>
-      `${titleStr}-${locationStr}-${countryCode}-${typeStr}-${contractStr}-${limit}-${devProviderOverride || 'none'}-${categoryStr || 'none'}`
+      `${titleStr}-${locationStr}-${countryCode}-${typeStr}-${contractStr}-${devProviderOverride || 'none'}-${categoryStr || 'none'}`
   }
 );
 
@@ -209,7 +209,7 @@ export default defineEventHandler(async (event) => {
 
   // 1. Check Cache
   const db = useAdminFirestore();
-  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode, categoryStr)}-${typeStr}-${contractStr}-${limit}`;
+  const cacheKey = `${generateCacheKey(titleStr, locationStr, countryCode, categoryStr)}-${typeStr}-${contractStr}`;
   const cacheRef = db.collection('adzuna_jobs_cache').doc(cacheKey);
 
   // Track existing DB state so we don't wipe it on cache refresh!
@@ -243,7 +243,7 @@ export default defineEventHandler(async (event) => {
             // If the document has our new expiresAt field, the check is instant!
             if (now < data.expiresAt.toMillis()) {
               return {
-                ...data?.data,
+                ...sliceJobsForResponse(data?.data as JobSearchResponse, limit),
                 gov_id_code: existingGovIdCode,
                 is_admin_verified: isAdminVerified
               };
@@ -267,7 +267,7 @@ export default defineEventHandler(async (event) => {
 
             if (now - cachedTime < categoryCacheMilli) {
               return {
-                ...data?.data,
+                ...sliceJobsForResponse(data?.data as JobSearchResponse, limit),
                 gov_id_code: existingGovIdCode,
                 is_admin_verified: isAdminVerified
               };
@@ -288,7 +288,6 @@ export default defineEventHandler(async (event) => {
       locationStr,
       typeStr,
       contractStr,
-      limit,
       isDevOrE2e,
       devProviderOverride,
       categoryStr
@@ -329,28 +328,34 @@ export default defineEventHandler(async (event) => {
     }
 
     // 4. Save to Cache
-    await cacheRef.set(
-      {
-        categoryTag,
-        data: cleanData,
-        timestamp: FieldValue.serverTimestamp(),
-        expiresAt: expiresAt, // <-- Save the exact expiration date!
-        searchParams: {
-          title: titleStr,
-          location: locationStr,
-          country: countryCode,
-          category: categoryStr || null
+    // A dev/E2E provider-override response is a pinned or static-fixture
+    // result, not a real regional-primary/fallback outcome -- persisting it
+    // would silently overwrite real cached data for any organic search that
+    // shares the same title/location/country cache key.
+    if (!skipCache) {
+      await cacheRef.set(
+        {
+          categoryTag,
+          data: cleanData,
+          timestamp: FieldValue.serverTimestamp(),
+          expiresAt: expiresAt, // <-- Save the exact expiration date!
+          searchParams: {
+            title: titleStr,
+            location: locationStr,
+            country: countryCode,
+            category: categoryStr || null
+          },
+          gov_id_code: existingGovIdCode || null, // Preserve admin match
+          is_admin_verified: isAdminVerified, // Preserve admin status
+          job_type: typeStr,
+          contract_type: contractStr
         },
-        gov_id_code: existingGovIdCode || null, // Preserve admin match
-        is_admin_verified: isAdminVerified, // Preserve admin status
-        job_type: typeStr,
-        contract_type: contractStr
-      },
-      { merge: true }
-    );
+        { merge: true }
+      );
+    }
 
     return {
-      ...cleanData,
+      ...sliceJobsForResponse(cleanData, limit),
       gov_id_code: existingGovIdCode,
       is_admin_verified: isAdminVerified
     };

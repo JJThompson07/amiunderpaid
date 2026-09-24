@@ -1,10 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  fetchAdzunaHistogram,
-  fetchAdzunaJobs,
-  generateCacheKey,
-  processAdzunaJobs
-} from '../adzuna';
+import { fetchAdzunaHistogram, fetchAdzunaJobs, generateCacheKey } from '../adzuna';
 import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 import type { JobListing } from '~~/shared/utils/market-data';
 
@@ -140,57 +135,6 @@ describe('adzuna utils', () => {
     });
   });
 
-  describe('processAdzunaJobs', () => {
-    it('relevance-filters, sorts, and computes mean/histogram from valid salaries', () => {
-      const jobs = [
-        buildAdzunaJob({ id: 1, title: 'Developer', salary_min: 40000, salary_max: 60000 }),
-        buildAdzunaJob({ id: 2, title: 'Senior Developer', salary_min: 55000, salary_max: 65000 }),
-        buildAdzunaJob({ id: 3, title: 'Unrelated Role', salary_min: 0, salary_max: 0 })
-      ];
-
-      const result = processAdzunaJobs(jobs, 'Developer');
-
-      expect(result.provider).toBe('adzuna');
-      expect(result.count).toBe(2);
-      expect(result.mean).toBe(55000);
-      expect(result.results[0]).toMatchObject({ id: 2, title: 'Senior Developer' });
-    });
-
-    it('handles an empty jobs array safely', () => {
-      const result = processAdzunaJobs([], 'Developer');
-      expect(result.count).toBe(0);
-      expect(result.mean).toBe(0);
-      expect(result.histogram).toEqual({});
-    });
-
-    it('drops an unparsed day-rate salary via filterSanitySalaries before computing the mean', () => {
-      const jobs = [
-        buildAdzunaJob({ id: 1, title: 'Developer', salary_min: 200, salary_max: 250 }), // day rate
-        buildAdzunaJob({ id: 2, title: 'Developer', salary_min: 40000, salary_max: 60000 })
-      ];
-
-      const result = processAdzunaJobs(jobs, 'Developer');
-
-      // The day-rate listing is still returned (sanity filtering only affects
-      // statistics, mirroring IQR trimming's behavior), but excluded from mean.
-      expect(result.count).toBe(2);
-      expect(result.mean).toBe(50000);
-    });
-
-    it('uses the $25,000 USD floor for us, vs. the £15,000 floor for gb', () => {
-      const jobs = [
-        buildAdzunaJob({ id: 1, title: 'Developer', salary_min: 20000, salary_max: 22000 }), // avg 21000
-        buildAdzunaJob({ id: 2, title: 'Developer', salary_min: 40000, salary_max: 60000 }) // avg 50000
-      ];
-
-      const resultUs = processAdzunaJobs(jobs, 'Developer', 'full-time', 'us');
-      expect(resultUs.mean).toBe(50000); // 21000 dropped under the $25k US floor
-
-      const resultGb = processAdzunaJobs(jobs, 'Developer', 'full-time', 'gb');
-      expect(resultGb.mean).toBe(35500); // both retained under the £15k GB floor
-    });
-  });
-
   describe('fetchAdzunaJobs', () => {
     it('should throw error if credentials are missing', async () => {
       vi.stubGlobal(
@@ -207,7 +151,7 @@ describe('adzuna utils', () => {
       );
     });
 
-    it('should use title_only (not what) and stop after one call when Tier 1 is sufficiently salaried', async () => {
+    it('should use title_only (not what) and skip the Tier 2 call when the anchor phrase is a no-op', async () => {
       vi.stubGlobal(
         'useRuntimeConfig',
         vi.fn(() => ({ adzunaAppId: 'id', adzunaAppKey: 'key' }))
@@ -265,17 +209,17 @@ describe('adzuna utils', () => {
       );
     });
 
-    it('should fall back to Tier 2 (anchor phrase title_only) when Tier 1 is sparse', async () => {
+    it('should run Tier 1 and Tier 2 (anchor phrase title_only) concurrently and dedupe Tier 2 against Tier 1', async () => {
       vi.stubGlobal(
         'useRuntimeConfig',
         vi.fn(() => ({ adzunaAppId: 'id', adzunaAppKey: 'key' }))
       );
-      const sparseResponse = {
+      const tier1Response = {
         count: 1,
         results: [buildAdzunaJob({ id: 1, title: 'Head of Finance' })]
       };
-      const richResponse = {
-        count: 5,
+      const tier2Response = {
+        count: 3,
         results: [
           buildAdzunaJob({ id: 1, title: 'Head of Finance' }),
           buildAdzunaJob({ id: 2, title: 'Head of Finance' }),
@@ -284,8 +228,8 @@ describe('adzuna utils', () => {
       };
       const fetchMock = vi
         .fn()
-        .mockResolvedValueOnce(sparseResponse)
-        .mockResolvedValueOnce(richResponse);
+        .mockResolvedValueOnce(tier1Response)
+        .mockResolvedValueOnce(tier2Response);
       vi.stubGlobal('$fetch', fetchMock);
 
       const result = await fetchAdzunaJobs(
@@ -311,6 +255,9 @@ describe('adzuna utils', () => {
           params: expect.objectContaining({ title_only: 'Head of Finance' })
         })
       );
+      // Tier 1: job 1 only. Tier 2: jobs 2 and 3 (job 1 deduplicated against Tier 1).
+      expect(result.results.map((r) => r.id)).toEqual([1]);
+      expect(result.similarResults?.map((r) => r.id)).toEqual([2, 3]);
       expect(result.count).toBe(3);
     });
 

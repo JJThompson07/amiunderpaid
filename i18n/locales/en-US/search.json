@@ -19,6 +19,10 @@
   "ami": {
     "switch-site": "Switch to our UK site"
   },
+  "filters": {
+    "show": "Show Filters",
+    "hide": "Hide Filters"
+  },
   "contract": {
     "contract": "Contractor",
     "permanent": "Full Employee",

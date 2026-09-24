@@ -2,6 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import { sanitizeAdzunaData } from '~~/shared/utils/sanitize';
 import type {
   JobCategoryEntry,
+  JobListing,
   JobSearchResponse,
   MarketDataProvider,
   SalaryDistributionResponse
@@ -30,7 +31,10 @@ export type UseJobsReturn = {
   distributionData: Ref<SalaryDistributionResponse | null>;
   jobsData: Ref<JobSearchResponse | null>;
   categories: Ref<JobCategoryEntry[]>;
+  /** Tier 2 (similar roles) listings, deduplicated against `jobsData.value.results`. */
+  similarJobsData: ComputedRef<JobListing[]>;
   hasJobsData: ComputedRef<boolean>;
+  hasSimilarJobsData: ComputedRef<boolean>;
   hasDistributionData: ComputedRef<boolean>;
   loading: ComputedRef<boolean>;
   meanSalary: ComputedRef<number>;
@@ -48,7 +52,8 @@ export type UseJobsReturn = {
     jobType?: string,
     contractType?: string,
     devProviderOverride?: string,
-    category?: string
+    category?: string,
+    resultsPerPage?: number
   ) => Promise<void>;
   fetchHistogram: (
     title: string,
@@ -114,6 +119,8 @@ export const useJobs = (): UseJobsReturn => {
   const hasJobsData = computed<boolean>(
     () => jobsData.value !== null && jobsData.value !== undefined && jobsCount.value > 0
   );
+  const similarJobsData = computed<JobListing[]>(() => jobsData.value?.similarResults || []);
+  const hasSimilarJobsData = computed<boolean>(() => similarJobsData.value.length > 0);
 
   const fetchJobs = async (
     title: string,
@@ -122,7 +129,8 @@ export const useJobs = (): UseJobsReturn => {
     jobType: string = 'full-time',
     contractType: string = 'permanent',
     devProviderOverride?: string,
-    category?: string
+    category?: string,
+    resultsPerPage?: number
   ): Promise<void> => {
     activeRequests.value++;
     cachedGovIdCode.value = undefined;
@@ -146,7 +154,8 @@ export const useJobs = (): UseJobsReturn => {
           jobType,
           contractType,
           devProvider: devProviderOverride === 'auto' ? undefined : devProviderOverride,
-          category
+          category,
+          resultsPerPage
         }
       });
 
@@ -159,6 +168,7 @@ export const useJobs = (): UseJobsReturn => {
         mean: rawData.mean,
         count: rawData.count,
         results: rawData.results,
+        similarResults: rawData.similarResults,
         provider: rawData.provider || 'adzuna'
       });
     } catch {
@@ -234,7 +244,9 @@ export const useJobs = (): UseJobsReturn => {
     distributionData,
     jobsData,
     categories,
+    similarJobsData,
     hasJobsData,
+    hasSimilarJobsData,
     hasDistributionData,
     loading,
     meanSalary,
