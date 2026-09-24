@@ -4,7 +4,7 @@ import type { JobListing } from '~~/shared/utils/market-data';
 /** Number of listings requested per tier from the API for the dedicated /jobs experience. */
 const JOBS_RESULTS_PER_PAGE = 100;
 
-export type JobSortMode = 'relevance' | 'salary_max' | 'salary_avg' | 'salary_min';
+export type JobSortMode = 'relevance' | 'salary_max' | 'salary_min';
 
 export type UseJobSearchEngineReturn = {
   pending: Ref<boolean>;
@@ -37,13 +37,6 @@ const unslugify = (slug: string): string => {
     .join(' ');
 };
 
-const averageSalary = (job: JobListing): number => {
-  if (job.salary_min && job.salary_max) {
-    return (job.salary_min + job.salary_max) / 2;
-  }
-  return job.salary_max || job.salary_min || 0;
-};
-
 const hasSalaryData = (job: JobListing): boolean =>
   Boolean(job.salary_min) || Boolean(job.salary_max);
 
@@ -52,7 +45,6 @@ const salaryComparators: Record<
   (a: JobListing, b: JobListing) => number
 > = {
   salary_max: (a, b) => (b.salary_max || b.salary_min || 0) - (a.salary_max || a.salary_min || 0),
-  salary_avg: (a, b) => averageSalary(b) - averageSalary(a),
   salary_min: (a, b) => (a.salary_min || a.salary_max || 0) - (b.salary_min || b.salary_max || 0)
 };
 

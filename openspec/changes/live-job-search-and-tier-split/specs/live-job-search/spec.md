@@ -60,7 +60,6 @@ The job search page SHALL provide sorting controls that allow users to reorder j
 
 - **Most Relevant** (Default order based on search relevance).
 - **Highest Salary** (Descending order based on `salary_max || salary_min`).
-- **Average Salary** (Descending order based on `(salary_min + salary_max) / 2`).
 - **Lowest Salary** (Ascending order based on `salary_min || salary_max`).
 
 The selected sort order SHALL apply to both the Exact Matches list and Similar Roles list simultaneously, while maintaining the separation between the two sections.

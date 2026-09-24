@@ -16,7 +16,7 @@ This design introduces a first-class job search experience (`/jobs` and `/jobs/[
 - Extend `BaseSearchForm.vue` to support `mode="jobs"`.
 - Refactor `reed.ts`, `adzuna.ts`, and `jooble.ts` to return both Tier 1 (`results`) and deduplicated Tier 2 (`similarResults`) with up to 100 listings per provider query.
 - Harmonize Firestore `adzuna_jobs_cache` keys and payloads between `jobs.ts` and `salary.ts` so that job searches and salary searches mutually share cached data.
-- Enable client-side multi-criteria sorting (Highest Potential Salary, Average Salary, Lowest Salary, Relevance) affecting both Exact and Similar listings independently.
+- Enable client-side multi-criteria sorting (Highest Potential Salary, Lowest Salary, Relevance) affecting both Exact and Similar listings independently.
 - Provide comprehensive SEO tags and JSON-LD structured data (`BreadcrumbList`, `ItemList`/`JobPosting`).
 
 **Non-Goals:**
@@ -98,7 +98,7 @@ export type JobSearchResponse = {
 
 - Route param unslugifying and active country detection.
 - Asynchronous data fetching via `useJobs().fetchJobs()`.
-- Active sort mode (`'relevance' | 'salary_max' | 'salary_avg' | 'salary_min'`).
+- Active sort mode (`'relevance' | 'salary_max' | 'salary_min'`).
 - Computed sorted lists:
   - `sortedExactListings`: Tier 1 listings sorted according to active sort mode.
   - `sortedSimilarListings`: Tier 2 listings sorted according to active sort mode.
@@ -113,13 +113,12 @@ export type JobSearchResponse = {
   1. Breadcrumbs (`AmILocationBreadcrumbs`).
   2. Page title & count banner.
   3. Pre-filled `BaseSearchForm` (`mode="jobs"`).
-  4. Salary benchmark banner (linking to `/salary/[title]/[country]/[location]`).
-  5. Sorting toolbar (Relevance, Highest Salary, Average Salary, Lowest Salary).
-  6. **Exact Matches** grid (`AmICardRole`).
-  7. **Similar Roles** grid (`AmICardRole`).
-  8. Recruiter card integration.
-  9. `AmICardNoData` when both lists are empty. **Correction (found during implementation):** the originally-named `LazySectionNoData` (`Section/NoData.vue`) is not a generic "no results" component — it's a government-benchmark-specific Algolia autocomplete against `salary_benchmarks`/`regional_salary_benchmarks`, emitting a `select` event for MCA/government-ID disambiguation, with a `broadenSearch` hardcoded to `/salary` or `/benchmark`. None of that applies to a job-search results page. `AmICardNoData` (`AmI/Card/NoData.vue`) is the already-existing generic empty-state card (icon + heading + body + "try a different search" link home) and is what's actually used.
-  10. `useSeoMeta` and JSON-LD `BreadcrumbList` & `ItemList` structured data.
+  4. Salary benchmark link (linking to `/salary/[title]/[country]/[location]`) and sorting toolbar (Relevance, Highest Salary, Lowest Salary), on the same row.
+  5. **Exact Matches** grid (`AmICardRole`), each card showing a `line-clamp-3` description.
+  6. **Similar Roles** grid (`AmICardRole`), same card treatment.
+  7. Recruiter card integration.
+  8. `AmICardNoData` when both lists are empty. **Correction (found during implementation):** the originally-named `LazySectionNoData` (`Section/NoData.vue`) is not a generic "no results" component — it's a government-benchmark-specific Algolia autocomplete against `salary_benchmarks`/`regional_salary_benchmarks`, emitting a `select` event for MCA/government-ID disambiguation, with a `broadenSearch` hardcoded to `/salary` or `/benchmark`. None of that applies to a job-search results page. `AmICardNoData` (`AmI/Card/NoData.vue`) is the already-existing generic empty-state card (icon + heading + body + "try a different search" link home) and is what's actually used.
+  9. `useSeoMeta` and JSON-LD `BreadcrumbList` & `ItemList` structured data.
 - Update `AmI/NavBar.vue` to include a "Jobs" link.
 - Update `server/routes/sitemap.xml.ts` to index `/jobs` and dynamic `/jobs/...` routes.
 

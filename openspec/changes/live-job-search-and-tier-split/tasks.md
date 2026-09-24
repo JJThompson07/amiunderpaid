@@ -15,7 +15,7 @@
 ## 3. Frontend Composables & Search Form Mode
 
 - [x] 3.1 Update `app/composables/useJobs.ts` to expose `similarJobsData` / `similarResults` and full listing arrays, update `app/composables/tests/useJobs.spec.ts`, and verify with `pnpm vitest run app/composables/tests/useJobs.spec.ts`.
-- [x] 3.2 Implement `app/composables/useJobSearchEngine.ts` with route param parsing, multi-criteria sorting (`relevance`, `salary_max`, `salary_avg`, `salary_min`), dual-tier list separation, write unit tests in `app/composables/tests/useJobSearchEngine.spec.ts`, and verify with `pnpm vitest run app/composables/tests/useJobSearchEngine.spec.ts`.
+- [x] 3.2 Implement `app/composables/useJobSearchEngine.ts` with route param parsing, multi-criteria sorting (`relevance`, `salary_max`, `salary_min`), dual-tier list separation, write unit tests in `app/composables/tests/useJobSearchEngine.spec.ts`, and verify with `pnpm vitest run app/composables/tests/useJobSearchEngine.spec.ts`.
 - [x] 3.3 Extend `app/components/BaseSearchForm.vue` to support `mode="jobs"`, hiding the salary input, customizing button text, and routing to `/jobs/...`.
 
 ## 4. Job Search Pages, Components & SEO

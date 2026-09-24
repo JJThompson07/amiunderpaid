@@ -4,8 +4,11 @@
       <div class="inline-flex p-4 mb-4 bg-negative-100 rounded-full text-slate-400">
         <component :is="icon" class="w-8 h-8 text-negative-700" />
       </div>
-      <h2 class="text-2xl font-bold text-slate-900 mb-2">{{ $t('card.no-data.heading') }}</h2>
-      <p class="text-slate-500 max-w-md mx-auto mb-8">
+      <h2 class="text-2xl font-bold text-slate-900 mb-2">
+        {{ heading || $t('card.no-data.heading') }}
+      </h2>
+      <p v-if="body" class="text-slate-500 max-w-md mx-auto mb-8 leading-relaxed">{{ body }}</p>
+      <p v-else class="text-slate-500 max-w-md mx-auto mb-8">
         <i18n-t keypath="card.no-data.body" tag="p" class="leading-relaxed">
           <template #role>
             <span class="font-bold">{{ title }}</span>
@@ -15,7 +18,7 @@
           </template>
         </i18n-t>
       </p>
-      <NuxtLink to="/">
+      <NuxtLink v-if="showButton" to="/">
         <AmIButton title="Try a different search" text-colour="text-white">
           {{ $t('card.no-data.try-different') }}
         </AmIButton>
@@ -43,6 +46,18 @@ defineProps({
   country: {
     type: String,
     required: true
+  },
+  heading: {
+    type: String,
+    default: ''
+  },
+  body: {
+    type: String,
+    default: ''
+  },
+  showButton: {
+    type: Boolean,
+    default: true
   }
 });
 </script>

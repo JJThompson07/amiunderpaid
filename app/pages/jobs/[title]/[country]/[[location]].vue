@@ -32,16 +32,19 @@
       class="mx-4"
       :title="displayTitle"
       :location="location"
-      :country="country" />
+      :country="country"
+      :heading="t('sections.jobs.no-results.heading')"
+      :body="t('sections.jobs.no-results.body')"
+      :show-button="false" />
 
     <div v-show="!pending && hasJobsData" class="relative flex flex-col gap-6 px-4 xl:px-0 mt-2">
-      <NuxtLink
-        :to="`/salary/${route.params.title}/${route.params.country}${location ? `/${route.params.location}` : ''}`"
-        class="inline-flex items-center gap-2 w-fit px-4 py-2.5 text-sm font-medium text-primary-900 bg-primary-50 border border-primary-200 rounded-xl hover:bg-primary-100 hover:border-primary-300 transition-all duration-300">
-        {{ $t('sections.jobs.view-salary-benchmark', { displayTitle }) }}
-      </NuxtLink>
+      <div v-if="hasJobsData" class="flex flex-wrap gap-3 justify-between items-center">
+        <NuxtLink
+          :to="`/salary/${route.params.title}/${route.params.country}${location ? `/${route.params.location}` : ''}`"
+          class="inline-flex items-center gap-2 w-fit px-4 py-2.5 text-sm font-medium text-primary-900 bg-primary-50 border border-primary-200 rounded-xl hover:bg-primary-100 hover:border-primary-300 transition-all duration-300">
+          {{ $t('sections.jobs.view-salary-benchmark', { displayTitle }) }}
+        </NuxtLink>
 
-      <div v-if="hasJobsData" class="flex justify-end">
         <AmITabs
           v-model="sortMode"
           :options="sortOptions"
@@ -184,7 +187,6 @@ const currencySymbol = computed<string>(() => (country.value === 'USA' ? '$' : '
 const sortOptions = computed(() => [
   { label: t('sections.jobs.sort.relevance'), value: 'relevance' },
   { label: t('sections.jobs.sort.salary_max'), value: 'salary_max' },
-  { label: t('sections.jobs.sort.salary_avg'), value: 'salary_avg' },
   { label: t('sections.jobs.sort.salary_min'), value: 'salary_min' }
 ]);
 

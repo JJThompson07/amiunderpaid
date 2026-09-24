@@ -15,7 +15,6 @@ Furthermore, our backend market data pipeline currently executes Tier 1 (exact-p
   2. **Similar Roles**: Related / broader roles matching the anchor phrase and keywords (Tier 2), deduplicated from exact matches.
 - **Role Sorting by Salary & Relevance**: Allow users to sort job listings by:
   - Highest Salary (Maximum potential salary `salary_max` descending).
-  - Average Salary (Mean of `salary_min` and `salary_max` descending).
   - Most Relevant (Default relevance ranking).
     Sorting controls update both Exact and Similar lists concurrently while keeping the two sections separate.
 - **Shared Cache Warm-Up & Increased Result Limits**:

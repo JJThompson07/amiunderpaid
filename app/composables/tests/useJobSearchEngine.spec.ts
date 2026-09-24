@@ -193,34 +193,6 @@ describe('useJobSearchEngine', () => {
     expect(engine.sortedSimilarListings.value.map((j) => j.id)).toEqual([4, 3]);
   });
 
-  it('sorts by average of salary_min/salary_max descending', async () => {
-    mockRoute.query = { sort: 'salary_avg' };
-    mockJobs.jobsData.value = {
-      results: [
-        { id: 1, salary_min: 40, salary_max: 60 }, // avg 50
-        { id: 2, salary_min: 80, salary_max: 100 } // avg 90
-      ]
-    };
-
-    const engine = await useJobSearchEngine();
-
-    expect(engine.sortedExactListings.value.map((j) => j.id)).toEqual([2, 1]);
-  });
-
-  it('falls back to salary_max/salary_min when only one bound is present for salary_avg sorting', async () => {
-    mockRoute.query = { sort: 'salary_avg' };
-    mockJobs.jobsData.value = {
-      results: [
-        { id: 1, salary_max: 30 },
-        { id: 2, salary_min: 60 }
-      ]
-    };
-
-    const engine = await useJobSearchEngine();
-
-    expect(engine.sortedExactListings.value.map((j) => j.id)).toEqual([2, 1]);
-  });
-
   it('sorts by salary_min ascending', async () => {
     mockRoute.query = { sort: 'salary_min' };
     mockJobs.jobsData.value = {
@@ -264,17 +236,13 @@ describe('useJobSearchEngine', () => {
     expect(engine.sortedExactListings.value.map((j) => j.id)).toEqual([2, 1, 3]);
   });
 
-  it('keeps salaried listings ahead of unsalaried ones for salary_max and salary_avg too', async () => {
+  it('keeps salaried listings ahead of unsalaried ones for salary_max too', async () => {
     mockJobs.jobsData.value = {
       results: [{ id: 1 }, { id: 2, salary_max: 50 }]
     };
 
     mockRoute.query = { sort: 'salary_max' };
-    let engine = await useJobSearchEngine();
-    expect(engine.sortedExactListings.value.map((j) => j.id)).toEqual([2, 1]);
-
-    mockRoute.query = { sort: 'salary_avg' };
-    engine = await useJobSearchEngine();
+    const engine = await useJobSearchEngine();
     expect(engine.sortedExactListings.value.map((j) => j.id)).toEqual([2, 1]);
   });
 
