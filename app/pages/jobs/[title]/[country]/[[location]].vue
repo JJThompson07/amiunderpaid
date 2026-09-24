@@ -55,10 +55,23 @@
           button-text-colour="text-white" />
       </div>
 
+      <h3
+        v-if="hasJobsData"
+        class="relative text-xl md:text-2xl text-slate-900 font-bold sm:whitespace-nowrap px-1">
+        <a
+          :href="providerHref"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-primary-500 hover:text-primary-700 transition-colors duration-500 ease-in-out"
+          >{{ $t('sections.jobs.jobs') }}</a
+        >
+        {{ providerAttribution }}
+      </h3>
+
       <div v-if="sortedExactListings.length" class="flex flex-col gap-3">
-        <h3 class="text-xl md:text-2xl text-slate-900 font-bold px-1">
+        <h4 class="text-lg md:text-xl text-slate-900 font-bold px-1">
           {{ $t('sections.jobs.tier.exact') }}
-        </h3>
+        </h4>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <AmICardRole
             v-for="listing in sortedExactListings"
@@ -78,9 +91,9 @@
       </div>
 
       <div v-if="sortedSimilarListings.length" class="flex flex-col gap-3">
-        <h3 class="text-xl md:text-2xl text-slate-900 font-bold px-1">
+        <h4 class="text-lg md:text-xl text-slate-900 font-bold px-1">
           {{ $t('sections.jobs.tier.similar') }}
-        </h3>
+        </h4>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <AmICardRole
             v-for="listing in sortedSimilarListings"
@@ -166,7 +179,8 @@ const {
   sortedSimilarListings,
   hasJobsData,
   jobsCount,
-  adzunaCategory
+  adzunaCategory,
+  dataProvider
 } = await useJobSearchEngine();
 
 // Called here rather than inside useJobSearchEngine: useRecruiterCards() calls
@@ -183,6 +197,27 @@ const { recruiterCards } = await useRecruiterCards(
 );
 
 const currencySymbol = computed<string>(() => (country.value === 'USA' ? '$' : '£'));
+
+// Mirrors the provider-attribution link on the salary/benchmark results pages.
+const providerHref = computed<string>(() => {
+  if (dataProvider.value === 'reed') {
+    return 'https://www.reed.co.uk';
+  }
+  if (dataProvider.value === 'jooble') {
+    return 'https://jooble.org';
+  }
+  return t(`sections.jobs.href.${country.value.toLowerCase()}`);
+});
+
+const providerAttribution = computed<string>(() => {
+  if (dataProvider.value === 'reed') {
+    return t('sections.jobs.by-reed');
+  }
+  if (dataProvider.value === 'jooble') {
+    return t('sections.jobs.by-jooble');
+  }
+  return t('sections.jobs.by-adzuna');
+});
 
 const sortOptions = computed(() => [
   { label: t('sections.jobs.sort.relevance'), value: 'relevance' },
