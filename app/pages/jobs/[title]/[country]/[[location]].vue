@@ -160,7 +160,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import type { RecruiterCard } from '~~/shared/utils/types';
 
 const route = useRoute();
@@ -234,6 +234,13 @@ const openRecruiterModal = (card: RecruiterCard): void => {
   selectedRecruiter.value = card;
   showRecruiterModal.value = true;
 };
+
+onMounted(() => {
+  const { sort, ...remainingQuery } = route.query;
+  if (Object.keys(remainingQuery).length > 0) {
+    navigateTo({ path: route.path, query: sort ? { sort: sort } : undefined }, { replace: true });
+  }
+});
 
 // ** SEO **
 const url = useRequestURL();
