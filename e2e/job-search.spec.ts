@@ -125,6 +125,11 @@ test.describe('Job Search', () => {
     await expect(page.locator('h1').first()).toContainText('Software Engineer', {
       ignoreCase: true
     });
+
+    // The search-form query params (q, gov_id, schedule, contract, category)
+    // used for the initial navigation/data fetch are stripped from the
+    // address bar once the client has mounted, leaving a clean, shareable URL.
+    await expect(page).toHaveURL(/^.*\/jobs\/software-engineer\/uk\/?$/i);
   });
 
   test('results page displays both Exact Matches and Similar Roles tiers', async ({ page }) => {
@@ -144,7 +149,9 @@ test.describe('Job Search', () => {
 
     await page.getByRole('button', { name: /Highest Salary/i }).click();
 
-    await expect(page).toHaveURL(/sort=salary_max/);
+    // Only the active sort param survives the URL cleanup -- no leftover
+    // search-form params (q, gov_id, schedule, contract, category).
+    await expect(page).toHaveURL(/^.*\/jobs\/software-engineer\/uk\/?\?sort=salary_max$/i);
 
     // The highest-paying exact match (Globex Corp, £100,000 max) should now lead.
     await expect(page.locator('.ami-role').first()).toContainText('Globex Corp');

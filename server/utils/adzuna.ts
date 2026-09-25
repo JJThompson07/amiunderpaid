@@ -146,10 +146,29 @@ export const fetchAdzunaJobs = async (
   // are fetched concurrently and both returned -- see design.md Decision 2.
   const runTier2 = anchorPhrase !== title;
 
-  const [tier1Raw, tier2Raw] = await Promise.all([
+  // Settled independently (not Promise.all) so a transient failure on ONE
+  // tier's request doesn't discard the other tier's already-successful
+  // results -- losing good data here would incorrectly trigger the gateway's
+  // regional fallback to Jooble even though Adzuna genuinely had usable
+  // listings. Only propagate a failure when there's no surviving tier to
+  // fall back on: Tier 1 failed AND Tier 2 either failed too or was never
+  // actually attempted (the no-op-anchor-phrase skip above trivially
+  // resolves Tier 2 without a real request, so that skip must not be
+  // mistaken for a successful Tier 2 fetch here). Uses Tier 1's raw,
+  // unwrapped error so the gateway still sees the real HTTP status -- see
+  // the `search` closure above.
+  const [tier1Outcome, tier2Outcome] = await Promise.allSettled([
     search(title),
     runTier2 ? search(anchorPhrase) : Promise.resolve<AdzunaRawSearchResponse>({ results: [] })
   ]);
+
+  const tier2Failed = !runTier2 || tier2Outcome.status === 'rejected';
+  if (tier1Outcome.status === 'rejected' && tier2Failed) {
+    throw tier1Outcome.reason;
+  }
+
+  const tier1Raw = tier1Outcome.status === 'fulfilled' ? tier1Outcome.value : { results: [] };
+  const tier2Raw = tier2Outcome.status === 'fulfilled' ? tier2Outcome.value : { results: [] };
 
   const normalizedCountry: 'gb' | 'us' = countryCode === 'us' ? 'us' : 'gb';
 

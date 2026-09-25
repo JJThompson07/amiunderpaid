@@ -295,5 +295,35 @@ describe('Reed Utility', () => {
         'Failed to fetch from Reed API'
       );
     });
+
+    it('keeps results from the tier that succeeded when the other tier request fails', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ reedApiKey: 'test-key' }))
+      );
+      vi.stubGlobal(
+        'createError',
+        (err: { statusMessage?: string }) => new Error(err.statusMessage)
+      );
+      const tier1Response: ReedJobResponse = {
+        totalResults: 1,
+        results: [
+          buildReedJob({ jobId: 1, jobTitle: 'Dev', minimumSalary: 40000, maximumSalary: 50000 })
+        ]
+      };
+      const fetchMock = vi.fn((_url: string, opts: { params: { keywords: string } }) =>
+        opts.params.keywords === '"Dev"'
+          ? Promise.resolve(tier1Response)
+          : Promise.reject(new Error('Tier 2 timed out'))
+      );
+      vi.stubGlobal('$fetch', fetchMock);
+
+      const result = await fetchReedData('Dev', '', 'full-time', 'permanent');
+
+      expect(result.results.map((r) => r.id)).toEqual([1]);
+      expect(result.similarResults).toEqual([]);
+      expect(result.count).toBe(1);
+      expect(result.provider).toBe('reed');
+    });
   });
 });

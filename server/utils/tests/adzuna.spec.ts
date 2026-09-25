@@ -309,6 +309,38 @@ describe('adzuna utils', () => {
         response: { status: 429 }
       });
     });
+
+    it('keeps Tier 1 results when the Tier 2 request fails, rather than discarding both', async () => {
+      vi.stubGlobal(
+        'useRuntimeConfig',
+        vi.fn(() => ({ adzunaAppId: 'id', adzunaAppKey: 'key' }))
+      );
+      const tier1Response = {
+        count: 1,
+        results: [buildAdzunaJob({ id: 1, title: 'Head of Finance' })]
+      };
+      const httpError = Object.assign(new Error('Too Many Requests'), {
+        response: { status: 429 }
+      });
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(tier1Response)
+        .mockRejectedValueOnce(httpError);
+      vi.stubGlobal('$fetch', fetchMock);
+
+      const result = await fetchAdzunaJobs(
+        'Group Head of Finance',
+        '',
+        'gb',
+        'full-time',
+        'permanent'
+      );
+
+      expect(result.results.map((r) => r.id)).toEqual([1]);
+      expect(result.similarResults).toEqual([]);
+      expect(result.count).toBe(1);
+      expect(result.provider).toBe('adzuna');
+    });
   });
 
   describe('fetchAdzunaHistogram', () => {
