@@ -604,11 +604,13 @@ describe('market-data jobs endpoint', () => {
 
     const setCall = jobsCacheDocRef.set.mock.calls[0]![0];
     const expiresAtMs = (setCall.expiresAt as Date).getTime();
-    const expectedMin = before + 30 * 24 * 60 * 60 * 1000;
-    const expectedMax = after + 30 * 24 * 60 * 60 * 1000;
+    const beforeExpected = new Date(before);
+    beforeExpected.setDate(beforeExpected.getDate() + 30);
+    const afterExpected = new Date(after);
+    afterExpected.setDate(afterExpected.getDate() + 30);
 
-    expect(expiresAtMs).toBeGreaterThanOrEqual(expectedMin);
-    expect(expiresAtMs).toBeLessThanOrEqual(expectedMax);
+    expect(expiresAtMs).toBeGreaterThanOrEqual(beforeExpected.getTime());
+    expect(expiresAtMs).toBeLessThanOrEqual(afterExpected.getTime());
   });
 
   it('persists the full dual-tier payload to Firestore but slices the response to the default limit (10) when resultsPerPage is omitted', async () => {
