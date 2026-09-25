@@ -164,10 +164,26 @@ export const fetchReedData = async (
   // concurrently -- both result sets are returned to the caller (deduplicated
   // and relevance-filtered by buildTieredJobResponse) rather than Tier 2 only
   // firing when Tier 1 is sparse. See design.md Decision 2.
-  const [tier1Response, tier2Response] = await Promise.all([
+  //
+  // Settled independently (not Promise.all) so a transient failure on ONE
+  // tier's request (timeout, rate limit) doesn't discard the other tier's
+  // already-successful results -- losing good Reed data would incorrectly
+  // trigger the caller's regional fallback to Adzuna even though Reed
+  // genuinely had usable listings. Only a failure on BOTH tiers means Reed
+  // itself is actually unreachable, which should still propagate as a
+  // provider failure.
+  const [tier1Outcome, tier2Outcome] = await Promise.allSettled([
     search(buildTier1Keywords(title, anchorPhrase, categoryKeyword)),
     search(buildTier2Keywords(title, categoryKeyword))
   ]);
+
+  if (tier1Outcome.status === 'rejected' && tier2Outcome.status === 'rejected') {
+    throw tier1Outcome.reason;
+  }
+
+  const emptyResponse: ReedJobResponse = { results: [], totalResults: 0 };
+  const tier1Response = tier1Outcome.status === 'fulfilled' ? tier1Outcome.value : emptyResponse;
+  const tier2Response = tier2Outcome.status === 'fulfilled' ? tier2Outcome.value : emptyResponse;
 
   return buildTieredJobResponse(
     mapReedJobs(tier1Response, jobType, contractType),
