@@ -44,32 +44,56 @@ export type SyncSummary = {
 const RATE_LIMIT_PER_MINUTE = 20;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
-const isRateLimited = (e: unknown): boolean => {
+// 429 is Adzuna's own rate-limit response; 503 ("Service Temporarily
+// Unavailable") shows up from Adzuna under the same throttling pressure --
+// confirmed live in a single production cron run where 15 categories failed:
+// 10 were 503 and only 5 were 429. Both mean "retry later", not "this
+// request is broken", so both get the same backoff treatment below.
+const isRetryableAdzunaError = (e: unknown): boolean => {
   const status =
     (e as { response?: { status?: number }; statusCode?: number })?.response?.status ??
     (e as { statusCode?: number })?.statusCode;
-  return status === 429;
+  return status === 429 || status === 503;
 };
 
-// Retries once on 429 after a short wait -- defense in depth alongside the
-// batch pacing below, in case Adzuna's rate-limit window doesn't align
-// exactly with our batch boundaries (confirmed live: a 429'd call succeeded
-// after just a ~10s wait).
+// Two-stage backoff, on top of the batch pacing below. The first retry (10s)
+// is defense in depth for the case where Adzuna's rate-limit window doesn't
+// align exactly with our batch boundaries (confirmed live: a 429'd call
+// succeeded after just a ~10s wait). But if the *entire* batch collided with
+// the limit (e.g. quota was already partly consumed before this run
+// started), a 10s wait isn't enough -- Adzuna counts per-minute, so the
+// quota isn't guaranteed to have cleared until a full window has elapsed.
+// The second retry waits out a full RATE_LIMIT_WINDOW_MS to cover that case
+// instead of giving up and leaving the category unsynced until the next
+// scheduled run.
+const RETRY_DELAYS_MS = [10_000, RATE_LIMIT_WINDOW_MS];
+
 const fetchWithRetry = async <T>(
   url: string,
   params: Record<string, unknown>,
-  retriesLeft = 1
+  attempt = 0
 ): Promise<T> => {
   try {
     return await $fetch<T>(url, { params });
   } catch (e) {
-    if (isRateLimited(e) && retriesLeft > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 10_000));
-      return fetchWithRetry<T>(url, params, retriesLeft - 1);
+    if (isRetryableAdzunaError(e) && attempt < RETRY_DELAYS_MS.length) {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+      return fetchWithRetry<T>(url, params, attempt + 1);
     }
     throw e;
   }
 };
+
+// ofetch embeds the full request URL -- including the app_id/app_key query
+// params, since that's how Adzuna's API accepts credentials -- in its thrown
+// error message (confirmed live: a real 503 error read
+// "...?app_id=<real id>&app_key=<real key>&category=...: 503 Service
+// Temporarily Unavailable"). That message ends up in the admin endpoint's
+// response, the cron's console.error log, and the Resend summary email --
+// none of which should carry live API credentials. Strip them before this
+// value goes anywhere.
+const redactAdzunaCredentials = (message: string): string =>
+  message.replace(/\b(app_id|app_key)=[^&"]+/g, '$1=REDACTED');
 
 // One call per country (not per category) to resolve human-readable labels
 // (e.g. "IT Jobs" for "it-jobs") for the UI's toggle pills and chart legend.
@@ -177,7 +201,7 @@ const syncOne = async (
       categoryTag,
       country,
       status: 'error',
-      error: e instanceof Error ? e.message : 'Unknown error',
+      error: e instanceof Error ? redactAdzunaCredentials(e.message) : 'Unknown error',
       label
     };
   }
