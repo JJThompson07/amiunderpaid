@@ -185,6 +185,98 @@ describe('runIndustryTrendsSync', () => {
     );
   });
 
+  it('retries after a 503 (Service Temporarily Unavailable) the same as a 429, and succeeds', async () => {
+    let historyCalls = 0;
+    $fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      historyCalls += 1;
+      if (historyCalls === 1) {
+        return Promise.reject({ statusCode: 503 });
+      }
+      return Promise.resolve({ month: { '2026-01': 45000 } });
+    });
+
+    vi.useFakeTimers();
+    const promise = runIndustryTrendsSync(12);
+    await vi.advanceTimersByTimeAsync(10_000);
+    const summary = await promise;
+    vi.useRealTimers();
+
+    expect(summary.failed).toBe(0);
+  });
+
+  it('retries a second time after a full rate-limit window when the first 10s retry also fails, and succeeds', async () => {
+    let itJobsCalls = 0;
+    $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      if (opts?.params?.category !== 'it-jobs') {
+        return Promise.resolve({ month: { '2026-01': 40000 } });
+      }
+      itJobsCalls += 1;
+      if (itJobsCalls === 1) {
+        return Promise.reject({ statusCode: 429 });
+      }
+      if (itJobsCalls === 2) {
+        return Promise.reject({ statusCode: 503 });
+      }
+      return Promise.resolve({ month: { '2026-01': 45000 } });
+    });
+
+    vi.useFakeTimers();
+    const promise = runIndustryTrendsSync(12);
+    await vi.advanceTimersByTimeAsync(10_000 + 60_000);
+    const summary = await promise;
+    vi.useRealTimers();
+
+    expect(itJobsCalls).toBe(3);
+    expect(summary.failed).toBe(0);
+  });
+
+  it('gives up and reports an error after the final retry is also rate-limited', async () => {
+    $fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      return Promise.reject({ statusCode: 429 });
+    });
+
+    vi.useFakeTimers();
+    const promise = runIndustryTrendsSync(12);
+    await vi.advanceTimersByTimeAsync(10_000 + 60_000);
+    const summary = await promise;
+    vi.useRealTimers();
+
+    expect(summary.failed).toBe(2);
+  });
+
+  it('redacts app_id/app_key from a stored error message instead of leaking live credentials', async () => {
+    $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      if (opts?.params?.category === 'it-jobs') {
+        return Promise.reject(
+          new Error(
+            '[GET] "https://api.adzuna.com/v1/api/jobs/gb/history?app_id=real-app-id&app_key=real-app-key&category=it-jobs&months=12&content-type=application%2Fjson": 500 Internal Server Error'
+          )
+        );
+      }
+      return Promise.resolve({ month: { '2026-01': 40000 } });
+    });
+
+    const summary = await runIndustryTrendsSync(12);
+
+    const failure = summary.results.find((r) => r.categoryTag === 'it-jobs');
+    expect(failure?.error).not.toContain('real-app-id');
+    expect(failure?.error).not.toContain('real-app-key');
+    expect(failure?.error).toContain('app_id=REDACTED');
+    expect(failure?.error).toContain('app_key=REDACTED');
+  });
+
   it('does not write a doc when Adzuna returns no history months for a category', async () => {
     $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
       if (url.includes('/categories')) {

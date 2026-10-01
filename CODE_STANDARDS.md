@@ -147,6 +147,10 @@ Features that exist only for local development **MUST** be gated behind both:
 
 This guarantees zero surface area in production builds.
 
+### 9.6 Credentials in Third-Party Error Messages
+
+Some third-party API clients (e.g. `ofetch`/`$fetch`) embed the full request URL — including any credentials sent as query params, since that's how some providers like Adzuna accept them — in the message of a thrown error. Never let that raw error message flow unredacted into anywhere it could persist or be forwarded: `console.error`/log output, outbound alert emails, admin-endpoint HTTP responses, or Firestore documents. Strip credential-shaped query params (e.g. `app_id`, `app_key`, `api_key`, `token`) before storing or surfacing the message, the same way `redactAdzunaCredentials` does in `server/utils/industryTrendsSync.ts`. This is distinct from §9.3's opaque-client-error rule — §9.3 is about not naming providers/countries in a message that was already going to be generic; this is about a literal secret value appearing verbatim in a caught error's `.message`.
+
 ## 10. Verification Before Recommending
 
 Before proposing or implementing a change that is irreversible, environment-dependent, or changes a failure mode, **verify the actual current state rather than assuming it**. Confident, plausible-sounding recommendations that turn out to be wrong about the real environment have previously caused real damage on this project (e.g. wrongly recommending Playwright e2e tests hit live endpoints instead of mocks, which broke CI and burned significant time/tokens before being reverted).
