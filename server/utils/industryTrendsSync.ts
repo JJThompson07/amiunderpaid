@@ -5,6 +5,7 @@ import {
   extractActiveCategoryCountryPairs,
   formatHistoryMonths
 } from './adzunaHistory';
+import { invalidateIndustryTrendsCache } from './industryTrendsCache';
 import type { HistoryPoint } from '~~/shared/utils/market-data';
 
 type AdzunaHistoryResponse = {
@@ -271,6 +272,19 @@ export const runIndustryTrendsSync = async (months: number): Promise<SyncSummary
   }
 
   const failed = results.filter((r) => r.status === 'error');
+
+  try {
+    // Without this, the public endpoint keeps serving its pre-sync snapshot
+    // for up to its own 24h cache window regardless of how fresh Firestore
+    // now is (confirmed live: a successful sync updated Firestore but
+    // /api/market-data/industry-trends kept returning stale data until this
+    // was added). Best-effort: a cache-invalidation failure shouldn't mask
+    // an otherwise-successful sync that already wrote real data.
+    await invalidateIndustryTrendsCache();
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to invalidate industry-trends cache after sync', e);
+  }
 
   return {
     success: true,

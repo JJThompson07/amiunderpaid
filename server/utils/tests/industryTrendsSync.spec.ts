@@ -16,6 +16,8 @@ const $fetchMock = vi.fn();
 vi.stubGlobal('$fetch', $fetchMock);
 const useAdminFirestoreMock = vi.fn();
 vi.stubGlobal('useAdminFirestore', useAdminFirestoreMock);
+const removeItemMock = vi.fn().mockResolvedValue(undefined);
+vi.stubGlobal('useStorage', () => ({ removeItem: removeItemMock }));
 
 const makeSnapshot = (docs: unknown[]): { docs: { data: () => unknown }[] } => ({
   docs: docs.map((data) => ({ data: () => data }))
@@ -456,5 +458,38 @@ describe('runIndustryTrendsSync', () => {
 
     expect(summary.results).toHaveLength(21);
     expect(summary.failed).toBe(0);
+  });
+
+  it('invalidates the industry-trends cache for both countries after a sync run', async () => {
+    $fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      return Promise.resolve({ month: { '2026-01': 40000 } });
+    });
+
+    await runIndustryTrendsSync(12);
+
+    expect(removeItemMock).toHaveBeenCalledWith(
+      '/cache:nitro/functions:industryTrendsFetch:gb.json'
+    );
+    expect(removeItemMock).toHaveBeenCalledWith(
+      '/cache:nitro/functions:industryTrendsFetch:us.json'
+    );
+  });
+
+  it('does not fail the sync when cache invalidation itself errors', async () => {
+    removeItemMock.mockRejectedValueOnce(new Error('storage unavailable'));
+    $fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      return Promise.resolve({ month: { '2026-01': 40000 } });
+    });
+
+    const summary = await runIndustryTrendsSync(12);
+
+    expect(summary.failed).toBe(0);
+    expect(summary.synced).toBe(2);
   });
 });
