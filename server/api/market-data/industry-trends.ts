@@ -1,4 +1,5 @@
 import { normalizeCountryCode } from '../../utils/adzunaHistory';
+import { INDUSTRY_TRENDS_CACHE_NAME } from '../../utils/industryTrendsCache';
 import type { HistoryPoint, IndustryTrendEntry } from '~~/shared/utils/market-data';
 
 type IndustryTrendDoc = {
@@ -34,7 +35,7 @@ const fetchIndustryTrends = defineCachedFunction(
     // Data only changes on a monthly sync, so a day-scale cache is generous
     // headroom without ever serving obviously-stale results.
     maxAge: 60 * 60 * 24,
-    name: 'industryTrendsFetch',
+    name: INDUSTRY_TRENDS_CACHE_NAME,
     getKey: (countryCode: string) => countryCode
   }
 );
