@@ -3,7 +3,8 @@ import {
   chunkForRateLimit,
   countCategoryLookups,
   extractActiveCategoryCountryPairs,
-  formatHistoryMonths
+  formatHistoryMonths,
+  lastCompleteMonth
 } from './adzunaHistory';
 import { invalidateIndustryTrendsCache } from './industryTrendsCache';
 import type { HistoryPoint } from '~~/shared/utils/market-data';
@@ -28,6 +29,11 @@ export type SyncOutcome = {
   // actually landed, not just a pass/fail count.
   latestMonth?: string;
   latestAverage?: number;
+  // True when the Adzuna call was skipped entirely because the stored doc
+  // already had the most recent complete month (see the pre-check in
+  // syncOne). Lets callers distinguish "already fresh, nothing to do" from a
+  // genuine no-op caused by Adzuna returning no data.
+  skipped?: boolean;
 };
 
 export type SyncSummary = {
@@ -126,12 +132,32 @@ const syncOne = async (
   appId: string,
   appKey: string,
   categoryLabels: Map<string, string>,
-  lookupCount: number
+  lookupCount: number,
+  now: Date
 ): Promise<SyncOutcome> => {
   const { categoryTag, country } = pair;
   const label = categoryLabels.get(categoryTag) || categoryTag;
+  const db = useAdminFirestore();
+  const docRef = db.collection('adzuna_industry_trends').doc(`${country}_${categoryTag}`);
 
   try {
+    if (months < 12) {
+      // Monthly delta only (never the one-time backfill): skip the Adzuna
+      // call entirely if the stored doc already has the most recent complete
+      // month -- conserves Adzuna's 2,500 calls/month cap on repeat runs
+      // within the same publish cycle, since a full sync costs ~20-25 calls
+      // regardless of whether the underlying data actually changed. Still
+      // refresh lookupCount via a Firestore-only write, since that costs
+      // zero Adzuna quota and keeps the "top 10 by activity" ranking current.
+      const expectedMonth = lastCompleteMonth(now);
+      const existingSnap = await docRef.get();
+      const existingHistory = (existingSnap.data()?.history as HistoryPoint[]) || [];
+      if (existingHistory.some((point) => point.month === expectedMonth)) {
+        await docRef.set({ lookupCount, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        return { categoryTag, country, status: 'ok', label, skipped: true };
+      }
+    }
+
     const raw = await fetchWithRetry<AdzunaHistoryResponse>(
       `https://api.adzuna.com/v1/api/jobs/${country}/history`,
       {
@@ -147,9 +173,6 @@ const syncOne = async (
     if (formatted.length === 0) {
       return { categoryTag, country, status: 'ok', label };
     }
-
-    const db = useAdminFirestore();
-    const docRef = db.collection('adzuna_industry_trends').doc(`${country}_${categoryTag}`);
 
     if (months >= 12) {
       // Backfill: replace the stored history wholesale with the fresh window.
@@ -213,8 +236,12 @@ const syncOne = async (
  * real search traffic, pulls Adzuna's /history endpoint for each, and writes
  * results to adzuna_industry_trends. Paced to stay under Adzuna's 25 req/min
  * limit. Shared by both the admin-triggered endpoint and the monthly cron.
+ * `now` defaults to the real current time; callers only override it in tests.
  */
-export const runIndustryTrendsSync = async (months: number): Promise<SyncSummary> => {
+export const runIndustryTrendsSync = async (
+  months: number,
+  now: Date = new Date()
+): Promise<SyncSummary> => {
   const config = useRuntimeConfig();
   const appId = config.adzunaAppId;
   const appKey = config.adzunaAppKey;
@@ -255,7 +282,8 @@ export const runIndustryTrendsSync = async (months: number): Promise<SyncSummary
           appId,
           appKey,
           labelsByCountry.get(pair.country) || new Map(),
-          lookupCountsByCountry.get(pair.country)?.get(pair.categoryTag) ?? 0
+          lookupCountsByCountry.get(pair.country)?.get(pair.categoryTag) ?? 0,
+          now
         )
       )
     );

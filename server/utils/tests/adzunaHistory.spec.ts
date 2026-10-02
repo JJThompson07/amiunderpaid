@@ -4,6 +4,7 @@ import {
   countCategoryLookups,
   extractActiveCategoryCountryPairs,
   formatHistoryMonths,
+  lastCompleteMonth,
   normalizeCountryCode
 } from '../adzunaHistory';
 
@@ -133,6 +134,20 @@ describe('adzunaHistory utils', () => {
       expect(normalizeCountryCode('uk')).toBe('gb');
       expect(normalizeCountryCode('')).toBe('gb');
       expect(normalizeCountryCode(undefined)).toBe('gb');
+    });
+  });
+
+  describe('lastCompleteMonth', () => {
+    it('returns the previous calendar month for a mid-month date', () => {
+      expect(lastCompleteMonth(new Date(Date.UTC(2026, 9, 2)))).toBe('2026-09');
+    });
+
+    it('rolls back across a year boundary', () => {
+      expect(lastCompleteMonth(new Date(Date.UTC(2027, 0, 2)))).toBe('2026-12');
+    });
+
+    it('returns the previous month even on the 1st of the month', () => {
+      expect(lastCompleteMonth(new Date(Date.UTC(2026, 9, 1)))).toBe('2026-09');
     });
   });
 

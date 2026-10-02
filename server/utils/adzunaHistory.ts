@@ -19,6 +19,18 @@ export const formatHistoryMonths = (monthMap: Record<string, number>): HistoryPo
 };
 
 /**
+ * Returns the most recent complete calendar month relative to `now`, as
+ * 'YYYY-MM'. This is the freshest month Adzuna's /history endpoint can
+ * realistically have published -- the in-progress current month never has a
+ * complete average yet (confirmed live: requesting months=1 always returns
+ * an empty {}, regardless of what day of the month it's called on).
+ */
+export const lastCompleteMonth = (now: Date): string => {
+  const prev = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  return `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, '0')}`;
+};
+
+/**
  * Derives the set of category/country combinations that actually have live
  * search traffic, from raw adzuna_jobs_cache documents. adzuna_category is
  * NOT a valid source for this -- nothing in the codebase writes to it.
