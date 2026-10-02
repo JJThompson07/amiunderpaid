@@ -24,9 +24,18 @@ const makeSnapshot = (docs: unknown[]): { docs: { data: () => unknown }[] } => (
 });
 
 type DocSetFn = (data: unknown, opts: { merge: boolean }) => Promise<void>;
-type MockDocRef = { set: ReturnType<typeof vi.fn<DocSetFn>> };
+type DocGetFn = () => Promise<{ data: () => unknown }>;
+type MockDocRef = {
+  set: ReturnType<typeof vi.fn<DocSetFn>>;
+  get: ReturnType<typeof vi.fn<DocGetFn>>;
+};
 
-let runIndustryTrendsSync: (months: number) => Promise<SyncSummary>;
+const makeDocRef = (): MockDocRef => ({
+  set: vi.fn().mockResolvedValue(undefined),
+  get: vi.fn().mockResolvedValue({ data: () => undefined })
+});
+
+let runIndustryTrendsSync: (months: number, now?: Date) => Promise<SyncSummary>;
 
 describe('runIndustryTrendsSync', () => {
   let docRefs: Map<string, MockDocRef>;
@@ -67,7 +76,7 @@ describe('runIndustryTrendsSync', () => {
           return {
             doc: vi.fn((id: string) => {
               if (!docRefs.has(id)) {
-                docRefs.set(id, { set: vi.fn().mockResolvedValue(undefined) });
+                docRefs.set(id, makeDocRef());
               }
               return docRefs.get(id)!;
             })
@@ -159,6 +168,95 @@ describe('runIndustryTrendsSync', () => {
       }),
       { merge: true }
     );
+  });
+
+  it('skips the Adzuna call for a monthly delta when the stored doc already has the most recent complete month', async () => {
+    const now = new Date(Date.UTC(2026, 9, 2)); // Oct 2, 2026 -> expected month '2026-09'
+    docRefs.set('gb_it-jobs', {
+      set: vi.fn().mockResolvedValue(undefined),
+      get: vi
+        .fn()
+        .mockResolvedValue({ data: () => ({ history: [{ month: '2026-09', average: 50000 }] }) })
+    });
+
+    let itJobsHistoryCalls = 0;
+    $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      if (opts?.params?.category === 'it-jobs') {
+        itJobsHistoryCalls += 1;
+      }
+      return Promise.resolve({ month: { '2026-09': 99999 } });
+    });
+
+    const summary = await runIndustryTrendsSync(1, now);
+
+    expect(itJobsHistoryCalls).toBe(0);
+    expect(summary.results.find((r) => r.categoryTag === 'it-jobs')).toEqual({
+      categoryTag: 'it-jobs',
+      country: 'gb',
+      status: 'ok',
+      label: 'it-jobs',
+      skipped: true
+    });
+    expect(docRefs.get('gb_it-jobs')?.set).toHaveBeenCalledWith(
+      { lookupCount: 3, updatedAt: 'server-timestamp' },
+      { merge: true }
+    );
+    expect(docRefs.get('gb_sales-jobs')?.set).toHaveBeenCalled();
+  });
+
+  it('does not skip a monthly delta when the stored doc is missing the most recent complete month', async () => {
+    const now = new Date(Date.UTC(2026, 9, 2)); // Oct 2, 2026 -> expected month '2026-09'
+    docRefs.set('gb_it-jobs', {
+      set: vi.fn().mockResolvedValue(undefined),
+      get: vi
+        .fn()
+        .mockResolvedValue({ data: () => ({ history: [{ month: '2026-08', average: 48000 }] }) })
+    });
+    $fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      return Promise.resolve({ month: { '2026-09': 52000 } });
+    });
+
+    await runIndustryTrendsSync(1, now);
+
+    expect(runTransactionMock).toHaveBeenCalled();
+    expect(docRefs.get('gb_it-jobs')?.set).toHaveBeenCalledWith(
+      expect.objectContaining({ history: [{ month: '2026-09', average: 52000 }] }),
+      { merge: true }
+    );
+  });
+
+  it('does not skip a 12-month backfill even when the doc already has the most recent complete month', async () => {
+    const now = new Date(Date.UTC(2026, 9, 2)); // Oct 2, 2026 -> expected month '2026-09'
+    docRefs.set('gb_it-jobs', {
+      set: vi.fn().mockResolvedValue(undefined),
+      get: vi
+        .fn()
+        .mockResolvedValue({ data: () => ({ history: [{ month: '2026-09', average: 50000 }] }) })
+    });
+
+    let itJobsHistoryCalls = 0;
+    $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
+      if (url.includes('/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      if (opts?.params?.category === 'it-jobs') {
+        itJobsHistoryCalls += 1;
+      }
+      return Promise.resolve({ month: { '2026-09': 55000 } });
+    });
+
+    const summary = await runIndustryTrendsSync(12, now);
+
+    expect(itJobsHistoryCalls).toBe(1);
+    const itJobsResult = summary.results.find((r) => r.categoryTag === 'it-jobs');
+    expect(itJobsResult?.skipped).toBeUndefined();
+    expect(itJobsResult?.status).toBe('ok');
   });
 
   it('retries once after a 429 and succeeds, still storing lookupCount', async () => {
@@ -294,7 +392,7 @@ describe('runIndustryTrendsSync', () => {
 
     expect(summary.synced).toBe(2);
     expect(summary.failed).toBe(0);
-    expect(docRefs.has('gb_it-jobs')).toBe(false);
+    expect(docRefs.get('gb_it-jobs')?.set).not.toHaveBeenCalled();
     expect(docRefs.get('gb_sales-jobs')?.set).toHaveBeenCalled();
   });
 
@@ -358,7 +456,7 @@ describe('runIndustryTrendsSync', () => {
     const summary = await runIndustryTrendsSync(12);
 
     expect(summary.synced).toBe(2);
-    expect(docRefs.has('gb_it-jobs')).toBe(false);
+    expect(docRefs.get('gb_it-jobs')?.set).not.toHaveBeenCalled();
   });
 
   it('de-duplicates merged history by month, keeping the freshest average for the current period', async () => {
@@ -433,7 +531,7 @@ describe('runIndustryTrendsSync', () => {
           return {
             doc: vi.fn((id: string) => {
               if (!docRefs.has(id)) {
-                docRefs.set(id, { set: vi.fn().mockResolvedValue(undefined) });
+                docRefs.set(id, makeDocRef());
               }
               return docRefs.get(id)!;
             })
