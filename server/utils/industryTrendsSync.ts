@@ -2,7 +2,6 @@ import { FieldValue } from 'firebase-admin/firestore';
 import {
   chunkForRateLimit,
   countCategoryLookups,
-  extractActiveCategoryCountryPairs,
   formatHistoryMonths,
   lastCompleteMonth
 } from './adzunaHistory';
@@ -50,6 +49,11 @@ export type SyncSummary = {
 // history batch, since 2 + 20 = 22 still stays under 25.
 const RATE_LIMIT_PER_MINUTE = 20;
 const RATE_LIMIT_WINDOW_MS = 60_000;
+
+// This app is strictly dual-tenant (AmIUnderpaid/UK, BenchmarkMyRole/US) --
+// the sync always covers exactly these two countries, independent of which
+// countries happen to appear in adzuna_jobs_cache.
+const TRACKED_COUNTRIES = ['gb', 'us'] as const;
 
 // 429 is Adzuna's own rate-limit response; 503 ("Service Temporarily
 // Unavailable") shows up from Adzuna under the same throttling pressure --
@@ -103,25 +107,30 @@ const redactAdzunaCredentials = (message: string): string =>
   message.replace(/\b(app_id|app_key)=[^&"]+/g, '$1=REDACTED');
 
 // One call per country (not per category) to resolve human-readable labels
-// (e.g. "IT Jobs" for "it-jobs") for the UI's toggle pills and chart legend.
+// (e.g. "IT Jobs" for "it-jobs") for the UI's toggle pills and chart legend
+// -- and, since this is Adzuna's own authoritative category taxonomy for the
+// country, this Map's keys are also the set of categories runIndustryTrendsSync
+// syncs (see below). A failure here must propagate rather than being
+// swallowed into an empty Map: an empty Map used to only cost display
+// labels, but now it would silently skip every category for this country.
 const fetchCategoryLabels = async (
   country: string,
   appId: string,
   appKey: string
 ): Promise<Map<string, string>> => {
+  const raw = await fetchWithRetry<AdzunaCategoriesResponse>(
+    `https://api.adzuna.com/v1/api/jobs/${country}/categories`,
+    { app_id: appId, app_key: appKey, 'content-type': 'application/json' }
+  );
   const labels = new Map<string, string>();
-  try {
-    const raw = await fetchWithRetry<AdzunaCategoriesResponse>(
-      `https://api.adzuna.com/v1/api/jobs/${country}/categories`,
-      { app_id: appId, app_key: appKey, 'content-type': 'application/json' }
-    );
-    for (const entry of raw?.results || []) {
-      if (entry.tag && entry.label) {
-        labels.set(entry.tag, entry.label);
-      }
+  for (const entry of raw?.results || []) {
+    // A missing `label` still gets a Map entry (falling back to the tag
+    // itself) because this Map's keys now drive which categories get
+    // synced -- dropping the entry here would silently skip syncing a
+    // real category just because Adzuna didn't send a display label for it.
+    if (entry.tag) {
+      labels.set(entry.tag, entry.label || entry.tag);
     }
-  } catch {
-    // Label lookup is a nice-to-have; sync still proceeds using the tag as a fallback label.
   }
   return labels;
 };
@@ -232,11 +241,13 @@ const syncOne = async (
 };
 
 /**
- * Runs the industry-trends sync: derives active category/country pairs from
- * real search traffic, pulls Adzuna's /history endpoint for each, and writes
- * results to adzuna_industry_trends. Paced to stay under Adzuna's 25 req/min
- * limit. Shared by both the admin-triggered endpoint and the monthly cron.
- * `now` defaults to the real current time; callers only override it in tests.
+ * Runs the industry-trends sync: for each tracked country, fetches Adzuna's
+ * full category taxonomy and syncs every category it returns -- unconditionally,
+ * independent of real search-cache traffic -- via Adzuna's /history endpoint,
+ * writing results to adzuna_industry_trends. Paced to stay under Adzuna's
+ * 25 req/min limit. Shared by both the admin-triggered endpoint and the
+ * monthly cron. `now` defaults to the real current time; callers only
+ * override it in tests.
  */
 export const runIndustryTrendsSync = async (
   months: number,
@@ -256,20 +267,58 @@ export const runIndustryTrendsSync = async (
     .select('categoryTag', 'searchParams')
     .get();
 
+  // Still read for lookupCount only (the frontend's default-selected-industries
+  // ranking) -- no longer used to decide which categories get synced.
   const cacheDocs = cacheSnap.docs.map((doc) => doc.data());
-  const pairs = extractActiveCategoryCountryPairs(cacheDocs);
 
-  const countriesInUse = [...new Set(pairs.map((p) => p.country))];
+  const pairs: { categoryTag: string; country: string }[] = [];
   const labelsByCountry = new Map<string, Map<string, string>>();
   const lookupCountsByCountry = new Map<string, Map<string, number>>();
-  for (const country of countriesInUse) {
-    labelsByCountry.set(country, await fetchCategoryLabels(country, appId, appKey));
-    // Reuses the adzuna_jobs_cache read above rather than a second Firestore
-    // query -- see countCategoryLookups for what this measures and why.
+  const results: SyncOutcome[] = [];
+
+  for (const country of TRACKED_COUNTRIES) {
     lookupCountsByCountry.set(country, countCategoryLookups(cacheDocs, country));
+
+    let categoryLabels: Map<string, string>;
+    try {
+      categoryLabels = await fetchCategoryLabels(country, appId, appKey);
+    } catch (e) {
+      // A categories-fetch failure must be a visible failure, not a silent
+      // "zero categories to sync" success -- that's exactly the kind of
+      // silent staleness this sync was redesigned to eliminate, just moved
+      // up one level. The other tracked country still proceeds normally.
+      results.push({
+        categoryTag: 'categories-fetch',
+        country,
+        status: 'error',
+        label: 'Category Taxonomy',
+        error: e instanceof Error ? redactAdzunaCredentials(e.message) : 'Unknown error'
+      });
+      continue;
+    }
+
+    if (categoryLabels.size === 0) {
+      // A 200 response with zero categories is itself an unexpected upstream
+      // condition in production (each tracked country has ~27 categories) --
+      // treat it the same as a fetch failure instead of silently reporting
+      // 0 synced/0 failed for this country, which would look identical to a
+      // quiet, successful "nothing changed" run.
+      results.push({
+        categoryTag: 'categories-fetch',
+        country,
+        status: 'error',
+        label: 'Category Taxonomy',
+        error: 'Adzuna categories response contained zero results.'
+      });
+      continue;
+    }
+
+    labelsByCountry.set(country, categoryLabels);
+    for (const categoryTag of categoryLabels.keys()) {
+      pairs.push({ categoryTag, country });
+    }
   }
 
-  const results: SyncOutcome[] = [];
   const batches = chunkForRateLimit(pairs, RATE_LIMIT_PER_MINUTE);
 
   for (let i = 0; i < batches.length; i++) {
@@ -289,8 +338,13 @@ export const runIndustryTrendsSync = async (
     );
     results.push(...batchResults);
 
+    // A batch that skipped the Adzuna call for every pair (all already fresh
+    // for this delta -- see the pre-check in syncOne) consumed zero quota, so
+    // there's nothing to pace against. Sleeping a full rate-limit window
+    // anyway would turn an all-skipped repeat run into a multi-minute no-op.
+    const madeNoAdzunaCalls = batchResults.every((r) => r.skipped === true);
     const isLastBatch = i === batches.length - 1;
-    if (!isLastBatch) {
+    if (!isLastBatch && !madeNoAdzunaCalls) {
       const elapsed = Date.now() - batchStart;
       const remaining = RATE_LIMIT_WINDOW_MS - elapsed;
       if (remaining > 0) {
