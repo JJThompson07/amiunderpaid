@@ -291,7 +291,24 @@ export const runIndustryTrendsSync = async (
         categoryTag: 'categories-fetch',
         country,
         status: 'error',
+        label: 'Category Taxonomy',
         error: e instanceof Error ? redactAdzunaCredentials(e.message) : 'Unknown error'
+      });
+      continue;
+    }
+
+    if (categoryLabels.size === 0) {
+      // A 200 response with zero categories is itself an unexpected upstream
+      // condition in production (each tracked country has ~27 categories) --
+      // treat it the same as a fetch failure instead of silently reporting
+      // 0 synced/0 failed for this country, which would look identical to a
+      // quiet, successful "nothing changed" run.
+      results.push({
+        categoryTag: 'categories-fetch',
+        country,
+        status: 'error',
+        label: 'Category Taxonomy',
+        error: 'Adzuna categories response contained zero results.'
       });
       continue;
     }
@@ -321,8 +338,13 @@ export const runIndustryTrendsSync = async (
     );
     results.push(...batchResults);
 
+    // A batch that skipped the Adzuna call for every pair (all already fresh
+    // for this delta -- see the pre-check in syncOne) consumed zero quota, so
+    // there's nothing to pace against. Sleeping a full rate-limit window
+    // anyway would turn an all-skipped repeat run into a multi-minute no-op.
+    const madeNoAdzunaCalls = batchResults.every((r) => r.skipped === true);
     const isLastBatch = i === batches.length - 1;
-    if (!isLastBatch) {
+    if (!isLastBatch && !madeNoAdzunaCalls) {
       const elapsed = Date.now() - batchStart;
       const remaining = RATE_LIMIT_WINDOW_MS - elapsed;
       if (remaining > 0) {

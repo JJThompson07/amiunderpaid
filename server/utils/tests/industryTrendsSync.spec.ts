@@ -37,8 +37,13 @@ const makeDocRef = (): MockDocRef => ({
 
 // Sync scope now comes entirely from the /categories response (not
 // adzuna_jobs_cache), so every test needs a categories mock. This is the
-// default gb set most tests sync against; us defaults to empty unless a
-// test explicitly cares about it.
+// default gb set most tests sync against; us defaults to an empty
+// /categories response unless a test explicitly cares about it. Since an
+// empty response is now treated as an explicit per-country failure (see
+// "records an explicit failure when a country's categories response is
+// empty" below), every test using this default implicitly records one extra
+// failed result for 'us' -- tests below that assert on aggregate
+// synced/failed counts account for that +1.
 const GB_CATEGORIES_RESPONSE = [
   { tag: 'it-jobs', label: 'IT Jobs' },
   { tag: 'sales-jobs', label: 'Sales Jobs' }
@@ -126,7 +131,7 @@ describe('runIndustryTrendsSync', () => {
       success: true,
       months: 12,
       synced: 2,
-      failed: 0,
+      failed: 1,
       results: expect.arrayContaining([
         {
           categoryTag: 'it-jobs',
@@ -300,7 +305,7 @@ describe('runIndustryTrendsSync', () => {
     const summary = await promise;
     vi.useRealTimers();
 
-    expect(summary.failed).toBe(0);
+    expect(summary.failed).toBe(1);
     expect(docRefs.get('gb_it-jobs')?.set).toHaveBeenCalledWith(
       expect.objectContaining({ lookupCount: 3 }),
       { merge: true }
@@ -329,7 +334,7 @@ describe('runIndustryTrendsSync', () => {
     const summary = await promise;
     vi.useRealTimers();
 
-    expect(summary.failed).toBe(0);
+    expect(summary.failed).toBe(1);
   });
 
   it('retries a second time after a full rate-limit window when the first 10s retry also fails, and succeeds', async () => {
@@ -361,7 +366,7 @@ describe('runIndustryTrendsSync', () => {
     vi.useRealTimers();
 
     expect(itJobsCalls).toBe(3);
-    expect(summary.failed).toBe(0);
+    expect(summary.failed).toBe(1);
   });
 
   it('gives up and reports an error after the final retry is also rate-limited', async () => {
@@ -381,7 +386,7 @@ describe('runIndustryTrendsSync', () => {
     const summary = await promise;
     vi.useRealTimers();
 
-    expect(summary.failed).toBe(2);
+    expect(summary.failed).toBe(3);
   });
 
   it('redacts app_id/app_key from a stored error message instead of leaking live credentials', async () => {
@@ -428,7 +433,7 @@ describe('runIndustryTrendsSync', () => {
     const summary = await runIndustryTrendsSync(12);
 
     expect(summary.synced).toBe(2);
-    expect(summary.failed).toBe(0);
+    expect(summary.failed).toBe(1);
     expect(docRefs.get('gb_it-jobs')?.set).not.toHaveBeenCalled();
     expect(docRefs.get('gb_sales-jobs')?.set).toHaveBeenCalled();
   });
@@ -450,7 +455,7 @@ describe('runIndustryTrendsSync', () => {
     const summary = await runIndustryTrendsSync(12);
 
     expect(summary.synced).toBe(1);
-    expect(summary.failed).toBe(1);
+    expect(summary.failed).toBe(2);
     expect(summary.results).toContainEqual({
       categoryTag: 'it-jobs',
       country: 'gb',
@@ -590,8 +595,8 @@ describe('runIndustryTrendsSync', () => {
     const summary = await promise;
     vi.useRealTimers();
 
-    expect(summary.results).toHaveLength(21);
-    expect(summary.failed).toBe(0);
+    expect(summary.results).toHaveLength(22);
+    expect(summary.failed).toBe(1);
   });
 
   it('invalidates the industry-trends cache for both countries after a sync run', async () => {
@@ -629,7 +634,7 @@ describe('runIndustryTrendsSync', () => {
 
     const summary = await runIndustryTrendsSync(12);
 
-    expect(summary.failed).toBe(0);
+    expect(summary.failed).toBe(1);
     expect(summary.synced).toBe(2);
   });
 
@@ -691,10 +696,77 @@ describe('runIndustryTrendsSync', () => {
     const summary = await runIndustryTrendsSync(12);
 
     expect(summary.results).toContainEqual(
-      expect.objectContaining({ categoryTag: 'categories-fetch', country: 'gb', status: 'error' })
+      expect.objectContaining({
+        categoryTag: 'categories-fetch',
+        country: 'gb',
+        status: 'error',
+        label: 'Category Taxonomy'
+      })
     );
     expect(docRefs.get('us_sales-jobs')?.set).toHaveBeenCalled();
     expect(summary.synced).toBe(1);
     expect(summary.failed).toBe(1);
+  });
+
+  it("records an explicit failure when a country's categories response is empty, without blocking the other tracked country", async () => {
+    // A 200 response with zero results is production-anomalous (each tracked
+    // country has ~27 categories) and must be surfaced the same way as a
+    // fetch failure -- not reported as a silent 0 synced/0 failed for 'us'.
+    $fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      return Promise.resolve({ month: { '2026-01': 60000 } });
+    });
+
+    const summary = await runIndustryTrendsSync(12);
+
+    expect(summary.results).toContainEqual({
+      categoryTag: 'categories-fetch',
+      country: 'us',
+      status: 'error',
+      label: 'Category Taxonomy',
+      error: 'Adzuna categories response contained zero results.'
+    });
+    expect(summary.synced).toBe(2);
+    expect(summary.failed).toBe(1);
+  });
+
+  it('skips the inter-batch rate-limit sleep when every pair in a batch was skipped (already fresh)', async () => {
+    const now = new Date(Date.UTC(2026, 9, 2)); // Oct 2, 2026 -> expected month '2026-09'
+    docRefs.set('gb_it-jobs', {
+      set: vi.fn().mockResolvedValue(undefined),
+      get: vi
+        .fn()
+        .mockResolvedValue({ data: () => ({ history: [{ month: '2026-09', average: 50000 }] }) })
+    });
+    docRefs.set('gb_sales-jobs', {
+      set: vi.fn().mockResolvedValue(undefined),
+      get: vi
+        .fn()
+        .mockResolvedValue({ data: () => ({ history: [{ month: '2026-09', average: 40000 }] }) })
+    });
+
+    $fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      throw new Error('a monthly delta should never call /history when every pair is skipped');
+    });
+
+    const start = Date.now();
+    const summary = await runIndustryTrendsSync(1, now);
+    const elapsed = Date.now() - start;
+
+    expect(summary.results.filter((r) => r.skipped)).toHaveLength(2);
+    // No real timers were advanced/faked here -- if the sleep had fired,
+    // this synchronous-ish run would take ~60s instead of a few ms.
+    expect(elapsed).toBeLessThan(5_000);
   });
 });
