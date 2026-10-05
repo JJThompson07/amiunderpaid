@@ -1,7 +1,5 @@
 import type { HistoryPoint } from '~~/shared/utils/market-data';
 
-export type ActiveCategoryCountry = { categoryTag: string; country: string };
-
 type CachedSearchDoc = {
   categoryTag?: string;
   searchParams?: { country?: string };
@@ -28,33 +26,6 @@ export const formatHistoryMonths = (monthMap: Record<string, number>): HistoryPo
 export const lastCompleteMonth = (now: Date): string => {
   const prev = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
   return `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, '0')}`;
-};
-
-/**
- * Derives the set of category/country combinations that actually have live
- * search traffic, from raw adzuna_jobs_cache documents. adzuna_category is
- * NOT a valid source for this -- nothing in the codebase writes to it.
- */
-export const extractActiveCategoryCountryPairs = (
-  docs: CachedSearchDoc[]
-): ActiveCategoryCountry[] => {
-  const seen = new Map<string, ActiveCategoryCountry>();
-
-  for (const doc of docs) {
-    const categoryTag = doc.categoryTag;
-    const country = doc.searchParams?.country?.toLowerCase();
-
-    if (!categoryTag || categoryTag === 'unknown' || (country !== 'gb' && country !== 'us')) {
-      continue;
-    }
-
-    const key = `${country}_${categoryTag}`;
-    if (!seen.has(key)) {
-      seen.set(key, { categoryTag, country });
-    }
-  }
-
-  return [...seen.values()];
 };
 
 /**

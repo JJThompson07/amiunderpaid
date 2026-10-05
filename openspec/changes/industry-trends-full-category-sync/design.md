@@ -12,11 +12,13 @@ Path (2) already has exactly the data path (1) should have been using — the fu
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Every category Adzuna returns from `/categories` for a tracked country gets a `/history` call every sync run, with no dependency on `adzuna_jobs_cache`.
 - No new Adzuna endpoint or call is introduced — reuse the existing `fetchCategoryLabels` call.
 - A failure to fetch a country's category list is surfaced as a visible sync failure, not silently treated as "zero categories to sync, nothing failed" — this reuses the exact kind of silent-failure path the proposal is fixing, so it must not be reintroduced one level up.
 
 **Non-Goals:**
+
 - Changing `lookupCount`/`countCategoryLookups` or the frontend's default-selected-industries behavior — out of scope, that feature continues reading `adzuna_jobs_cache` exactly as today.
 - Changing the retry/backoff or batch-pacing logic (`fetchWithRetry`, `chunkForRateLimit`) — unaffected by where the pair list comes from.
 - Changing the admin/cron trigger endpoints' request/response shape.
@@ -32,7 +34,7 @@ Alternative considered: hardcode a static list of category tags in the repo (e.g
 This app is strictly dual-tenant (AmIUnderpaid/UK, BenchmarkMyRole/US) per `AGENTS.md` §7 — there is no scenario today where the sync should cover a country outside this pair, and the fixed list removes the sync's last remaining dependency on `adzuna_jobs_cache` for scope decisions.
 
 **Treat a failed categories fetch as a sync failure for that country, not a silent empty result.**
-Today, `fetchCategoryLabels` swallows any error from the `/categories` call and returns an empty `Map` (acceptable when the Map only fed display labels — the sync still ran against the cache-derived pairs either way). Once the Map's keys *are* the pair list, swallowing a categories-fetch failure would mean "every category for that country silently gets zero Adzuna calls this month" — the exact silent-staleness failure mode this proposal exists to remove, just moved up one level. `runIndustryTrendsSync` must instead detect a categories-fetch failure per country and record it as an explicit failure in `SyncSummary` (e.g. a synthetic `SyncOutcome` entry, or a dedicated field) rather than treating "0 pairs for this country" as a quiet no-op success.
+Today, `fetchCategoryLabels` swallows any error from the `/categories` call and returns an empty `Map` (acceptable when the Map only fed display labels — the sync still ran against the cache-derived pairs either way). Once the Map's keys _are_ the pair list, swallowing a categories-fetch failure would mean "every category for that country silently gets zero Adzuna calls this month" — the exact silent-staleness failure mode this proposal exists to remove, just moved up one level. `runIndustryTrendsSync` must instead detect a categories-fetch failure per country and record it as an explicit failure in `SyncSummary` (e.g. a synthetic `SyncOutcome` entry, or a dedicated field) rather than treating "0 pairs for this country" as a quiet no-op success.
 Alternative considered: let `fetchCategoryLabels` throw and let the whole sync run fail. Rejected — the existing per-pair failure isolation (one category's Adzuna error doesn't abort the batch) is a deliberate existing property (`industry-trends` spec's "Rate-Limit-Safe Sync" requirement); a categories-fetch failure for one country (e.g. `us`) should not prevent the other country (`gb`) from syncing successfully in the same run.
 
 ## Risks / Trade-offs

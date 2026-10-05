@@ -35,6 +35,15 @@ const makeDocRef = (): MockDocRef => ({
   get: vi.fn().mockResolvedValue({ data: () => undefined })
 });
 
+// Sync scope now comes entirely from the /categories response (not
+// adzuna_jobs_cache), so every test needs a categories mock. This is the
+// default gb set most tests sync against; us defaults to empty unless a
+// test explicitly cares about it.
+const GB_CATEGORIES_RESPONSE = [
+  { tag: 'it-jobs', label: 'IT Jobs' },
+  { tag: 'sales-jobs', label: 'Sales Jobs' }
+];
+
 let runIndustryTrendsSync: (months: number, now?: Date) => Promise<SyncSummary>;
 
 describe('runIndustryTrendsSync', () => {
@@ -102,13 +111,11 @@ describe('runIndustryTrendsSync', () => {
 
   it('backfill (months >= 12): writes lookupCount computed from adzuna_jobs_cache onto each doc', async () => {
     $fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/categories')) {
-        return Promise.resolve({
-          results: [
-            { tag: 'it-jobs', label: 'IT Jobs' },
-            { tag: 'sales-jobs', label: 'Sales Jobs' }
-          ]
-        });
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
+        return Promise.resolve({ results: [] });
       }
       return Promise.resolve({ month: { '2026-01': 50000 } });
     });
@@ -152,7 +159,10 @@ describe('runIndustryTrendsSync', () => {
 
   it('monthly delta (months < 12): merges into existing history via a transaction and still stores lookupCount', async () => {
     $fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       return Promise.resolve({ month: { '2026-02': 51000 } });
@@ -181,7 +191,10 @@ describe('runIndustryTrendsSync', () => {
 
     let itJobsHistoryCalls = 0;
     $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       if (opts?.params?.category === 'it-jobs') {
@@ -197,7 +210,7 @@ describe('runIndustryTrendsSync', () => {
       categoryTag: 'it-jobs',
       country: 'gb',
       status: 'ok',
-      label: 'it-jobs',
+      label: 'IT Jobs',
       skipped: true
     });
     expect(docRefs.get('gb_it-jobs')?.set).toHaveBeenCalledWith(
@@ -216,7 +229,10 @@ describe('runIndustryTrendsSync', () => {
         .mockResolvedValue({ data: () => ({ history: [{ month: '2026-08', average: 48000 }] }) })
     });
     $fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       return Promise.resolve({ month: { '2026-09': 52000 } });
@@ -242,7 +258,10 @@ describe('runIndustryTrendsSync', () => {
 
     let itJobsHistoryCalls = 0;
     $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       if (opts?.params?.category === 'it-jobs') {
@@ -262,7 +281,10 @@ describe('runIndustryTrendsSync', () => {
   it('retries once after a 429 and succeeds, still storing lookupCount', async () => {
     let historyCalls = 0;
     $fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       historyCalls += 1;
@@ -288,7 +310,10 @@ describe('runIndustryTrendsSync', () => {
   it('retries after a 503 (Service Temporarily Unavailable) the same as a 429, and succeeds', async () => {
     let historyCalls = 0;
     $fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       historyCalls += 1;
@@ -310,7 +335,10 @@ describe('runIndustryTrendsSync', () => {
   it('retries a second time after a full rate-limit window when the first 10s retry also fails, and succeeds', async () => {
     let itJobsCalls = 0;
     $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       if (opts?.params?.category !== 'it-jobs') {
@@ -338,7 +366,10 @@ describe('runIndustryTrendsSync', () => {
 
   it('gives up and reports an error after the final retry is also rate-limited', async () => {
     $fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       return Promise.reject({ statusCode: 429 });
@@ -355,7 +386,10 @@ describe('runIndustryTrendsSync', () => {
 
   it('redacts app_id/app_key from a stored error message instead of leaking live credentials', async () => {
     $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       if (opts?.params?.category === 'it-jobs') {
@@ -379,7 +413,10 @@ describe('runIndustryTrendsSync', () => {
 
   it('does not write a doc when Adzuna returns no history months for a category', async () => {
     $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       if (opts?.params?.category === 'it-jobs') {
@@ -398,7 +435,10 @@ describe('runIndustryTrendsSync', () => {
 
   it('records a per-pair error and keeps syncing the rest when a history fetch fails', async () => {
     $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       if (opts?.params?.category === 'it-jobs') {
@@ -416,16 +456,21 @@ describe('runIndustryTrendsSync', () => {
       country: 'gb',
       status: 'error',
       error: 'boom',
-      label: 'it-jobs'
+      label: 'IT Jobs'
     });
   });
 
-  it('falls back to the tag as label when a categories entry is missing its tag or label', async () => {
+  it('falls back to the tag as label when a categories entry has no label', async () => {
+    // An entry missing `tag` entirely contributes no pair to sync (there's
+    // nothing to call /history with) -- that's a separate, unsynced case,
+    // not a label-fallback case. This tests the fallback for entries that
+    // do have a tag but no label.
     $fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/categories')) {
-        return Promise.resolve({
-          results: [{ tag: 'it-jobs' }, { label: 'Sales Jobs (unmatched)' }]
-        });
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: [{ tag: 'it-jobs' }, { tag: 'sales-jobs' }] });
+      }
+      if (url.includes('/us/categories')) {
+        return Promise.resolve({ results: [] });
       }
       return Promise.resolve({ month: { '2026-01': 40000 } });
     });
@@ -444,7 +489,10 @@ describe('runIndustryTrendsSync', () => {
 
   it('treats a history response with no month field as having zero history points', async () => {
     $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       if (opts?.params?.category === 'it-jobs') {
@@ -475,7 +523,10 @@ describe('runIndustryTrendsSync', () => {
       await callback(tx);
     });
     $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       if (opts?.params?.category === 'it-jobs') {
@@ -499,7 +550,10 @@ describe('runIndustryTrendsSync', () => {
 
   it('records "Unknown error" when a history fetch rejects with a non-Error value', async () => {
     $fetchMock.mockImplementation((url: string, opts?: { params?: { category?: string } }) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       if (opts?.params?.category === 'it-jobs') {
@@ -516,33 +570,15 @@ describe('runIndustryTrendsSync', () => {
   });
 
   it('paces requests into multiple batches when more pairs exist than the per-minute rate limit', async () => {
-    const manyCacheDocs = Array.from({ length: 21 }, (_, i) => ({
-      categoryTag: `cat-${i}`,
-      searchParams: { country: 'gb' }
+    const manyCategories = Array.from({ length: 21 }, (_, i) => ({
+      tag: `cat-${i}`,
+      label: `Cat ${i}`
     }));
-    useAdminFirestoreMock.mockReturnValue({
-      collection: vi.fn((name: string) => {
-        if (name === 'adzuna_jobs_cache') {
-          return {
-            select: vi.fn(() => ({ get: vi.fn().mockResolvedValue(makeSnapshot(manyCacheDocs)) }))
-          };
-        }
-        if (name === 'adzuna_industry_trends') {
-          return {
-            doc: vi.fn((id: string) => {
-              if (!docRefs.has(id)) {
-                docRefs.set(id, makeDocRef());
-              }
-              return docRefs.get(id)!;
-            })
-          };
-        }
-        throw new Error(`unexpected collection: ${name}`);
-      }),
-      runTransaction: (cb: (tx: unknown) => Promise<void>) => runTransactionMock(cb)
-    });
     $fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: manyCategories });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       return Promise.resolve({ month: { '2026-01': 40000 } });
@@ -560,7 +596,10 @@ describe('runIndustryTrendsSync', () => {
 
   it('invalidates the industry-trends cache for both countries after a sync run', async () => {
     $fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       return Promise.resolve({ month: { '2026-01': 40000 } });
@@ -579,7 +618,10 @@ describe('runIndustryTrendsSync', () => {
   it('does not fail the sync when cache invalidation itself errors', async () => {
     removeItemMock.mockRejectedValueOnce(new Error('storage unavailable'));
     $fetchMock.mockImplementation((url: string) => {
-      if (url.includes('/categories')) {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: GB_CATEGORIES_RESPONSE });
+      }
+      if (url.includes('/us/categories')) {
         return Promise.resolve({ results: [] });
       }
       return Promise.resolve({ month: { '2026-01': 40000 } });
@@ -589,5 +631,70 @@ describe('runIndustryTrendsSync', () => {
 
     expect(summary.failed).toBe(0);
     expect(summary.synced).toBe(2);
+  });
+
+  it('syncs a category with zero adzuna_jobs_cache docs, driven entirely by the /categories response', async () => {
+    // beforeEach's default adzuna_jobs_cache mock has no entries at all for
+    // this tag -- this is the regression test for the production bug: a
+    // category must sync even with zero recent search traffic.
+    $fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({
+          results: [{ tag: 'engineering-jobs', label: 'Engineering Jobs' }]
+        });
+      }
+      if (url.includes('/us/categories')) {
+        return Promise.resolve({ results: [] });
+      }
+      return Promise.resolve({ month: { '2026-01': 60000 } });
+    });
+
+    const summary = await runIndustryTrendsSync(12);
+
+    expect(summary.synced).toBe(1);
+    expect(docRefs.get('gb_engineering-jobs')?.set).toHaveBeenCalledWith(
+      expect.objectContaining({ label: 'Engineering Jobs', lookupCount: 0 }),
+      { merge: true }
+    );
+  });
+
+  it('attempts both tracked countries every run, independent of adzuna_jobs_cache contents', async () => {
+    // beforeEach's default adzuna_jobs_cache mock only contains gb docs.
+    $fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/gb/categories')) {
+        return Promise.resolve({ results: [{ tag: 'it-jobs', label: 'IT Jobs' }] });
+      }
+      if (url.includes('/us/categories')) {
+        return Promise.resolve({ results: [{ tag: 'sales-jobs', label: 'Sales Jobs' }] });
+      }
+      return Promise.resolve({ month: { '2026-01': 70000 } });
+    });
+
+    const summary = await runIndustryTrendsSync(12);
+
+    expect(summary.synced).toBe(2);
+    expect(docRefs.get('gb_it-jobs')?.set).toHaveBeenCalled();
+    expect(docRefs.get('us_sales-jobs')?.set).toHaveBeenCalled();
+  });
+
+  it('records an explicit failure when a country categories fetch fails, without blocking the other tracked country', async () => {
+    $fetchMock.mockImplementation((url: string) => {
+      if (url.includes('/gb/categories')) {
+        return Promise.reject({ statusCode: 500 });
+      }
+      if (url.includes('/us/categories')) {
+        return Promise.resolve({ results: [{ tag: 'sales-jobs', label: 'Sales Jobs' }] });
+      }
+      return Promise.resolve({ month: { '2026-01': 55000 } });
+    });
+
+    const summary = await runIndustryTrendsSync(12);
+
+    expect(summary.results).toContainEqual(
+      expect.objectContaining({ categoryTag: 'categories-fetch', country: 'gb', status: 'error' })
+    );
+    expect(docRefs.get('us_sales-jobs')?.set).toHaveBeenCalled();
+    expect(summary.synced).toBe(1);
+    expect(summary.failed).toBe(1);
   });
 });

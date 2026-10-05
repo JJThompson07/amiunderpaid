@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   chunkForRateLimit,
   countCategoryLookups,
-  extractActiveCategoryCountryPairs,
   formatHistoryMonths,
   lastCompleteMonth,
   normalizeCountryCode
@@ -33,47 +32,6 @@ describe('adzunaHistory utils', () => {
       expect(formatHistoryMonths({ '2026-01': 50000 })).toEqual([
         { month: '2026-01', average: 50000 }
       ]);
-    });
-  });
-
-  describe('extractActiveCategoryCountryPairs', () => {
-    it('extracts unique categoryTag/country pairs from cache docs', () => {
-      const docs = [
-        { categoryTag: 'it-jobs', searchParams: { country: 'gb' } },
-        { categoryTag: 'it-jobs', searchParams: { country: 'gb' } },
-        { categoryTag: 'sales-jobs', searchParams: { country: 'us' } }
-      ];
-
-      expect(extractActiveCategoryCountryPairs(docs)).toEqual([
-        { categoryTag: 'it-jobs', country: 'gb' },
-        { categoryTag: 'sales-jobs', country: 'us' }
-      ]);
-    });
-
-    it('excludes docs with categoryTag "unknown"', () => {
-      const docs = [{ categoryTag: 'unknown', searchParams: { country: 'gb' } }];
-      expect(extractActiveCategoryCountryPairs(docs)).toEqual([]);
-    });
-
-    it('excludes docs with a missing categoryTag', () => {
-      const docs = [{ searchParams: { country: 'gb' } }];
-      expect(extractActiveCategoryCountryPairs(docs)).toEqual([]);
-    });
-
-    it('excludes docs with a country outside gb/us', () => {
-      const docs = [{ categoryTag: 'it-jobs', searchParams: { country: 'fr' } }];
-      expect(extractActiveCategoryCountryPairs(docs)).toEqual([]);
-    });
-
-    it('normalizes country casing', () => {
-      const docs = [{ categoryTag: 'it-jobs', searchParams: { country: 'GB' } }];
-      expect(extractActiveCategoryCountryPairs(docs)).toEqual([
-        { categoryTag: 'it-jobs', country: 'gb' }
-      ]);
-    });
-
-    it('returns an empty array for an empty input', () => {
-      expect(extractActiveCategoryCountryPairs([])).toEqual([]);
     });
   });
 
