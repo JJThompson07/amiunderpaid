@@ -77,6 +77,15 @@ const answerCookieBanner = async (page: Page): Promise<void> => {
   await page.getByRole('button', { name: 'Decline' }).click();
 };
 
+// the page-scoped seen set behind useSeenAffiliateImpressions (useState keys are prefixed '$s')
+const seenImpressions = (page: Page): Promise<string[]> =>
+  page.evaluate(() => {
+    const nuxtRoot = document.querySelector('#__nuxt');
+    // @ts-expect-error -- __vue_app__ is Vue's internal hook, not a typed DOM property
+    const state = nuxtRoot?.__vue_app__?.$nuxt?.payload?.state;
+    return state?.['$saffiliate-page-seen-impressions'] ?? [];
+  });
+
 const offerToast = (page: Page): ReturnType<Page['getByRole']> =>
   page.getByRole('status').filter({ hasText: 'Sponsored' });
 
@@ -125,6 +134,34 @@ test.describe('Affiliate offer toast', () => {
       await page.clock.fastForward(TOAST_DELAY_MS);
       await expect(offerToast(page)).toBeVisible({ timeout: 250 });
     }).toPass({ timeout: 10_000 });
+  });
+
+  test('a grid card seen on one search does not suppress the toast on the next', async ({
+    page
+  }) => {
+    await answerCookieBanner(page);
+    await navigateClientSide(page, '/salary/software-engineer/uk?compare=35000');
+    await expect(page.locator('h1').first()).toContainText('Software Engineer', {
+      ignoreCase: true
+    });
+
+    // seeing the lead card in the grid suppresses the toast for this search
+    await page.locator('a[rel="sponsored"]').first().scrollIntoViewIfNeeded();
+    await expect.poll(() => seenImpressions(page)).toContain('salary-negotiator:negotiation-grid');
+    await page.clock.fastForward(TOAST_DELAY_MS);
+    await expect(offerToast(page)).toHaveCount(0);
+
+    // back to the top first: the fake clock also holds Nuxt's scroll-to-top on navigation
+    await page.evaluate(() => window.scrollTo(0, 0));
+
+    // a new search is a new page instance, so the seen set starts empty again
+    await navigateClientSide(page, '/salary/software-engineer/uk/london?compare=35000');
+    await expect(page).toHaveURL(/\/salary\/software-engineer\/uk\/london/);
+    // the URL updates before the new page instance's setup runs, so wait for the reset
+    await expect.poll(() => seenImpressions(page)).toEqual([]);
+
+    await page.clock.fastForward(TOAST_DELAY_MS);
+    await expect(offerToast(page)).toBeVisible();
   });
 
   test('does not re-display on a second search in the same session', async ({ page }) => {
