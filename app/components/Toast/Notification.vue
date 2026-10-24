@@ -20,7 +20,7 @@
       </div>
 
       <button :class="['shrink-0 ml-2 transition-colors', theme.closeBtn]" @click="isOpen = false">
-        <span class="sr-only">Close</span>
+        <span class="sr-only">{{ $t('common.close') }}</span>
         <X class="w-5 h-5" />
       </button>
     </div>
