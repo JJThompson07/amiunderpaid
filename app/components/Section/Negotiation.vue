@@ -39,11 +39,14 @@
               <!-- Link CTA -->
               <a
                 v-if="card.ctaType === 'link'"
+                :ref="(el) => registerImpression(el, card.partner)"
                 :href="card.ctaUrl"
                 target="_blank"
                 rel="sponsored"
                 class="block w-full p-3 text-center text-sm font-bold text-white rounded-lg transition-colors shadow-md"
                 :class="card.ctaClass"
+                @click="onAffiliateClick(card.partner)"
+                @auxclick.middle="onAffiliateClick(card.partner)"
                 >{{ card.ctaText }}</a
               >
               <!-- Button CTA -->
@@ -86,8 +89,12 @@
 <script setup lang="ts">
 // imports
 import { Binoculars, CheckCircle2, Copy, FileText, Mail, TrendingUp } from 'lucide-vue-next';
+import { AFFILIATE_PARTNERS } from '~~/shared/utils/affiliates';
+import type { AffiliatePartnerSlug, AffiliateTrackingPayload } from '~~/shared/utils/affiliates';
 import { AmICardAction, LazyAmICardAction } from '#components';
 import { computed, onMounted, ref } from 'vue';
+import { calculateSalaryVerdict } from '~~/shared/utils/verdict';
+import type { ComponentPublicInstance } from 'vue';
 // ** type definitions **
 
 // ** props **
@@ -107,7 +114,8 @@ defineEmits<{
 // ** data & refs **
 const copied = ref(false);
 const showScript = ref(false);
-const { trackResultAction } = useAnalytics();
+const { trackAffiliateClick, trackResultAction } = useAnalytics();
+const { observeImpression } = useAffiliateImpression();
 const { isXl: viewportIsXl } = useViewport();
 
 // Ensure isXl is false during SSR/Hydration to match server rendering
@@ -120,6 +128,8 @@ onMounted(() => {
 
 // ** computed properties **
 const isUnderpaid = computed(() => props.marketAverage > props.currentSalary);
+
+const verdict = computed(() => calculateSalaryVerdict(props.currentSalary, props.marketAverage));
 
 const emailSubject = computed(() => `Salary Review Discussion - ${props.title} Role`);
 
@@ -142,6 +152,28 @@ const toggleScript = (): void => {
   // only track the action when the user views the script, not when they hide it
   if (showScript.value) {
     trackResultAction('view_script');
+  }
+};
+
+const affiliatePayload = (partner: AffiliatePartnerSlug): AffiliateTrackingPayload => ({
+  partner,
+  placement: 'negotiation-grid',
+  country: props.country,
+  verdict: verdict.value
+});
+
+const onAffiliateClick = (partner: AffiliatePartnerSlug | undefined): void => {
+  if (partner) {
+    trackAffiliateClick(affiliatePayload(partner));
+  }
+};
+
+const registerImpression = (
+  el: Element | ComponentPublicInstance | null,
+  partner: AffiliatePartnerSlug | undefined
+): void => {
+  if (partner) {
+    observeImpression(el, () => affiliatePayload(partner));
   }
 };
 
@@ -170,7 +202,8 @@ const cards = computed(() => {
         name: `<strong class="text-salary-negotiator-500">${$t('sections.negotiation.salary-negotiator.name')}</strong>`
       }),
       ctaType: 'link',
-      ctaUrl: 'https://thesalarynegotiator.com/courses?ref=ndlknjh',
+      partner: AFFILIATE_PARTNERS['salary-negotiator'].slug,
+      ctaUrl: AFFILIATE_PARTNERS['salary-negotiator'].url,
       ctaText: $t('sections.negotiation.salary-negotiator.cta'),
       ctaClass: 'bg-salary-negotiator-500 hover:bg-salary-negotiator-700'
     },
@@ -191,7 +224,8 @@ const cards = computed(() => {
         name: `<strong class="text-purple-cv-700">${$t('sections.negotiation.purple-cv.name')}</strong>`
       }),
       ctaType: 'link',
-      ctaUrl: 'https://purplecv.co.uk/cv-writing?wpam_id=1293',
+      partner: AFFILIATE_PARTNERS['purple-cv'].slug,
+      ctaUrl: AFFILIATE_PARTNERS['purple-cv'].url,
       ctaText: $t('sections.negotiation.purple-cv.cta'),
       ctaClass: 'bg-purple-cv-900 hover:bg-purple-cv-700'
     },
@@ -211,7 +245,8 @@ const cards = computed(() => {
         name: `<strong class="text-cv-library-700">${$t('sections.negotiation.cv-library.name')}</strong>`
       }),
       ctaType: 'link',
-      ctaUrl: 'https://www.cv-library.co.uk/register?id=107202',
+      partner: AFFILIATE_PARTNERS['cv-library'].slug,
+      ctaUrl: AFFILIATE_PARTNERS['cv-library'].url,
       ctaText: $t('sections.negotiation.cv-library.cta'),
       ctaClass: 'bg-cv-library-700 hover:bg-cv-library-500'
     },

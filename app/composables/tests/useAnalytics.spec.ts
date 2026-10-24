@@ -102,4 +102,47 @@ describe('useAnalytics', () => {
       brand: 'TestBrand'
     });
   });
+
+  describe('affiliate tracking', () => {
+    const payload = {
+      partner: 'purple-cv',
+      placement: 'negotiation-grid',
+      country: 'UK',
+      verdict: 'underpaid'
+    } as const;
+
+    it.each([
+      ['trackAffiliateClick', 'affiliate_click'],
+      ['trackAffiliateImpression', 'affiliate_impression'],
+      ['trackAffiliateDismiss', 'affiliate_dismiss']
+    ] as const)('%s sends %s when consent is granted', (helper, eventName) => {
+      const analytics = useAnalytics();
+      mockCookieValue = 'granted';
+      analytics[helper](payload);
+      expect(mockGtag).toHaveBeenCalledWith('event', eventName, {
+        partner: 'purple-cv',
+        placement: 'negotiation-grid',
+        country: 'UK',
+        verdict: 'underpaid',
+        brand: 'TestBrand'
+      });
+    });
+
+    it.each([null, 'denied'])('sends no affiliate events when consent is %s', (consent) => {
+      const { trackAffiliateClick, trackAffiliateDismiss, trackAffiliateImpression } =
+        useAnalytics();
+      mockCookieValue = consent;
+      trackAffiliateClick(payload);
+      trackAffiliateImpression(payload);
+      trackAffiliateDismiss(payload);
+      expect(mockGtag).not.toHaveBeenCalled();
+    });
+
+    it('drops any fields beyond the tracked dimensions', () => {
+      const { trackAffiliateClick } = useAnalytics();
+      mockCookieValue = 'granted';
+      trackAffiliateClick({ ...payload, salary: 42000 } as typeof payload);
+      expect(mockGtag.mock.calls[0]?.[2]).not.toHaveProperty('salary');
+    });
+  });
 });
