@@ -1,3 +1,4 @@
+import type { AffiliateTrackingPayload } from '~~/shared/utils/affiliates';
 import type { Ref } from 'vue';
 
 type UseAnalyticsReturn = {
@@ -13,6 +14,9 @@ type UseAnalyticsReturn = {
   trackResultAction: (action: string) => void;
   trackDistribution: (title: string, country: string, location: string, fetch: boolean) => void;
   trackViewRole: (title: string, company: string, location: string, url: string) => void;
+  trackAffiliateClick: (payload: AffiliateTrackingPayload) => void;
+  trackAffiliateImpression: (payload: AffiliateTrackingPayload) => void;
+  trackAffiliateDismiss: (payload: AffiliateTrackingPayload) => void;
   analyticsConsent: Ref<string | null>;
 };
 
@@ -81,12 +85,36 @@ export const useAnalytics = (): UseAnalyticsReturn => {
     trackEvent('view_role', { job_title: title, company, location, url });
   };
 
+  // affiliate payloads are rebuilt field by field so nothing beyond the four tracked
+  // dimensions (e.g. a salary on a spread object) can reach GA
+  const toAffiliateParams = (payload: AffiliateTrackingPayload): Record<string, unknown> => ({
+    partner: payload.partner,
+    placement: payload.placement,
+    country: payload.country,
+    verdict: payload.verdict
+  });
+
+  const trackAffiliateClick = (payload: AffiliateTrackingPayload): void => {
+    trackEvent('affiliate_click', toAffiliateParams(payload));
+  };
+
+  const trackAffiliateImpression = (payload: AffiliateTrackingPayload): void => {
+    trackEvent('affiliate_impression', toAffiliateParams(payload));
+  };
+
+  const trackAffiliateDismiss = (payload: AffiliateTrackingPayload): void => {
+    trackEvent('affiliate_dismiss', toAffiliateParams(payload));
+  };
+
   return {
     trackSearch,
     trackAmbiguousSearch,
     trackResultAction,
     trackDistribution,
     trackViewRole,
+    trackAffiliateClick,
+    trackAffiliateImpression,
+    trackAffiliateDismiss,
     analyticsConsent
   };
 };
