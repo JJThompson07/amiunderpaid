@@ -19,7 +19,7 @@
                   <button
                     class="shrink-0 ml-4 text-slate-400 hover:text-slate-600 transition-colors"
                     @click="$emit('update:modelValue', false)">
-                    <span class="sr-only">Close</span>
+                    <span class="sr-only">{{ $t('common.close') }}</span>
                     <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path
                         fill-rule="evenodd"
@@ -46,6 +46,7 @@ const props = defineProps({
   message: { type: String, default: '' },
   duration: { type: Number, default: 0 },
   bgClasses: { type: String, default: 'bg-white/90 border-slate-200' },
+  zIndexClass: { type: String, default: 'z-[100]' },
   fullWidth: { type: Boolean, default: false },
   direction: {
     type: String,
@@ -61,7 +62,7 @@ const emit = defineEmits<{
 // 1. Dynamic Positioning Classes
 const containerClasses = computed(() => {
   // We use pointer-events-none on the wrapper so users can click the page *behind* the toast
-  const base = 'fixed z-[100] pointer-events-none flex';
+  const base = `fixed ${props.zIndexClass} pointer-events-none flex`;
 
   if (props.fullWidth) {
     // Banner style: Spans the bottom of the screen with some padding

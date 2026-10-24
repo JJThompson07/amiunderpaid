@@ -34,3 +34,14 @@ export const calculateSalaryVerdict = (
 
   return getSalaryVerdict(diffPercent);
 };
+
+// Legacy numeric form used by the comparison cards: 1 above, 0 within, -1 below the band
+export const verdictToComparison = (verdict: SalaryVerdict): number => {
+  if (verdict === 'overpaid') {
+    return 1;
+  }
+  if (verdict === 'underpaid') {
+    return -1;
+  }
+  return 0;
+};

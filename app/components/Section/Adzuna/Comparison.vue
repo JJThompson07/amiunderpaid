@@ -59,6 +59,7 @@ import { computed, type PropType } from 'vue';
 import type { HistogramBucket } from '../../../../shared/utils/types';
 import { getRawDiffPercentage } from '~/helpers/utility';
 import { TrendingUp } from 'lucide-vue-next';
+import { getSalaryVerdict, verdictToComparison } from '~~/shared/utils/verdict';
 
 const { trackDistribution } = useAnalytics();
 
@@ -128,15 +129,7 @@ const diffPercent = computed(() => {
   return getRawDiffPercentage(props.currentSalary, props.averageSalary);
 });
 
-const comparison = computed<number>(() => {
-  if (diffPercent.value > 2.5) {
-    return 1;
-  } else if (diffPercent.value < -2.5) {
-    return -1;
-  } else {
-    return 0;
-  }
-});
+const comparison = computed<number>(() => verdictToComparison(getSalaryVerdict(diffPercent.value)));
 
 const toggleHistogram = (): void => {
   trackDistribution(props.displayTitle, props.country, props.location, !hasData.value);

@@ -27,6 +27,7 @@ context: |
   VERIFY BEFORE RECOMMENDING (CODE_STANDARDS.md §10):
   - Before proposing anything irreversible, environment-dependent, or that flips a failure mode from silent to loud (or vice versa), verify the real current state — don't assume it.
   - The e2e/Playwright suite uses mocked endpoints, not live ones; never propose otherwise without explicit current instruction.
+  - e2e tests must never grant analytics consent (CI runs a production build wired to the live GA property): decline the cookie banner and block GA/GTM requests.
 
 rules:
   proposal:

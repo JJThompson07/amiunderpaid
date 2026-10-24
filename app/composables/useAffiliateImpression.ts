@@ -1,4 +1,8 @@
-import type { AffiliateTrackingPayload } from '~~/shared/utils/affiliates';
+import type {
+  AffiliatePartnerSlug,
+  AffiliatePlacement,
+  AffiliateTrackingPayload
+} from '~~/shared/utils/affiliates';
 import type { ComponentPublicInstance } from 'vue';
 
 type ImpressionTarget = Element | ComponentPublicInstance | null;
@@ -9,6 +13,42 @@ type UseAffiliateImpressionReturn = {
 
 // share of an element that must be on screen before it counts as seen
 export const IMPRESSION_THRESHOLD = 0.5;
+
+type UseSeenAffiliateImpressionsReturn = {
+  markImpressionSeen: (partner: AffiliatePartnerSlug, placement: AffiliatePlacement) => void;
+  hasImpressionFired: (partner: AffiliatePartnerSlug, placement: AffiliatePlacement) => boolean;
+  resetSeenImpressions: () => void;
+};
+
+const seenKey = (partner: AffiliatePartnerSlug, placement: AffiliatePlacement): string =>
+  `${partner}:${placement}`;
+
+/**
+ * Which affiliate cards the user has seen on the current results page, shared across
+ * components (e.g. so the offer toast can skip a partner already seen in the grid).
+ * The results page resets it in setup, before its children register, so it is scoped to
+ * one page view. This is separate from each useAffiliateImpression instance's own
+ * once-per-page-view dedupe, which drives the impression events themselves.
+ *
+ * Call it during setup: the returned functions are safe to use later, e.g. from timers.
+ */
+export const useSeenAffiliateImpressions = (): UseSeenAffiliateImpressionsReturn => {
+  const seen = useState<string[]>('affiliate-page-seen-impressions', () => []);
+
+  return {
+    markImpressionSeen: (partner, placement): void => {
+      const key = seenKey(partner, placement);
+      if (!seen.value.includes(key)) {
+        seen.value = [...seen.value, key];
+      }
+    },
+    hasImpressionFired: (partner, placement): boolean =>
+      seen.value.includes(seenKey(partner, placement)),
+    resetSeenImpressions: (): void => {
+      seen.value = [];
+    }
+  };
+};
 
 const resolveElement = (target: ImpressionTarget): Element | null => {
   if (!target) {
@@ -32,6 +72,7 @@ const resolveElement = (target: ImpressionTarget): Element | null => {
  */
 export const useAffiliateImpression = (): UseAffiliateImpressionReturn => {
   const { trackAffiliateImpression } = useAnalytics();
+  const { markImpressionSeen } = useSeenAffiliateImpressions();
 
   const fired = new Set<string>();
   const payloadGetters = new WeakMap<Element, () => AffiliateTrackingPayload>();
@@ -47,12 +88,13 @@ export const useAffiliateImpression = (): UseAffiliateImpressionReturn => {
       observer?.unobserve(entry.target);
 
       const payload = getPayload();
-      const key = `${payload.partner}:${payload.placement}`;
+      const key = seenKey(payload.partner, payload.placement);
       if (fired.has(key)) {
         continue;
       }
 
       fired.add(key);
+      markImpressionSeen(payload.partner, payload.placement);
       trackAffiliateImpression(payload);
     }
   };
