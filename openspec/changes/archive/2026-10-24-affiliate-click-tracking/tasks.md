@@ -31,4 +31,4 @@
 ## 4. Verification & Operational Tasks
 
 - [x] 4.1 Execute full local verification pipeline `pnpm test:verify` (chaining lint, typecheck, coverage with 80% per-file gate, mocked Playwright e2e, and Firestore rules) and confirm all checks pass with zero regressions.
-- [ ] 4.2 Manual post-deploy task (User facing): In Google Analytics 4 Admin > Custom definitions > Custom dimensions, create event-scoped custom dimensions for `partner`, `placement`, `verdict`, and `country` (searched country from payload) so they populate in GA4 reports and explorations.
+- [x] 4.2 Manual post-deploy task (User facing): In Google Analytics 4 Admin > Custom definitions > Custom dimensions, create event-scoped custom dimensions for `partner`, `placement`, `verdict`, and `country` (searched country from payload) so they populate in GA4 reports and explorations.
