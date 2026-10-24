@@ -200,44 +200,6 @@
 
       <!-- 6. Action / Negotiation (Hidden if recruiter exists) -->
       <div v-if="!hasRecruiters" class="flex flex-col gap-6 w-full mt-4">
-        <LazyAmICardAction
-          v-if="country === 'UK' && isXl"
-          bg-colour="bg-cv-library-50"
-          border-colour="border-cv-library-100"
-          hover-class="hover:border-cv-library-200"
-          affiliate-bg-colour="bg-cv-library-100"
-          affiliate-text-colour="text-cv-library-700"
-          :icon="FileUser"
-          :header="$t('sections.negotiation.cv-library.title')"
-          :strapline="$t('sections.negotiation.cv-library.strapline')"
-          sponsored
-          class="rounded-lg border shadow-lg w-full flex-1">
-          <template #body>
-            <i18n-t
-              keypath="sections.negotiation.cv-library.body-html"
-              tag="span"
-              class="leading-relaxed">
-              <template #name>
-                <strong class="text-cv-library-700">{{
-                  $t('sections.negotiation.cv-library.name')
-                }}</strong>
-              </template>
-            </i18n-t>
-          </template>
-          <template #cta>
-            <a
-              :ref="(el) => observeImpression(el, cvLibraryPayload)"
-              :href="getAffiliateUrl('cv-library')"
-              target="_blank"
-              rel="sponsored"
-              class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
-              @click="trackAffiliateClick(cvLibraryPayload())"
-              @auxclick.middle="trackAffiliateClick(cvLibraryPayload())"
-              >{{ $t('sections.negotiation.cv-library.cta') }}</a
-            >
-          </template>
-        </LazyAmICardAction>
-
         <LazySectionNegotiation
           v-show="hasGovernmentData || hasJobsData"
           :title="displayTitle"
@@ -297,20 +259,27 @@
         :text-colour="recruiterCards[0].brandTextColour"
         @click="openRecruiterModal(recruiterCards[0])" />
     </div>
+
+    <!-- Delayed lead affiliate offer (once per session; see useAffiliateOfferToast) -->
+    <ToastAffiliateOffer
+      v-if="affiliateToastOffer && affiliateToastCopy"
+      :model-value="isAffiliateToastVisible"
+      :partner="affiliateToastOffer.slug"
+      :url="affiliateToastOffer.url"
+      :copy-keys="affiliateToastCopy"
+      @cta="onAffiliateToastCta"
+      @dismiss="onAffiliateToastDismiss" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { FileUser, Info } from 'lucide-vue-next';
+import { Info } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
-import type { AffiliateTrackingPayload } from '~~/shared/utils/affiliates';
-import { getAffiliateUrl } from '~~/shared/utils/affiliates';
 import { calculateSalaryVerdict } from '~~/shared/utils/verdict';
 import type { RecruiterCard } from '~~/shared/utils/types';
 
 const { $siteBrand } = useNuxtApp();
 const route = useRoute();
-const { isXl } = useViewport();
 const { t } = useI18n();
 
 // 🚀 Inject the Engine
@@ -393,19 +362,28 @@ const openRecruiterModal = (card: RecruiterCard): void => {
   showRecruiterModal.value = true;
 };
 
-// Affiliate tracking - same baseline SectionNegotiation receives, so every placement agrees
-const { trackAffiliateClick } = useAnalytics();
-const { observeImpression } = useAffiliateImpression();
+// A new results page is a new page view: reset which affiliate cards count as seen. This runs
+// in setup, before SectionNegotiation registers its cards, so it can't wipe this page's views.
+useSeenAffiliateImpressions().resetSeenImpressions();
 
+// Same baseline SectionNegotiation receives, so the toast and the grid agree on the verdict
 const affiliateVerdict = computed(() =>
   calculateSalaryVerdict(userSalary.value, meanSalary.value || marketAverage.value)
 );
 
-const cvLibraryPayload = (): AffiliateTrackingPayload => ({
-  partner: 'cv-library',
-  placement: 'standalone-xl',
-  country: country.value,
-  verdict: affiliateVerdict.value
+const {
+  copyKeys: affiliateToastCopy,
+  isVisible: isAffiliateToastVisible,
+  offer: affiliateToastOffer,
+  onCtaClick: onAffiliateToastCta,
+  onDismiss: onAffiliateToastDismiss
+} = useAffiliateOfferToast({
+  country,
+  verdict: affiliateVerdict,
+  isSettled: () =>
+    !pending.value && !adzunaLoading.value && !resolving.value && !showUserSelection.value,
+  hasResults: () => hasGovernmentData.value || hasJobsData.value,
+  hasRecruiters: () => Boolean(hasRecruiters.value)
 });
 
 onMounted(() => {

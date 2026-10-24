@@ -1,10 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AffiliateTrackingPayload } from '~~/shared/utils/affiliates';
-import { IMPRESSION_THRESHOLD, useAffiliateImpression } from '../useAffiliateImpression';
+import {
+  IMPRESSION_THRESHOLD,
+  useAffiliateImpression,
+  useSeenAffiliateImpressions
+} from '../useAffiliateImpression';
 
 const mockTrackAffiliateImpression = vi.fn();
 vi.stubGlobal('useAnalytics', () => ({ trackAffiliateImpression: mockTrackAffiliateImpression }));
+
+// minimal useState: one shared ref per key, like Nuxt's app-level state
+let stateStore = new Map<string, { value: unknown }>();
+vi.stubGlobal('useState', <T>(key: string, init: () => T) => {
+  if (!stateStore.has(key)) {
+    stateStore.set(key, { value: init() });
+  }
+  return stateStore.get(key) as { value: T };
+});
 
 let unmountHooks: (() => void)[] = [];
 vi.stubGlobal('onBeforeUnmount', (fn: () => void) => unmountHooks.push(fn));
@@ -50,6 +63,7 @@ describe('useAffiliateImpression', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     unmountHooks = [];
+    stateStore = new Map();
     MockIntersectionObserver.instances = [];
     vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
   });
@@ -162,5 +176,75 @@ describe('useAffiliateImpression', () => {
 
     unmountHooks.forEach((hook) => hook());
     expect(latestObserver().disconnect).toHaveBeenCalled();
+  });
+});
+
+describe('useSeenAffiliateImpressions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    unmountHooks = [];
+    stateStore = new Map();
+    MockIntersectionObserver.instances = [];
+    vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+  });
+
+  it('records a card as seen once its impression fires', () => {
+    const { observeImpression } = useAffiliateImpression();
+    const { hasImpressionFired } = useSeenAffiliateImpressions();
+    const el = document.createElement('a');
+
+    observeImpression(el, () => payload());
+    expect(hasImpressionFired('purple-cv', 'negotiation-grid')).toBe(false);
+
+    latestObserver().trigger(el);
+    expect(hasImpressionFired('purple-cv', 'negotiation-grid')).toBe(true);
+    expect(hasImpressionFired('purple-cv', 'toast')).toBe(false);
+    expect(hasImpressionFired('salary-negotiator', 'negotiation-grid')).toBe(false);
+  });
+
+  it('shares seen state between separate composable instances', () => {
+    const { markImpressionSeen } = useSeenAffiliateImpressions();
+    const { hasImpressionFired } = useSeenAffiliateImpressions();
+
+    markImpressionSeen('cv-library', 'negotiation-grid');
+    markImpressionSeen('cv-library', 'negotiation-grid');
+    expect(hasImpressionFired('cv-library', 'negotiation-grid')).toBe(true);
+    expect(stateStore.get('affiliate-page-seen-impressions')?.value).toEqual([
+      'cv-library:negotiation-grid'
+    ]);
+  });
+
+  it('clears seen state on reset', () => {
+    const { hasImpressionFired, markImpressionSeen, resetSeenImpressions } =
+      useSeenAffiliateImpressions();
+
+    markImpressionSeen('purple-cv', 'negotiation-grid');
+    resetSeenImpressions();
+    expect(hasImpressionFired('purple-cv', 'negotiation-grid')).toBe(false);
+  });
+
+  it('re-fires grid impressions on a second search while seen state resets', () => {
+    // first results page
+    const firstPage = useSeenAffiliateImpressions();
+    firstPage.resetSeenImpressions();
+    const firstGrid = useAffiliateImpression();
+    const firstEl = document.createElement('a');
+    firstGrid.observeImpression(firstEl, () => payload());
+    latestObserver().trigger(firstEl);
+    unmountHooks.forEach((hook) => hook());
+    unmountHooks = [];
+
+    // second search: the page resets seen state in setup, then the grid mounts again
+    const secondPage = useSeenAffiliateImpressions();
+    secondPage.resetSeenImpressions();
+    expect(secondPage.hasImpressionFired('purple-cv', 'negotiation-grid')).toBe(false);
+
+    const secondGrid = useAffiliateImpression();
+    const secondEl = document.createElement('a');
+    secondGrid.observeImpression(secondEl, () => payload());
+    latestObserver().trigger(secondEl);
+
+    expect(mockTrackAffiliateImpression).toHaveBeenCalledTimes(2);
+    expect(secondPage.hasImpressionFired('purple-cv', 'negotiation-grid')).toBe(true);
   });
 });
