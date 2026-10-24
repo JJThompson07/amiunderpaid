@@ -20,7 +20,7 @@ The system SHALL track an impression event named `affiliate_impression` when an 
 
 #### Scenario: Individual affiliate card scrolls into view
 
-- **WHEN** an individual affiliate partner card enters the viewport with an intersection threshold of visibility
+- **WHEN** at least half of an individual affiliate card's CTA link is visible in the viewport
 - **THEN** the system emits an `affiliate_impression` event with that partner's slug, placement identifier, country code, and salary verdict.
 
 #### Scenario: Lower cards in single-column layout remain off-screen
@@ -75,14 +75,15 @@ Affiliate tracking (`affiliate_click`, `affiliate_impression`, and `affiliate_di
 
 The system SHALL use stable partner slugs (`salary-negotiator`, `purple-cv`, `cv-library`) rather than localized display names, supported placements (`negotiation-grid`, `standalone-xl`, `toast`), and SHALL determine the salary verdict using a single-source calculation against the market baseline (`meanSalary || marketAverage`):
 
-- If `userSalary <= 0` or `marketAverage <= 0`, verdict is `'unknown'`.
+- If `userSalary <= 0` or the baseline (`meanSalary || marketAverage`) is `<= 0` or unavailable, verdict is `'unknown'`.
+- The diff percent is rounded to a whole percent (capped at 100) exactly as `getRawDiffPercentage` does, so the verdict matches the one shown in the comparison cards.
 - If `diffPercent < -2.5%`, verdict is `'underpaid'`.
 - If `diffPercent > 2.5%`, verdict is `'overpaid'`.
 - If within `[-2.5%, 2.5%]`, verdict is `'fair'`.
 
 #### Scenario: Deriving verdict with missing or non-positive salary data
 
-- **WHEN** the user's salary or market average is less than or equal to 0, or unavailable
+- **WHEN** the user's salary or the market baseline is less than or equal to 0, or unavailable
 - **THEN** the verdict is resolved as `'unknown'`.
 
 #### Scenario: Deriving verdict for salary below market threshold
