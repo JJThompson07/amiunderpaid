@@ -226,10 +226,13 @@
           </template>
           <template #cta>
             <a
-              href="https://www.cv-library.co.uk/register?id=107202"
+              :ref="(el) => observeImpression(el, cvLibraryPayload)"
+              :href="getAffiliateUrl('cv-library')"
               target="_blank"
               rel="sponsored"
               class="block w-full p-3 text-center text-sm font-bold text-white bg-cv-library-700 rounded-lg hover:bg-cv-library-500 transition-colors shadow-md"
+              @click="trackAffiliateClick(cvLibraryPayload())"
+              @auxclick.middle="trackAffiliateClick(cvLibraryPayload())"
               >{{ $t('sections.negotiation.cv-library.cta') }}</a
             >
           </template>
@@ -300,6 +303,9 @@
 <script setup lang="ts">
 import { FileUser, Info } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
+import type { AffiliateTrackingPayload } from '~~/shared/utils/affiliates';
+import { getAffiliateUrl } from '~~/shared/utils/affiliates';
+import { calculateSalaryVerdict } from '~~/shared/utils/verdict';
 import type { RecruiterCard } from '~~/shared/utils/types';
 
 const { $siteBrand } = useNuxtApp();
@@ -386,6 +392,21 @@ const openRecruiterModal = (card: RecruiterCard): void => {
   selectedRecruiter.value = card;
   showRecruiterModal.value = true;
 };
+
+// Affiliate tracking - same baseline SectionNegotiation receives, so every placement agrees
+const { trackAffiliateClick } = useAnalytics();
+const { observeImpression } = useAffiliateImpression();
+
+const affiliateVerdict = computed(() =>
+  calculateSalaryVerdict(userSalary.value, meanSalary.value || marketAverage.value)
+);
+
+const cvLibraryPayload = (): AffiliateTrackingPayload => ({
+  partner: 'cv-library',
+  placement: 'standalone-xl',
+  country: country.value,
+  verdict: affiliateVerdict.value
+});
 
 onMounted(() => {
   const { compare, ...remainingQuery } = route.query;
