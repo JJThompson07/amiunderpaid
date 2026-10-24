@@ -68,6 +68,7 @@
 
 <script setup lang="ts">
 import { Landmark } from 'lucide-vue-next';
+import { getSalaryVerdict, verdictToComparison } from '~~/shared/utils/verdict';
 
 const props = defineProps<{
   isFallback: boolean;
@@ -89,15 +90,7 @@ defineEmits<{
   (e: 'userSelect'): void;
 }>();
 
-const comparison = computed<number>(() => {
-  if (props.diffPercent > 2.5) {
-    return 1;
-  } else if (props.diffPercent < -2.5) {
-    return -1;
-  } else {
-    return 0;
-  }
-});
+const comparison = computed<number>(() => verdictToComparison(getSalaryVerdict(props.diffPercent)));
 </script>
 
 <style scoped></style>

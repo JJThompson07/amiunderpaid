@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { calculateSalaryVerdict, getSalaryVerdict, VERDICT_BAND_PERCENT } from '../verdict';
+import {
+  calculateSalaryVerdict,
+  getSalaryVerdict,
+  VERDICT_BAND_PERCENT,
+  verdictToComparison
+} from '../verdict';
 
 describe('getSalaryVerdict', () => {
   it('uses a 2.5% band', () => {
@@ -60,5 +65,24 @@ describe('calculateSalaryVerdict', () => {
 
   it('caps the diff at 100% without changing the verdict', () => {
     expect(calculateSalaryVerdict(500000, 50000)).toBe('overpaid');
+  });
+});
+
+describe('verdictToComparison', () => {
+  it('maps verdicts to the comparison cards numeric state', () => {
+    expect(verdictToComparison('overpaid')).toBe(1);
+    expect(verdictToComparison('fair')).toBe(0);
+    expect(verdictToComparison('underpaid')).toBe(-1);
+  });
+
+  it('treats an unknown verdict as neutral', () => {
+    expect(verdictToComparison('unknown')).toBe(0);
+  });
+
+  it('matches the cards previous inline ±2.5% thresholds', () => {
+    const legacy = (diff: number): number => (diff > 2.5 ? 1 : diff < -2.5 ? -1 : 0);
+    for (const diff of [-50, -3, -2.6, -2.5, -1, 0, 1, 2.5, 2.6, 3, 50]) {
+      expect(verdictToComparison(getSalaryVerdict(diff))).toBe(legacy(diff));
+    }
   });
 });
