@@ -13,12 +13,9 @@
       <div class="relative p-6 overflow-y-auto flex flex-col gap-6">
         <div
           class="grid grid-cols-1 gap-4"
-          :class="
-            country === 'USA' ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-3'
-          ">
+          :class="country === 'USA' ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-4'">
           <!-- Loop through cards -->
-          <component
-            :is="card.component || AmICardAction"
+          <AmICardAction
             v-for="card in cards"
             :key="card.header"
             :icon="card.icon"
@@ -57,7 +54,7 @@
                 {{ card.ctaText }}
               </AmIButton>
             </template>
-          </component>
+          </AmICardAction>
         </div>
 
         <!-- Collapsible Script Section -->
@@ -89,13 +86,56 @@
 <script setup lang="ts">
 // imports
 import { Binoculars, CheckCircle2, Copy, FileText, Mail, TrendingUp } from 'lucide-vue-next';
-import { AFFILIATE_PARTNERS } from '~~/shared/utils/affiliates';
 import type { AffiliatePartnerSlug, AffiliateTrackingPayload } from '~~/shared/utils/affiliates';
-import { AmICardAction, LazyAmICardAction } from '#components';
-import { computed, onMounted, ref } from 'vue';
+import type { Component, ComponentPublicInstance } from 'vue';
+import { computed, ref } from 'vue';
 import { calculateSalaryVerdict } from '~~/shared/utils/verdict';
-import type { ComponentPublicInstance } from 'vue';
+import { getOrderedAffiliateOffers } from '~~/shared/utils/affiliates';
 // ** type definitions **
+type CardTheme = {
+  icon: Component;
+  bgColour: string;
+  borderColour: string;
+  hoverClass: string;
+  affiliateBgColour: string;
+  affiliateTextColour: string;
+  nameClass: string;
+  ctaClass: string;
+};
+
+// presentation stays here rather than in the server-importable offer registry
+const CARD_THEMES: Record<AffiliatePartnerSlug, CardTheme> = {
+  'salary-negotiator': {
+    icon: TrendingUp,
+    bgColour: 'bg-salary-negotiator-50/50',
+    borderColour: 'border-salary-negotiator-100',
+    hoverClass: 'hover:border-salary-negotiator-200',
+    affiliateBgColour: 'bg-salary-negotiator-100',
+    affiliateTextColour: 'text-salary-negotiator-600',
+    nameClass: 'text-salary-negotiator-500',
+    ctaClass: 'bg-salary-negotiator-500 hover:bg-salary-negotiator-700'
+  },
+  'purple-cv': {
+    icon: FileText,
+    bgColour: 'bg-purple-cv-50/50',
+    borderColour: 'border-purple-cv-100',
+    hoverClass: 'hover:border-purple-cv-200',
+    affiliateBgColour: 'bg-purple-cv-100',
+    affiliateTextColour: 'text-purple-cv-600',
+    nameClass: 'text-purple-cv-700',
+    ctaClass: 'bg-purple-cv-900 hover:bg-purple-cv-700'
+  },
+  'cv-library': {
+    icon: Binoculars,
+    bgColour: 'bg-cv-library-50/50',
+    borderColour: 'border-cv-library-100',
+    hoverClass: 'hover:border-cv-library-200',
+    affiliateBgColour: 'bg-cv-library-100',
+    affiliateTextColour: 'text-cv-library-700',
+    nameClass: 'text-cv-library-700',
+    ctaClass: 'bg-cv-library-700 hover:bg-cv-library-500'
+  }
+};
 
 // ** props **
 const props = defineProps<{
@@ -116,31 +156,22 @@ const copied = ref(false);
 const showScript = ref(false);
 const { trackAffiliateClick, trackResultAction } = useAnalytics();
 const { observeImpression } = useAffiliateImpression();
-const { isXl: viewportIsXl } = useViewport();
-
-// Ensure isXl is false during SSR/Hydration to match server rendering
-const isMounted = ref(false);
-const isXl = computed(() => isMounted.value && viewportIsXl.value);
-
-onMounted(() => {
-  isMounted.value = true;
-});
 
 // ** computed properties **
-const isUnderpaid = computed(() => props.marketAverage > props.currentSalary);
-
 const verdict = computed(() => calculateSalaryVerdict(props.currentSalary, props.marketAverage));
 
 const emailSubject = computed(() => `Salary Review Discussion - ${props.title} Role`);
 
 const emailBody = computed(() => {
-  const emailBody = isUnderpaid.value
-    ? $t('email.body.underpaid', {
-        title: props.title,
-        currency: props.currencySymbol,
-        average: props.marketAverage.toLocaleString()
-      })
-    : $t('email.body.incentive');
+  // within the ±2.5% band the user is fairly paid, so they get the incentive script
+  const emailBody =
+    verdict.value === 'underpaid'
+      ? $t('email.body.underpaid', {
+          title: props.title,
+          currency: props.currencySymbol,
+          average: props.marketAverage.toLocaleString()
+        })
+      : $t('email.body.incentive');
 
   return `${$t('email.subject', { subject: emailSubject.value })}${$t('email.intro')}${emailBody}${$t('email.closing')}`;
 });
@@ -184,96 +215,62 @@ const copyToClipboard = async (): Promise<void> => {
 };
 
 const cards = computed(() => {
-  const list = [
-    {
-      id: 1,
-      component: undefined,
-      header: $t('sections.negotiation.salary-negotiator.title'),
-      strapline: $t('sections.negotiation.salary-negotiator.strapline'),
-      icon: TrendingUp,
-      premier: true,
-      sponsored: true,
-      bgColour: 'bg-salary-negotiator-50/50',
-      borderColour: 'border-salary-negotiator-100',
-      hoverClass: 'hover:border-salary-negotiator-200',
-      affiliateBgColour: 'bg-salary-negotiator-100',
-      affiliateTextColour: 'text-salary-negotiator-600',
-      bodyHtml: $t('sections.negotiation.salary-negotiator.body-html', {
-        name: `<strong class="text-salary-negotiator-500">${$t('sections.negotiation.salary-negotiator.name')}</strong>`
+  const affiliateCards = getOrderedAffiliateOffers(props.country, verdict.value).map((offer) => {
+    const theme = CARD_THEMES[offer.slug];
+    return {
+      header: $t(offer.titleKey),
+      strapline: $t(offer.straplineKey),
+      icon: theme.icon,
+      premier: offer.premier,
+      sponsored: offer.sponsored,
+      bgColour: theme.bgColour,
+      borderColour: theme.borderColour,
+      hoverClass: theme.hoverClass,
+      affiliateBgColour: theme.affiliateBgColour,
+      affiliateTextColour: theme.affiliateTextColour,
+      bodyHtml: $t(offer.bodyHtmlKey, {
+        name: `<strong class="${theme.nameClass}">${$t(offer.nameKey)}</strong>`
       }),
-      ctaType: 'link',
-      partner: AFFILIATE_PARTNERS['salary-negotiator'].slug,
-      ctaUrl: AFFILIATE_PARTNERS['salary-negotiator'].url,
-      ctaText: $t('sections.negotiation.salary-negotiator.cta'),
-      ctaClass: 'bg-salary-negotiator-500 hover:bg-salary-negotiator-700'
-    },
-    {
-      id: 2,
-      component: undefined,
-      header: $t('sections.negotiation.purple-cv.title'),
-      strapline: $t('sections.negotiation.purple-cv.strapline'),
-      icon: FileText,
-      premier: true,
-      sponsored: true,
-      bgColour: 'bg-purple-cv-50/50',
-      borderColour: 'border-purple-cv-100',
-      hoverClass: 'hover:border-purple-cv-200',
-      affiliateBgColour: 'bg-purple-cv-100',
-      affiliateTextColour: 'text-purple-cv-600',
-      bodyHtml: $t('sections.negotiation.purple-cv.body-html', {
-        name: `<strong class="text-purple-cv-700">${$t('sections.negotiation.purple-cv.name')}</strong>`
-      }),
-      ctaType: 'link',
-      partner: AFFILIATE_PARTNERS['purple-cv'].slug,
-      ctaUrl: AFFILIATE_PARTNERS['purple-cv'].url,
-      ctaText: $t('sections.negotiation.purple-cv.cta'),
-      ctaClass: 'bg-purple-cv-900 hover:bg-purple-cv-700'
-    },
-    {
-      id: 3,
-      component: LazyAmICardAction,
-      header: $t('sections.negotiation.cv-library.title'),
-      strapline: $t('sections.negotiation.cv-library.strapline'),
-      icon: Binoculars,
-      sponsored: true,
-      bgColour: 'bg-cv-library-50/50',
-      borderColour: 'border-cv-library-100',
-      hoverClass: 'hover:border-cv-library-200',
-      affiliateBgColour: 'bg-cv-library-100',
-      affiliateTextColour: 'text-cv-library-700',
-      bodyHtml: $t('sections.negotiation.cv-library.body-html', {
-        name: `<strong class="text-cv-library-700">${$t('sections.negotiation.cv-library.name')}</strong>`
-      }),
-      ctaType: 'link',
-      partner: AFFILIATE_PARTNERS['cv-library'].slug,
-      ctaUrl: AFFILIATE_PARTNERS['cv-library'].url,
-      ctaText: $t('sections.negotiation.cv-library.cta'),
-      ctaClass: 'bg-cv-library-700 hover:bg-cv-library-500'
-    },
-    {
-      id: 4,
-      component: undefined,
-      header: $t('sections.negotiation.custom.title'),
-      strapline: $t('sections.negotiation.custom.strapline'),
-      icon: Mail,
-      bodyHtml: $t('sections.negotiation.custom.body-html'),
-      ctaType: 'button',
-      ctaText: showScript.value
-        ? $t('sections.negotiation.custom.cta-hide')
-        : $t('sections.negotiation.custom.cta-show'),
-      ctaAction: toggleScript,
-      ctaProps: {
-        bgColour: 'bg-white',
-        animationColour: 'bg-slate-200',
-        textColour: 'text-slate-900',
-        class: 'border-slate-300 border'
-      }
-    }
-  ];
+      ctaType: 'link' as const,
+      partner: offer.slug,
+      ctaUrl: offer.url,
+      ctaText: $t(offer.ctaTextKey),
+      ctaClass: theme.ctaClass,
+      ctaAction: undefined,
+      ctaProps: undefined
+    };
+  });
 
-  return !isXl.value && props.country === 'UK'
-    ? list
-    : (list.filter((item) => !item.component) as typeof list);
+  // the free email script always closes the grid
+  const scriptCard = {
+    header: $t('sections.negotiation.custom.title'),
+    strapline: $t('sections.negotiation.custom.strapline'),
+    icon: Mail,
+    premier: false,
+    sponsored: false,
+    bgColour: undefined,
+    borderColour: undefined,
+    hoverClass: undefined,
+    affiliateBgColour: undefined,
+    affiliateTextColour: undefined,
+    bodyHtml: $t('sections.negotiation.custom.body-html'),
+    ctaType: 'button' as const,
+    partner: undefined,
+    ctaUrl: undefined,
+    ctaText: showScript.value
+      ? $t('sections.negotiation.custom.cta-hide')
+      : $t('sections.negotiation.custom.cta-show'),
+    ctaClass: undefined,
+    ctaAction: toggleScript,
+    ctaProps: {
+      bgColour: 'bg-white',
+      animationColour: 'bg-slate-200',
+      textColour: 'text-slate-900',
+      class: 'border-slate-300 border'
+    }
+  };
+
+  return [...affiliateCards, scriptCard];
 });
 
 // ** watchers **

@@ -22,5 +22,38 @@
     "success": "Success",
     "error": "Error",
     "info": "Info"
+  },
+  "affiliate": {
+    "sponsored": "Sponsored",
+    "salary-negotiator": {
+      "cta": "View courses",
+      "underpaid": {
+        "title": "You could be earning more",
+        "message": "Your salary is below the market rate for this role. The Salary Negotiator's courses show you how to close the gap."
+      },
+      "fair": {
+        "title": "Paid fairly? Aim higher",
+        "message": "You're in line with the market. Learn how to make the case for your next raise or bonus with The Salary Negotiator."
+      },
+      "overpaid": {
+        "title": "Negotiate your total compensation",
+        "message": "You're paid above the market rate. Go beyond base salary and learn to negotiate bonuses, equity and benefits with The Salary Negotiator."
+      },
+      "unknown": {
+        "title": "Know your worth",
+        "message": "Learn how to find your market value and negotiate the pay you deserve with The Salary Negotiator."
+      }
+    },
+    "purple-cv": {
+      "cta": "Get your resume written",
+      "fair": {
+        "title": "Ready for your next move?",
+        "message": "You're paid in line with the market. A professionally written resume from PurpleCV can help you land a better-paying role."
+      },
+      "overpaid": {
+        "title": "Position yourself for the next level",
+        "message": "You're already ahead of the market. PurpleCV's experts can position your leadership experience for senior roles."
+      }
+    }
   }
 }
