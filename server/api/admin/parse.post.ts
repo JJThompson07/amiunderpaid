@@ -6,13 +6,14 @@ type SheetCell = string | number | boolean | Date | null | undefined;
 type SheetRow = SheetCell[];
 
 /**
- * Server-side parser for Regional/State employment data.
- * * UK Source: ONS ASHE Work Geography Table 7.7a
- * - 'Description' column = Location Name
- * - Job Title defaults to 'All' (as these tables are aggregates)
- * * USA Source: BLS OEWS State/Area data
- * - 'AREA_TITLE' column = Location Name
+ * Server-side parser for National occupation employment data.
+ * * UK Source: ONS ASHE Occupation (4-digit SOC) Table 14.7a
+ * - 'Description' column = Job Title
+ * - 'Code' column = SOC code
+ * - Location is always 'United Kingdom'
+ * * USA Source: BLS OEWS National data
  * - 'OCC_TITLE' column = Job Title
+ * - 'A_MEDIAN' column = Annual median salary
  */
 
 type SalaryRecord = {
