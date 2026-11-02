@@ -39,4 +39,28 @@ describe('useConsoleLog', () => {
 
     expect(status.value).toBe('');
   });
+
+  it('rewrites the previous progress line in place until a normal line is logged', () => {
+    const { status, log, logProgress } = useConsoleLog();
+
+    log('start');
+    logProgress('Firestore: 1,000 / 3,000 (33%)');
+    logProgress('Firestore: 2,000 / 3,000 (67%)');
+    log('done');
+    logProgress('Search index: 1,000 / 3,000 (33%)');
+
+    expect(status.value).toBe(
+      '> start\n> Firestore: 2,000 / 3,000 (67%)\n> done\n> Search index: 1,000 / 3,000 (33%)\n'
+    );
+  });
+
+  it('starts a fresh progress line after the log is cleared', () => {
+    const { status, logProgress, clearLog } = useConsoleLog();
+
+    logProgress('old progress');
+    clearLog();
+    logProgress('new progress');
+
+    expect(status.value).toBe('> new progress\n');
+  });
 });
