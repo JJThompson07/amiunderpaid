@@ -1,4 +1,10 @@
-const ALLOWED_COLLECTIONS = ['adzuna_jobs_cache', 'reed_jobs_cache'];
+const ALLOWED_COLLECTIONS = [
+  'adzuna_jobs_cache',
+  'reed_jobs_cache',
+  // government benchmark datasets, deleted per country/year/period from the admin seeder
+  'regional_salary_benchmarks',
+  'salary_benchmarks'
+];
 
 export default defineEventHandler(async (event) => {
   // admin-guard.ts now handles authentication globally for /api/admin/*, but we can leave this or remove it.

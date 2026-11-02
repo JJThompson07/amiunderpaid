@@ -49,6 +49,17 @@ describe('admin seed endpoint', () => {
     expect(mockBatchSeed).toHaveBeenCalledWith('job_titles', [{ title: 'Engineer' }]);
   });
 
+  it.each(['salary_benchmarks', 'regional_salary_benchmarks'])(
+    'accepts the %s government benchmark collection',
+    async (collectionName) => {
+      mockReadBody.mockResolvedValue({ collectionName, data: [{ title: 'Nurse' }] });
+
+      await handler({} as unknown as H3Event);
+
+      expect(mockBatchSeed).toHaveBeenCalledWith(collectionName, [{ title: 'Nurse' }]);
+    }
+  );
+
   it('enforces admin authorization', async () => {
     mockVerifyAdmin.mockRejectedValueOnce(new Error('Forbidden'));
     const event = {} as unknown as H3Event;

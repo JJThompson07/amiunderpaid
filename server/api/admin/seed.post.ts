@@ -9,6 +9,8 @@ export default defineEventHandler(async (event) => {
     'adzuna_categories',
     'job_titles',
     'platform_settings',
+    'regional_salary_benchmarks',
+    'salary_benchmarks',
     'uk_job_groups',
     'usa_job_groups'
   ];
