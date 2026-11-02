@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pinToSingleYear } from '../benchmarkYear';
+import { isLatestYear, pinToSingleYear } from '../benchmarkYear';
 
 describe('pinToSingleYear', () => {
   const hits = [
@@ -33,5 +33,23 @@ describe('pinToSingleYear', () => {
     ];
 
     expect(pinToSingleYear(legacy, 2026)).toEqual(legacy);
+  });
+});
+
+describe('isLatestYear', () => {
+  it('is true for a year newer than every existing one', () => {
+    expect(isLatestYear(2026, [2025, 2024])).toBe(true);
+  });
+
+  it('is true when re-uploading the newest year', () => {
+    expect(isLatestYear(2026, [2026, 2025])).toBe(true);
+  });
+
+  it('is false for a year older than the newest existing one', () => {
+    expect(isLatestYear(2024, [2026, 2025])).toBe(false);
+  });
+
+  it('treats no existing years as newest', () => {
+    expect(isLatestYear(2024, [])).toBe(true);
   });
 });

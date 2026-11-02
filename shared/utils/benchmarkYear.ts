@@ -19,3 +19,10 @@ export const pinToSingleYear = <T extends { year?: number }>(
   const year = preferredYear ?? Math.max(...years);
   return hits.filter((hit) => hit.year === year);
 };
+
+/**
+ * Whether `year` is at least as new as every year already held (an empty list counts as newest).
+ * The seeder only syncs the newest regional year to search, so an older upload can't replace it.
+ */
+export const isLatestYear = (year: number, existingYears: number[]): boolean =>
+  existingYears.every((existing) => year >= existing);
