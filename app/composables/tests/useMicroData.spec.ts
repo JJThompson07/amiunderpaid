@@ -108,6 +108,57 @@ describe('useMicroData', () => {
     });
   });
 
+  it('keeps the first hit when a region has duplicate records for the same year', async () => {
+    mockNationalSearch.mockResolvedValueOnce({
+      hits: [{ title: 'Registered Nurse', year: 2026, salary: 37000 }]
+    });
+    mockRegionalSearch.mockResolvedValueOnce({
+      hits: [
+        { searchLocation: 'London', year: 2026, salary: 43000 },
+        { searchLocation: 'London', year: 2026, salary: 41000 }
+      ]
+    });
+
+    const { fetchMicroBaselines } = useMicroData();
+    const result = await fetchMicroBaselines('UK', 'Registered Nurse', 'London', '2231');
+
+    expect(result.microRegionalData?.p50).toBe(43000);
+  });
+
+  it("only requests the prefetched national record's year from the regional index", async () => {
+    mockRegionalSearch.mockResolvedValueOnce({ hits: [] });
+
+    const { fetchMicroBaselines } = useMicroData();
+    await fetchMicroBaselines('UK', 'Registered Nurse', 'London', '2231', {
+      title: 'Registered Nurse',
+      year: 2025,
+      salary: 36000
+    });
+
+    expect(mockRegionalSearch).toHaveBeenCalledWith('', {
+      filters: 'country:UK AND id_code:2231 AND year:2025',
+      hitsPerPage: 1000
+    });
+  });
+
+  it('never mixes years: regions without a figure for the national year are left out', async () => {
+    mockNationalSearch.mockResolvedValueOnce({
+      hits: [{ title: 'Registered Nurse', year: 2026, salary: 37000 }]
+    });
+    mockRegionalSearch.mockResolvedValueOnce({
+      hits: [
+        { searchLocation: 'London', year: 2026, salary: 43000 },
+        { searchLocation: 'Orkney Islands', year: 2025, salary: 30000 }
+      ]
+    });
+
+    const { fetchMicroBaselines } = useMicroData();
+    const result = await fetchMicroBaselines('UK', 'Registered Nurse', 'Orkney Islands', '2231');
+
+    expect(Object.keys(result.allRegionalMicroData)).toEqual(['london']);
+    expect(result.microRegionalData).toBeNull();
+  });
+
   it('fetches micro baselines with USA idCode with quotes', async () => {
     mockNationalSearch.mockResolvedValueOnce({ hits: [] });
     mockRegionalSearch.mockResolvedValueOnce({ hits: [] });

@@ -47,6 +47,12 @@ describe('admin clear-algolia endpoint', () => {
     await expect(handler(event)).rejects.toThrow('Missing indexName or filters');
   });
 
+  it('rejects an index outside the allow-list', async () => {
+    mockReadBody.mockResolvedValue({ indexName: 'search_history', filters: 'country:UK' });
+
+    await expect(handler({} as unknown as H3Event)).rejects.toThrow('Invalid search index');
+  });
+
   it('fails with a 500 when Algolia credentials are missing', async () => {
     mockConfig = {};
     const event = {} as unknown as H3Event;

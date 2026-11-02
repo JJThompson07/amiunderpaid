@@ -6,12 +6,20 @@ type SyncAlgoliaRequestBody = {
   indexName: string;
 };
 
+// the only indices the admin pages write to (seed.vue: benchmarks, coding-index.vue: job_titles)
+const ALLOWED_INDICES = ['job_titles', 'regional_salary_benchmarks', 'salary_benchmarks'];
+
 export default defineEventHandler(async (event) => {
+  await verifyAdmin(event);
   const body = await readBody<SyncAlgoliaRequestBody>(event);
   const { data, indexName } = body;
 
   if (!data || !Array.isArray(data)) {
     throw createError({ statusCode: 400, message: 'Invalid data format' });
+  }
+
+  if (!ALLOWED_INDICES.includes(indexName)) {
+    throw createError({ statusCode: 400, message: 'Invalid search index' });
   }
 
   const config = useRuntimeConfig();
@@ -40,7 +48,10 @@ export default defineEventHandler(async (event) => {
         'filterOnly(searchLocation)',
         'searchable(location)', // Searchable facet for autocomplete
         'searchable(title)' // Searchable facet for autocomplete
-      ]
+      ],
+      // benchmark indices can hold several data years side by side; newest first so lookups
+      // that take the first hit per title/region get the latest year
+      customRanking: ['desc(year)']
     });
 
     // Save objects (upsert)

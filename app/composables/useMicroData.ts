@@ -2,6 +2,7 @@ import type { SearchClient } from 'algoliasearch';
 import type { Ref } from 'vue';
 import type { SalaryBenchmark } from '~/composables/useMarketData';
 import type { PercentileData } from '~~/shared/utils/types';
+import { pinToSingleYear } from '~~/shared/utils/benchmarkYear';
 
 // Raw shape of a benchmark record as stored in the Algolia `salary_benchmarks` /
 // `regional_salary_benchmarks` indices.
@@ -14,6 +15,7 @@ type AlgoliaBenchmarkHit = {
   salary_75_pt?: number;
   salary_90_pt?: number;
   searchLocation?: string;
+  year?: number;
 };
 
 export type MicroBaselines = {
@@ -78,6 +80,12 @@ export const useMicroData = (): {
         baseRegionalFilter += ` AND searchTitle:"${cleanTitle}"`;
       }
 
+      // When the national record is already known, only fetch its year's regions: newer years
+      // rank first and could otherwise push this year's regions past the hitsPerPage cap
+      if (prefetchedHit?.year) {
+        baseRegionalFilter += ` AND year:${prefetchedHit.year}`;
+      }
+
       // ==========================================
       // 2. BUILD QUERIES
       // ==========================================
@@ -130,8 +138,14 @@ export const useMicroData = (): {
       const allRegionalMicroData: Record<string, PercentileData> = {};
 
       if (regionalRes && regionalRes.hits) {
-        (regionalRes.hits as unknown as AlgoliaBenchmarkHit[]).forEach((hit) => {
-          if (hit.searchLocation) {
+        // pin every region to the national record's year so a role never shows a mix of years
+        pinToSingleYear(
+          regionalRes.hits as unknown as AlgoliaBenchmarkHit[],
+          nationalHit?.year
+        ).forEach((hit) => {
+          // hits arrive newest year first (customRanking desc(year)), so the first hit per
+          // region is its latest data year — never let an older year overwrite it
+          if (hit.searchLocation && !(hit.searchLocation.toLowerCase() in allRegionalMicroData)) {
             allRegionalMicroData[hit.searchLocation.toLowerCase()] = {
               mean: hit.avg_salary || hit.salary || 0,
               p10: hit.salary_10_pt || null,

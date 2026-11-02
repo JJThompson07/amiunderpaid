@@ -161,6 +161,9 @@
             </span>
             <input type="file" class="hidden" accept=".xlsx,.csv" @change="onFileSelect" />
           </label>
+          <p class="text-2xs text-slate-400 text-left ml-1">
+            Expected source: {{ expectedSource }}
+          </p>
         </div>
       </div>
 
@@ -234,7 +237,7 @@
 
 <script setup lang="ts">
 import { CheckCircle2, Database, LoaderCircle, Lock, UploadCloud, X } from 'lucide-vue-next';
-import { collection, FirestoreError, getCountFromServer, query, where } from 'firebase/firestore';
+import type { BenchmarkSummaryRow } from '../../../server/api/admin/benchmark-summary.get';
 import type { SalaryRecord } from '../../../utils/seedData';
 
 /**
@@ -248,7 +251,6 @@ definePageMeta({
 const adminFetch = useAdminFetch();
 
 // ** data & refs **
-const db = useFirestore();
 const user = useCurrentUser();
 
 const parsing = ref(false);
@@ -262,67 +264,34 @@ const targetYear = ref(new Date().getFullYear());
 const selectedFile = ref<File | null>(null);
 const fileName = ref('');
 const parsedData = ref<(SalaryRecord & { period: string })[]>([]);
-const existingData = ref<
-  { country: string; year: number; period: string; count: number; scope: string }[]
->([]);
+const existingData = ref<BenchmarkSummaryRow[]>([]);
 
 // ** methods **
 
 const fetchSummary = async (): Promise<void> => {
-  if (!db) {
-    return;
+  try {
+    const rows = await adminFetch<BenchmarkSummaryRow[]>('/api/admin/benchmark-summary');
+    existingData.value = rows.sort(
+      (a, b) =>
+        b.year - a.year || a.country.localeCompare(b.country) || a.scope.localeCompare(b.scope)
+    );
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log(`❌ Could not load current database records: ${message}`);
   }
-  const countries = ['UK', 'USA'];
-  const periods = ['year'];
-
-  // Generate last 5 years dynamically
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
-
-  const results: { country: string; year: number; period: string; count: number; scope: string }[] =
-    [];
-  const collections = [
-    { name: 'salary_benchmarks', scope: 'National' },
-    { name: 'regional_salary_benchmarks', scope: 'Regional' }
-  ];
-
-  const promises = [];
-
-  for (const col of collections) {
-    for (const country of countries) {
-      for (const year of years) {
-        for (const period of periods) {
-          promises.push(
-            (async (): Promise<void> => {
-              try {
-                const q = query(
-                  collection(db, col.name),
-                  where('country', '==', country),
-                  where('year', '==', year),
-                  where('period', '==', period)
-                );
-                const snapshot = await getCountFromServer(q);
-                const count = snapshot.data().count;
-                if (count > 0) {
-                  results.push({ country, year, period, count, scope: col.scope });
-                }
-              } catch {
-                // Silently continue checking other collections
-              }
-            })()
-          );
-        }
-      }
-    }
-  }
-
-  await Promise.all(promises);
-
-  existingData.value = results.sort(
-    (a, b) =>
-      b.year - a.year || a.country.localeCompare(b.country) || a.scope.localeCompare(b.scope)
-  );
 };
+
+// which government spreadsheet each country/scope combination's parser expects
+const expectedSource = computed(() => {
+  if (targetCountry.value === 'UK') {
+    return targetScope.value === 'national'
+      ? 'ONS ASHE Table 14.7a (Occupation, 4-digit SOC)'
+      : 'ONS ASHE Table 7.7a (Work Geography)';
+  }
+  return targetScope.value === 'national'
+    ? 'BLS OEWS National (OCC_TITLE, A_MEDIAN)'
+    : 'BLS OEWS State/Area (AREA_TITLE, OCC_TITLE, A_MEDIAN)';
+});
 
 const setCountry = (c: string): void => {
   targetCountry.value = c;
@@ -349,9 +318,6 @@ const deleteRecords = async (
   period: string,
   scope: string
 ): Promise<void> => {
-  if (!db) {
-    return;
-  }
   if (
     !confirm(
       `Are you sure you want to delete ALL ${scope} records for ${country} ${year} (${period})? This cannot be undone.`
@@ -433,7 +399,7 @@ const handleParse = async (): Promise<void> => {
 
 const seedToFirestore = async (): Promise<void> => {
   // 1. Pre-flight check
-  if (loading.value || parsedData.value.length === 0 || !db) {
+  if (loading.value || parsedData.value.length === 0) {
     return;
   }
 
@@ -478,7 +444,15 @@ const seedToFirestore = async (): Promise<void> => {
     });
 
     await batchSeed(recordsToSync, collectionName);
+  } catch {
+    // useAdminClient's batchSeed has already logged the failure
+    loading.value = false;
+    return;
+  }
 
+  // batchSeed's own finally clears loading; hold it until Algolia and the summary are done too
+  loading.value = true;
+  try {
     // 2. Sync to Algolia
     log(`Syncing ${recordsToSync.length} records to Algolia index '${collectionName}'...`);
     await adminFetch('/api/admin/sync-algolia', {
@@ -494,14 +468,14 @@ const seedToFirestore = async (): Promise<void> => {
     selectedFile.value = null;
     fileName.value = '';
     await fetchSummary();
-  } catch (e) {
+  } catch (e: unknown) {
+    // Firestore already holds these records, so the parsed data is kept for a retry
+    const message = e instanceof Error ? e.message : String(e);
+    log(
+      `❌ ALGOLIA SYNC ERROR: ${message}. Firestore was updated but search was not — click Sync again to retry.`
+    );
+  } finally {
     loading.value = false;
-    if (e instanceof FirestoreError && e.code === 'permission-denied') {
-      log(
-        `❌ PERMISSION ERROR: Missing write access for collection '${collectionName}'. Check firestore.rules.`
-      );
-    }
-    // Error logging handled in composable
   }
 };
 
@@ -525,10 +499,10 @@ watch(user, (newUser) => {
   }
 });
 
+// the summary already covers both scopes, so switching scope needs no refetch
 watch(targetScope, (newScope) => {
   if (newScope === 'regional') {
     targetPeriod.value = 'year';
   }
-  fetchSummary();
 });
 </script>

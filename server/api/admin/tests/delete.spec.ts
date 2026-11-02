@@ -61,4 +61,23 @@ describe('admin delete endpoint', () => {
     expect(res).toEqual({ success: true, count: 5 });
     expect(mockBatchDelete).toHaveBeenCalledWith('adzuna_jobs_cache', { country: 'gb' });
   });
+
+  it.each(['salary_benchmarks', 'regional_salary_benchmarks'])(
+    'deletes a filtered %s government benchmark dataset',
+    async (collectionName) => {
+      const filters = { country: 'UK', year: 2025, period: 'year' };
+      mockReadBody.mockResolvedValue({ collectionName, filters });
+
+      await handler({} as unknown as H3Event);
+
+      expect(mockBatchDelete).toHaveBeenCalledWith(collectionName, filters);
+    }
+  );
+
+  it('still refuses an unfiltered government benchmark wipe', async () => {
+    mockReadBody.mockResolvedValue({ collectionName: 'salary_benchmarks', filters: {} });
+
+    await expect(handler({} as unknown as H3Event)).rejects.toThrow();
+    expect(mockBatchDelete).not.toHaveBeenCalled();
+  });
 });
