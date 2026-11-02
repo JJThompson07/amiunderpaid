@@ -250,6 +250,7 @@
 import { CheckCircle2, Database, LoaderCircle, Lock, UploadCloud, X } from 'lucide-vue-next';
 import type { BenchmarkSummaryRow } from '../../../server/api/admin/benchmark-summary.get';
 import type { GovParseOptions, GovSalaryRecord } from '~~/shared/utils/govSpreadsheet';
+import { isLatestYear } from '~~/shared/utils/benchmarkYear';
 
 /**
  * PAGE METADATA
@@ -340,6 +341,35 @@ const onFileSelect = (e: Event): void => {
   }
 };
 
+// Firestore years already held for a country's regional data (from the summary)
+const regionalYears = (country: string): number[] =>
+  existingData.value
+    .filter((row) => row.scope === 'Regional' && row.country === country)
+    .map((row) => row.year);
+
+// Search holds only the newest regional year per country (Firestore keeps every year), so the
+// record quota doesn't grow with each yearly upload. Lookups only ever serve one year anyway.
+const pruneOlderRegionalYears = async (
+  country: string,
+  year: number,
+  period: string
+): Promise<void> => {
+  log(`Removing ${country} regional years before ${year} from search (Firestore keeps them)...`);
+  try {
+    await adminFetch('/api/admin/clear-algolia', {
+      method: 'POST',
+      body: {
+        indexName: 'regional_salary_benchmarks',
+        filters: `country:${country} AND period:${period} AND year < ${year}`
+      }
+    });
+    log('✅ Older regional years removed from search.');
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log(`⚠️ Could not remove older regional years from search: ${message}`);
+  }
+};
+
 const deleteRecords = async (
   country: string,
   year: number,
@@ -374,6 +404,12 @@ const deleteRecords = async (
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error';
     log(`⚠️ Failed to clear Algolia: ${message}`);
+  }
+
+  if (scope === 'Regional' && isLatestYear(year, regionalYears(country))) {
+    log(
+      `⚠️ Search only holds the newest regional year, so it has no ${country} regional data until a year is synced again.`
+    );
   }
 
   await fetchSummary();
@@ -437,6 +473,10 @@ const seedToFirestore = async (): Promise<void> => {
 
   const collectionName =
     parsedScope.value === 'national' ? 'salary_benchmarks' : 'regional_salary_benchmarks';
+  const { country, year, period } = parsedData.value[0]!;
+  const regional = parsedScope.value === 'regional';
+  // search keeps only the newest regional year; an older one goes to Firestore alone
+  const syncSearch = !regional || isLatestYear(year, regionalYears(country));
 
   const recordsToSync = parsedData.value.map((record) => {
     // deterministic IDs, so a retry overwrites rather than duplicates
@@ -479,12 +519,21 @@ const seedToFirestore = async (): Promise<void> => {
       firestoreSynced.value = true;
     }
 
-    try {
-      await batchSyncSearch(recordsToSync, collectionName);
-    } catch {
-      // the parsed data is kept, and the next Sync skips the Firestore step
-      log('Firestore was updated but search was not. Click Sync again to retry the search sync.');
-      return;
+    if (syncSearch) {
+      try {
+        await batchSyncSearch(recordsToSync, collectionName);
+      } catch {
+        // the parsed data is kept, and the next Sync skips the Firestore step
+        log('Firestore was updated but search was not. Click Sync again to retry the search sync.');
+        return;
+      }
+      if (regional) {
+        await pruneOlderRegionalYears(country, year, period);
+      }
+    } else {
+      log(
+        `Search keeps only the newest ${country} regional year, so ${year} was written to Firestore only.`
+      );
     }
 
     clearParsed();

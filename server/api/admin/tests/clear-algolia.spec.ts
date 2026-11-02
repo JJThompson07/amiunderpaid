@@ -70,6 +70,16 @@ describe('admin clear-algolia endpoint', () => {
     expect(mockDeleteBy).toHaveBeenCalledWith({ filters: 'country:UK' });
   });
 
+  it('passes a numeric year range through, for pruning older regional years', async () => {
+    const filters = 'country:USA AND period:year AND year < 2026';
+    mockReadBody.mockResolvedValue({ indexName: 'regional_salary_benchmarks', filters });
+
+    await handler({} as unknown as H3Event);
+
+    expect(mockInitIndex).toHaveBeenCalledWith('regional_salary_benchmarks');
+    expect(mockDeleteBy).toHaveBeenCalledWith({ filters });
+  });
+
   it('wraps an Algolia deleteBy failure in an opaque 500', async () => {
     mockDeleteBy.mockRejectedValueOnce(new Error('algolia down'));
     const event = {} as unknown as H3Event;

@@ -43,3 +43,12 @@ When the benchmark indices hold more than one data year, each lookup SHALL use e
 
 - **WHEN** national 2026 records are indexed but regional records are still only 2025
 - **THEN** no regional data is shown until the regional 2026 records are uploaded, rather than mixing 2026 national with 2025 regional figures
+
+### Requirement: Search holds one regional year per country
+
+The `regional_salary_benchmarks` search index SHALL hold only the newest regional data year per country, while Firestore keeps every year, so the search index stays within its record quota as new years are added.
+
+#### Scenario: A new regional year is added
+
+- **WHEN** 2026 regional data is synced for a country that already had 2025 regional data in search
+- **THEN** the search index holds only that country's 2026 regional records, and lookups behave as defined by "One data year per result"
