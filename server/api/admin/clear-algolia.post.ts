@@ -1,6 +1,9 @@
 import { createError, defineEventHandler, readBody } from 'h3';
 import algoliasearch from 'algoliasearch';
 
+// the only indices the admin pages write to (seed.vue: benchmarks, coding-index.vue: job_titles)
+const ALLOWED_INDICES = ['job_titles', 'regional_salary_benchmarks', 'salary_benchmarks'];
+
 export default defineEventHandler(async (event) => {
   await verifyAdmin(event);
   const config = useRuntimeConfig();
@@ -9,6 +12,10 @@ export default defineEventHandler(async (event) => {
 
   if (!indexName || !filters) {
     throw createError({ statusCode: 400, message: 'Missing indexName or filters' });
+  }
+
+  if (!ALLOWED_INDICES.includes(indexName)) {
+    throw createError({ statusCode: 400, message: 'Invalid search index' });
   }
 
   const appId = config.algoliaApplicationId;
