@@ -70,6 +70,14 @@ describe('admin sync-algolia endpoint', () => {
     });
   });
 
+  it('ranks newer data years first so year-agnostic lookups get the latest year', async () => {
+    await handler({} as unknown as H3Event);
+
+    expect(mockSetSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ customRanking: ['desc(year)'] })
+    );
+  });
+
   it('wraps a saveObjects failure in an opaque 500 without leaking the underlying error message', async () => {
     mockSaveObjects.mockRejectedValueOnce(new Error('quota exceeded'));
     const event = {} as unknown as H3Event;

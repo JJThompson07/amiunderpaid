@@ -40,7 +40,10 @@ export default defineEventHandler(async (event) => {
         'filterOnly(searchLocation)',
         'searchable(location)', // Searchable facet for autocomplete
         'searchable(title)' // Searchable facet for autocomplete
-      ]
+      ],
+      // benchmark indices can hold several data years side by side; newest first so lookups
+      // that take the first hit per title/region get the latest year
+      customRanking: ['desc(year)']
     });
 
     // Save objects (upsert)

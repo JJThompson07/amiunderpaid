@@ -84,6 +84,22 @@ describe('useMacroData', () => {
     expect(result.regionalMedianAllRoles).toBe(40000);
   });
 
+  it('keeps the newest data year when a region has hits for several years', async () => {
+    mockNationalSearch.mockResolvedValueOnce({ hits: [{ salary: 31000 }] });
+    // Algolia ranks desc(year), so the 2026 hit arrives before the 2025 one
+    mockRegionalSearch.mockResolvedValueOnce({
+      hits: [
+        { searchLocation: 'London', year: 2026, salary: 42000 },
+        { searchLocation: 'London', year: 2025, salary: 40000 }
+      ]
+    });
+
+    const result = await useMacroData().fetchMacroBaselines('UK', 'London');
+
+    expect(result.userRegionalData?.p50).toBe(42000);
+    expect(result.regionalMedianAllRoles).toBe(42000);
+  });
+
   it('fetches USA macro data correctly', async () => {
     mockNationalSearch.mockResolvedValueOnce({
       hits: [{ avg_salary: 50000, salary: 50000 }]

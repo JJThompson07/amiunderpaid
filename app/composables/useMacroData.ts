@@ -104,7 +104,9 @@ export const useMacroData = (): {
 
       if (regionalRes && regionalRes.hits) {
         regionalRes.hits.forEach((hit) => {
-          if (hit.searchLocation) {
+          // hits arrive newest year first (customRanking desc(year)), so the first hit per
+          // region is its latest data year — never let an older year overwrite it
+          if (hit.searchLocation && !(hit.searchLocation.toLowerCase() in allRegionalData)) {
             allRegionalData[hit.searchLocation.toLowerCase()] = {
               mean: hit.avg_salary || hit.salary || 0,
               p10: hit.salary_10_pt || null,

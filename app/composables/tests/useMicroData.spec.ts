@@ -108,6 +108,24 @@ describe('useMicroData', () => {
     });
   });
 
+  it('keeps the newest data year when a region has hits for several years', async () => {
+    mockNationalSearch.mockResolvedValueOnce({
+      hits: [{ title: 'Registered Nurse', salary: 37000 }]
+    });
+    // Algolia ranks desc(year), so the 2026 hit arrives before the 2025 one
+    mockRegionalSearch.mockResolvedValueOnce({
+      hits: [
+        { searchLocation: 'London', year: 2026, salary: 43000 },
+        { searchLocation: 'London', year: 2025, salary: 41000 }
+      ]
+    });
+
+    const { fetchMicroBaselines } = useMicroData();
+    const result = await fetchMicroBaselines('UK', 'Registered Nurse', 'London', '2231');
+
+    expect(result.microRegionalData?.p50).toBe(43000);
+  });
+
   it('fetches micro baselines with USA idCode with quotes', async () => {
     mockNationalSearch.mockResolvedValueOnce({ hits: [] });
     mockRegionalSearch.mockResolvedValueOnce({ hits: [] });
