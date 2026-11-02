@@ -142,6 +142,29 @@ describe('parseGovernmentWorkbook', () => {
       expect(skipped).toBe(4);
     });
 
+    it("strips the leading apostrophe ONS 2026 tables put on codes ('2134, 'E12000003)", () => {
+      const nationalWb = workbookOf({
+        'Full-Time': [UK_HEADERS, ["'2134", 'Programmers', 59863, 69121], ["'", 'Code only', 40000]]
+      });
+      const regionalWb = workbookOf({
+        'Full-Time': [UK_HEADERS, ["'E12000003", 'Yorkshire', 33000]]
+      });
+
+      const national = parseGovernmentWorkbook(nationalWb, {
+        country: 'UK',
+        scope: 'national',
+        year: 2026
+      });
+      const regional = parseGovernmentWorkbook(regionalWb, {
+        country: 'UK',
+        scope: 'regional',
+        year: 2026
+      });
+
+      expect(national.records.map((r) => r.id_code)).toEqual(['2134', undefined]);
+      expect(regional.records[0]?.id_code).toBe('E12000003');
+    });
+
     it('rejects a sheet without the ONS header structure', () => {
       const wb = workbookOf({ 'Full-Time': [['nothing', 'recognisable']] });
 
