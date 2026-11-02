@@ -28,11 +28,19 @@
 
 - [x] 5.1 Correct the `parse.post.ts` header (ONS ASHE Table 14.7a / BLS OEWS national) and show the expected source per country/scope under the seeder's file picker.
 
-## 6. Verification gate
+## 6. PR review follow-ups
 
-- [x] 6.1 Run `pnpm test:verify` and confirm it passes in full.
+- [x] 6.1 `seed.vue`: remove the leftover client Firestore code (`FirestoreError`, `useFirestore()`, the `!db` guards). Log `sync-algolia` failures (Firestore written but search not, parsed data kept for retry) instead of swallowing them. Hold `loading` until Algolia and the summary finish. Stop refetching the summary on scope toggle, since it already covers both scopes.
+- [x] 6.2 `sync-algolia.post.ts` / `clear-algolia.post.ts`: explicit `verifyAdmin` (defense in depth on top of `admin-guard`) and an `ALLOWED_INDICES` allow-list (`job_titles`, `salary_benchmarks`, `regional_salary_benchmarks`), with tests.
+- [x] 6.3 `useMicroData`: when a prefetched national hit carries a year, add `year:<year>` to the regional filter, so newer years can't push its regions past `hitsPerPage: 1000`.
+- [x] 6.4 Replace the regional "newest year" composable tests, which `pinToSingleYear` made vacuous, with same-year duplicate tests that actually exercise the first-hit guard.
+- [x] 6.5 `backfill-searches.post.ts`: drop `.limit(1)` on the `salary_benchmarks` lookups and pick the newest year (Firestore returns oldest-year IDs first). `useJobAutocomplete`: map a USA title to the first (newest) id within a response. Both with tests.
 
-## 7. Post-deploy (manual)
+## 7. Verification gate
 
-- [ ] 7.1 After deploy, open `/admin/seed` and confirm the panel lists the four 2025 datasets.
-- [ ] 7.2 Upload UK 2026 national (ASHE 14.7a) and regional (ASHE 7.7a) back to back (regional data is hidden in between, by design), then check a UK search shows 2026 figures and the panel lists both years.
+- [x] 7.1 Run `pnpm test:verify` and confirm it passes in full.
+
+## 8. Post-deploy (manual)
+
+- [ ] 8.1 After deploy, open `/admin/seed` and confirm the panel lists the four 2025 datasets.
+- [ ] 8.2 Upload UK 2026 national (ASHE 14.7a) and regional (ASHE 7.7a) back to back (regional data is hidden in between, by design), then check a UK search shows 2026 figures and the panel lists both years.
