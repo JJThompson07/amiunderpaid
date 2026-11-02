@@ -95,6 +95,19 @@ describe('admin sync-algolia endpoint', () => {
     );
   });
 
+  it('skips index settings for follow-up chunks', async () => {
+    mockReadBody.mockResolvedValue({
+      data: [{ objectID: '2' }],
+      indexName: 'salary_benchmarks',
+      configureSettings: false
+    });
+
+    await handler({} as unknown as H3Event);
+
+    expect(mockSetSettings).not.toHaveBeenCalled();
+    expect(mockSaveObjects).toHaveBeenCalled();
+  });
+
   it('wraps a saveObjects failure in an opaque 500 without leaking the underlying error message', async () => {
     mockSaveObjects.mockRejectedValueOnce(new Error('quota exceeded'));
     const event = {} as unknown as H3Event;

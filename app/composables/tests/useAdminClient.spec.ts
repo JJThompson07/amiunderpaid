@@ -180,12 +180,42 @@ describe('useAdminClient', () => {
       expect(mockAdminFetch).toHaveBeenCalledTimes(2);
       expect(mockAdminFetch).toHaveBeenLastCalledWith('/api/admin/sync-algolia', {
         method: 'POST',
-        body: { data: records.slice(1000), indexName: 'regional_salary_benchmarks' }
+        body: {
+          data: records.slice(1000),
+          indexName: 'regional_salary_benchmarks',
+          configureSettings: false
+        }
       });
       expect(logMock).toHaveBeenCalledWith(
         expect.stringMatching(/^✅ Search index complete: 1,200 records/)
       );
       expect(loading.value).toBe(false);
+    });
+
+    it('applies index settings with the first chunk only', async () => {
+      mockAdminFetch.mockResolvedValue({ success: true });
+      const { batchSyncSearch } = useAdminClient(logMock);
+
+      await batchSyncSearch(
+        Array.from({ length: 2500 }, (_, i) => i),
+        'regional_salary_benchmarks'
+      );
+
+      const flags = mockAdminFetch.mock.calls.map(
+        ([, opts]) => (opts as { body: { configureSettings: boolean } }).body.configureSettings
+      );
+      expect(flags).toEqual([true, false, false]);
+    });
+
+    it('leaves a caller-owned loading flag set for the rest of the caller flow', async () => {
+      mockAdminFetch.mockResolvedValue({ success: true });
+      const { batchSeed, batchSyncSearch, loading } = useAdminClient(logMock);
+      loading.value = true;
+
+      await batchSeed([{ id: 1 }], 'salary_benchmarks');
+      expect(loading.value).toBe(true);
+      await batchSyncSearch([{ id: 1 }], 'salary_benchmarks');
+      expect(loading.value).toBe(true);
     });
 
     it('rethrows a failed chunk and clears loading', async () => {

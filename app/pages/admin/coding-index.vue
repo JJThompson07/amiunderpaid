@@ -191,7 +191,7 @@ const user = useCurrentUser();
 
 const parsing = ref(false);
 const { status, consoleRef, log } = useConsoleLog();
-const { loading, batchDelete, batchSeed } = useAdminClient(log);
+const { loading, batchDelete, batchSeed, batchSyncSearch } = useAdminClient(log);
 
 const targetCountry = ref('UK');
 const overwrite = ref(false);
@@ -384,12 +384,7 @@ const seedToFirestore = async (): Promise<void> => {
     await batchSeed(recordsToSync, 'job_titles');
 
     // 3. Sync to Algolia
-    log(`Syncing to Algolia index 'job_titles'...`);
-    await adminFetch('/api/admin/sync-algolia', {
-      method: 'POST',
-      body: { data: recordsToSync, indexName: 'job_titles' }
-    });
-    log('✅ Algolia Sync Complete.');
+    await batchSyncSearch(recordsToSync, 'job_titles');
 
     parsedData.value = [];
     selectedFile.value = null;
@@ -398,6 +393,8 @@ const seedToFirestore = async (): Promise<void> => {
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
     log(`❌ Error: ${message}`);
+  } finally {
+    // this flow owns loading; batchSeed/batchSyncSearch leave a caller-owned loading alone
     loading.value = false;
   }
 };

@@ -22,7 +22,7 @@ type UseAdminClientReturn = {
   batchSyncSearch: <T>(data: T[], indexName: string) => Promise<void>;
 };
 
-const formatCount = (n: number): string => n.toLocaleString('en-GB');
+export const formatCount = (n: number): string => n.toLocaleString('en-GB');
 
 const formatDuration = (ms: number): string => {
   const seconds = Math.round(ms / 1000);
@@ -78,7 +78,7 @@ export const useAdminClient = (
   const sendInChunks = async <T>(
     data: T[],
     label: string,
-    send: (chunk: T[]) => Promise<unknown>
+    send: (chunk: T[], start: number) => Promise<unknown>
   ): Promise<void> => {
     const total = data.length;
     const chunks = Math.ceil(total / ADMIN_SYNC_CHUNK_SIZE);
@@ -90,7 +90,7 @@ export const useAdminClient = (
       for (let start = 0; start < total; start += ADMIN_SYNC_CHUNK_SIZE) {
         const chunk = data.slice(start, start + ADMIN_SYNC_CHUNK_SIZE);
         try {
-          await send(chunk);
+          await send(chunk, start);
         } catch (e: unknown) {
           log(
             `❌ ${label} stopped after ${formatCount(start)} of ${formatCount(total)} records: ${errorMessage(e)}`
@@ -115,35 +115,52 @@ export const useAdminClient = (
   /**
    * Writes records to a Firestore collection via the admin seed endpoint, in chunks.
    */
-  const batchSeed = async <T>(data: T[], collectionName: string): Promise<void> => {
-    if (data.length === 0) {
-      return;
-    }
+  /**
+   * Runs `work` with `loading` set. A caller that already set `loading` for a longer flow
+   * (e.g. Firestore write, then search sync, then a summary refresh) keeps it set afterwards.
+   */
+  const withLoading = async (work: () => Promise<void>): Promise<void> => {
+    const owned = !loading.value;
     loading.value = true;
     try {
-      await sendInChunks(data, 'Firestore', (chunk) =>
-        adminFetch('/api/admin/seed', { method: 'POST', body: { collectionName, data: chunk } })
-      );
+      await work();
     } finally {
-      loading.value = false;
+      if (owned) {
+        loading.value = false;
+      }
     }
   };
 
   /**
-   * Adds or replaces records in a search index via the admin sync endpoint, in chunks.
+   * Writes records to a Firestore collection via the admin seed endpoint, in chunks.
+   */
+  const batchSeed = async <T>(data: T[], collectionName: string): Promise<void> => {
+    if (data.length === 0) {
+      return;
+    }
+    await withLoading(() =>
+      sendInChunks(data, 'Firestore', (chunk) =>
+        adminFetch('/api/admin/seed', { method: 'POST', body: { collectionName, data: chunk } })
+      )
+    );
+  };
+
+  /**
+   * Adds or replaces records in a search index via the admin sync endpoint, in chunks. Index
+   * settings are applied with the first chunk only.
    */
   const batchSyncSearch = async <T>(data: T[], indexName: string): Promise<void> => {
     if (data.length === 0) {
       return;
     }
-    loading.value = true;
-    try {
-      await sendInChunks(data, 'Search index', (chunk) =>
-        adminFetch('/api/admin/sync-algolia', { method: 'POST', body: { data: chunk, indexName } })
-      );
-    } finally {
-      loading.value = false;
-    }
+    await withLoading(() =>
+      sendInChunks(data, 'Search index', (chunk, start) =>
+        adminFetch('/api/admin/sync-algolia', {
+          method: 'POST',
+          body: { data: chunk, indexName, configureSettings: start === 0 }
+        })
+      )
+    );
   };
 
   return {
