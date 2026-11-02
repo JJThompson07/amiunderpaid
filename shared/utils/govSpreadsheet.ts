@@ -75,6 +75,13 @@ const parseUSVal = (val: SheetCell): number | undefined => {
   return !isNaN(parsed) ? Math.round(parsed) : undefined;
 };
 
+// ONS 2026 tables store codes as text with a literal leading apostrophe ('2134, 'E12000003);
+// strip it so codes match job_titles SOC codes and the site's id_code lookups
+const parseCode = (val: SheetCell): string | undefined => {
+  const code = val == null ? '' : String(val).trim().replace(/^'+/, '').trim();
+  return code === '' ? undefined : code;
+};
+
 const isBlank = (val: SheetCell): boolean => val == null || String(val).trim() === '';
 
 type Columns = {
@@ -170,8 +177,7 @@ const parseUK = (workbook: XLSX.WorkBook, { scope, year }: GovParseOptions): Gov
             country: 'UK',
             period: 'year'
           };
-    record.id_code =
-      codeIdx > -1 && !isBlank(row[codeIdx]) ? String(row[codeIdx]).trim() : undefined;
+    record.id_code = codeIdx > -1 ? parseCode(row[codeIdx]) : undefined;
 
     records.push(addOptionalFields(record, row, cols, parseUKVal));
   }
@@ -219,7 +225,7 @@ const parseUSA = (workbook: XLSX.WorkBook, { year }: GovParseOptions): GovParseR
       year,
       salary,
       country: 'USA',
-      id_code: codeIdx > -1 && !isBlank(row[codeIdx]) ? String(row[codeIdx]).trim() : undefined,
+      id_code: codeIdx > -1 ? parseCode(row[codeIdx]) : undefined,
       period: 'year'
     };
     records.push(addOptionalFields(record, row, cols, parseUSVal));
