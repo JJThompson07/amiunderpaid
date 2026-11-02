@@ -170,7 +170,8 @@ const parseUK = (workbook: XLSX.WorkBook, { scope, year }: GovParseOptions): Gov
             country: 'UK',
             period: 'year'
           };
-    record.id_code = codeIdx > -1 && row[codeIdx] != null ? String(row[codeIdx]).trim() : undefined;
+    record.id_code =
+      codeIdx > -1 && !isBlank(row[codeIdx]) ? String(row[codeIdx]).trim() : undefined;
 
     records.push(addOptionalFields(record, row, cols, parseUKVal));
   }
@@ -218,7 +219,7 @@ const parseUSA = (workbook: XLSX.WorkBook, { year }: GovParseOptions): GovParseR
       year,
       salary,
       country: 'USA',
-      id_code: codeIdx > -1 && row[codeIdx] != null ? String(row[codeIdx]).trim() : undefined,
+      id_code: codeIdx > -1 && !isBlank(row[codeIdx]) ? String(row[codeIdx]).trim() : undefined,
       period: 'year'
     };
     records.push(addOptionalFields(record, row, cols, parseUSVal));
@@ -233,5 +234,7 @@ export const parseGovernmentWorkbook = (
 ): GovParseResult =>
   options.country === 'UK' ? parseUK(workbook, options) : parseUSA(workbook, options);
 
+// sheet_to_json only reads raw cell values, so skip building formula, HTML and formatted-text
+// strings for every cell: the BLS state/area workbook has over a million cells
 export const readGovernmentWorkbook = (data: ArrayBuffer): XLSX.WorkBook =>
-  XLSX.read(data, { type: 'array' });
+  XLSX.read(data, { type: 'array', cellFormula: false, cellHTML: false, cellText: false });

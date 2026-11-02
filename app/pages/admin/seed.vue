@@ -48,7 +48,7 @@
                 }}</span>
                 <span class="text-slate-300">|</span>
                 <span class="text-slate-500 font-medium"
-                  >{{ record.count.toLocaleString() }} records</span
+                  >{{ formatCount(record.count) }} records</span
                 >
               </div>
               <button
@@ -183,9 +183,7 @@
         <div v-if="progress" class="px-4 pt-3">
           <div class="flex justify-between text-2xs font-bold text-slate-400 mb-1">
             <span>{{ progress.label }}</span>
-            <span
-              >{{ progress.done.toLocaleString() }} / {{ progress.total.toLocaleString() }}</span
-            >
+            <span>{{ formatCount(progress.done) }} / {{ formatCount(progress.total) }}</span>
           </div>
           <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
             <div
@@ -218,7 +216,7 @@
             @click="seedToFirestore">
             <div class="flex items-center gap-2">
               <CheckCircle2 class="w-4 h-4" />
-              <span>Sync {{ parsedData.length }} Records</span>
+              <span>Sync {{ formatCount(parsedData.length) }} Records</span>
             </div>
           </AmIButton>
         </AmIAnimatedBorder>
@@ -279,7 +277,11 @@ const targetPeriod = ref('year');
 const targetYear = ref(new Date().getFullYear());
 const selectedFile = ref<File | null>(null);
 const fileName = ref('');
-const parsedData = ref<GovSalaryRecord[]>([]);
+// shallow: tens of thousands of records are only ever replaced wholesale, never mutated in place
+const parsedData = shallowRef<GovSalaryRecord[]>([]);
+// set once parsedData is in Firestore, so a retry after a search-sync failure skips straight to
+// the search step instead of re-writing every document
+const firestoreSynced = ref(false);
 // the scope the current parsedData was parsed as, so changing the toggle afterwards can't send
 // national rows to the regional collection (or vice versa)
 const parsedScope = ref<GovParseOptions['scope']>('national');
@@ -319,13 +321,20 @@ const setCountry = (c: string): void => {
   }
 };
 
+const clearParsed = (): void => {
+  parsedData.value = [];
+  firestoreSynced.value = false;
+};
+
 const onFileSelect = (e: Event): void => {
   const target = e.target as HTMLInputElement;
   const file = target.files?.[0];
+  // reset so choosing the same file again still fires @change
+  target.value = '';
   if (file) {
     selectedFile.value = file;
     fileName.value = file.name;
-    parsedData.value = [];
+    clearParsed();
     log(`Selected: ${file.name}`);
     log(`Ready to parse. Click 'Parse Spreadsheet' below.`);
   }
@@ -370,15 +379,13 @@ const deleteRecords = async (
   await fetchSummary();
 };
 
-const formatCount = (n: number): string => n.toLocaleString('en-GB');
-
 const handleParse = async (): Promise<void> => {
   if (!selectedFile.value) {
     return;
   }
 
   parsing.value = true;
-  parsedData.value = [];
+  clearParsed();
   const options: GovParseOptions = {
     country: targetCountry.value === 'USA' ? 'USA' : 'UK',
     scope: targetScope.value === 'regional' ? 'regional' : 'national',
@@ -393,7 +400,10 @@ const handleParse = async (): Promise<void> => {
     // loaded on demand so the spreadsheet library only ships to admins who parse a file
     const { parseGovernmentWorkbook, readGovernmentWorkbook } =
       await import('~~/shared/utils/govSpreadsheet');
-    const workbook = readGovernmentWorkbook(await selectedFile.value.arrayBuffer());
+    const data = await selectedFile.value.arrayBuffer();
+    // parsing blocks the main thread; let the spinner and log line paint first
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const workbook = readGovernmentWorkbook(data);
     const { records, skipped } = parseGovernmentWorkbook(workbook, options);
 
     if (records.length === 0) {
@@ -451,29 +461,40 @@ const seedToFirestore = async (): Promise<void> => {
   });
 
   log(`Syncing ${formatCount(recordsToSync.length)} records to '${collectionName}'...`);
+  // held across all three steps; batchSeed/batchSyncSearch leave a caller-owned loading alone
+  loading.value = true;
 
   try {
-    await batchSeed(recordsToSync, collectionName);
-  } catch {
-    log(
-      'Nothing was sent to search. Click Sync again to retry; already-written records are overwritten.'
-    );
-    return;
-  }
+    if (firestoreSynced.value) {
+      log('Firestore already holds these records; retrying the search sync only.');
+    } else {
+      try {
+        await batchSeed(recordsToSync, collectionName);
+      } catch {
+        log(
+          'Nothing was sent to search. Click Sync again to retry; already-written records are overwritten.'
+        );
+        return;
+      }
+      firestoreSynced.value = true;
+    }
 
-  try {
-    await batchSyncSearch(recordsToSync, collectionName);
-  } catch {
-    // Firestore already holds these records, so the parsed data is kept for a retry
-    log('Firestore was updated but search was not. Click Sync again to retry.');
-    return;
-  }
+    try {
+      await batchSyncSearch(recordsToSync, collectionName);
+    } catch {
+      // the parsed data is kept, and the next Sync skips the Firestore step
+      log('Firestore was updated but search was not. Click Sync again to retry the search sync.');
+      return;
+    }
 
-  parsedData.value = [];
-  selectedFile.value = null;
-  fileName.value = '';
-  log('🏆 All done. Refreshing the database summary...');
-  await fetchSummary();
+    clearParsed();
+    selectedFile.value = null;
+    fileName.value = '';
+    log('🏆 All done. Refreshing the database summary...');
+    await fetchSummary();
+  } finally {
+    loading.value = false;
+  }
 };
 
 // ** lifecycle **
@@ -500,6 +521,15 @@ watch(user, (newUser) => {
 watch(targetScope, (newScope) => {
   if (newScope === 'regional') {
     targetPeriod.value = 'year';
+  }
+});
+
+// country and year are baked into each parsed record, so changing either (or the scope) after
+// parsing discards the result rather than letting Sync write the old values
+watch([targetCountry, targetYear, targetScope], () => {
+  if (parsedData.value.length > 0) {
+    clearParsed();
+    log('Settings changed: parsed data discarded. Click Parse Spreadsheet to parse again.');
   }
 });
 </script>

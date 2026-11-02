@@ -122,7 +122,7 @@ describe('parseGovernmentWorkbook', () => {
       const wb = workbookOf({
         'Full-Time': [
           ['Code', 'Description', 'Median'],
-          [undefined, 'Kept', 45000],
+          ['   ', 'Kept', 45000],
           ['1', 'Suppressed', 'x'],
           ['2', 'Unreliable', '..'],
           ['3', 'Not available', ':'],
