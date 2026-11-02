@@ -42,7 +42,7 @@ describe('useAdminFetch', () => {
     const res = await adminFetch('/api/test', { method: 'GET' });
 
     expect(mockAuthStateReady).toHaveBeenCalled();
-    expect(mockGetIdToken).toHaveBeenCalledWith(true);
+    expect(mockGetIdToken).toHaveBeenCalledWith(false);
     expect(mock$fetch).toHaveBeenCalledWith('/api/test', {
       method: 'GET',
       headers: { Authorization: 'Bearer test-token' }
@@ -80,5 +80,54 @@ describe('useAdminFetch', () => {
     await expect(adminFetch('/api/test')).rejects.toEqual({ statusCode: 500 });
     expect(mockLogout).not.toHaveBeenCalled();
     expect(mockNavigateTo).not.toHaveBeenCalled();
+  });
+
+  it('reuses the cached token across requests instead of forcing a refresh each time', async () => {
+    mock$fetch.mockResolvedValue({ data: 'ok' });
+    const adminFetch = useAdminFetch();
+
+    await adminFetch('/api/admin/seed', { method: 'POST' });
+    await adminFetch('/api/admin/seed', { method: 'POST' });
+
+    expect(mockGetIdToken).toHaveBeenCalledTimes(2);
+    expect(mockGetIdToken).not.toHaveBeenCalledWith(true);
+  });
+
+  it('refreshes the token once and retries when a stale token is forbidden', async () => {
+    mockGetIdToken.mockResolvedValueOnce('stale-token').mockResolvedValueOnce('fresh-token');
+    mock$fetch
+      .mockRejectedValueOnce({ response: { status: 403 } })
+      .mockResolvedValueOnce({ data: 'ok' });
+    const adminFetch = useAdminFetch();
+
+    const res = await adminFetch('/api/admin/seed', { method: 'POST' });
+
+    expect(res).toEqual({ data: 'ok' });
+    expect(mockGetIdToken).toHaveBeenLastCalledWith(true);
+    expect(mock$fetch).toHaveBeenLastCalledWith('/api/admin/seed', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer fresh-token' }
+    });
+  });
+
+  it('rethrows a 403 that persists after the refresh without logging out', async () => {
+    mock$fetch.mockRejectedValue({ statusCode: 403 });
+    const adminFetch = useAdminFetch();
+
+    await expect(adminFetch('/api/admin/seed')).rejects.toEqual({ statusCode: 403 });
+    expect(mock$fetch).toHaveBeenCalledTimes(2);
+    expect(mockLogout).not.toHaveBeenCalled();
+  });
+
+  it('does not retry a 403 when there is no signed-in user', async () => {
+    mock$fetch.mockRejectedValueOnce({ statusCode: 403 });
+    const { useCurrentUser } = await import('vuefire');
+    vi.mocked(useCurrentUser).mockReturnValueOnce({
+      value: null
+    } as unknown as ReturnType<typeof useCurrentUser>);
+    const adminFetch = useAdminFetch();
+
+    await expect(adminFetch('/api/admin/seed')).rejects.toEqual({ statusCode: 403 });
+    expect(mock$fetch).toHaveBeenCalledTimes(1);
   });
 });
