@@ -4,6 +4,8 @@ import algoliasearch from 'algoliasearch';
 type SyncAlgoliaRequestBody = {
   data: Record<string, unknown>[];
   indexName: string;
+  // chunked uploads apply index settings with their first chunk only
+  configureSettings?: boolean;
 };
 
 // the only indices the admin pages write to (seed.vue: benchmarks, coding-index.vue: job_titles)
@@ -12,7 +14,7 @@ const ALLOWED_INDICES = ['job_titles', 'regional_salary_benchmarks', 'salary_ben
 export default defineEventHandler(async (event) => {
   await verifyAdmin(event);
   const body = await readBody<SyncAlgoliaRequestBody>(event);
-  const { data, indexName } = body;
+  const { data, indexName, configureSettings = true } = body;
 
   if (!data || !Array.isArray(data)) {
     throw createError({ statusCode: 400, message: 'Invalid data format' });
@@ -37,22 +39,24 @@ export default defineEventHandler(async (event) => {
   try {
     // Configure index settings for filtering (idempotent)
     // We ensure 'country' is available for filtering in SalarySearch.vue
-    await index.setSettings({
-      searchableAttributes: ['title', 'searchTitle', 'location', 'searchLocation'],
-      attributesForFaceting: [
-        'filterOnly(country)',
-        'filterOnly(year)',
-        'filterOnly(period)',
-        'filterOnly(id_code)', // Required for UK SOC code lookup
-        'filterOnly(searchTitle)',
-        'filterOnly(searchLocation)',
-        'searchable(location)', // Searchable facet for autocomplete
-        'searchable(title)' // Searchable facet for autocomplete
-      ],
-      // benchmark indices can hold several data years side by side; newest first so lookups
-      // that take the first hit per title/region get the latest year
-      customRanking: ['desc(year)']
-    });
+    if (configureSettings) {
+      await index.setSettings({
+        searchableAttributes: ['title', 'searchTitle', 'location', 'searchLocation'],
+        attributesForFaceting: [
+          'filterOnly(country)',
+          'filterOnly(year)',
+          'filterOnly(period)',
+          'filterOnly(id_code)', // Required for UK SOC code lookup
+          'filterOnly(searchTitle)',
+          'filterOnly(searchLocation)',
+          'searchable(location)', // Searchable facet for autocomplete
+          'searchable(title)' // Searchable facet for autocomplete
+        ],
+        // benchmark indices can hold several data years side by side; newest first so lookups
+        // that take the first hit per title/region get the latest year
+        customRanking: ['desc(year)']
+      });
+    }
 
     // Save objects (upsert)
     // We expect data to have 'objectID' set to match Firestore ID
