@@ -237,7 +237,6 @@
 
 <script setup lang="ts">
 import { CheckCircle2, Database, LoaderCircle, Lock, UploadCloud, X } from 'lucide-vue-next';
-import { FirestoreError } from 'firebase/firestore';
 import type { BenchmarkSummaryRow } from '../../../server/api/admin/benchmark-summary.get';
 import type { SalaryRecord } from '../../../utils/seedData';
 
@@ -252,7 +251,6 @@ definePageMeta({
 const adminFetch = useAdminFetch();
 
 // ** data & refs **
-const db = useFirestore();
 const user = useCurrentUser();
 
 const parsing = ref(false);
@@ -320,9 +318,6 @@ const deleteRecords = async (
   period: string,
   scope: string
 ): Promise<void> => {
-  if (!db) {
-    return;
-  }
   if (
     !confirm(
       `Are you sure you want to delete ALL ${scope} records for ${country} ${year} (${period})? This cannot be undone.`
@@ -404,7 +399,7 @@ const handleParse = async (): Promise<void> => {
 
 const seedToFirestore = async (): Promise<void> => {
   // 1. Pre-flight check
-  if (loading.value || parsedData.value.length === 0 || !db) {
+  if (loading.value || parsedData.value.length === 0) {
     return;
   }
 
@@ -449,7 +444,15 @@ const seedToFirestore = async (): Promise<void> => {
     });
 
     await batchSeed(recordsToSync, collectionName);
+  } catch {
+    // useAdminClient's batchSeed has already logged the failure
+    loading.value = false;
+    return;
+  }
 
+  // batchSeed's own finally clears loading; hold it until Algolia and the summary are done too
+  loading.value = true;
+  try {
     // 2. Sync to Algolia
     log(`Syncing ${recordsToSync.length} records to Algolia index '${collectionName}'...`);
     await adminFetch('/api/admin/sync-algolia', {
@@ -465,14 +468,14 @@ const seedToFirestore = async (): Promise<void> => {
     selectedFile.value = null;
     fileName.value = '';
     await fetchSummary();
-  } catch (e) {
+  } catch (e: unknown) {
+    // Firestore already holds these records, so the parsed data is kept for a retry
+    const message = e instanceof Error ? e.message : String(e);
+    log(
+      `❌ ALGOLIA SYNC ERROR: ${message}. Firestore was updated but search was not — click Sync again to retry.`
+    );
+  } finally {
     loading.value = false;
-    if (e instanceof FirestoreError && e.code === 'permission-denied') {
-      log(
-        `❌ PERMISSION ERROR: Missing write access for collection '${collectionName}'. Check firestore.rules.`
-      );
-    }
-    // Error logging handled in composable
   }
 };
 
@@ -496,10 +499,10 @@ watch(user, (newUser) => {
   }
 });
 
+// the summary already covers both scopes, so switching scope needs no refetch
 watch(targetScope, (newScope) => {
   if (newScope === 'regional') {
     targetPeriod.value = 'year';
   }
-  fetchSummary();
 });
 </script>
