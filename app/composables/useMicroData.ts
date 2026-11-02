@@ -80,6 +80,12 @@ export const useMicroData = (): {
         baseRegionalFilter += ` AND searchTitle:"${cleanTitle}"`;
       }
 
+      // When the national record is already known, only fetch its year's regions: newer years
+      // rank first and could otherwise push this year's regions past the hitsPerPage cap
+      if (prefetchedHit?.year) {
+        baseRegionalFilter += ` AND year:${prefetchedHit.year}`;
+      }
+
       // ==========================================
       // 2. BUILD QUERIES
       // ==========================================

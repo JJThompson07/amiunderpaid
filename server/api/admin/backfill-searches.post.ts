@@ -3,6 +3,14 @@ import { getAuth } from 'firebase-admin/auth';
 import { generateCacheKey } from '../../utils/adzuna';
 import { calculateUKBenchmarkScore } from '~~/shared/utils/uk';
 import { calculateUSABenchmarkScore } from '~~/shared/utils/usa';
+import { pinToSingleYear } from '~~/shared/utils/benchmarkYear';
+
+// benchmark collections can hold several data years, and Firestore returns docs in ID order
+// (oldest year first), so pick the newest year's record rather than the first doc
+const newestBenchmark = (
+  snap: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>
+): FirebaseFirestore.DocumentData | undefined =>
+  pinToSingleYear(snap.docs.map((doc) => doc.data()))[0];
 
 type BackfillUpdatePayload = {
   historical_fetched_MCA: boolean;
@@ -153,7 +161,6 @@ export default defineEventHandler(async (event) => {
             .collection('salary_benchmarks')
             .where('id_code', '==', govIdCode)
             .where('country', '==', queryCountry)
-            .limit(1)
             .get();
         } else {
           // Fallback to text match in Firestore
@@ -175,7 +182,6 @@ export default defineEventHandler(async (event) => {
                   .collection('salary_benchmarks')
                   .where('id_code', '==', soc)
                   .where('country', '==', 'UK')
-                  .limit(1)
                   .get();
               }
             }
@@ -185,13 +191,12 @@ export default defineEventHandler(async (event) => {
               .collection('salary_benchmarks')
               .where('searchTitle', '==', cleanTitle)
               .where('country', '==', 'USA')
-              .limit(1)
               .get();
           }
         }
 
         if (microSnap && !microSnap.empty) {
-          microData = microSnap.docs[0]?.data();
+          microData = newestBenchmark(microSnap);
           if (microData) {
             formattedMicroData = {
               mean: microData.avg_salary || microData.salary || 0,
@@ -210,10 +215,9 @@ export default defineEventHandler(async (event) => {
             .collection('salary_benchmarks')
             .where('id_code', '==', '00-0000')
             .where('country', '==', 'USA')
-            .limit(1)
             .get();
           if (!usMacroSnap.empty) {
-            const hit = usMacroSnap.docs[0]?.data();
+            const hit = newestBenchmark(usMacroSnap);
             if (hit) {
               macroData = {
                 macroNationalData: {
@@ -235,10 +239,9 @@ export default defineEventHandler(async (event) => {
             .where('searchTitle', '==', 'all employees')
             .where('country', '==', 'UK')
             .where('searchLocation', 'in', ['uk', 'united kingdom'])
-            .limit(1)
             .get();
           if (!ukMacroSnap.empty) {
-            const hit = ukMacroSnap.docs[0]?.data();
+            const hit = newestBenchmark(ukMacroSnap);
             if (hit) {
               macroData = {
                 macroNationalData: {

@@ -69,7 +69,8 @@ export const useJobAutocomplete = (
 
     hits.forEach((hit) => {
       const id = hit.id_code || hit.objectID;
-      if (id) {
+      // hits rank newest data year first, so within one response keep the first id for a title
+      if (id && !results.has(hit.title)) {
         if (Object.keys(labelToIdMap.value).length > 200) {
           labelToIdMap.value = {};
         }

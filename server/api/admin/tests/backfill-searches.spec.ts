@@ -174,6 +174,49 @@ describe('admin backfill-searches endpoint', () => {
     );
   });
 
+  it('uses the newest benchmark year when several are stored (Firestore returns the oldest first)', async () => {
+    queryQueues.search_history = [
+      {
+        empty: false,
+        docs: [
+          {
+            id: 'doc1',
+            data: (): unknown => ({
+              title: 'Software Engineer',
+              country: 'UK',
+              location: 'london',
+              salary: 50000,
+              historical_fetched_MCA: false,
+              historical_fetched_MCA_v2: false,
+              mcaScore: null,
+              governmentAverage: null
+            })
+          }
+        ]
+      }
+    ];
+    docGetQueues.adzuna_jobs_cache = [
+      { exists: true, data: (): unknown => ({ data: { results: [] }, gov_id_code: '2136' }) }
+    ];
+    queryQueues.salary_benchmarks = [
+      {
+        empty: false,
+        docs: [
+          { data: (): unknown => ({ year: 2025, avg_salary: 50000, salary: 49000 }) },
+          { data: (): unknown => ({ year: 2026, avg_salary: 58000, salary: 56000 }) }
+        ]
+      }
+    ];
+    mockCalculateUK.mockReturnValue({ score: 60, breakdown: {} });
+
+    await handler({} as unknown as H3Event);
+
+    expect(searchHistorySetSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ governmentAverage: 58000 }),
+      { merge: true }
+    );
+  });
+
   it('skips a doc already successfully backfilled', async () => {
     queryQueues.search_history = [
       {

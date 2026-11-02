@@ -12,6 +12,7 @@ export type SalaryBenchmark = {
   salary_75_pt?: number;
   salary_90_pt?: number;
   id_code?: string;
+  year?: number;
   soc?: string; // Added for UK job_titles dictionary
   group?: string; // Added for UK job_titles dictionary
 };

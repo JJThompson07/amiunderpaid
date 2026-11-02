@@ -84,13 +84,12 @@ describe('useMacroData', () => {
     expect(result.regionalMedianAllRoles).toBe(40000);
   });
 
-  it('keeps the newest data year when a region has hits for several years', async () => {
-    mockNationalSearch.mockResolvedValueOnce({ hits: [{ salary: 31000 }] });
-    // Algolia ranks desc(year), so the 2026 hit arrives before the 2025 one
+  it('keeps the first hit when a region has duplicate records for the same year', async () => {
+    mockNationalSearch.mockResolvedValueOnce({ hits: [{ year: 2026, salary: 31000 }] });
     mockRegionalSearch.mockResolvedValueOnce({
       hits: [
         { searchLocation: 'London', year: 2026, salary: 42000 },
-        { searchLocation: 'London', year: 2025, salary: 40000 }
+        { searchLocation: 'London', year: 2026, salary: 40000 }
       ]
     });
 

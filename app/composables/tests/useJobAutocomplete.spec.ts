@@ -90,6 +90,22 @@ describe('useJobAutocomplete', () => {
     });
   });
 
+  it('maps a USA title to its newest-year id when several years are returned', async () => {
+    // ranked desc(year): the 2026 record comes first
+    mockSearch.mockResolvedValueOnce({
+      hits: [
+        { title: 'Teacher', id_code: '25-2031', year: 2026 },
+        { title: 'Teacher', id_code: '25-2030', year: 2025 }
+      ]
+    });
+
+    const composable = useJobAutocomplete(mockRef('USA'), mockRef(''), mockRef(''));
+    await composable.fetchTitles('teach');
+
+    expect(composable.titleOptions.value).toEqual([{ label: 'Teacher', value: 'Teacher' }]);
+    expect(composable.labelToIdMap.value).toEqual({ Teacher: '25-2031' });
+  });
+
   it('does not fetch if search term is less than 2 chars', async () => {
     const country = mockRef('UK');
     const location = mockRef('');
