@@ -180,6 +180,19 @@
             v-if="loading || parsing"
             class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
         </div>
+        <div v-if="progress" class="px-4 pt-3">
+          <div class="flex justify-between text-2xs font-bold text-slate-400 mb-1">
+            <span>{{ progress.label }}</span>
+            <span
+              >{{ progress.done.toLocaleString() }} / {{ progress.total.toLocaleString() }}</span
+            >
+          </div>
+          <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div
+              class="h-full bg-emerald-500 transition-all duration-300 ease-out"
+              :style="{ width: `${(progress.done / progress.total) * 100}%` }" />
+          </div>
+        </div>
         <div
           ref="consoleRef"
           class="p-5 overflow-y-auto max-h-48 font-mono text-[11px] text-emerald-400 whitespace-pre-wrap leading-relaxed scrollbar-thin scrollbar-thumb-slate-700">
@@ -238,7 +251,7 @@
 <script setup lang="ts">
 import { CheckCircle2, Database, LoaderCircle, Lock, UploadCloud, X } from 'lucide-vue-next';
 import type { BenchmarkSummaryRow } from '../../../server/api/admin/benchmark-summary.get';
-import type { SalaryRecord } from '../../../utils/seedData';
+import type { GovParseOptions, GovSalaryRecord } from '~~/shared/utils/govSpreadsheet';
 
 /**
  * PAGE METADATA
@@ -254,8 +267,11 @@ const adminFetch = useAdminFetch();
 const user = useCurrentUser();
 
 const parsing = ref(false);
-const { status, consoleRef, log } = useConsoleLog();
-const { loading, batchDelete, batchSeed } = useAdminClient(log);
+const { status, consoleRef, log, logProgress } = useConsoleLog();
+const { loading, progress, batchDelete, batchSeed, batchSyncSearch } = useAdminClient(
+  log,
+  logProgress
+);
 
 const targetScope = ref('national'); // 'national' | 'regional'
 const targetCountry = ref('UK');
@@ -263,7 +279,10 @@ const targetPeriod = ref('year');
 const targetYear = ref(new Date().getFullYear());
 const selectedFile = ref<File | null>(null);
 const fileName = ref('');
-const parsedData = ref<(SalaryRecord & { period: string })[]>([]);
+const parsedData = ref<GovSalaryRecord[]>([]);
+// the scope the current parsedData was parsed as, so changing the toggle afterwards can't send
+// national rows to the regional collection (or vice versa)
+const parsedScope = ref<GovParseOptions['scope']>('national');
 const existingData = ref<BenchmarkSummaryRow[]>([]);
 
 // ** methods **
@@ -351,132 +370,110 @@ const deleteRecords = async (
   await fetchSummary();
 };
 
+const formatCount = (n: number): string => n.toLocaleString('en-GB');
+
 const handleParse = async (): Promise<void> => {
-  // 1. Validation checks
   if (!selectedFile.value) {
     return;
   }
 
   parsing.value = true;
-  log(`Initiating upload: ${targetCountry.value} (${targetScope.value}) data...`);
-
-  const formData = new FormData();
-  formData.append('file', selectedFile.value);
-  formData.append('country', targetCountry.value);
-  formData.append('year', targetYear.value.toString());
-  formData.append('period', targetPeriod.value);
-
-  const endpoint =
-    targetScope.value === 'national' ? '/api/admin/parse' : '/api/admin/parse-region';
+  parsedData.value = [];
+  const options: GovParseOptions = {
+    country: targetCountry.value === 'USA' ? 'USA' : 'UK',
+    scope: targetScope.value === 'regional' ? 'regional' : 'national',
+    year: Number(targetYear.value)
+  };
+  log(
+    `Parsing ${selectedFile.value.name} in the browser as ${options.country} ${options.scope} ${options.year}...`
+  );
 
   try {
-    // 2. Request parsing from server API
-    log(`Sending file to server parser (${endpoint})...`);
-    const response = await adminFetch<{
-      success: boolean;
-      data: (SalaryRecord & { period: string })[];
-      count: number;
-      error?: string;
-    }>(endpoint, {
-      method: 'POST',
-      body: formData
-    });
+    const started = Date.now();
+    // loaded on demand so the spreadsheet library only ships to admins who parse a file
+    const { parseGovernmentWorkbook, readGovernmentWorkbook } =
+      await import('~~/shared/utils/govSpreadsheet');
+    const workbook = readGovernmentWorkbook(await selectedFile.value.arrayBuffer());
+    const { records, skipped } = parseGovernmentWorkbook(workbook, options);
 
-    if (response.success) {
-      parsedData.value = response.data;
-      log(`✅ SUCCESS: Parsed ${response.count} valid records.`);
-      log(`Review the results above, then click 'Sync' to write to Firestore.`);
-    } else {
-      log(`❌ PARSE ERROR: ${response.error}`);
+    if (records.length === 0) {
+      log('❌ PARSE ERROR: no usable rows found. Check the file matches the expected source.');
+      return;
     }
-  } catch (e) {
-    const message = e instanceof Error ? e.message : 'Unknown error';
-    log(`❌ NETWORK ERROR: ${message}`);
+
+    parsedData.value = records;
+    parsedScope.value = options.scope;
+    const locations = new Set(records.map((r) => r.location)).size;
+    const titles = new Set(records.map((r) => r.title)).size;
+    log(
+      `✅ Parsed ${formatCount(records.length)} records in ${((Date.now() - started) / 1000).toFixed(1)}s`
+    );
+    log(
+      `   ${formatCount(titles)} occupation(s) × ${formatCount(locations)} location(s), ${formatCount(skipped)} row(s) skipped (suppressed or no median)`
+    );
+    log(`Review the summary, then click 'Sync' to write to Firestore and search.`);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    log(`❌ PARSE ERROR: ${message}`);
   } finally {
     parsing.value = false;
   }
 };
 
 const seedToFirestore = async (): Promise<void> => {
-  // 1. Pre-flight check
   if (loading.value || parsedData.value.length === 0) {
     return;
   }
 
-  loading.value = true;
-  log('Starting Firestore Batch Sync...');
-
   const collectionName =
-    targetScope.value === 'national' ? 'salary_benchmarks' : 'regional_salary_benchmarks';
+    parsedScope.value === 'national' ? 'salary_benchmarks' : 'regional_salary_benchmarks';
 
-  const recordsToSync: (SalaryRecord & {
-    period: string;
-    searchTitle: string;
-    searchLocation: string;
-    updatedAt: Date;
-    objectID: string;
-  })[] = [];
+  const recordsToSync = parsedData.value.map((record) => {
+    // deterministic IDs, so a retry overwrites rather than duplicates
+    const cleanTitle = record.title
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_\-+#.]/g, ''); // Allow +, #, . for C++, C#, .NET
+    const cleanLocation = record.location
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_\-+.#]/g, '');
+    const docId =
+      `${record.country}-${cleanLocation}-${cleanTitle}-${record.year}-${record.period}`.toLowerCase();
+
+    return {
+      ...record,
+      searchTitle: record.title.toLowerCase(),
+      searchLocation: record.location.toLowerCase(),
+      updatedAt: new Date(), // Use Date instead of serverTimestamp for JSON compatibility
+      objectID: docId // For Algolia
+    };
+  });
+
+  log(`Syncing ${formatCount(recordsToSync.length)} records to '${collectionName}'...`);
 
   try {
-    // 1. Prepare and Save to Firestore
-    parsedData.value.forEach((record) => {
-      // Create deterministic IDs
-      const cleanTitle = record.title
-        .toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_\-+#.]/g, ''); // Allow +, #, . for C++, C#, .NET
-      const cleanLocation = record.location
-        .toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_\-+.#]/g, '');
-      const docId =
-        `${record.country}-${cleanLocation}-${cleanTitle}-${record.year}-${record.period}`.toLowerCase();
-
-      const finalRecord = {
-        ...record,
-        searchTitle: record.title.toLowerCase(),
-        searchLocation: record.location.toLowerCase(),
-        updatedAt: new Date(), // Use Date instead of serverTimestamp for JSON compatibility
-        objectID: docId // For Algolia
-      };
-
-      recordsToSync.push(finalRecord);
-    });
-
     await batchSeed(recordsToSync, collectionName);
   } catch {
-    // useAdminClient's batchSeed has already logged the failure
-    loading.value = false;
+    log(
+      'Nothing was sent to search. Click Sync again to retry; already-written records are overwritten.'
+    );
     return;
   }
 
-  // batchSeed's own finally clears loading; hold it until Algolia and the summary are done too
-  loading.value = true;
   try {
-    // 2. Sync to Algolia
-    log(`Syncing ${recordsToSync.length} records to Algolia index '${collectionName}'...`);
-    await adminFetch('/api/admin/sync-algolia', {
-      method: 'POST',
-      body: {
-        data: recordsToSync,
-        indexName: collectionName
-      }
-    });
-    log('✅ Algolia Sync Complete.');
-
-    parsedData.value = [];
-    selectedFile.value = null;
-    fileName.value = '';
-    await fetchSummary();
-  } catch (e: unknown) {
+    await batchSyncSearch(recordsToSync, collectionName);
+  } catch {
     // Firestore already holds these records, so the parsed data is kept for a retry
-    const message = e instanceof Error ? e.message : String(e);
-    log(
-      `❌ ALGOLIA SYNC ERROR: ${message}. Firestore was updated but search was not — click Sync again to retry.`
-    );
-  } finally {
-    loading.value = false;
+    log('Firestore was updated but search was not. Click Sync again to retry.');
+    return;
   }
+
+  parsedData.value = [];
+  selectedFile.value = null;
+  fileName.value = '';
+  log('🏆 All done. Refreshing the database summary...');
+  await fetchSummary();
 };
 
 // ** lifecycle **
