@@ -100,6 +100,19 @@ describe('useMacroData', () => {
     expect(result.regionalMedianAllRoles).toBe(42000);
   });
 
+  it('drops all regional data while only an older year is uploaded for regions', async () => {
+    // national 2026 is live but regional 2026 has not been uploaded yet
+    mockNationalSearch.mockResolvedValueOnce({ hits: [{ year: 2026, salary: 31000 }] });
+    mockRegionalSearch.mockResolvedValueOnce({
+      hits: [{ searchLocation: 'London', year: 2025, salary: 40000 }]
+    });
+
+    const result = await useMacroData().fetchMacroBaselines('UK', 'London');
+
+    expect(result.allRegionalData).toEqual({});
+    expect(result.userRegionalData).toBeNull();
+  });
+
   it('fetches USA macro data correctly', async () => {
     mockNationalSearch.mockResolvedValueOnce({
       hits: [{ avg_salary: 50000, salary: 50000 }]

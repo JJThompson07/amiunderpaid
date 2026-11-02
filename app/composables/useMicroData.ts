@@ -2,6 +2,7 @@ import type { SearchClient } from 'algoliasearch';
 import type { Ref } from 'vue';
 import type { SalaryBenchmark } from '~/composables/useMarketData';
 import type { PercentileData } from '~~/shared/utils/types';
+import { pinToSingleYear } from '~~/shared/utils/benchmarkYear';
 
 // Raw shape of a benchmark record as stored in the Algolia `salary_benchmarks` /
 // `regional_salary_benchmarks` indices.
@@ -14,6 +15,7 @@ type AlgoliaBenchmarkHit = {
   salary_75_pt?: number;
   salary_90_pt?: number;
   searchLocation?: string;
+  year?: number;
 };
 
 export type MicroBaselines = {
@@ -130,7 +132,11 @@ export const useMicroData = (): {
       const allRegionalMicroData: Record<string, PercentileData> = {};
 
       if (regionalRes && regionalRes.hits) {
-        (regionalRes.hits as unknown as AlgoliaBenchmarkHit[]).forEach((hit) => {
+        // pin every region to the national record's year so a role never shows a mix of years
+        pinToSingleYear(
+          regionalRes.hits as unknown as AlgoliaBenchmarkHit[],
+          nationalHit?.year
+        ).forEach((hit) => {
           // hits arrive newest year first (customRanking desc(year)), so the first hit per
           // region is its latest data year — never let an older year overwrite it
           if (hit.searchLocation && !(hit.searchLocation.toLowerCase() in allRegionalMicroData)) {

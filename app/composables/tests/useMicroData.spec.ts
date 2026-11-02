@@ -126,6 +126,24 @@ describe('useMicroData', () => {
     expect(result.microRegionalData?.p50).toBe(43000);
   });
 
+  it('never mixes years: regions without a figure for the national year are left out', async () => {
+    mockNationalSearch.mockResolvedValueOnce({
+      hits: [{ title: 'Registered Nurse', year: 2026, salary: 37000 }]
+    });
+    mockRegionalSearch.mockResolvedValueOnce({
+      hits: [
+        { searchLocation: 'London', year: 2026, salary: 43000 },
+        { searchLocation: 'Orkney Islands', year: 2025, salary: 30000 }
+      ]
+    });
+
+    const { fetchMicroBaselines } = useMicroData();
+    const result = await fetchMicroBaselines('UK', 'Registered Nurse', 'Orkney Islands', '2231');
+
+    expect(Object.keys(result.allRegionalMicroData)).toEqual(['london']);
+    expect(result.microRegionalData).toBeNull();
+  });
+
   it('fetches micro baselines with USA idCode with quotes', async () => {
     mockNationalSearch.mockResolvedValueOnce({ hits: [] });
     mockRegionalSearch.mockResolvedValueOnce({ hits: [] });
