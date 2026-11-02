@@ -22,8 +22,14 @@ Seeded records serialise to roughly 300–400 bytes. Chunks of 1,000 records (~0
 - `/api/admin/seed` writes 1,000 docs as two 500-op Firestore batches;
 - `sync-algolia` is one `saveObjects` call.
 
-A USA regional upload is about 37 chunks per step. `sync-algolia` re-applies the same idempotent index settings on each chunk; that is accepted rather than adding a settings-only endpoint.
+A USA regional upload is about 37 chunks per step. `sync-algolia` takes an optional `configureSettings` flag (default `true`, so existing callers are unchanged), and `batchSyncSearch` sets it only on the first chunk, so index settings are applied once per sync rather than 37 times.
+
+### Auth token reuse
+
+Chunking turns 2 admin requests into about 74. `useAdminFetch` used to force a token refresh (`getIdToken(true)`) on every request, which would have meant 74 round-trips to Google's token endpoint. It now uses the SDK's cached token, which refreshes itself near expiry. On a `403` it forces one refresh and retries once, so an admin whose `admin` claim was granted after their token was minted still gets in. That was the reason for forcing the refresh in the first place.
 
 ### Failure and retry
 
 Chunks run sequentially. On the first failure the run stops and logs `n of total` written, and the error propagates. Firestore doc IDs and Algolia `objectID`s are deterministic, so re-running Sync overwrites the same records instead of duplicating them. That makes "click Sync again" a complete recovery.
+
+If Firestore completes but the search sync fails, a `firestoreSynced` flag makes the next Sync skip straight to the search step instead of re-writing every document. Changing country, year or scope after parsing discards the parsed data, because country and year are baked into each record.

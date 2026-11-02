@@ -23,10 +23,24 @@
 - [x] 4.3 Console: add `useConsoleLog.logProgress` (rewrites its own previous line), a `useAdminClient.progress` state rendered as a progress bar, a parse summary (records, occupations × locations, skipped rows) and per-step durations. Tests in `useConsoleLog.spec.ts` / `useAdminClient.spec.ts`.
 - [x] 4.4 Pin the parsed scope (`parsedScope`) so Sync targets the collection the file was parsed for.
 
-## 5. Verification gate
+## 5. PR review follow-ups
 
-- [x] 5.1 Run `pnpm test:verify` and confirm it passes in full.
+- [x] 5.1 `useAdminFetch`: use the cached ID token instead of forcing a refresh per request. On a `403`, force one refresh and retry, preserving newly granted admin claims. With tests.
+- [x] 5.2 `sync-algolia`: optional `configureSettings` (default `true`). `batchSyncSearch` applies settings on the first chunk only. With tests.
+- [x] 5.3 `useAdminClient`: `batchSeed`/`batchSyncSearch` only clear `loading` if they set it. `seed.vue` and `coding-index.vue` hold it across their whole sync flow. `coding-index.vue` also moves to the chunked `batchSyncSearch`.
+- [x] 5.4 `seed.vue`:
+  - `shallowRef` for `parsedData`;
+  - yield a frame before the synchronous parse;
+  - reset the file input so the same file can be re-selected;
+  - discard parsed data when country, year or scope changes;
+  - skip the Firestore step on a retry after a search-only failure;
+  - consistent `formatCount` formatting.
+- [x] 5.5 `govSpreadsheet`: read with `cellFormula`/`cellHTML`/`cellText` off, and treat whitespace-only code cells as no code.
 
-## 6. Post-deploy (manual)
+## 6. Verification gate
 
-- [ ] 6.1 Upload the USA May 2025 OEWS state/area file as regional 2026, check the panel shows USA 2026 Regional (~36k), and check a USA search shows regional figures again.
+- [x] 6.1 Run `pnpm test:verify` and confirm it passes in full.
+
+## 7. Post-deploy (manual)
+
+- [ ] 7.1 Upload the USA May 2025 OEWS state/area file as regional 2026, check the panel shows USA 2026 Regional (~36k), and check a USA search shows regional figures again.
