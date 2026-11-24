@@ -40,7 +40,7 @@ In `buildTieredJobResponse`:
 
 `server/utils/providerQuota.ts`:
 
-- `reserveReedCalls(n)` runs a Firestore transaction on `provider_usage/reed-day-YYYY-MM-DD` and `provider_usage/reed-month-YYYY-MM`. If `used + n` would exceed the cap minus the reserve, it returns `false`; otherwise it increments both and returns `true`.
+- `reserveReedCalls(n)` runs a Firestore transaction on a single document, `provider_usage/reed-YYYY-MM` = `{ month: number, days: { 'DD': number } }`. If `month + n` or `days[DD] + n` would exceed its cap minus the reserve, it returns `false`; otherwise it increments `month` and `days.DD` in one write and returns `true`. One document per transaction halves the reads/writes and avoids cross-document contention between concurrent cold searches.
 - It's called before each Reed search with `n = 2`. If one tier then fails without having reached Reed, the reservation isn't refunded. That's deliberately conservative, since counting is for protection, not billing.
 - Config (server `runtimeConfig`, not public and not secret):
 
@@ -80,12 +80,12 @@ else keep exact (even if thin)                           ─► basis 'exact', s
 
 `server/utils/prewarm.ts`:
 
-- `rankDemand(db, days=30)` reads UK `search_history` since the cutoff with only `country`/`timestamp` fields projected. It normalises each entry to (title, location, schedule ?? 'full-time', contract ?? 'permanent'), counts occurrences and sorts descending.
+- `rankDemand(db, days=30)` reads UK `search_history` since the cutoff projecting only the fields it uses: `title`, `location`, `schedule`, `contract`, `country` and `timestamp`. It normalises each entry to (title, location, schedule ?? 'full-time', contract ?? 'permanent'), counts occurrences and sorts descending.
 - `prewarm(budget)` walks the ranked list:
   - It skips keys whose cache doc expires more than 3 days from now.
   - Otherwise it calls the same provider path as `salary.ts` (extracted into a shared `refreshLiveEntry(args)`, so the cache-write logic exists once) through `reserveReedCalls`.
   - It stops when the budget is spent or a reservation fails.
-- **Cron:** `GET /api/cron/prewarm-live` at `0 2 * * *`, `CRON_SECRET`-guarded, with a Resend summary (keys refreshed, calls spent, skipped as fresh, stopped reason). The run time limit is Vercel's default 300s. The loop also stops itself at 240s.
+- **Cron:** `GET /api/cron/prewarm-live` at `0 2 * * *`, `CRON_SECRET`-guarded, with a Resend summary (keys refreshed, calls spent, skipped as fresh, stopped reason). The run time limit is the project's function default of 300s (verified 2026-11-24: Fluid Compute on, `functionDefaultTimeout: 300`; task 5.5 re-checks before deploy). The loop also stops itself at 240s.
 - **Ordering:** a refresh that hits the Adzuna fallback (Reed down) writes a 24h-TTL entry, per the existing logic, so the next night retries it.
 
 ## Risks / Trade-offs

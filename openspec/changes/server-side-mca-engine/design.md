@@ -65,7 +65,7 @@ Confidence values are fixed constants in `types.ts`. They're a signal for the AP
   - National: `salary_benchmarks` where `country`, `id_code == soc`.
   - Regional: `regional_salary_benchmarks` where `country`, `id_code == soc`, `searchLocation == location`.
   - For the UK regional query this returns nothing until Table 15 lands. That's intended.
-- **Cache:** a module-level `Map<key, { value, expiresAt }>` with a 6h TTL and at most 2,000 entries, pruned on write (same shape as `server/middleware/rate-limit.ts`). Benchmarks change only when an admin seeds, roughly once a year, and in-memory staleness is bounded by the TTL. An admin "clear cache" isn't needed: Vercel instances recycle well within 6h of a deploy.
+- **Cache:** a module-level `Map<key, { value, expiresAt }>` with a 6h TTL and at most 2,000 entries. On write, expired entries are swept; if the map is still at 2,000, the oldest insertion is evicted (FIFO: `map.delete(map.keys().next().value)`). This adds a hard cap that `server/middleware/rate-limit.ts` (which only prunes expired entries) doesn't have. Benchmarks change only when an admin seeds, roughly once a year, and in-memory staleness is bounded by the TTL. An admin "clear cache" isn't needed: Vercel instances recycle well within 6h of a deploy.
 
 Alternative considered: keep the Algolia reads on the server. Rejected per the planning decision. Algolia's regional index drops older years, Firestore is the source of truth, and keeping per-request reads off Algolia protects its quota.
 

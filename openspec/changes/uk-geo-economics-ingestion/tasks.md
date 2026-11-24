@@ -42,7 +42,8 @@
 
 - [ ] 6.1 `server/utils/economicsSync.ts`: `syncCpih()` and `syncRents()` per design D4, each validating shape before any write and recording redacted `lastError` on failure (§9.6).
   - Tests: `server/utils/tests/economicsSync.spec.ts`, with fixture JSON and a fixture workbook. Cover the happy path, a fetch 5xx, a 429 (treated as failure, nothing written), too few rows and a missing rents link on the dataset page.
-- [ ] 6.2 `server/api/cron/sync-economics.get.ts`: timing-safe `CRON_SECRET` check (same helper pattern as `clean-cache.get.ts`), `Promise.allSettled` over both sources, and a Resend summary email.
+- [ ] 6.1a Extract the duplicated timing-safe `CRON_SECRET` check from `clean-cache.get.ts` and `sync-trends.get.ts` into `server/utils/cronAuth.ts` `verifyCronSecret(event)` (throws 401; 500 if the secret is unset), switch both existing crons to it with their specs still green, and add `server/utils/tests/cronAuth.spec.ts` (missing header, wrong secret, length mismatch, correct secret, unset secret). Every later cron (`prewarm-live`, `report-usage`) uses it.
+- [ ] 6.2 `server/api/cron/sync-economics.get.ts`: `verifyCronSecret(event)`, `Promise.allSettled` over both sources, and a Resend summary email.
   - Tests: `server/api/cron/tests/sync-economics.spec.ts`, covering 401, both succeed, one fails and the email-send failure not failing the run.
 - [ ] 6.3 Add `{ "path": "/api/cron/sync-economics", "schedule": "0 5 20 * *" }` to `vercel.json`.
 - [ ] 6.4 `firestore.rules`: add `uk_economic_indicators` and `uk_rents` as `allow read, write: if false` (server-only). Add a rules test case in the existing rules test suite.

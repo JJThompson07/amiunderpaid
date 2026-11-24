@@ -45,12 +45,12 @@
 
 1. Generate `requestId` (`req_` + 16 hex) and set `X-Request-Id`.
 2. Parse `Authorization: Bearer bmr_live_…`. If missing or malformed: 401 `invalid_api_key`.
-3. Compute `hash = HMAC-SHA256(apiKeyPepper, key)` and read `api_keys/{hash}`, using a 60s in-memory positive cache and a 10s negative cache. If not found or revoked: 401.
+3. Compute `hash = HMAC-SHA256(apiKeyPepper, key)` and read `api_keys/{hash}`, using a 60s in-memory positive cache and a 10s negative cache. Both caches are hard-capped (positive 5,000 entries, negative 5,000 entries): on insert, expired entries are swept and, if the cap is still reached, the oldest entry is evicted (FIFO via `map.keys().next()`). A flood of random invalid keys therefore costs bounded memory and only churns the negative cache. If not found or revoked: 401.
 4. Read the plan from `api_accounts/{uid}` (cached 60s).
 5. Rate limit: Redis `INCR rl:{keyHash}:{epochSecond}` + `EXPIRE 2`. Over `plan.rps`: 429 `rate_limited` with `Retry-After: 1`.
 6. Quota (free plan only): Redis `GET usage:{uid}:{YYYY-MM}` ≥ `plan.monthlyIncluded`: 429 `quota_exceeded`. Paid plans aren't hard-capped, except for a safety ceiling of `plan.monthlyIncluded × 20`, which returns 429 `quota_exceeded` and emails support.
 7. Run the handler.
-8. On a 2xx: `INCR usage:{uid}:{YYYY-MM}` and `INCR usage:{uid}:{YYYY-MM-DDTHH}`. This is the billable count.
+8. On a 2xx, one pipelined Redis round-trip: `INCR usage:{uid}:{YYYY-MM}` + `EXPIRE … 5184000 NX` (60 days), `INCR usage:{uid}:{YYYY-MM-DDTHH}` + `EXPIRE … 172800 NX` (48h), and `SADD active:{YYYY-MM-DDTHH} {uid}` + `EXPIRE … 172800 NX`. This is the billable count. Every usage key has a TTL, and the hourly active-account set lets the reporting cron avoid `SCAN`.
 9. Set `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-Quota-Remaining` (free plan), and wrap the response in the envelope.
 
 Redis errors at steps 5 and 6 fail open: an in-memory per-instance limiter applies and a warning is logged. A Redis error at step 8 writes `FieldValue.increment(1)` to `api_usage_fallback/{uid}_{YYYY-MM-DDTHH}`, so billable usage is never lost.
@@ -61,7 +61,7 @@ Redis errors at steps 5 and 6 fail open: an in-memory per-instance limiter appli
 - **`api_keys/{hmacHex}`:** `{ uid, name, last4, createdAt, revokedAt: null, lastUsedAt }`. `lastUsedAt` is written at most once an hour per key, using the in-memory cache's timestamp to throttle.
 - **Pepper:** `apiKeyPepper`, a new private runtime secret. Without the pepper, a Firestore export can't be turned into working keys.
 - **Limits:** at most 5 non-revoked keys per uid, enforced in a transaction on `api_accounts/{uid}.activeKeyCount`.
-- **Revocation:** sets `revokedAt` and decrements the count. Other instances' 60s positive caches can serve a revoked key for up to 60s. That's documented in the docs and acceptable.
+- **Revocation:** a transaction that is a no-op if `revokedAt` is already set (so a duplicate request can't double-decrement), otherwise sets `revokedAt` and writes `activeKeyCount = Math.max(0, count - 1)`. The instance handling the revocation evicts the hash from its own positive cache immediately. Other instances' 60s positive caches can serve a revoked key for up to 60s. That's documented in the docs and acceptable.
 - **Rules:** `api_keys`, `api_accounts` and `api_usage_fallback` are all `allow read, write: if false`. The dashboard goes through server routes.
 
 ### D4. Plans as config
@@ -75,9 +75,9 @@ Redis errors at steps 5 and 6 fail open: an in-memory per-instance limiter appli
 
 `GET /api/cron/report-usage` runs hourly at `:05`. For the previous hour bucket `H`:
 
-1. Gather accounts with non-zero `usage:{uid}:{H}` (Redis `SCAN usage:*:{H}`) plus any `api_usage_fallback/*_{H}` docs, and sum them per uid.
+1. Read the uids that had usage in `H` with `SMEMBERS active:{H}` (one round-trip, no keyspace `SCAN`), then `MGET usage:{uid}:{H}` for them. Add any `api_usage_fallback/*_{H}` docs and sum per uid.
 2. For each paid account: `stripe.billing.meterEvents.create({ event_name, payload: { stripe_customer_id, value }, identifier: \`${uid}-${H}\`, timestamp: end of H })`. Stripe rejects a duplicate identifier, which makes retries and overlapping runs safe.
-3. Record `api_accounts/{uid}.lastReportedHour = H`. The cron also re-reports any unreported hour from the last 24h (Stripe's identifier dedup window covers that).
+3. Record `api_accounts/{uid}.lastReportedHour = H`, then batch-delete that account's `api_usage_fallback/{uid}_{H}` doc. Fallback docs are only deleted after Stripe accepted (or rejected as duplicate) the meter event, so an unreported hour's fallback is never lost. The cron also re-reports any unreported hour from the last 24h (Stripe's identifier dedup window covers that, and the 48h Redis TTL keeps the hourly keys alive for it).
 
 Free accounts are never reported. Failures for one account don't stop the others, and a summary is emailed only if there were failures.
 

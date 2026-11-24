@@ -18,6 +18,11 @@ A visitor SHALL be able to create an account with email and password, verify the
 - **WHEN** a visitor signs up and verifies their email
 - **THEN** they are on the free plan and can create their first key
 
+#### Scenario: Signed-out dashboard visit
+
+- **WHEN** a signed-out visitor opens `/dashboard`
+- **THEN** they are sent to `/login` with a redirect back to `/dashboard`, without the dashboard rendering first
+
 ### Requirement: Playground without keys in the browser
 
 The playground SHALL let a signed-in, verified user run v1 requests from a form, executed server-side on their account, and MUST NOT require or expose an API key in the browser. Playground requests SHALL be counted like any other request.

@@ -19,7 +19,7 @@
 
 - [ ] 3.1 Add non-secret server config to `nuxt.config.ts` `runtimeConfig`: `reedDailyCallCap`, `reedMonthlyCallCap`, `reedCallReserve` and `reedPrewarmCallBudget`, with design D3 defaults overridable by `NUXT_*` env.
 - [ ] 3.2 `server/utils/providerQuota.ts`: `reserveReedCalls(n)` and `getReedUsage()` per design D3, skipped under `process.dev` / E2E.
-  - Tests: `server/utils/tests/providerQuota.spec.ts`, covering under cap, daily refusal, monthly refusal, a day rollover key, a transaction error (fail-closed: refuse and log) and the dev bypass.
+  - Tests: `server/utils/tests/providerQuota.spec.ts`, covering under cap, daily refusal, monthly refusal, a day rollover (new `days.DD` field), a month rollover (new doc), a transaction error (fail-closed: refuse and log) and the dev bypass.
 - [ ] 3.3 Call the guard before Reed in `jobs.ts` and `salary.ts`. On refusal, serve the newest cached doc with `stale: true` without touching `expiresAt`; else use the existing UK fallback. Add tests to both handler specs for refusal-with-cache and refusal-without-cache.
 - [ ] 3.4 `firestore.rules`: `provider_usage` server-only (`allow read, write: if false`), plus a rules test.
 
@@ -33,10 +33,11 @@
 
 - [ ] 5.1 Extract the provider-fetch + cache-write path of `salary.ts` into `refreshLiveEntry(args)` (in `server/utils/prewarm.ts` or a sibling util) and make `salary.ts` use it, with behaviour unchanged and existing tests green.
 - [ ] 5.2 `server/utils/prewarm.ts`: `rankDemand` and `prewarm(budget)` per design D5, including the 240s self-stop.
-  - Tests: `server/utils/tests/prewarm.spec.ts`. Cover ranking, normalisation defaults, skipping fresh entries, stopping on budget, stopping on quota refusal and a provider error on one key not aborting the run.
-- [ ] 5.3 `server/api/cron/prewarm-live.get.ts`: timing-safe `CRON_SECRET`, run `prewarm(config.reedPrewarmCallBudget)`, Resend summary.
+  - Tests: `server/utils/tests/prewarm.spec.ts`. Cover the `search_history` query projecting `title`/`location`/`schedule`/`contract`/`country`/`timestamp`, ranking, normalisation defaults, skipping fresh entries, stopping on budget, stopping on quota refusal and a provider error on one key not aborting the run.
+- [ ] 5.3 `server/api/cron/prewarm-live.get.ts`: `verifyCronSecret` (from `uk-geo-economics-ingestion`), run `prewarm(config.reedPrewarmCallBudget)`, Resend summary.
   - Tests: `server/api/cron/tests/prewarm-live.spec.ts`, covering 401, success summary and an email failure not failing the run.
 - [ ] 5.4 `vercel.json`: add `{ "path": "/api/cron/prewarm-live", "schedule": "0 2 * * *" }`.
+- [ ] 5.5 Pre-flight (§10): re-read the Vercel project's `defaultResourceConfig` and confirm `fluid: true` and `functionDefaultTimeout` ≥ 300. If either changed, add `maxDuration: 300` for `/api/cron/**` before deploying.
 
 ## 6. Consumer UI
 
@@ -49,5 +50,5 @@
 ## 7. Verification
 
 - [ ] 7.1 Repeat the task 1.2 measurement on one new never-searched title: expect 2 Reed calls. Then remove the counter.
-- [ ] 7.2 After deploy, read `provider_usage/reed-day-*` for the first two days and confirm the pre-warm summary emails arrived with sensible numbers. Report both to the user.
+- [ ] 7.2 After deploy, read `provider_usage/reed-YYYY-MM` (`days` for the first two days) and confirm the pre-warm summary emails arrived with sensible numbers. Report both to the user.
 - [ ] 7.3 Gate: `pnpm test:verify` passes, with 80% per-file coverage on every new `server/utils/*.ts` and the cron handler.

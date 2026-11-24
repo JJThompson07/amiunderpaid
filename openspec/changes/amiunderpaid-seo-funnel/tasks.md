@@ -4,11 +4,12 @@
 - [ ] 1.2 Re-check that ISR ignores query strings on `/salary/**` in production: fetch one page with two different `compare` values and confirm neither appears in the HTML and `x-vercel-cache` is `HIT` (the 2026-11-12 result). If the behaviour has changed, revisit design D3 before building.
 - [ ] 1.3 Re-check the UKHPI file. Find the newest `UK-HPI-full-file-YYYY-MM.csv`, record its size and header, and confirm the `AreaCode` values are GSS codes that `shared/data/uk-geo.json` can join (LAD/CTYUA/region). Record the join coverage %.
 - [ ] 1.4 Read `/v1/benchmark`'s `meta.sources` (from `api-keys-metering-billing`) so `/data-sources` uses the same dataset names and licence text.
+- [ ] 1.5 Re-read the Vercel project's `defaultResourceConfig` and confirm `fluid: true` and `functionDefaultTimeout` ≥ 300 (the 2026-11-24 result), and time one full UKHPI download + streamed parse locally. If the timeout changed or the parse takes more than ~150s, add `maxDuration: 300` for `/api/cron/**` or revisit design D1 before building.
 
 ## 2. House prices
 
 - [ ] 2.1 `server/utils/economicsSync.ts`: `syncHousePrices()` per design D1 (newest-file probe, streamed parse, header-name columns, validation, batch write).
-  - Tests in `server/utils/tests/economicsSync.spec.ts` with a small fixture CSV stream: latest-per-area selection, reordered columns, a 404 then 200 probe, all-404 (no write, error recorded), too few areas, a stale latest month.
+  - Tests in `server/utils/tests/economicsSync.spec.ts` with a small fixture CSV stream: rows split across chunk boundaries (including mid-field and a CRLF split), a final line with no trailing newline, latest-per-area selection where string order and date order disagree (e.g. `15/01/2026` vs `01/08/2026`), reordered columns, a 404 then 200 probe, all-404 (no write, error recorded), too few areas, a stale latest month.
 - [ ] 2.2 Add it to `server/api/cron/sync-economics.get.ts`'s `Promise.allSettled` set and summary email, and to the admin "run now" endpoint. Update both specs.
 - [ ] 2.3 `firestore.rules`: `uk_house_prices` server-only, plus a rules test.
 - [ ] 2.4 `server/utils/economics.ts`: add `housePrice` with the LAD → CTYUA → region fallback, and update `server/utils/tests/economics.spec.ts`.

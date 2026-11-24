@@ -14,7 +14,7 @@
   - Tests: `server/utils/engine/tests/resolveRole.spec.ts`, covering every cascade branch, an unknown supplied code, ambiguity and Algolia errors. Port the existing `useMarketData.spec.ts` resolution cases as regression cases.
 - [ ] 2.3 Register `algoliaSearchApiKey: process.env.ALGOLIA_SEARCH_API_KEY` in private `runtimeConfig` in `nuxt.config.ts` (§9.2).
 - [ ] 2.4 Refactor `server/api/engine/match-title.get.ts` to call `findSynonymMatches`. Keep its response shape; update `server/api/engine/tests/`.
-- [ ] 2.5 `server/utils/engine/baselines.ts`: `getMacroBaselines`, `getMicroBaselines` per design D3. Use equality-only Firestore queries and `pinToSingleYear`; UK regional macro reads `searchTitle == 'all'`. Add the bounded TTL cache (6h, 2,000 entries, prune on write).
+- [ ] 2.5 `server/utils/engine/baselines.ts`: `getMacroBaselines`, `getMicroBaselines` per design D3. Use equality-only Firestore queries and `pinToSingleYear`; UK regional macro reads `searchTitle == 'all'`. Add the bounded TTL cache (6h, 2,000 entries; on write sweep expired, then FIFO-evict the oldest if still at cap).
   - Tests: `server/utils/engine/tests/baselines.spec.ts`. Cover UK/USA national, the UK regional modifier records, two-year pinning, a missing region, cache hit/expiry/eviction, and a Firestore error (the macro falls back to null, not to the old hard-coded 35,000).
 - [ ] 2.6 `server/utils/engine/computeBenchmark.ts`. Resolve, then baselines ∥ live via `event.$fetch('/api/market-data/salary')`, then build `EngineContext` and score with `calculate{UK,USA}BenchmarkScore`.
   - A live failure gives `live: null` and scoring continues.

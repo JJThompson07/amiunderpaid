@@ -29,11 +29,11 @@
   - Secrets: `apiKeyPepper` and the Redis names from 1.5.
   - Non-secret server values: `apiLiveDataEnabled` (default false), `apiCheckoutEnabled` (default false) and `apiVersion`.
 - [ ] 3.2 `pnpm add @upstash/redis`. `server/utils/api/redis.ts` provides a lazy client from runtimeConfig, with a test using a mocked client.
-- [ ] 3.3 `server/utils/api/keys.ts`: `generateKey`, `hashKey` (HMAC-SHA256 with the pepper), `createKey(uid, name)` (transaction: verified email, ≤5 active), `revokeKey`, `listKeys`, and the lookup with 60s positive / 10s negative caches.
-  - Tests: format and entropy length, a hash that's stable and pepper-dependent, the limit, revocation, the cache TTLs, and that the raw key never appears in any Firestore write.
+- [ ] 3.3 `server/utils/api/keys.ts`: `generateKey`, `hashKey` (HMAC-SHA256 with the pepper), `createKey(uid, name)` (transaction: verified email, ≤5 active), `revokeKey` (idempotent: no-op if already revoked, count clamped at 0, evicts the hash from the local positive cache), `listKeys`, and the lookup with 60s positive / 10s negative caches, each capped at 5,000 entries with expired-sweep then FIFO eviction per design D2.
+  - Tests: format and entropy length, a hash that's stable and pepper-dependent, the limit, revocation (including a duplicate revoke leaving the count unchanged and an immediate local 401 after revoke), the cache TTLs, both caches staying at their cap under a flood of distinct invalid keys, and that the raw key never appears in any Firestore write.
 - [ ] 3.4 `server/utils/api/plans.ts`: `PLANS` from task 1.1 and `getAccount(uid)` with a 60s cache (+ tests).
 - [ ] 3.5 `server/utils/api/rateLimit.ts`: Redis per-second window, in-memory fallback on error (+ tests: under, over, Redis error).
-- [ ] 3.6 `server/utils/api/metering.ts`: `checkQuota`, `recordBillable` (Redis INCR month + hour; Firestore `api_usage_fallback` increment on Redis error), `readUsage` (+ tests).
+- [ ] 3.6 `server/utils/api/metering.ts`: `checkQuota`, `recordBillable` (one pipeline: INCR month + hour, `SADD active:{H}`, each with `EXPIRE … NX` TTLs per design D2; Firestore `api_usage_fallback` increment on Redis error), `readUsage` (+ tests, including asserting every written key gets a TTL).
 - [ ] 3.7 `server/utils/api/envelope.ts`: `ok(data, meta)`, `fail(code, status, details?)` and the request-id generator (+ tests: shape, and messages never contain provider names).
 - [ ] 3.8 `server/utils/api/auth.ts`: `withApi(handler)` running pipeline steps 1–9 of design D2.
   - Tests: every 401 path, 429 rate and quota, free vs paid quota behaviour, the safety ceiling (alert sent), only 2xx metered, headers set, and the raw key never passed to `console.*`.
@@ -65,14 +65,15 @@
 - [ ] 6.3 `server/api/developer/billing-portal.post.ts` (+ tests).
 - [ ] 6.4 `server/api/stripe/webhook.post.ts`: an API branch first for `checkout.session.completed` / `customer.subscription.updated` / `customer.subscription.deleted` with `product === 'bmr_api'`, inside the existing dedup.
   - Tests: each event, territory events don't touch `api_accounts`, API events don't touch territory collections, and duplicate events are ignored.
-- [ ] 6.5 `server/api/cron/report-usage.get.ts` per design D5: timing-safe `CRON_SECRET`, Redis scan plus Firestore fallback merge, meter events with identifiers, 24h catch-up, per-account failure isolation, failure-only email.
-  - Tests: one hour reported, a duplicate run, a failed account retried next run, free accounts skipped, the fallback merged.
+- [ ] 6.5 `server/api/cron/report-usage.get.ts` per design D5: `CRON_SECRET` via `verifyCronSecret` (from `uk-geo-economics-ingestion`), `SMEMBERS active:{H}` + `MGET` plus Firestore fallback merge (no `SCAN`), meter events with identifiers, fallback docs deleted only after a successful report, 24h catch-up, per-account failure isolation, failure-only email.
+  - Tests: one hour reported, a duplicate run, a failed account retried next run (its fallback doc kept), free accounts skipped, the fallback merged then deleted.
 - [ ] 6.6 `vercel.json`: `{ "path": "/api/cron/report-usage", "schedule": "5 * * * *" }`.
 
 ## 7. Developer portal UI
 
 - [ ] 7.1 Extend i18n `developers.json` (en-GB and en-US) with landing, pricing, docs, sign-up/login, dashboard, playground, errors and email-verification copy (§6, no hardcoded strings).
 - [ ] 7.2 `app/pages/developers/signup.vue` and `login.vue`: Firebase email/password, `sendEmailVerification`, then `POST /api/developer/account`. Use `useCurrentUser()` for reactivity (Golden Rule) and `useFirebaseAuth()` only for SDK calls.
+- [ ] 7.2a `app/middleware/developer.ts` (named route middleware, applied to `dashboard.vue` and `playground.vue`): `await getCurrentUser()` (same pattern as `app/middleware/recruiters.ts`, not `useCurrentUser()`, which is `undefined` before auth hydrates) and, if signed out, `navigateTo` the developer login with `redirect` set to the requested path. Redirected `/recruiter/*` visitors (from `recruiter-deprecation-and-regional-explorer`) land here. Covered by the 7.8 e2e: signed-out `/dashboard` → login.
 - [ ] 7.3 `app/pages/developers/dashboard.vue`: keys list/create (show-once modal `ModalApiKeyCreated.vue`)/revoke, usage meter, plan card, upgrade (hidden when checkout is disabled) and billing portal button. Toasts via `useSystemToast`.
 - [ ] 7.4 `app/pages/developers/docs.vue`, with renderer component `app/components/Developer/OpenApiOperation.vue`. If it carries real logic (parameter/schema flattening), add `app/components/Developer/tests/OpenApiOperation.spec.ts` (§8).
 - [ ] 7.5 `app/pages/developers/playground.vue`: form for the 3 endpoints, JSON viewer, verify-email gate.

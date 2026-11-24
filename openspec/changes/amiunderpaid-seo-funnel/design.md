@@ -28,7 +28,7 @@
 `syncHousePrices()` in `server/utils/economicsSync.ts`:
 
 - **Find the file:** try the current month, then step back up to 4 months and take the first 200 response.
-- **Parse:** stream the body through `TextDecoderStream` and split on newlines, with no full-file buffering. Locate the `Date`, `AreaCode`, `RegionName` and `AveragePrice` columns by header name (not position). For each row, keep the row with the greatest `Date` per `AreaCode`, so about 450 entries are held in memory.
+- **Parse:** stream the body through `TextDecoderStream`, with no full-file buffering. Chunks end at arbitrary byte boundaries, so keep a carry-over buffer: prepend it to each chunk, split on newlines, and hold back the last (possibly partial) segment for the next chunk; flush it at end of stream. Strip a trailing `\r`. Locate the `Date`, `AreaCode`, `RegionName` and `AveragePrice` columns by header name (not position). Convert each `DD/MM/YYYY` date to ISO `YYYY-MM-DD` before comparing (a raw string compare is not chronological), and keep the row with the greatest ISO date per `AreaCode`, so about 450 entries are held in memory.
 - **Validate:** at least 300 areas, each with a GSS-shaped code and a positive price, and a latest month no older than 6 months. Otherwise the source counts as failed (keep last good).
 - **Write:** batch `uk_house_prices/{gss}` = `{ name, averagePrice, month, updatedAt }`, plus metadata in `uk_economic_indicators/house-prices`.
 
@@ -91,4 +91,4 @@ The component accepts a `placement` prop and is never mounted on `/salary/**` or
   → Copy says "at the typical salary for this role here", and the user's own figures are labelled separately.
 - **[Risk] Thin or estimated regional pay feeds the ratios.**
   → The ratios inherit `basis`. Estimated inputs show the same "estimated" note as the pay card.
-- **[Trade-off] The 35 MB monthly download** runs once a month in a cron with a 300s limit, streamed at about 450 entries in memory. That's acceptable.
+- **[Trade-off] The 35 MB monthly download** runs once a month in a cron with the project's 300s function default (verified 2026-11-24; re-checked in task 1.5), streamed at about 450 entries in memory. That's acceptable.

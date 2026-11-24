@@ -23,6 +23,16 @@ Every v1 data endpoint MUST require `Authorization: Bearer <key>` and MUST respo
 - **WHEN** a key was revoked more than 60 seconds ago and is then used
 - **THEN** the response is 401 `invalid_api_key`
 
+#### Scenario: Duplicate revocation
+
+- **WHEN** the same key is revoked twice
+- **THEN** the user's active key count drops by exactly one and never goes below zero
+
+#### Scenario: Flood of invalid keys
+
+- **WHEN** a client sends many requests, each with a different random key
+- **THEN** every request gets 401 `invalid_api_key` and the server's key caches never exceed their fixed maximum entry count
+
 ### Requirement: Key issuance limits
 
 A user MUST have a verified email to create a key, and SHALL NOT hold more than 5 non-revoked keys at once.
