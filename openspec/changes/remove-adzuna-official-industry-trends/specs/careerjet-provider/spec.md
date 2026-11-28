@@ -15,6 +15,21 @@ The system SHALL fetch active US job vacancies from the Careerjet Publisher API 
 - **WHEN** the Careerjet API does not respond within 6,000 milliseconds or returns an HTTP error or zero matching listings
 - **THEN** the market data gateway SHALL automatically fail over to the Jooble API for USA traffic.
 
+#### Scenario: Both US providers find no listings
+
+- **WHEN** neither Careerjet nor Jooble returns listings and at least one of them answered successfully with zero results
+- **THEN** `/api/market-data/jobs` SHALL return 200 with an empty listings payload cached for `liveCacheFallbackTtlHours` hours, not an error.
+
+#### Scenario: Both US providers fail
+
+- **WHEN** Careerjet and Jooble both fail with a network error, HTTP error, or timeout
+- **THEN** the market data gateway SHALL return 503 `'Market data temporarily unavailable.'`.
+
+#### Scenario: End-user context does not split the in-memory cache
+
+- **WHEN** two visitors with different IP addresses and User-Agents make the same US search within the in-memory cache window
+- **THEN** both SHALL be served by one provider call, because `user_ip` and `user_agent` are not part of the cache key.
+
 ### Requirement: Careerjet Salary Normalization and Statistical Calculation
 
 The system SHALL normalize Careerjet job salaries into annual numeric `salary_min` and `salary_max` values using `salary_type` (`'Y'` × 1, `'M'` × 12, `'W'` × 52, `'D'` × 260, `'H'` × 2,080 for full-time or × 1,040 for part-time), falling back to unstructured string parsing when numeric bounds are absent, and SHALL compute the mean, count, and 7-bucket histogram via `buildTieredJobResponse`. When the salary distribution is requested independently via `server/api/market-data/salary.ts`, the system SHALL reuse a fresh cached Careerjet job-search entry from `market_jobs_cache` rather than issuing a second live Careerjet API call.

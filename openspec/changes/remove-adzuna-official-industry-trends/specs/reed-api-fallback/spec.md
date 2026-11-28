@@ -14,7 +14,7 @@ The Reed utility (`server/utils/reed.ts`) SHALL accept an optional category para
 The `market-data` API Gateway SHALL route job and salary requests dynamically based on the target region:
 
 - UK Traffic: Routes exclusively to the Reed API. When Reed returns zero results or fails, the system MUST NOT query another job board and SHALL fall back to official ONS data.
-- USA Traffic: Routes primarily to the Careerjet API, falling back to the Jooble API on zero results or API failure, and to official BLS data when both fail.
+- USA Traffic: Routes primarily to the Careerjet API, falling back to the Jooble API on zero results or API failure, and to official BLS data when both fail. When the providers answer with zero results, the system SHALL return an empty result, not an error.
 
 #### Scenario: UK Geographic Routing
 

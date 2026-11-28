@@ -19,7 +19,7 @@
 
 - Zero Adzuna code, credentials, UI copy, or stored Firestore documents remain after this change completes.
 - UK live listings use Reed only and degrade cleanly to ONS baselines when Reed fails or returns 0 jobs.
-- US live listings use Careerjet Publisher API v4 as primary and Jooble as fallback, and degrade cleanly to BLS baselines when both fail.
+- US live listings use Careerjet Publisher API v4 as primary and Jooble as fallback, and degrade cleanly to BLS baselines when both fail. Both finding nothing is an empty result, not a failure.
 - Industry salary trends come from official monthly government regular earnings: ONS Average Weekly Earnings by industry (UK) and BLS CES Average Weekly Earnings (US), checked daily and written only when a new month is published.
 - Salary and benchmark searches resolve an industry from their SOC code without a live job-board hit. The jobs page uses the industry the user selected, or none.
 - Dropped or consolidated category URLs 301-redirect so existing backlinks never 404.
@@ -48,6 +48,7 @@
   - `user_agent`: `getRequestHeader(event, 'user-agent') || 'Mozilla/5.0 (compatible; AmIUnderpaid/1.0)'`.
   - `Referer` header: `https://www.amiunderpaid.com/jobs/${slugify(title)}/usa${location ? `/${slugify(location)}` : ''}`.
   - When `computeBenchmark` calls `salary.ts` via `event.$fetch`, Nitro forwards the original request's headers, so the end user's IP and UA reach Careerjet (verified in `nitropack@2.13.4` `dist/runtime/internal/app.mjs`). Pre-warm or cron callers have no end user; they don't call Careerjet in this change.
+  - `user_ip` and `user_agent` are passed into `fetchFromProviders` but are **not** in its `defineCachedFunction` `getKey`. The key stays the search parameters only; adding the visitor would split the 1-hour in-memory cache per user and remove its stampede protection. The visitor whose request misses the cache is the one whose context reaches Careerjet.
 - **Query parameters:**
   - `locale_code: 'en_US'`
   - `keywords`: Tier 1 uses `buildTier1Keywords(title, anchorPhrase, categoryKeyword)`; Tier 2 (when `anchorPhrase !== title` or the category keyword is relaxed) uses `buildTier2Keywords(anchorPhrase, categoryKeyword)`, settled together via `Promise.allSettled` (same pattern as `reed.ts`). Pre-flight 1.1 checks whether quoted phrases work.
@@ -73,6 +74,8 @@
   - **Why 7 days:** the cache holds both the listings users see and the salary statistics derived from them. Statistics barely move week to week, but listings close: at today's 30 days many shown jobs are already gone. 3 days keeps listings fresher but roughly doubles Reed calls for popular searches (each fresh UK search costs 2 calls against a 1,000/day quota) before `reed-percentiles-and-geo-cascade` adds the quota guard. 7 days keeps most listings live, costs at most ~9 Reed calls a month per popular search, and leaves a 24-hour window for that change's nightly pre-warm.
 
 - **UK zero-result / error handling:** when `countryCode === 'gb'` and `fetchReedData` returns `count === 0`, `jobs.ts` and `salary.ts` return the empty Reed response (`count: 0, mean: 0, histogram: {}, results: [], similarResults: [], provider: 'reed'`) cached for `liveCacheFallbackTtlHours` hours, without calling `executeMarketFallback`. When `fetchReedData` throws, they return 503 `'Market data temporarily unavailable.'` (§9.3–9.4), so `computeBenchmark` sets `live: null` and scores from ONS baselines.
+- **US zero-result / error handling:** Careerjet first; Jooble when Careerjet throws or returns `count === 0`. `jobs.ts` and `salary.ts` return 503 only when every provider tried threw. If any provider answered with zero listings and none returned listings, they return 200 with the empty response (`provider` = the last provider that answered) cached for `liveCacheFallbackTtlHours` hours, so a niche search renders `NoData` (`noindex`) rather than an error page.
+- **Dev/E2E mock gate:** `careerjet.ts`, `reed.ts` and `jooble.ts` gate their mocks with `process.dev || process.env.E2E === 'true'` (server code, §9.5).
 - **`executeMarketFallback` for UK:** if ever called with `countryCode === 'gb'`, it throws 503 (a downstream provider is unavailable; §9.4), never 404.
 
 ### D2. Canonical SIC / NAICS industry taxonomy and 301 redirects (`shared/utils/industries.ts`)
@@ -148,7 +151,7 @@ UK: 19 industries. US: 16 industries.
 ### D3. Monthly official industry earnings ingestion (`server/utils/industryTrendsSync.ts`)
 
 1. **`syncUkIndustryTrends(options?: { force?: boolean })`:**
-   - **Discover & fetch:** fetch the EARN03 and EARN02 dataset pages, take the `/file?uri=…/current/<name>.xls` link from each, download both workbooks, and read them with the installed `xlsx` package.
+   - **Discover & fetch:** fetch the EARN03 and EARN02 dataset pages, take the `/file?uri=…/current/<name>.xls` link from each (the matcher accepts `.xls` or `.xlsx`, `/\.xlsx?$/i`, since ONS is moving files to `.xlsx`; `xlsx` reads both), download both workbooks, and read them with the installed `xlsx` package.
    - **Parse:** in each sheet, find the row whose first cell is `CDID`, map each configured CDID to its column, and read monthly rows whose label matches `/^(\d{4}) ([A-Z][a-z]{2})( \(p\))?$/` as `YYYY-MM`. Regular pay = AWE − Bonuses − Arrears, annualized as `Math.round(weekly × 52)`. Keep the newest 36 months.
    - **Validation (fail-closed):** every configured UK industry (19) must be present, each with ≥12 valid months and every value in `[10_000, 250_000]`. Otherwise throw before writing, naming the first missing CDID.
    - **Delta check:** read `industry_trends_meta/gb`. If not `force`, `meta.latestMonth === newestMonth`, and `meta.industryCount === 19`, skip the industry writes, update `{ lastCheckedAt, lastError: null }`, return `skipped: true`.
@@ -187,7 +190,7 @@ Adzuna's terms require deleting Adzuna-sourced data on termination. Per §10, th
    - `adzuna_jobs_cache` → **`market_jobs_cache`**; `adzuna_distribution_cache` → **`market_distribution_cache`**.
 2. **Copy before deploy, purge after:**
    - **`--dry-run` (default):** counts docs in all four `adzuna_*` collections; breaks down both caches by `data.provider` (`reed`, `jooble`, `adzuna`, missing); lists `adzuna_jobs_cache` docs with `is_admin_verified === true && gov_id_code != null` and whether that synonym is already in `{uk,usa}_job_groups`; reports `industry_trends` doc counts per country.
-   - **`--copy` (run immediately before deploy):** copies non-expired docs with `data.provider in ['reed', 'jooble']` from each `adzuna_*_cache` to its `market_*_cache` (500 per batch, idempotent `set`), clamping `expiresAt` to at most `now + liveCachePrimaryTtlDays`. For admin-verified Adzuna docs, writes a stub `{ gov_id_code, is_admin_verified: true }` with no listing or salary data. Without this step every live search goes cold at deploy and the first day of UK traffic all hits Reed.
+   - **`--copy` (run immediately before deploy):** copies non-expired docs with `data.provider in ['reed', 'jooble']` from `adzuna_jobs_cache` to `market_jobs_cache`. It does **not** copy `adzuna_distribution_cache`: those docs hold only `{ histogram, provider }`, without the `mean` and `count` that `computeBenchmark` needs. `salary.ts` refills `market_distribution_cache` from the copied jobs cache via `tryReuseJobsCacheHistogram`, and treats any distribution doc missing a numeric `mean` or `count` as a miss (500 per batch, idempotent `set`), clamping `expiresAt` to at most `now + liveCachePrimaryTtlDays`. For admin-verified Adzuna docs, writes a stub `{ gov_id_code, is_admin_verified: true }` with no listing or salary data. Without this step every live search goes cold at deploy and the first day of UK traffic all hits Reed.
    - **`--execute` (after deploy and a successful forced trends sync):** refuses unless `industry_trends` holds all 19 UK and 16 US docs; re-runs the copy for any docs written between `--copy` and the deploy; then batch-deletes (500/commit) every doc in the four `adzuna_*` collections and prints the final counts (0 each).
 
 ### D6. Cross-change edits applied to active `openspec/changes/`
