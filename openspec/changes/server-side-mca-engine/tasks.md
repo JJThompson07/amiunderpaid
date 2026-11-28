@@ -27,7 +27,7 @@
 
 ## 4. Client switch-over
 
-- [ ] 4.1 `app/composables/useLocationEngine.ts`: replace `fetchHistogram`, the identity resolvers and the macro/micro fetches with one `$fetch('/api/engine/benchmark')` inside the existing `useAsyncData`. Populate `useJobs().distributionData` (through `sanitizeAdzunaData`) and the `useMarketData` state refs from the response. Keep `UseLocationEngineReturn` unchanged. `mcaScore` still calls the scorer client-side, from the returned context plus the live `userSalary`.
+- [ ] 4.1 `app/composables/useLocationEngine.ts`: replace `fetchHistogram`, the identity resolvers and the macro/micro fetches with one `$fetch('/api/engine/benchmark')` inside the existing `useAsyncData`. Populate `useJobs().distributionData` (through `sanitizeAdzunaData`, renamed to `sanitizeMarketData` in `remove-adzuna-official-industry-trends`) and the `useMarketData` state refs from the response. Keep `UseLocationEngineReturn` unchanged. `mcaScore` still calls the scorer client-side, from the returned context plus the live `userSalary`.
   - Update `app/composables/tests/useLocationEngine.spec.ts`, mocking `$fetch` for the endpoint. Cover the score path, no-data path, ambiguity alternatives → `ambiguousMatches` and the National redirect watcher.
 - [ ] 4.2 `app/composables/useMarketData.ts`: delete `resolveUkIdentity` / `resolveUsaIdentity` and the `$algolia` dependency. Keep the state refs and exported types (`SalaryBenchmark`, `ResolvedJobIdentity`), and update `app/composables/tests/useMarketData.spec.ts`.
 - [ ] 4.3 Delete `app/composables/useMacroData.ts`, `app/composables/useMicroData.ts`, `app/composables/tests/useMacroData.spec.ts` and `app/composables/tests/useMicroData.spec.ts`. Grep that nothing else imports them.

@@ -39,7 +39,7 @@
 - [ ] 5.1 `app/components/AmI/BenchmarkMyRoleCta.vue` (`inline`/`panel`, `placement` prop, UTM link). It builds its own URL, which is real logic, so add a test at `app/components/AmI/tests/BenchmarkMyRoleCta.spec.ts` (§8).
 - [ ] 5.2 Add the inline CTA to `app/components/AmI/NavBar.vue` (desktop and mobile, not for admins) and to the footer in `app/layouts/default.vue`.
 - [ ] 5.3 Add the panel CTA to `app/pages/data-sources.vue`, `app/pages/mca-score.vue` and `app/pages/explorer.vue`.
-- [ ] 5.4 Rewrite `app/pages/data-sources.vue`: one card per source (ONS ASHE 7.7a/14.7a/15, CPIH, Price Index of Private Rents, HM Land Registry UKHPI, live job providers), with anchors matching the living-costs source links and the OGL v3.0 attribution statement. Update `i18n/locales/*/data-sources.json` in both locales.
+- [ ] 5.4 Rewrite `app/pages/data-sources.vue`: one card per source (ONS ASHE 7.7a/14.7a/15, ONS EARN03 Average Weekly Earnings by industry, CPIH, Price Index of Private Rents, HM Land Registry UKHPI, BLS OEWS, BLS CES, and live job providers Reed for UK and Careerjet & Jooble for USA — no Adzuna), with anchors matching the living-costs source links and the OGL v3.0 attribution statement. Update `i18n/locales/*/data-sources.json` in both locales.
 - [ ] 5.5 Add `navbar` and `common.footer` i18n keys for the CTA (both locales).
 
 ## 6. Tests and checks
