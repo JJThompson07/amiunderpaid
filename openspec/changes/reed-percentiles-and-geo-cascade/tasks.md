@@ -1,6 +1,6 @@
 ## 1. Pre-flight (verify real state before touching provider behaviour)
 
-- [ ] 1.1 Confirm `server-side-mca-engine` and `uk-geo-economics-ingestion` are merged: `server/utils/engine/computeBenchmark.ts` and `shared/utils/ukGeo.ts` exist.
+- [ ] 1.1 Confirm `server-side-mca-engine`, `uk-geo-economics-ingestion`, and `remove-adzuna-official-industry-trends` are merged: `server/utils/engine/computeBenchmark.ts`, `shared/utils/ukGeo.ts`, and `market_jobs_cache` / `market_distribution_cache` exist.
 - [ ] 1.2 Measure today's Reed calls per cold UK results page.
   - Add a temporary local-only counter around the Reed `$fetch` in `server/utils/reed.ts`, gated by `process.dev`, with a real key locally.
   - Load one never-searched title + location once. Record the call count (expected 4), then remove the counter.
@@ -13,14 +13,14 @@
 - [ ] 2.1 `server/utils/singleFlight.ts` (+ `server/utils/tests/singleFlight.spec.ts`): shared promise, cleanup on resolve and on reject, separate keys independent.
 - [ ] 2.2 Wrap the provider fetch in `server/api/market-data/jobs.ts` and `server/api/market-data/salary.ts` with `singleFlight(<harmonised cache key>, …)`. Add a test to each handler's spec where concurrent jobs + salary calls produce one `fetchReedData` invocation.
 - [ ] 2.3 `server/utils/jobTiering.ts`: add `percentiles` (null below 5) and `sampleSize` per design D2. Extend the types in `shared/utils/market-data.ts`. Tests in `server/utils/tests/jobTiering.spec.ts`: interpolation, below-5 and an empty sample.
-- [ ] 2.4 Persist `percentiles` and `sampleSize` in the `adzuna_jobs_cache` and `adzuna_distribution_cache` writes, and read them back, with legacy docs giving null. Update both handler specs.
+- [ ] 2.4 Persist `percentiles` and `sampleSize` in the `market_jobs_cache` and `market_distribution_cache` writes, and read them back, with legacy docs giving null. Update both handler specs.
 
 ## 3. Quota guard
 
 - [ ] 3.1 Add non-secret server config to `nuxt.config.ts` `runtimeConfig`: `reedDailyCallCap`, `reedMonthlyCallCap`, `reedCallReserve` and `reedPrewarmCallBudget`, with design D3 defaults overridable by `NUXT_*` env.
 - [ ] 3.2 `server/utils/providerQuota.ts`: `reserveReedCalls(n)` and `getReedUsage()` per design D3, skipped under `process.dev` / E2E.
   - Tests: `server/utils/tests/providerQuota.spec.ts`, covering under cap, daily refusal, monthly refusal, a day rollover (new `days.DD` field), a month rollover (new doc), a transaction error (fail-closed: refuse and log) and the dev bypass.
-- [ ] 3.3 Call the guard before Reed in `jobs.ts` and `salary.ts`. On refusal, serve the newest cached doc with `stale: true` without touching `expiresAt`; else use the existing UK fallback. Add tests to both handler specs for refusal-with-cache and refusal-without-cache.
+- [ ] 3.3 Call the guard before Reed in `jobs.ts` and `salary.ts`. On refusal, serve the newest cached doc with `stale: true` without touching `expiresAt`; else return no live data (empty listings in `jobs.ts`; 503 in `salary.ts` so the engine falls back to ONS baselines). Add tests to both handler specs for refusal-with-cache and refusal-without-cache.
 - [ ] 3.4 `firestore.rules`: `provider_usage` server-only (`allow read, write: if false`), plus a rules test.
 
 ## 4. Live geo cascade
@@ -42,7 +42,7 @@
 ## 6. Consumer UI
 
 - [ ] 6.1 `useLocationEngine`: expose `livePercentiles`, `liveSampleSize`, `liveBasis` and `liveStale` (update the spec).
-- [ ] 6.2 Results page live section (`app/components/Section/Adzuna/Comparison.vue`, which renders the live tier for both countries; `Section/Reed/` holds only listings):
+- [ ] 6.2 Results page live section (`app/components/Section/Market/Comparison.vue`, renamed from `Section/Adzuna/Comparison.vue` in `remove-adzuna-official-industry-trends`, which renders the live tier for both countries; `Section/Reed/` holds only listings):
   - Show the sample size, plus "Based on wider-area listings" when `liveBasis !== 'exact'`.
   - Show the p25–p75 range when percentiles exist.
   - i18n keys in both locales (§6). USA shows the sample size and range only; there's no cascade.

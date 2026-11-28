@@ -11,7 +11,7 @@ The system MUST count Reed API calls per UTC day and per calendar month in a sto
 
 ### Requirement: Quota exhaustion serves stale data before falling back
 
-When a UK live search is blocked by the quota guard, the system SHALL serve the newest cached result for that search even if it has expired, marked `stale: true`, and SHALL only use the secondary provider when no cached result exists. Serving stale data MUST NOT extend the cached entry's expiry.
+When a UK live search is blocked by the quota guard, the system SHALL serve the newest cached result for that search even if it has expired, marked `stale: true`, and SHALL return no live tier when no cached result exists so the benchmark engine scores from ONS baselines alone. Serving stale data MUST NOT extend the cached entry's expiry.
 
 #### Scenario: Expired cache exists
 
@@ -21,7 +21,7 @@ When a UK live search is blocked by the quota guard, the system SHALL serve the 
 #### Scenario: No cache exists
 
 - **WHEN** the quota guard blocks a search with no cache entry
-- **THEN** the existing UK fallback provider is used
+- **THEN** no live listings or distribution are returned and the benchmark engine scores from ONS baselines alone (`live: null`)
 
 ### Requirement: Live tier widens by cache only
 

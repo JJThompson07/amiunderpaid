@@ -1,7 +1,7 @@
 ## Context
 
 - `fetchReedData` issues 2 Reed HTTP calls per search (tier 1 exact-phrase ∥ tier 2 broad, `Promise.allSettled`, `resultsToTake: 100` each). `buildTieredJobResponse` (`server/utils/jobTiering.ts`) sanitises, IQR-trims and builds `mean`, `count` and a 7-bucket `histogram`.
-- `jobs.ts` caches in `adzuna_jobs_cache` and `salary.ts` in `adzuna_distribution_cache`, with a harmonised key (`generateCacheKey(title, location, country, category)-type-contract`). `salary.ts` reuses the jobs entry when it exists (`tryReuseJobsCacheHistogram`). The TTL is `adzuna_categories/{uk|usa}-{tag}.cache` days (default 30), or 24h for fallback-provider data.
+- `jobs.ts` caches in `market_jobs_cache` and `salary.ts` in `market_distribution_cache` (renamed from `adzuna_*_cache` in `remove-adzuna-official-industry-trends`), with a harmonised key (`generateCacheKey(title, location, country, category)-type-contract`). `salary.ts` reuses the jobs entry when it exists (`tryReuseJobsCacheHistogram`). The TTL is `config.liveCachePrimaryTtlDays` days (default 7) for primary provider responses with listings, or `config.liveCacheFallbackTtlHours` hours (default 24h) for fallback-provider or zero-listing data.
 - `salary.ts` also wraps provider fetches in Nitro `cachedFunction`, but that only dedupes inside the salary route, not across jobs and salary.
 - After `server-side-mca-engine`, the engine calls `/api/market-data/salary` internally. After `uk-geo-economics-ingestion`, `resolveUkLocation` and the regional all-roles medians are available.
 - `search_history` docs: `{ title, country, location, schedule, contract, category, brand, timestamp }`. Titles and locations are lowercased; there's no SOC.
@@ -24,7 +24,7 @@
 
 `server/utils/singleFlight.ts`: `singleFlight<T>(key, fn)` keeps a `Map<string, Promise<T>>`, and an entry is deleted when its promise settles.
 
-- `fetchReedData` callers in `jobs.ts` and `salary.ts` wrap the provider fetch with the harmonised cache key, so concurrent jobs and salary requests for one search share the result.
+- Provider fetch callers in `jobs.ts` and `salary.ts` (Reed for UK, Careerjet → Jooble for USA) wrap the provider fetch with the harmonised cache key, so concurrent jobs and salary requests for one search share the result.
 - Under Fluid Compute both requests from one page view usually hit one instance.
 - Rejected alternative: a Firestore lease document. That adds 2 writes plus polling latency to every cold search, to save a rare duplicate the quota guard already bounds.
 
@@ -55,7 +55,7 @@ In `buildTieredJobResponse`:
 
 - When reservation fails, `jobs.ts` and `salary.ts`:
   1. Serve the newest cached doc for the key even if expired, with `stale: true` in the response and **no** TTL change.
-  2. Otherwise take the existing UK fallback (Adzuna).
+  2. Otherwise return no live data (empty listings in `jobs.ts`; 503 in `salary.ts` so `computeBenchmark` sets `live: null` and scores from ONS baselines alone, since UK has no secondary job-board fallback after `remove-adzuna-official-industry-trends`).
 - The guard is skipped under `process.dev` / E2E, where Reed is mocked.
 - Transaction contention: about 1 write per search. At current volume that's far below Firestore's per-document limit (~1 write/sec sustained). If API traffic approaches it, `api-keys-metering-billing`'s Redis can host the counter instead. That's noted there, not built here.
 
@@ -82,11 +82,11 @@ else keep exact (even if thin)                           ─► basis 'exact', s
 
 - `rankDemand(db, days=30)` reads UK `search_history` since the cutoff projecting only the fields it uses: `title`, `location`, `schedule`, `contract`, `country` and `timestamp`. It normalises each entry to (title, location, schedule ?? 'full-time', contract ?? 'permanent'), counts occurrences and sorts descending.
 - `prewarm(budget)` walks the ranked list:
-  - It skips keys whose cache doc expires more than 3 days from now.
+  - It skips keys whose cache doc expires more than 24 hours from now.
   - Otherwise it calls the same provider path as `salary.ts` (extracted into a shared `refreshLiveEntry(args)`, so the cache-write logic exists once) through `reserveReedCalls`.
   - It stops when the budget is spent or a reservation fails.
 - **Cron:** `GET /api/cron/prewarm-live` at `0 2 * * *`, `CRON_SECRET`-guarded, with a Resend summary (keys refreshed, calls spent, skipped as fresh, stopped reason). The run time limit is the project's function default of 300s (verified 2026-11-24: Fluid Compute on, `functionDefaultTimeout: 300`; task 5.5 re-checks before deploy). The loop also stops itself at 240s.
-- **Ordering:** a refresh that hits the Adzuna fallback (Reed down) writes a 24h-TTL entry, per the existing logic, so the next night retries it.
+- **Failure handling:** a refresh where Reed fails leaves any existing cache entry untouched so the next night retries it.
 
 ## Risks / Trade-offs
 
