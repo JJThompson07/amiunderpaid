@@ -2,7 +2,7 @@
 
 Today's pipeline, all running inside `useAsyncData` in `useLocationEngine`:
 
-1. `useJobs.fetchJobs` + `fetchHistogram` call `/api/market-data/{jobs,salary}`. These are server routes with provider fallback and Firestore caching (`adzuna_jobs_cache`, `adzuna_distribution_cache`).
+1. `useJobs.fetchJobs` + `fetchHistogram` call `/api/market-data/{jobs,salary}`. These are server routes with provider fallback and Firestore caching (`adzuna_jobs_cache`, `adzuna_distribution_cache`; renamed to `market_jobs_cache`, `market_distribution_cache` in `remove-adzuna-official-industry-trends`).
 2. `useMarketData.resolveUkIdentity` searches Algolia `job_titles` (UK) and falls back to `salary_benchmarks`; `resolveUsaIdentity` searches `salary_benchmarks`. Ambiguous UK hits across more than one group fill `ambiguousMatches`.
 3. `useMacroData` reads the national all-employees record plus all regional all-roles records (`hitsPerPage: 1000`) from Algolia.
 4. `useMicroData` reads the occupation's national record and its regional records by `id_code`.
@@ -71,7 +71,7 @@ Alternative considered: keep the Algolia reads on the server. Rejected per the p
 
 ### D4. Live tier via Nitro internal `$fetch`
 
-`computeBenchmark` calls `event.$fetch('/api/market-data/salary', { query })`. Nitro routes that in-process, with no network hop. Calling the handler this way keeps its provider fallback, Firestore cache and `cachedFunction` stampede guard exactly as they are, without extracting ~350 lines of handler logic. On failure (a 503 after all providers fail), the live tier is reported as unavailable and the score is computed without it. The scorers already handle `totalLiveJobs: 0`.
+`computeBenchmark` calls `event.$fetch('/api/market-data/salary', { query })`. Nitro routes that in-process, with no network hop. Calling the handler this way keeps its provider fallback, Firestore cache and `cachedFunction` stampede guard exactly as they are, without extracting ~350 lines of handler logic. (Once `remove-adzuna-official-industry-trends` lands, `/api/market-data/salary` returns `{ histogram, mean, count, provider }` for Reed in the UK and Careerjet → Jooble in the USA, all computed via `buildTieredJobResponse`, so `computeBenchmark` receives `mean` and `count` directly without needing a separate `/api/market-data/jobs` call.) On failure (a 503 after all providers fail), the live tier is reported as unavailable and the score is computed without it. The scorers already handle `totalLiveJobs: 0`.
 
 ### D5. Internal endpoint contract
 
@@ -86,9 +86,9 @@ Alternative considered: keep the Algolia reads on the server. Rejected per the p
 
 `useLocationEngine` keeps its public return type (`UseLocationEngineReturn`) so the salary page and its components don't change. Inside `useAsyncData`:
 
-- `adzuna.fetchJobs(...)` stays. Listings are display-only and not part of the engine.
+- `useJobs().fetchJobs(...)` stays. Listings are display-only and not part of the engine.
 - One `$fetch('/api/engine/benchmark', …)` replaces `fetchHistogram`, `resolveUk/UsaIdentity`, `fetchMacroBaselines` and `fetchMicroBaselines`.
-- The response populates `useJobs().distributionData` (same `SalaryDistributionResponse` shape `fetchHistogram` stores, run through `sanitizeAdzunaData`) and the `useMarketData` state refs (`matchedTitle`, `matchedIdCode`, `isGenericFallback`, `ambiguousMatches`). Every existing computed keeps working.
+- The response populates `useJobs().distributionData` (same `SalaryDistributionResponse` shape `fetchHistogram` stores, run through `sanitizeAdzunaData` — renamed to `sanitizeMarketData` in `remove-adzuna-official-industry-trends`) and the `useMarketData` state refs (`matchedTitle`, `matchedIdCode`, `isGenericFallback`, `ambiguousMatches`). Every existing computed keeps working.
 - `mcaScore` stays a client computed. It calls the scorer locally on the server-returned context, because `userSalary` changes client-side without a refetch (the slider). The engine returns the full `EngineContext` inputs for exactly this reason.
 
 That last point means the scorer still runs in two places (client for interactivity, server for the API) on identical inputs from one source. The scoring function is shared code, so there's still one engine. What moved server-side is the data assembly.

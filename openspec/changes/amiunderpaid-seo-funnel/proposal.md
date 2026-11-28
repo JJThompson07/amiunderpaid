@@ -40,7 +40,7 @@ Constraint, checked in production on 2026-11-12: `/salary/**` is Vercel ISR, and
 
   As decided, **not** on `/salary` or `/jobs` results.
 
-- **`/data-sources` rewrite:** describes every source the site now uses (ONS ASHE Tables 7.7a/14.7a/15, CPIH, Price Index of Private Rents, HM Land Registry UKHPI, plus the live job-board providers), with OGL v3.0 attribution text and links.
+- **`/data-sources` rewrite:** describes every source the site now uses (ONS ASHE Tables 7.7a/14.7a/15, ONS Average Weekly Earnings by industry EARN03, CPIH, Price Index of Private Rents, HM Land Registry UKHPI, BLS OEWS, BLS CES, plus the live job-board providers Reed for UK and Careerjet & Jooble for USA), with OGL v3.0 and Careerjet/Reed/Jooble attribution text and links.
 
 ## Scope
 

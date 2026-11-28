@@ -9,7 +9,7 @@ Reed is the UK live-market provider. The account allows 1,000 calls a day and 30
 2. **No percentiles.** The live tier exposes only a 7-bucket histogram and a mean, computed from IQR-trimmed salaries in `server/utils/jobTiering.ts`. A benchmarking product needs p10–p90 and the sample size behind them.
 3. **No location fallback and no quota awareness.**
    - A town with five matching ads gives a thin, noisy live tier, and nothing falls back to a wider area.
-   - Nothing tracks Reed usage. Once API traffic arrives, a burst could exhaust the daily quota and push every UK search onto the Adzuna fallback, whose quota is also capped (2,500/month).
+   - Nothing tracks Reed usage. Once API traffic arrives, a burst could exhaust the daily quota and leave cold UK searches with no live tier, falling back to ONS data alone.
 
 ## What Changes
 
@@ -17,7 +17,7 @@ Reed is the UK live-market provider. The account allows 1,000 calls a day and 30
 - **Live percentiles.** `buildTieredJobResponse` computes p10/p25/p50/p75/p90 and `sampleSize` from the same trimmed salaries as the mean. They're stored in the jobs and distribution caches and returned by the engine's `live` block.
 - **Reed quota guard.**
   - A Firestore-backed counter of actual Reed HTTP calls, per UTC day and per month.
-  - Before a live search, if the remaining budget is below the call reserve, the request serves the newest cached entry even if expired (`stale: true`). With no cache at all it takes the existing Adzuna fallback.
+  - Before a live search, if the remaining budget is below the call reserve, the request serves the newest cached entry even if expired (`stale: true`). With no cache at all it returns no live tier so the engine falls back to ONS data.
   - The caps are server runtime config.
 - **Live geo cascade, in the engine.** When the exact location's sample is below a minimum size, the engine tries, in order:
   1. A fresh cached entry for the same search at the location's **region**.
@@ -27,7 +27,7 @@ Reed is the UK live-market provider. The account allows 1,000 calls a day and 30
 
 - **Nightly pre-warm cron** `GET /api/cron/prewarm-live`:
   - Ranks UK (title, location, schedule, contract) demand from the last 30 days of `search_history`.
-  - Refreshes entries that are missing or expire within 3 days, most-demanded first.
+  - Refreshes entries that are missing or expire within the next 24 hours, most-demanded first.
   - Stops at a configurable budget (default 300 calls, 30% of the daily cap) or when the quota guard says no.
   - Emails a summary.
 - **Licence flag.** Every live result already carries `provider`. This change keeps it on the engine output so `api-keys-metering-billing` can withhold Reed-derived data from API keys until the Reed licence question is answered.
@@ -35,14 +35,14 @@ Reed is the UK live-market provider. The account allows 1,000 calls a day and 30
 ## Scope
 
 - The single-flight wrapper, percentile computation, quota guard, live cascade in the engine, and pre-warm cron.
-- UK only for the quota guard and cascade, since Reed serves only UK. USA (Adzuna → Jooble) is unchanged apart from gaining percentiles.
+- UK only for the quota guard and cascade, since Reed serves only UK. USA (Careerjet → Jooble) also benefits from single-flight deduplication and percentiles, since both providers use `buildTieredJobResponse`.
 
 ## Non-goals
 
 - Reed licence or commercial terms (user action), and exposing live data through the API (`api-keys-metering-billing`, behind a flag).
 - A shared cross-instance lock for single-flight. Per-instance deduplication removes the common case (one page's two parallel requests land on one instance under Fluid Compute). Rare cross-instance duplicates are bounded by the quota guard.
-- Adzuna quota tracking. Adzuna's monthly cap is handled by the existing trends-sync discipline. The same guard could be applied later.
-- Changing cache TTLs (`adzuna_categories.cache` days, 24h for fallback data).
+- Careerjet or Jooble quota tracking. The same guard pattern could be applied later if needed.
+- Changing cache TTLs (`liveCachePrimaryTtlDays` and `liveCacheFallbackTtlHours` from server `runtimeConfig`, introduced in `remove-adzuna-official-industry-trends`).
 
 ## Capabilities
 
